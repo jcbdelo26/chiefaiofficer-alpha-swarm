@@ -487,57 +487,55 @@ class GHLOutcomeWebhook:
     async def handle_opportunity_update(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         """
         Handle opportunity/deal update webhook from GHL.
-        
-        Expected payload structure:
-        {
-            "type": "opportunity.stageChanged",
-            "data": {
-                "id": "opp_123",
-                "contact_id": "con_456",
-                "name": "Acme Corp - Enterprise Deal",
-                "stage": "won",
-                "value": 50000,
-                "custom_fields": {...},
-                "contact": {
-                    "name": "John Smith",
-                    "email": "john@acme.com",
-                    "company": "Acme Corp"
-                }
-            }
-        }
+        Supports both custom JSON structure and standard GHL flat payload.
         """
+        # Strategy 1: Check for Custom JSON structure (type/data wrapper)
         event_type = payload.get("type", "")
-        data = payload.get("data", {})
+        if event_type and ("stageChanged" in event_type or "opportunity" in event_type):
+            data = payload.get("data", {})
+            return await self._process_deal_data(data, event_type)
+            
+        # Strategy 2: Check for Standard GHL Flat Payload
+        # Standard GHL webhooks send flattened contact/opp data
+        if "contact_id" in payload or "contact.id" in payload:
+            print("✓ Detected Standard GHL Payload")
+            return await self._process_deal_data(payload, "standard_ghl")
+            
+        return {"status": "ignored", "reason": "Unknown payload format"}
+
+    async def _process_deal_data(self, data: Dict[str, Any], source_type: str) -> Dict[str, Any]:
+        """Process extracted deal data regardless of source format."""
         
-        if "stageChanged" not in event_type and "opportunity" not in event_type:
-            return {"status": "ignored", "reason": "Not a stage change event"}
-        
-        # Get stage and map to outcome
-        stage = data.get("stage", "").lower().strip()
+        # Normalize fields (handle flat vs nested)
+        stage = (data.get("stage") or data.get("opportunity_status") or data.get("status") or "").lower().strip()
         outcome = self.stage_mapping.get(stage)
         
         if not outcome:
-            return {"status": "ignored", "reason": f"Stage '{stage}' not mapped to outcome"}
+            # Try to infer from status field common in GHL
+            if stage in ["won", "closed won"]: outcome = DealOutcome.WON
+            elif stage in ["lost", "closed lost"]: outcome = DealOutcome.LOST
+            elif stage in ["abandoned"]: outcome = DealOutcome.OTHER
+            else: return {"status": "ignored", "reason": f"Stage/Status '{stage}' not mapped"}
         
         # Extract features
         features = self._extract_features(data)
         
         # Create deal record
         deal = DealRecord(
-            deal_id=data.get("id", "unknown"),
-            contact_id=data.get("contact_id", ""),
-            company_name=data.get("contact", {}).get("company", data.get("name", "Unknown")),
+            deal_id=data.get("id") or data.get("opportunity_id") or "unknown",
+            contact_id=data.get("contact_id") or data.get("contact", {}).get("id") or "",
+            company_name=data.get("contact", {}).get("company") or data.get("company_name") or data.get("contact.company_name") or "Unknown",
             features=features,
             outcome=outcome,
             outcome_reason=data.get("lost_reason") or data.get("custom_fields", {}).get("lost_reason"),
-            deal_value=float(data.get("value", 0)),
+            deal_value=float(data.get("value") or data.get("monetary_value") or 0),
             closed_at=datetime.now(timezone.utc).isoformat()
         )
         
         # Record the outcome
         await self.memory.record_deal_outcome(deal)
         
-        # Update weights based on features
+        # Update weights
         self._update_weights_for_deal(deal)
         
         return {
