@@ -300,8 +300,8 @@ def generate_meeting_prep(meeting: Dict[str, Any]) -> Dict[str, Any]:
 def get_inngest_serve():
     """Get the Inngest serve middleware for FastAPI."""
     return serve(
-        inngest_client,
-        [
+        client=inngest_client,
+        functions=[
             pipeline_scan,
             daily_health_check,
             weekly_icp_analysis,
