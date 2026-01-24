@@ -1,0 +1,12 @@
+# Railway Deployment Configuration
+# Deploys the webhook server for Clay enrichment callbacks
+
+[build]
+builder = "NIXPACKS"
+
+[deploy]
+startCommand = "uvicorn webhooks.rb2b_webhook:app --host 0.0.0.0 --port $PORT"
+healthcheckPath = "/webhooks/rb2b/health"
+healthcheckTimeout = 30
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 3
