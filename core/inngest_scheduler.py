@@ -242,21 +242,43 @@ def generate_health_report(data: Dict[str, Any]) -> Dict[str, Any]:
 
 
 async def get_deal_outcomes() -> list:
-    """Get won/lost deal data from GHL."""
-    # TODO: Query GHL for recent deals
-    return []
+    """Get won/lost deal data from ICP memory."""
+    try:
+        from core.self_learning_icp import icp_memory
+        return icp_memory.deals
+    except Exception as e:
+        print(f"Error getting deal outcomes: {e}")
+        return []
 
 
 def analyze_deal_patterns(outcomes: list) -> Dict[str, Any]:
-    """Analyze patterns in deal outcomes."""
-    # TODO: Implement pattern analysis
-    return {}
+    """Analyze patterns in deal outcomes using PatternAnalyzer."""
+    try:
+        from core.self_learning_icp import pattern_analyzer
+        import asyncio
+        loop = asyncio.get_event_loop()
+        if loop.is_running():
+            # Already in async context
+            return pattern_analyzer.memory.generate_insights_report()
+        else:
+            return asyncio.run(pattern_analyzer.run_weekly_analysis())
+    except Exception as e:
+        print(f"Error analyzing patterns: {e}")
+        return {}
 
 
 def update_icp_weights(patterns: Dict[str, Any]) -> bool:
     """Update ICP scoring weights based on patterns."""
-    # TODO: Update scoring model
-    return True
+    try:
+        from core.self_learning_icp import icp_memory
+        # Weights are updated automatically when deals are recorded
+        # This function just triggers a save
+        icp_memory._save_weights()
+        print(f"✓ ICP weights updated ({len(icp_memory.weights)} traits)")
+        return True
+    except Exception as e:
+        print(f"Error updating weights: {e}")
+        return False
 
 
 async def get_tomorrow_meetings() -> list:

@@ -50,6 +50,15 @@ except Exception as e:
     print(f"Warning: Clay enrichment not initialized - {e}")
     clay_enricher = None
 
+# Initialize Self-Learning ICP
+try:
+    from core.self_learning_icp import get_icp_router
+    icp_router = get_icp_router()
+    app.include_router(icp_router)
+    print("✓ Self-Learning ICP engine enabled")
+except Exception as e:
+    print(f"Warning: ICP learning not initialized - {e}")
+
 
 
 def verify_rb2b_signature(payload: bytes, signature: str) -> bool:
