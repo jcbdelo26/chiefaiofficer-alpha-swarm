@@ -37,19 +37,39 @@ app = FastAPI()
 RB2B_WEBHOOK_SECRET = os.getenv('RB2B_WEBHOOK_SECRET', '')
 
 
-# Global error tracker
-init_error = None
 
-# Initialize Clay Enricher
+# =============================================================================
+# ROBUST IMPORT PATH SETUP
+# =============================================================================
 try:
-    # Add project root to path if needed (it's already added in some envs but good to be safe)
-    PROJECT_ROOT = Path(__file__).parent.parent
-    if str(PROJECT_ROOT) not in sys.path:
-        sys.path.insert(0, str(PROJECT_ROOT))
+    # 1. Calculate project root (2 levels up from webhooks/rb2b_webhook.py)
+    current_file = Path(__file__).resolve()
+    project_root = current_file.parent.parent
     
-    from core.clay_direct_enrichment import ClayDirectEnrichment
+    # 2. Add to sys.path if missing
+    if str(project_root) not in sys.path:
+        sys.path.insert(0, str(project_root))
+    
+    print(f"✓ Python path updated: {project_root}")
+    
+    # 3. Import Core Modules
+    try:
+        # Try standard absolute import
+        from core.clay_direct_enrichment import ClayDirectEnrichment
+    except ImportError:
+        # Fallback to direct path import
+        import importlib.util
+        spec = importlib.util.spec_from_file_location(
+            "clay_direct_enrichment", 
+            project_root / "core" / "clay_direct_enrichment.py"
+        )
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        ClayDirectEnrichment = module.ClayDirectEnrichment
+
     clay_enricher = ClayDirectEnrichment()
     print("✓ Clay Direct Enrichment initialized")
+    
 except Exception as e:
     init_error = str(e)
     print(f"Warning: Clay enrichment not initialized - {e}")
