@@ -36,6 +36,10 @@ app = FastAPI()
 
 RB2B_WEBHOOK_SECRET = os.getenv('RB2B_WEBHOOK_SECRET', '')
 
+
+# Global error tracker
+init_error = None
+
 # Initialize Clay Enricher
 try:
     # Add project root to path if needed (it's already added in some envs but good to be safe)
@@ -47,8 +51,10 @@ try:
     clay_enricher = ClayDirectEnrichment()
     print("✓ Clay Direct Enrichment initialized")
 except Exception as e:
+    init_error = str(e)
     print(f"Warning: Clay enrichment not initialized - {e}")
     clay_enricher = None
+
 
 # Initialize Self-Learning ICP
 try:
@@ -286,7 +292,8 @@ async def clay_callback(request: Request):
     Endpoint: /webhooks/clay/callback
     """
     if not clay_enricher:
-        raise HTTPException(status_code=503, detail="Clay enrichment not initialized")
+        detail_msg = f"Clay enrichment not initialized. Error: {init_error}" if init_error else "Clay enrichment not initialized (Unknown error)"
+        raise HTTPException(status_code=503, detail=detail_msg)
         
     try:
         data = await request.json()
