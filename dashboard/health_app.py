@@ -1,0 +1,851 @@
+#!/usr/bin/env python3
+"""
+Health Dashboard - FastAPI Web Server
+=====================================
+Real-time health monitoring dashboard for the CAIO RevOps Swarm.
+
+Endpoints:
+- GET  /api/health       - Current health status
+- GET  /api/metrics      - Historical metrics
+- GET  /api/agents       - Agent status
+- GET  /api/integrations - Integration status
+- WS   /ws               - Real-time updates
+
+Usage:
+    uvicorn dashboard.health_app:app --host 0.0.0.0 --port 8080 --reload
+"""
+
+import os
+import sys
+import json
+import asyncio
+from datetime import datetime
+from pathlib import Path
+from typing import Dict, List, Any, Optional
+
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, Query, Depends, Body
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import HTMLResponse, FileResponse
+from fastapi.middleware.cors import CORSMiddleware
+import uvicorn
+
+PROJECT_ROOT = Path(__file__).parent.parent
+sys.path.insert(0, str(PROJECT_ROOT))
+
+from core.unified_health_monitor import get_health_monitor, HealthMonitor
+from core.precision_scorecard import get_scorecard, reset_scorecard
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
+
+# =============================================================================
+# AUTHENTICATION
+# =============================================================================
+
+DASHBOARD_AUTH_TOKEN = os.getenv("DASHBOARD_AUTH_TOKEN", "")
+
+def require_auth(token: str = Query(None, alias="token")):
+    """
+    Simple token-based authentication for sensitive endpoints.
+    Requires ?token=xxx query parameter matching DASHBOARD_AUTH_TOKEN.
+    """
+    if not DASHBOARD_AUTH_TOKEN:
+        # If no token configured, allow access (dev mode) but warn
+        print("WARNING: DASHBOARD_AUTH_TOKEN not set - endpoints are unprotected!")
+        return True
+    
+    if not token or token != DASHBOARD_AUTH_TOKEN:
+        raise HTTPException(
+            status_code=401,
+            detail="Unauthorized. Please provide valid ?token= parameter."
+        )
+    return True
+
+# =============================================================================
+# APP SETUP
+# =============================================================================
+
+app = FastAPI(
+    title="CAIO Swarm Health Dashboard",
+    description="Real-time health monitoring for the unified agent swarm",
+    version="1.0.0"
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Serve static files
+STATIC_DIR = Path(__file__).parent / "static"
+STATIC_DIR.mkdir(exist_ok=True)
+app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
+
+
+# =============================================================================
+# WEBSOCKET MANAGER
+# =============================================================================
+
+class ConnectionManager:
+    """Manage WebSocket connections."""
+
+    def __init__(self):
+        self.active_connections: List[WebSocket] = []
+
+    async def connect(self, websocket: WebSocket):
+        await websocket.accept()
+        self.active_connections.append(websocket)
+
+    def disconnect(self, websocket: WebSocket):
+        if websocket in self.active_connections:
+            self.active_connections.remove(websocket)
+
+    async def broadcast(self, message: Dict[str, Any]):
+        disconnected = []
+        for connection in self.active_connections:
+            try:
+                await connection.send_json(message)
+            except Exception:
+                disconnected.append(connection)
+        
+        for conn in disconnected:
+            self.disconnect(conn)
+
+
+manager = ConnectionManager()
+
+
+# =============================================================================
+# BACKGROUND TASKS
+# =============================================================================
+
+async def health_broadcast_loop():
+    """Broadcast health updates to WebSocket clients."""
+    monitor = get_health_monitor()
+    
+    while True:
+        await asyncio.sleep(5)  # Update every 5 seconds
+        
+        if manager.active_connections:
+            try:
+                status = monitor.get_health_status()
+                await manager.broadcast({
+                    "type": "health_update",
+                    "data": status
+                })
+            except Exception as e:
+                print(f"Broadcast error: {e}")
+
+
+@app.on_event("startup")
+async def startup_event():
+    """Start background tasks on app startup."""
+    # Start the health monitor
+    monitor = get_health_monitor()
+    asyncio.create_task(monitor.start())
+    
+    # Start broadcast loop
+    asyncio.create_task(health_broadcast_loop())
+
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    """Cleanup on shutdown."""
+    monitor = get_health_monitor()
+    await monitor.stop()
+
+
+# =============================================================================
+# API ROUTES
+# =============================================================================
+
+@app.get("/")
+async def root():
+    """Serve the dashboard HTML."""
+    index_path = STATIC_DIR / "index.html"
+    if index_path.exists():
+        return FileResponse(index_path)
+    return HTMLResponse("<h1>Health Dashboard</h1><p>Static files not found.</p>")
+
+
+@app.get("/api/health")
+async def get_health() -> Dict[str, Any]:
+    """Get current health status of all components."""
+    monitor = get_health_monitor()
+    return monitor.get_health_status()
+
+
+@app.get("/api/metrics")
+async def get_metrics(hours: int = 24) -> Dict[str, Any]:
+    """Get historical metrics."""
+    monitor = get_health_monitor()
+    return monitor.get_metrics_history(hours)
+
+
+@app.get("/api/agents")
+async def get_agents() -> Dict[str, Any]:
+    """Get status of all agents."""
+    monitor = get_health_monitor()
+    status = monitor.get_health_status()
+    return {
+        "agents": status.get("agents", {}),
+        "timestamp": status.get("timestamp")
+    }
+
+
+@app.get("/api/agents/{agent_name}")
+async def get_agent(agent_name: str) -> Dict[str, Any]:
+    """Get status of a specific agent."""
+    monitor = get_health_monitor()
+    agent_status = monitor.get_agent_status(agent_name)
+    
+    if not agent_status:
+        raise HTTPException(status_code=404, detail=f"Agent '{agent_name}' not found")
+    
+    return agent_status
+
+
+@app.get("/api/integrations")
+async def get_integrations() -> Dict[str, Any]:
+    """Get status of all integrations."""
+    monitor = get_health_monitor()
+    status = monitor.get_health_status()
+    return {
+        "integrations": status.get("integrations", {}),
+        "timestamp": status.get("timestamp")
+    }
+
+
+@app.get("/api/mcp-servers")
+async def get_mcp_servers() -> Dict[str, Any]:
+    """Get status of all MCP servers."""
+    monitor = get_health_monitor()
+    status = monitor.get_health_status()
+    return {
+        "mcp_servers": status.get("mcp_servers", {}),
+        "timestamp": status.get("timestamp")
+    }
+
+
+@app.get("/api/guardrails")
+async def get_guardrails() -> Dict[str, Any]:
+    """Get status of guardrails."""
+    monitor = get_health_monitor()
+    status = monitor.get_health_status()
+    return {
+        "guardrails": status.get("guardrails", {}),
+        "rate_limits": status.get("rate_limits", {}),
+        "email_limits": status.get("email_limits", {}),
+        "timestamp": status.get("timestamp")
+    }
+
+
+@app.get("/api/actions")
+async def get_recent_actions(limit: int = 20) -> Dict[str, Any]:
+    """Get recent actions."""
+    monitor = get_health_monitor()
+    status = monitor.get_health_status()
+    actions = status.get("recent_actions", [])
+    return {
+        "actions": actions[:limit],
+        "total": len(actions),
+        "timestamp": status.get("timestamp")
+    }
+
+
+@app.get("/api/alerts")
+async def get_alerts() -> Dict[str, Any]:
+    """Get recent alerts."""
+    monitor = get_health_monitor()
+    status = monitor.get_health_status()
+    return {
+        "alerts": status.get("alerts", []),
+        "timestamp": status.get("timestamp")
+    }
+
+
+@app.post("/api/actions/record")
+async def record_action(
+    component: str,
+    success: bool,
+    latency_ms: float = 0,
+    error: Optional[str] = None,
+    agent: Optional[str] = None,
+    action: Optional[str] = None
+) -> Dict[str, Any]:
+    """Record an action for a component."""
+    monitor = get_health_monitor()
+    monitor.record_action(component, success, latency_ms, error, agent, action)
+    return {"status": "recorded"}
+
+
+@app.post("/api/email/record")
+async def record_email(count: int = 1) -> Dict[str, Any]:
+    """Record emails sent."""
+    monitor = get_health_monitor()
+    monitor.record_email_sent(count)
+    return {"status": "recorded", "count": count}
+
+
+# =============================================================================
+# WEBSOCKET ENDPOINT
+# =============================================================================
+
+@app.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket):
+    """WebSocket endpoint for real-time updates."""
+    await manager.connect(websocket)
+    
+    # Send initial status
+    monitor = get_health_monitor()
+    try:
+        await websocket.send_json({
+            "type": "health_update",
+            "data": monitor.get_health_status()
+        })
+        
+        # Keep connection alive and handle messages
+        while True:
+            try:
+                data = await asyncio.wait_for(websocket.receive_json(), timeout=30.0)
+                
+                if data.get("type") == "ping":
+                    await websocket.send_json({"type": "pong"})
+                elif data.get("type") == "refresh":
+                    await websocket.send_json({
+                        "type": "health_update",
+                        "data": monitor.get_health_status()
+                    })
+            except asyncio.TimeoutError:
+                # Send heartbeat
+                await websocket.send_json({"type": "heartbeat"})
+                
+    except WebSocketDisconnect:
+        manager.disconnect(websocket)
+    except Exception as e:
+        print(f"WebSocket error: {e}")
+        manager.disconnect(websocket)
+
+
+# =============================================================================
+# PRECISION SCORECARD ENDPOINTS
+# =============================================================================
+
+@app.get("/api/scorecard")
+async def get_scorecard_summary():
+    """
+    Get the Precision Scorecard summary.
+    
+    Returns the 12 key metrics, organized by category, plus the current constraint.
+    Inspired by Precision.co: "The only scorecard that tells you what to fix."
+    """
+    scorecard = get_scorecard()
+    return scorecard.get_summary()
+
+
+@app.post("/api/scorecard/refresh")
+async def refresh_scorecard():
+    """
+    Force refresh all scorecard metrics from data sources.
+    """
+    scorecard = get_scorecard()
+    scorecard.refresh()
+    return {"status": "refreshed", "timestamp": datetime.now().isoformat()}
+
+
+@app.get("/api/scorecard/constraint")
+async def get_constraint():
+    """
+    Get just the current constraint (the ONE thing to fix).
+    """
+    scorecard = get_scorecard()
+    constraint = scorecard.get_constraint()
+    
+    if constraint:
+        return constraint.to_dict()
+    else:
+        return {"constraint": None, "message": "All metrics on track"}
+
+
+@app.get("/api/scorecard/markdown")
+async def get_scorecard_markdown():
+    """
+    Get the scorecard as a markdown report (for email/Slack).
+    """
+    scorecard = get_scorecard()
+    return {"markdown": scorecard.to_markdown_report()}
+
+
+@app.get("/scorecard")
+async def scorecard_dashboard():
+    """
+    Serve the Precision Scorecard HTML dashboard.
+    """
+    scorecard_html = Path(__file__).parent / "scorecard.html"
+    if scorecard_html.exists():
+        return FileResponse(str(scorecard_html))
+    raise HTTPException(status_code=404, detail="Scorecard dashboard not found")
+
+
+@app.get("/sales")
+async def sales_dashboard():
+    """
+    Serve the Head of Sales Dashboard.
+    
+    This is the primary dashboard for Dani Apgar to:
+    - Review and approve pending emails
+    - See the 4 key conversion metrics
+    - View the #1 constraint to fix
+    - Monitor recent activity
+    """
+    hos_html = Path(__file__).parent / "hos_dashboard.html"
+    if hos_html.exists():
+        return FileResponse(str(hos_html))
+    raise HTTPException(status_code=404, detail="Sales dashboard not found")
+
+
+@app.get("/api/pending-emails")
+async def get_pending_emails(auth: bool = Depends(require_auth)):
+    """
+    Get pending emails awaiting approval.
+    
+    Returns emails that need HoS review before sending.
+    """
+    # Load from shadow mode log
+    shadow_log = PROJECT_ROOT / ".hive-mind" / "shadow_mode_emails"
+    pending = []
+    
+    if shadow_log.exists():
+        for email_file in sorted(shadow_log.glob("*.json"), reverse=True)[:20]:
+            try:
+                with open(email_file) as f:
+                    email_data = json.load(f)
+                    if email_data.get("status") == "pending":
+                        # Ensure we pass all necessary fields for the frontend
+                        email_data["email_id"] = email_data.get("email_id") or email_file.stem
+                        email_data["timestamp"] = email_data.get("timestamp", "Unknown")
+                        email_data["recipient_data"] = email_data.get("recipient_data", {})
+                        pending.append(email_data)
+            except Exception:
+                pass
+    
+    return {"pending_emails": pending, "count": len(pending)}
+
+
+@app.post("/api/emails/{email_id}/approve")
+async def approve_email(
+    email_id: str, 
+    approver: str = "dashboard_user", 
+    auth: bool = Depends(require_auth),
+    edited_body: Optional[str] = Body(None),
+    feedback: Optional[str] = Body(None)
+):
+    """
+    Approve an email for sending, optionally with edits and feedback.
+    
+    1. If edited_body is provided, updates the email content.
+    2. Logs any feedback for agent training.
+    3. CHECKS CONFIG for 'actually_send'.
+    4. If true, dispatches to GHL API.
+    5. Updates status and queues for send.
+    """
+    shadow_log = PROJECT_ROOT / ".hive-mind" / "shadow_mode_emails"
+    email_file = None
+    email_data = None
+    
+    # Find the email file
+    if shadow_log.exists():
+        for f in shadow_log.glob("*.json"):
+            try:
+                with open(f) as fp:
+                    data = json.load(fp)
+                    if data.get("email_id") == email_id or f.stem == email_id:
+                        email_file = f
+                        email_data = data
+                        break
+            except Exception:
+                continue
+    
+    if not email_file or not email_data:
+        raise HTTPException(status_code=404, detail=f"Email {email_id} not found")
+    
+    if email_data.get("status") == "approved":
+        raise HTTPException(status_code=400, detail="Email already approved")
+    
+    # Handle Body Edits
+    if edited_body:
+        email_data["body"] = edited_body
+        email_data["was_edited"] = True
+    
+    # =========================================================================
+    # LIVE SENDING LOGIC
+    # =========================================================================
+    
+    # Load config to check if we should send
+    project_config = {}
+    try:
+        config_path = PROJECT_ROOT / "config" / "production.json"
+        if config_path.exists():
+            with open(config_path) as cp:
+                project_config = json.load(cp)
+    except Exception as e:
+        print(f"Warning: Could not load config: {e}")
+    
+    actually_send = project_config.get("email_behavior", {}).get("actually_send", False)
+    
+    formatted_response = "Email approved (simulated)"
+    
+    if actually_send:
+        contact_id = email_data.get("contact_id")
+        
+        # Guard against synthetic/test data in live mode
+        if contact_id and not contact_id.startswith("synthetic_"):
+            try:
+                from core.ghl_outreach import GHLOutreachClient, EmailTemplate, OutreachType
+                
+                # Init client
+                api_key = os.getenv("GHL_PROD_API_KEY") or os.getenv("GHL_API_KEY")
+                location_id = os.getenv("GHL_LOCATION_ID")
+                
+                if api_key and location_id:
+                    client = GHLOutreachClient(api_key, location_id)
+                    
+                    # Create temp template from the approved content
+                    temp_template = EmailTemplate(
+                        id=f"approved_{email_id}",
+                        name="Approved Dashboard Email",
+                        subject=email_data.get("subject", ""),
+                        body=email_data.get("body", ""),
+                        type=OutreachType.WARM
+                    )
+                    
+                    # Send!
+                    result = await client.send_email(contact_id, temp_template)
+                    await client.close()
+                    
+                    if result.get("success"):
+                        email_data["sent_via_ghl"] = True
+                        email_data["ghl_message_id"] = result.get("message_id")
+                        formatted_response = "Email sent via GHL"
+                    else:
+                        # Log error but don't fail the approval entirely?
+                        # Or maybe fail it so user knows? Let's fail hard to be safe.
+                        raise Exception(f"GHL Send Failed: {result.get('error')}")
+                else:
+                     print("Warning: GHL Config missing, skipping send.")
+            except Exception as e:
+                # If sending fails, we should generally Notify user
+                print(f"Critical Error sending email: {e}")
+                # For now, we allow approval to proceed but log the error
+                email_data["send_error"] = str(e)
+                formatted_response = f"Approved but Send Failed: {str(e)}"
+        else:
+             formatted_response = "Email approved (Synthetic/Test skipped)"
+
+    # =========================================================================
+    
+    # Update status
+    email_data["status"] = "approved"
+    email_data["approved_at"] = datetime.now().isoformat()
+    email_data["approved_by"] = approver
+    email_data["feedback"] = feedback
+    
+    # Save updated data
+    try:
+        with open(email_file, "w") as fp:
+            json.dump(email_data, fp, indent=2)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to save approval: {e}")
+    
+    # Log to Audit Log
+    audit_log = PROJECT_ROOT / ".hive-mind" / "audit" / "email_approvals.jsonl"
+    audit_log.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        with open(audit_log, "a") as fp:
+            fp.write(json.dumps({
+                "email_id": email_id,
+                "action": "approved",
+                "approver": approver,
+                "sent_real": actually_send,
+                "timestamp": datetime.now().isoformat(),
+                "recipient": email_data.get("to"),
+                "subject": email_data.get("subject"),
+                "was_edited": bool(edited_body),
+                "feedback": feedback
+            }) + "\n")
+    except Exception:
+        pass
+
+    # Log to Training Feedback Log
+    if feedback or edited_body:
+        training_log = PROJECT_ROOT / ".hive-mind" / "audit" / "agent_feedback.jsonl"
+        try:
+            with open(training_log, "a") as fp:
+                fp.write(json.dumps({
+                    "email_id": email_id,
+                    "action": "approved_with_changes" if edited_body else "approved_with_feedback",
+                    "feedback": feedback,
+                    "original_body": email_data.get("body") if edited_body else None,
+                    "edited_body": edited_body, 
+                    "timestamp": datetime.now().isoformat()
+                }) + "\n")
+        except Exception:
+            pass
+    
+    return {
+        "status": "approved",
+        "email_id": email_id,
+        "edited": bool(edited_body),
+        "message": formatted_response
+    }
+
+
+@app.post("/api/emails/{email_id}/reject")
+async def reject_email(email_id: str, reason: Optional[str] = None, approver: str = "dashboard_user", auth: bool = Depends(require_auth)):
+    """
+    Reject an email.
+    
+    Finds the email and marks it as rejected with reason.
+    Logs the rejection for agent training.
+    """
+    shadow_log = PROJECT_ROOT / ".hive-mind" / "shadow_mode_emails"
+    email_file = None
+    email_data = None
+    
+    # Find the email file
+    if shadow_log.exists():
+        for f in shadow_log.glob("*.json"):
+            try:
+                with open(f) as fp:
+                    data = json.load(fp)
+                    if data.get("email_id") == email_id or f.stem == email_id:
+                        email_file = f
+                        email_data = data
+                        break
+            except Exception:
+                continue
+    
+    if not email_file or not email_data:
+        raise HTTPException(status_code=404, detail=f"Email {email_id} not found")
+    
+    if email_data.get("status") == "rejected":
+        raise HTTPException(status_code=400, detail="Email already rejected")
+    
+    # Update status
+    email_data["status"] = "rejected"
+    email_data["rejected_at"] = datetime.now().isoformat()
+    email_data["rejected_by"] = approver
+    email_data["rejection_reason"] = reason or "No reason provided"
+    
+    # Save updated data
+    try:
+        with open(email_file, "w") as fp:
+            json.dump(email_data, fp, indent=2)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to save rejection: {e}")
+
+    # Log to Training Feedback Log
+    training_log = PROJECT_ROOT / ".hive-mind" / "audit" / "agent_feedback.jsonl"
+    try:
+        with open(training_log, "a") as fp:
+            fp.write(json.dumps({
+                "email_id": email_id,
+                "action": "rejected",
+                "feedback": reason,
+                "original_body": email_data.get("body"),
+                "timestamp": datetime.now().isoformat()
+            }) + "\n")
+    except Exception:
+        pass
+    
+    # Log the rejection
+    audit_log = PROJECT_ROOT / ".hive-mind" / "audit" / "email_approvals.jsonl"
+    audit_log.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        with open(audit_log, "a") as fp:
+            fp.write(json.dumps({
+                "email_id": email_id,
+                "action": "rejected",
+                "approver": approver,
+                "reason": reason,
+                "timestamp": datetime.now().isoformat(),
+                "recipient": email_data.get("to"),
+                "subject": email_data.get("subject")
+            }) + "\n")
+    except Exception:
+        pass  # Non-critical
+    
+    return {
+        "status": "rejected",
+        "email_id": email_id,
+        "reason": reason,
+        "approver": approver,
+        "timestamp": datetime.now().isoformat()
+    }
+
+
+@app.get("/api/queue-status")
+async def get_queue_status(auth: bool = Depends(require_auth)):
+    """
+    Get the status of all email queues for pipeline monitoring.
+    
+    Returns counts from:
+    - shadow_mode_emails (dashboard approvals)
+    - gatekeeper_queue (backup/audit)
+    - Daily email counts
+    """
+    shadow_dir = PROJECT_ROOT / ".hive-mind" / "shadow_mode_emails"
+    gatekeeper_dir = PROJECT_ROOT / ".hive-mind" / "gatekeeper_queue"
+    metrics_file = PROJECT_ROOT / ".hive-mind" / "metrics" / "daily_email_counts.json"
+    intent_log = PROJECT_ROOT / ".hive-mind" / "logs" / "intent_queue.jsonl"
+    
+    # Shadow mode emails breakdown
+    shadow_pending = 0
+    shadow_approved = 0
+    shadow_rejected = 0
+    shadow_total = 0
+    
+    if shadow_dir.exists():
+        for f in shadow_dir.glob("*.json"):
+            try:
+                with open(f) as fp:
+                    data = json.load(fp)
+                    status = data.get("status", "pending")
+                    shadow_total += 1
+                    if status == "pending":
+                        shadow_pending += 1
+                    elif status == "approved":
+                        shadow_approved += 1
+                    elif status == "rejected":
+                        shadow_rejected += 1
+            except Exception:
+                pass
+    
+    # Gatekeeper queue count
+    gatekeeper_count = 0
+    if gatekeeper_dir.exists():
+        gatekeeper_count = len(list(gatekeeper_dir.glob("*.json")))
+    
+    # Daily counts
+    daily_counts = {"date": "N/A", "queued": 0, "sent": 0}
+    if metrics_file.exists():
+        try:
+            with open(metrics_file) as f:
+                daily_counts = json.load(f)
+        except Exception:
+            pass
+    
+    # Recent intent queue events (last 10)
+    recent_events = []
+    if intent_log.exists():
+        try:
+            with open(intent_log) as f:
+                lines = f.readlines()
+                for line in lines[-10:]:
+                    try:
+                        recent_events.append(json.loads(line.strip()))
+                    except Exception:
+                        pass
+        except Exception:
+            pass
+    
+    return {
+        "shadow_mode_emails": {
+            "total": shadow_total,
+            "pending": shadow_pending,
+            "approved": shadow_approved,
+            "rejected": shadow_rejected
+        },
+        "gatekeeper_queue": {
+            "total": gatekeeper_count
+        },
+        "daily_limits": {
+            "date": daily_counts.get("date", "N/A"),
+            "queued_today": daily_counts.get("queued", 0),
+            "sent_today": daily_counts.get("sent", 0),
+            "limit": 25,
+            "remaining": max(0, 25 - daily_counts.get("queued", 0)),
+            "last_queued_at": daily_counts.get("last_queued_at")
+        },
+        "recent_queue_events": recent_events[-5:],
+        "pipeline_healthy": shadow_pending > 0 or gatekeeper_count > 0 or daily_counts.get("queued", 0) > 0
+    }
+
+
+@app.get("/api/health/ready")
+async def readiness_probe():
+    """
+    Kubernetes readiness probe endpoint.
+    
+    Returns 200 if the service is ready to accept traffic.
+    """
+    try:
+        monitor = get_health_monitor()
+        status = monitor.get_health_status()
+        
+        # Check critical dependencies
+        integrations = status.get("integrations", {})
+        critical_healthy = True
+        unhealthy = []
+        
+        for name, integration in integrations.items():
+            if integration.get("critical", False) and integration.get("status") != "healthy":
+                critical_healthy = False
+                unhealthy.append(name)
+        
+        if not critical_healthy:
+            raise HTTPException(
+                status_code=503,
+                detail=f"Critical integrations unhealthy: {', '.join(unhealthy)}"
+            )
+        
+        return {
+            "status": "ready",
+            "timestamp": datetime.now().isoformat(),
+            "checks": {
+                "health_monitor": "ok",
+                "integrations": "ok"
+            }
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=503, detail=f"Readiness check failed: {e}")
+
+
+
+# =============================================================================
+# WEBHOOKS INTEGRATION
+# =============================================================================
+
+try:
+    from webhooks.rb2b_webhook import router as rb2b_router
+    app.include_router(rb2b_router)
+    print("✓ RB2B Webhook mounted")
+except Exception as e:
+    print(f"Warning: RB2B Webhook could not be mounted: {e}")
+
+# =============================================================================
+# MAIN
+# =============================================================================
+
+if __name__ == "__main__":
+    print("\n" + "=" * 60)
+    print("  CAIO Swarm Health Dashboard")
+    print("=" * 60)
+    print("  HTTP:      http://localhost:8080")
+    print("  WebSocket: ws://localhost:8080/ws")
+    print("  API:       http://localhost:8080/api/health")
+    print("  Webhook:   http://localhost:8080/webhooks/rb2b")
+    print("=" * 60 + "\n")
+    
+    uvicorn.run(
+        "health_app:app",
+        host="0.0.0.0",
+        port=8080,
+        reload=True
+    )

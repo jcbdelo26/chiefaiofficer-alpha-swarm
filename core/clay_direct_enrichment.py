@@ -29,7 +29,8 @@ import sys
 import json
 import asyncio
 import logging
-from datetime import datetime, timezone
+import hashlib
+from datetime import datetime, timezone, timedelta
 from pathlib import Path
 from typing import Dict, List, Any, Optional, Tuple
 from dataclasses import dataclass, field, asdict
@@ -179,16 +180,29 @@ class ClayDirectEnrichment:
     4. Sync enriched data to GHL
     """
     
+    # Cache TTLs (in days)
+    ENRICHMENT_CACHE_TTL_DAYS = 7
+    COST_PER_ENRICHMENT = 0.03  # Estimated cost saved per cache hit
+    
     def __init__(self, config: Optional[ClayConfig] = None):
         self.config = config or ClayConfig()
         self.storage_dir = PROJECT_ROOT / ".hive-mind" / "clay_enrichment"
         self.storage_dir.mkdir(parents=True, exist_ok=True)
         
+        # Cache directory
+        self.cache_dir = PROJECT_ROOT / ".hive-mind" / "enrichment_cache"
+        self.cache_dir.mkdir(parents=True, exist_ok=True)
+        
         # Track pending enrichments
         self._pending: Dict[str, EnrichmentRequest] = {}
         self._results: Dict[str, EnrichmentResult] = {}
         
+        # Cache stats
+        self._cache_hits: int = 0
+        self._cache_misses: int = 0
+        
         self._load_state()
+        self._load_cache_stats()
         logger.info("Clay Direct Enrichment initialized")
     
     def _load_state(self):
@@ -212,6 +226,144 @@ class ClayDirectEnrichment:
         except Exception as e:
             logger.warning(f"Failed to save state: {e}")
     
+    def _load_cache_stats(self):
+        """Load cache stats from disk."""
+        stats_file = self.cache_dir / "stats.json"
+        if stats_file.exists():
+            try:
+                with open(stats_file) as f:
+                    data = json.load(f)
+                    self._cache_hits = data.get("cache_hits", 0)
+                    self._cache_misses = data.get("cache_misses", 0)
+            except Exception as e:
+                logger.warning(f"Failed to load cache stats: {e}")
+    
+    def _save_cache_stats(self):
+        """Save cache stats to disk."""
+        stats_file = self.cache_dir / "stats.json"
+        try:
+            with open(stats_file, 'w') as f:
+                json.dump({
+                    "cache_hits": self._cache_hits,
+                    "cache_misses": self._cache_misses,
+                    "cost_saved_estimate": self._cache_hits * self.COST_PER_ENRICHMENT
+                }, f, indent=2)
+        except Exception as e:
+            logger.warning(f"Failed to save cache stats: {e}")
+    
+    def _get_cache_key(self, identifier: str) -> str:
+        """Generate cache key from email or domain."""
+        return hashlib.md5(identifier.lower().encode()).hexdigest()
+    
+    def _get_cached_enrichment(self, email: Optional[str], domain: Optional[str]) -> Optional[EnrichmentResult]:
+        """Check cache for existing enrichment data."""
+        identifiers = []
+        if email:
+            identifiers.append(f"enrichment:{email}")
+        if domain:
+            identifiers.append(f"enrichment:{domain}")
+        
+        for identifier in identifiers:
+            cache_key = self._get_cache_key(identifier)
+            cache_file = self.cache_dir / f"{cache_key}.json"
+            
+            if cache_file.exists():
+                try:
+                    with open(cache_file) as f:
+                        data = json.load(f)
+                    
+                    cached_at = datetime.fromisoformat(data.get("cached_at", ""))
+                    ttl = timedelta(days=self.ENRICHMENT_CACHE_TTL_DAYS)
+                    
+                    if datetime.now(timezone.utc) - cached_at < ttl:
+                        logger.info(f"Cache HIT for {email or domain}")
+                        self._cache_hits += 1
+                        self._save_cache_stats()
+                        
+                        result_data = data.get("result", {})
+                        return EnrichmentResult(
+                            request_id=result_data.get("request_id", "cached"),
+                            status=EnrichmentStatus(result_data.get("status", "completed")),
+                            email=result_data.get("email"),
+                            email_verified=result_data.get("email_verified", False),
+                            phone=result_data.get("phone"),
+                            linkedin_url=result_data.get("linkedin_url"),
+                            first_name=result_data.get("first_name"),
+                            last_name=result_data.get("last_name"),
+                            job_title=result_data.get("job_title"),
+                            company_name=result_data.get("company_name"),
+                            company_domain=result_data.get("company_domain"),
+                            company_industry=result_data.get("company_industry"),
+                            company_size=result_data.get("company_size"),
+                            company_revenue=result_data.get("company_revenue"),
+                            company_linkedin=result_data.get("company_linkedin"),
+                            icp_fit_score=result_data.get("icp_fit_score", 0.0),
+                            priority_tier=result_data.get("priority_tier", "low"),
+                            enrichment_sources=result_data.get("enrichment_sources", []),
+                            raw_data=result_data.get("raw_data", {}),
+                            enriched_at=result_data.get("enriched_at", "")
+                        )
+                    else:
+                        logger.debug(f"Cache expired for {email or domain}")
+                except Exception as e:
+                    logger.warning(f"Failed to read cache: {e}")
+        
+        return None
+    
+    def _cache_enrichment(self, result: EnrichmentResult, email: Optional[str], domain: Optional[str]):
+        """Cache enrichment result."""
+        identifiers = []
+        if email:
+            identifiers.append(f"enrichment:{email}")
+        if domain:
+            identifiers.append(f"enrichment:{domain}")
+        
+        cache_data = {
+            "cached_at": datetime.now(timezone.utc).isoformat(),
+            "ttl_days": self.ENRICHMENT_CACHE_TTL_DAYS,
+            "result": {
+                "request_id": result.request_id,
+                "status": result.status.value,
+                "email": result.email,
+                "email_verified": result.email_verified,
+                "phone": result.phone,
+                "linkedin_url": result.linkedin_url,
+                "first_name": result.first_name,
+                "last_name": result.last_name,
+                "job_title": result.job_title,
+                "company_name": result.company_name,
+                "company_domain": result.company_domain,
+                "company_industry": result.company_industry,
+                "company_size": result.company_size,
+                "company_revenue": result.company_revenue,
+                "company_linkedin": result.company_linkedin,
+                "icp_fit_score": result.icp_fit_score,
+                "priority_tier": result.priority_tier,
+                "enrichment_sources": result.enrichment_sources,
+                "raw_data": result.raw_data,
+                "enriched_at": result.enriched_at
+            }
+        }
+        
+        for identifier in identifiers:
+            cache_key = self._get_cache_key(identifier)
+            cache_file = self.cache_dir / f"{cache_key}.json"
+            try:
+                with open(cache_file, 'w') as f:
+                    json.dump(cache_data, f, indent=2)
+                logger.info(f"Cached enrichment for {email or domain}")
+            except Exception as e:
+                logger.warning(f"Failed to cache enrichment: {e}")
+    
+    def get_cache_stats(self) -> Dict[str, Any]:
+        """Get cache statistics."""
+        return {
+            "cache_hits": self._cache_hits,
+            "cache_misses": self._cache_misses,
+            "cost_saved_estimate": round(self._cache_hits * self.COST_PER_ENRICHMENT, 2),
+            "hit_rate": round(self._cache_hits / max(1, self._cache_hits + self._cache_misses) * 100, 1)
+        }
+    
     async def enrich_visitor(self, visitor_data: Dict[str, Any]) -> EnrichmentResult:
         """
         Enrich a website visitor from RB2B.
@@ -222,18 +374,30 @@ class ClayDirectEnrichment:
         Returns:
             EnrichmentResult with enriched data
         """
+        email = visitor_data.get("email")
+        company_domain = visitor_data.get("company", {}).get("domain")
+        
+        # Check cache BEFORE calling Clay
+        cached_result = self._get_cached_enrichment(email, company_domain)
+        if cached_result:
+            return cached_result
+        
+        # Cache miss - track it
+        self._cache_misses += 1
+        self._save_cache_stats()
+        
         # Create enrichment request
         request_id = f"enr_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{visitor_data.get('visitor_id', 'unknown')[:8]}"
         
         request = EnrichmentRequest(
             request_id=request_id,
             visitor_id=visitor_data.get("visitor_id", ""),
-            email=visitor_data.get("email"),
+            email=email,
             linkedin_url=visitor_data.get("linkedin_url"),
             first_name=visitor_data.get("first_name"),
             last_name=visitor_data.get("last_name"),
             company_name=visitor_data.get("company", {}).get("name"),
-            company_domain=visitor_data.get("company", {}).get("domain"),
+            company_domain=company_domain,
             source="rb2b",
             priority="high"
         )
@@ -263,6 +427,8 @@ class ClayDirectEnrichment:
         
         # Sync to GHL if successful
         if result.status == EnrichmentStatus.COMPLETED:
+            # Cache the result AFTER getting Clay results
+            self._cache_enrichment(result, email, company_domain)
             await self._sync_to_ghl(result)
         
         return result
@@ -524,17 +690,21 @@ class ClayDirectEnrichment:
         queued = len(list(queue_dir.glob("*.json"))) if queue_dir.exists() else 0
         completed = len(list(results_dir.glob("*.json"))) if results_dir.exists() else 0
         
+        cache_stats = self.get_cache_stats()
+        
         return {
             "pending": len(self._pending),
             "queued_for_manual": queued,
             "completed": completed,
             "webhook_configured": bool(self.config.workbook_webhook_url),
-            "ghl_configured": bool(self.config.ghl_api_key)
+            "ghl_configured": bool(self.config.ghl_api_key),
+            "cache": cache_stats
         }
     
     def print_status(self):
         """Print enrichment status."""
         status = self.get_status()
+        cache = status.get("cache", {})
         
         print("\n" + "=" * 60)
         print("  CLAY DIRECT ENRICHMENT STATUS")
@@ -544,6 +714,11 @@ class ClayDirectEnrichment:
         print(f"  Completed: {status['completed']}")
         print(f"\n  Clay Webhook Configured: {'Yes' if status['webhook_configured'] else 'No'}")
         print(f"  GHL Sync Configured: {'Yes' if status['ghl_configured'] else 'No'}")
+        print(f"\n  --- Cache Stats ---")
+        print(f"  Cache Hits: {cache.get('cache_hits', 0)}")
+        print(f"  Cache Misses: {cache.get('cache_misses', 0)}")
+        print(f"  Hit Rate: {cache.get('hit_rate', 0)}%")
+        print(f"  Est. Cost Saved: ${cache.get('cost_saved_estimate', 0):.2f}")
         print("\n" + "=" * 60)
 
 
