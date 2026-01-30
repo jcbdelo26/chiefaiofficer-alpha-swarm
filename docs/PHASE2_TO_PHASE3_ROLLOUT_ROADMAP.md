@@ -32,18 +32,27 @@ PRODUCTION (❌ Old Code):
 
 ### Fix: Deploy to Railway
 
-```bash
-# Option 1: Railway CLI
+**✅ Git push completed** (Jan 31, 2026):
+```
+Commit: 887d435
+Message: feat: connect RB2B webhook to Website Intent Monitor for email queue population
+Pushed to: https://github.com/jcbdelo26/chiefaiofficer-alpha-swarm.git
+```
+
+**⚠️ Railway NOT auto-deploying - Manual trigger required:**
+1. Go to https://railway.app/dashboard
+2. Select `caio-swarm-dashboard-production` project
+3. Click "Deploy" → "Trigger Deploy" from latest commit
+4. Wait for build to complete (~2-3 min)
+
+**Alternative: Install Railway CLI**
+```powershell
+# Install Railway CLI
+npm i -g @railway/cli
+
+# Login and deploy
+railway login
 railway up
-
-# Option 2: Git push (if auto-deploy configured)
-git add -A
-git commit -m "feat: connect RB2B webhook to Website Intent Monitor"
-git push origin main
-
-# Option 3: Manual Railway deployment
-# 1. Go to Railway dashboard
-# 2. Trigger manual deploy from latest commit
 ```
 
 ### Verify After Deploy
@@ -58,38 +67,26 @@ curl https://caio-swarm-dashboard-production.up.railway.app/api/queue-status
 
 ---
 
-## 🔴 Clay Enrichment: Callback Not Configured
+## ✅ Clay Enrichment: Callback IS Configured
 
-### Problem
-Clay workbook webhook URL is empty. The pipeline flow is broken:
+### Status (Jan 31, 2026)
+Clay workbook has HTTP API column configured and working:
+- **Endpoint**: `https://caio-swarm-dashboard-production.up.railway.app/webhooks/clay`
+- **Status**: Status Code 200 on all rows (callbacks working!)
+- **Workbook**: CAIO RB2B ABM Leads Enrichment (1,703 rows)
 
+### Remaining Issue
+The callback is reaching the server, but:
+1. Production code doesn't process callbacks correctly (old code)
+2. After Railway deploy, callbacks will populate `shadow_mode_emails/`
+
+### Verify After Deploy
+```bash
+# Check Clay callback health
+curl https://caio-swarm-dashboard-production.up.railway.app/webhooks/clay/health
+
+# Expected: {"status": "healthy", "enricher_initialized": true}
 ```
-RB2B → Our Webhook → Clay Workbook (POST) → Clay Enriches → ??? (no callback configured)
-                                                          ↳ _poll_for_result() times out
-```
-
-### Fix Required
-
-1. **In Clay workbook**, add an HTTP Action step that POSTs enrichment results to:
-   ```
-   https://caio-swarm-dashboard-production.up.railway.app/webhooks/clay
-   ```
-
-2. **In Railway environment**, set:
-   ```
-   CLAY_WORKBOOK_WEBHOOK_URL=https://app.clay.com/webhook/YOUR_ACTUAL_WEBHOOK_ID
-   ```
-
-3. **Verify callback payload format** - Clay should POST:
-   ```json
-   {
-     "request_id": "xxx",
-     "email": "enriched@email.com",
-     "job_title": "VP Sales",
-     "company_name": "Acme",
-     ...
-   }
-   ```
 
 ---
 
@@ -303,19 +300,15 @@ Phase 4 is the final production mode. Entry requires:
 ## 🔧 Immediate Action Items
 
 ### TODAY - CRITICAL (Priority 0)
-1. [ ] **DEPLOY TO RAILWAY** - This is blocking everything
-   ```bash
-   git add -A && git commit -m "feat: connect RB2B webhook to Intent Monitor" && git push
-   ```
-2. [ ] Verify `/api/queue-status` returns 200 (not 404)
-3. [ ] Verify dashboard shows 5 pending emails
+1. [x] ~~Git push to GitHub~~ - ✅ Commit 887d435 pushed
+2. [ ] **TRIGGER RAILWAY DEPLOY** - Go to Railway dashboard, click "Deploy"
+3. [ ] Verify `/api/queue-status` returns 200 (not 404)
+4. [ ] Verify dashboard shows pending emails
 
 ### TODAY - Clay Configuration (Priority 1)
-1. [ ] Log into [Clay Workbook](https://app.clay.com/shared-workbook/share_0t9c5h2Dt6hzzFrz4Gv)
-2. [ ] Add HTTP Action step that POSTs to: `https://caio-swarm-dashboard-production.up.railway.app/webhooks/clay`
-3. [ ] Copy the Clay workbook webhook URL
-4. [ ] Set `CLAY_WORKBOOK_WEBHOOK_URL` in Railway environment variables
-5. [ ] Test with a sample lead - verify callback arrives
+1. [x] ~~Clay HTTP API column configured~~ - ✅ Status Code 200 on all rows
+2. [x] ~~POSTing to webhook endpoint~~ - ✅ `https://caio-swarm-dashboard-production.up.railway.app/webhooks/clay`
+3. [ ] Verify after Railway deploy: `curl .../webhooks/clay/health` returns `{"enricher_initialized": true}`
 
 ### This Week (Priority 2)
 1. [ ] Fix Clay enrichment timeouts
