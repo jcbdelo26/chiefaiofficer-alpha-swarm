@@ -78,9 +78,18 @@ Repository: https://github.com/jcbdelo26/chiefaiofficer-alpha-swarm.git
 
 ---
 
-## Blocking Action: Railway Deployment
+## Blocking Action: Railway REDEPLOY Needed
 
-Railway is NOT auto-deploying. Manual trigger required:
+**Problem:** Railway deployed "4 min ago via CLI" but it deployed OLD code (before our git push).
+
+**Evidence:**
+- `/api/queue-status` returns 404 (endpoint exists in our code at line 691)
+- `/api/pending-emails` works but returns empty (`.hive-mind/` is gitignored)
+- RB2B webhook rejects with "Missing signature header" (old verification logic)
+
+**Action Required:** Trigger a NEW deploy from the latest commit (df60f3a)
+
+Railway must redeploy to pick up:
 
 ### Option 1: Railway Dashboard (Recommended)
 1. Go to https://railway.app/dashboard
@@ -89,20 +98,21 @@ Railway is NOT auto-deploying. Manual trigger required:
 4. Click **"Deploy"** → **"Trigger Deploy"**
 5. Wait ~2-3 min for build completion
 
-### Option 2: Railway CLI
+### Option 2: Railway CLI (Force redeploy)
 ```powershell
-# Install CLI
 npm i -g @railway/cli
-
-# Login and deploy
 cd D:\Agent Swarm Orchestration\chiefaiofficer-alpha-swarm
 railway login
-railway up
+railway up --detach
 ```
 
-### Option 3: Check GitHub Integration
-- Railway may need GitHub app reinstalled or repo reconnected
-- Check Railway project settings → "Settings" → "Source"
+### Option 3: Connect GitHub Auto-Deploy
+1. Railway dashboard → Settings → Source
+2. Connect: `jcbdelo26/chiefaiofficer-alpha-swarm` branch `main`
+3. Enable auto-deploy
+
+### ⚠️ IMPORTANT: `.hive-mind/` is gitignored
+Local pending emails WON'T deploy. After redeploy, trigger RB2B webhook to generate new emails on Railway.
 
 ---
 
