@@ -505,14 +505,22 @@ async def approve_email(
         # Guard against synthetic/test data in live mode
         if contact_id and not contact_id.startswith("synthetic_"):
             try:
-                from core.ghl_outreach import GHLOutreachClient, EmailTemplate, OutreachType
+                # Init client with production config limits
+                from core.ghl_outreach import OutreachConfig
                 
-                # Init client
-                api_key = os.getenv("GHL_PROD_API_KEY") or os.getenv("GHL_API_KEY")
-                location_id = os.getenv("GHL_LOCATION_ID")
+                # Extract limits from loaded config
+                # Default to 150/3000 if not found in config
+                # Note: config structure is guardrails -> email_limits
+                email_limits = project_config.get("guardrails", {}).get("email_limits", {})
+                
+                outreach_config = OutreachConfig(
+                    monthly_limit=email_limits.get("monthly_limit", 3000),
+                    daily_limit=email_limits.get("daily_limit", 150),
+                    min_delay_seconds=email_limits.get("min_delay_seconds", 60)
+                )
                 
                 if api_key and location_id:
-                    client = GHLOutreachClient(api_key, location_id)
+                    client = GHLOutreachClient(api_key, location_id, config=outreach_config)
                     
                     # Create temp template from the approved content
                     temp_template = EmailTemplate(
@@ -532,11 +540,19 @@ async def approve_email(
                         email_data["ghl_message_id"] = result.get("message_id")
                         formatted_response = "Email sent via GHL"
                     else:
-                        # Log error but don't fail the approval entirely?
-                        # Or maybe fail it so user knows? Let's fail hard to be safe.
-                        raise Exception(f"GHL Send Failed: {result.get('error')}")
+                        error_msg = result.get("error", "Unknown error")
+                        if "limit reached" in str(error_msg):
+                            # Rate limit hit - Queue it!
+                            email_data["sent_via_ghl"] = False
+                            email_data["queued_for_send"] = True
+                            email_data["send_error"] = f"Rate Limit Hit: {error_msg}"
+                            formatted_response = "Email approved & Queued (Rate Limit Hit)"
+                        else:
+                            # Other error - Fail hard
+                            raise Exception(f"GHL Send Failed: {error_msg}")
                 else:
                      print("Warning: GHL Config missing, skipping send.")
+                     formatted_response = "Email approved (Config Missing)"
             except Exception as e:
                 # If sending fails, we should generally Notify user
                 print(f"Critical Error sending email: {e}")
@@ -816,6 +832,79 @@ async def readiness_probe():
     except Exception as e:
         raise HTTPException(status_code=503, detail=f"Readiness check failed: {e}")
 
+
+
+# =============================================================================
+# CALL PREP AGENT ENDPOINTS
+# =============================================================================
+
+@app.post("/api/call-prep/{contact_id}")
+async def prepare_contact_for_call(
+    contact_id: str,
+    dry_run: bool = Query(False, description="If true, don't update GHL"),
+    auth: bool = Depends(require_auth)
+):
+    """
+    Prepare a contact for an upcoming call by enriching custom fields.
+    
+    Populates:
+    - call_prep_summary: One-paragraph briefing
+    - pain_points: Detected pain points
+    - warm_connections: Team connections
+    - recommended_approach: Conversation angle
+    - objection_prep: Likely objections and responses
+    """
+    try:
+        from core.call_prep_agent import get_call_prep_agent
+        agent = get_call_prep_agent()
+        result = await agent.prepare_contact_for_call(
+            contact_id=contact_id,
+            update_ghl=not dry_run
+        )
+        return {
+            "status": "success",
+            "contact_id": contact_id,
+            "contact_name": result.contact_name,
+            "company_name": result.company_name,
+            "summary": result.summary,
+            "pain_points": result.pain_points,
+            "warm_connections": result.warm_connections,
+            "recommended_approach": result.recommended_approach,
+            "objection_prep": result.objection_prep,
+            "confidence_score": result.confidence_score,
+            "ghl_updated": not dry_run
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Call prep failed: {e}")
+
+
+@app.post("/api/call-prep/batch")
+async def prepare_hot_leads_batch(
+    limit: int = Query(10, description="Max leads to prepare"),
+    auth: bool = Depends(require_auth)
+):
+    """
+    Prepare all hot leads in queue for upcoming calls.
+    """
+    try:
+        from core.call_prep_agent import get_call_prep_agent
+        agent = get_call_prep_agent()
+        results = await agent.prepare_hot_leads_batch(limit=limit)
+        return {
+            "status": "success",
+            "prepared_count": len(results),
+            "leads": [
+                {
+                    "contact_id": r.contact_id,
+                    "name": r.contact_name,
+                    "company": r.company_name,
+                    "confidence": r.confidence_score
+                }
+                for r in results
+            ]
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Batch prep failed: {e}")
 
 
 # =============================================================================

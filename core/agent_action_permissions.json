@@ -1,0 +1,487 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "version": "1.0.0",
+  "description": "Permission matrix for all 12 agents in the Unified CAIO RevOps Swarm",
+  "updated_at": "2026-01-22T00:00:00Z",
+  
+  "risk_levels": {
+    "LOW": {
+      "description": "Read-only operations, no side effects",
+      "requires_grounding": false,
+      "requires_approval": false,
+      "max_rate_per_minute": 60
+    },
+    "MEDIUM": {
+      "description": "Single record modifications",
+      "requires_grounding": false,
+      "requires_approval": false,
+      "max_rate_per_minute": 30
+    },
+    "HIGH": {
+      "description": "Outreach operations, affects external parties",
+      "requires_grounding": true,
+      "requires_approval": false,
+      "max_rate_per_minute": 20
+    },
+    "CRITICAL": {
+      "description": "Bulk or destructive operations",
+      "requires_grounding": true,
+      "requires_approval": true,
+      "max_rate_per_minute": 5
+    }
+  },
+
+  "action_definitions": {
+    "read_contact": {
+      "risk_level": "LOW",
+      "description": "Read contact details from CRM",
+      "platforms": ["ghl"]
+    },
+    "read_pipeline": {
+      "risk_level": "LOW",
+      "description": "Read pipeline/opportunity data",
+      "platforms": ["ghl"]
+    },
+    "read_calendar": {
+      "risk_level": "LOW",
+      "description": "Read calendar availability",
+      "platforms": ["google_calendar"]
+    },
+    "search_contacts": {
+      "risk_level": "LOW",
+      "description": "Search contacts in CRM",
+      "platforms": ["ghl"]
+    },
+    "get_templates": {
+      "risk_level": "LOW",
+      "description": "Retrieve email/SMS templates",
+      "platforms": ["ghl"]
+    },
+    "create_contact": {
+      "risk_level": "MEDIUM",
+      "description": "Create a new contact",
+      "platforms": ["ghl"]
+    },
+    "update_contact": {
+      "risk_level": "MEDIUM",
+      "description": "Update contact information",
+      "platforms": ["ghl"]
+    },
+    "add_tag": {
+      "risk_level": "MEDIUM",
+      "description": "Add tag to contact",
+      "platforms": ["ghl"]
+    },
+    "remove_tag": {
+      "risk_level": "MEDIUM",
+      "description": "Remove tag from contact",
+      "platforms": ["ghl"]
+    },
+    "create_task": {
+      "risk_level": "MEDIUM",
+      "description": "Create a task/reminder",
+      "platforms": ["ghl"]
+    },
+    "update_opportunity": {
+      "risk_level": "MEDIUM",
+      "description": "Update opportunity/deal",
+      "platforms": ["ghl"]
+    },
+    "create_calendar_event": {
+      "risk_level": "MEDIUM",
+      "description": "Create calendar event with Zoom link",
+      "platforms": ["google_calendar", "zoom"]
+    },
+    "update_calendar_event": {
+      "risk_level": "MEDIUM",
+      "description": "Update existing calendar event",
+      "platforms": ["google_calendar"]
+    },
+    "delete_calendar_event": {
+      "risk_level": "MEDIUM",
+      "description": "Cancel/delete calendar event",
+      "platforms": ["google_calendar"]
+    },
+    "send_email": {
+      "risk_level": "HIGH",
+      "description": "Send single email",
+      "platforms": ["ghl"],
+      "daily_limit": 150,
+      "hourly_limit": 20
+    },
+    "send_sms": {
+      "risk_level": "HIGH",
+      "description": "Send single SMS",
+      "platforms": ["ghl"],
+      "daily_limit": 100,
+      "hourly_limit": 15
+    },
+    "schedule_email": {
+      "risk_level": "HIGH",
+      "description": "Schedule email for future send",
+      "platforms": ["ghl"]
+    },
+    "trigger_workflow": {
+      "risk_level": "HIGH",
+      "description": "Trigger automation workflow",
+      "platforms": ["ghl"]
+    },
+    "bulk_create_contacts": {
+      "risk_level": "CRITICAL",
+      "description": "Create multiple contacts",
+      "platforms": ["ghl"],
+      "max_batch_size": 50
+    },
+    "bulk_update_contacts": {
+      "risk_level": "CRITICAL",
+      "description": "Update multiple contacts",
+      "platforms": ["ghl"],
+      "max_batch_size": 50
+    },
+    "bulk_send_email": {
+      "risk_level": "CRITICAL",
+      "description": "Send emails to multiple recipients",
+      "platforms": ["ghl"],
+      "max_batch_size": 25
+    },
+    "delete_contact": {
+      "risk_level": "CRITICAL",
+      "description": "Delete a contact",
+      "platforms": ["ghl"]
+    },
+    "bulk_delete": {
+      "risk_level": "CRITICAL",
+      "description": "Delete multiple records",
+      "platforms": ["ghl"],
+      "blocked": true,
+      "blocked_reason": "Bulk delete operations are permanently blocked for safety"
+    }
+  },
+
+  "agents": {
+    "UNIFIED_QUEEN": {
+      "description": "Master orchestrator with full system access",
+      "role": "orchestrator",
+      "allowed_actions": ["*"],
+      "denied_actions": ["bulk_delete"],
+      "can_delegate": true,
+      "can_approve": true,
+      "approval_weight": 3,
+      "rate_limits": {
+        "per_minute": 100,
+        "per_hour": 1000,
+        "per_day": 10000
+      }
+    },
+    "HUNTER": {
+      "description": "LinkedIn scraper and lead harvester",
+      "role": "lead_generation",
+      "allowed_actions": [
+        "read_contact",
+        "search_contacts",
+        "create_contact",
+        "update_contact",
+        "add_tag"
+      ],
+      "denied_actions": [],
+      "can_delegate": false,
+      "can_approve": false,
+      "approval_weight": 1,
+      "rate_limits": {
+        "per_minute": 30,
+        "per_hour": 200,
+        "per_day": 2000
+      }
+    },
+    "ENRICHER": {
+      "description": "Data enrichment via Clay/RB2B",
+      "role": "lead_generation",
+      "allowed_actions": [
+        "read_contact",
+        "update_contact",
+        "add_tag"
+      ],
+      "denied_actions": [],
+      "can_delegate": false,
+      "can_approve": false,
+      "approval_weight": 1,
+      "rate_limits": {
+        "per_minute": 20,
+        "per_hour": 150,
+        "per_day": 1500
+      }
+    },
+    "SEGMENTOR": {
+      "description": "Lead classification and scoring",
+      "role": "lead_generation",
+      "allowed_actions": [
+        "read_contact",
+        "read_pipeline",
+        "update_contact",
+        "add_tag",
+        "remove_tag"
+      ],
+      "denied_actions": [],
+      "can_delegate": false,
+      "can_approve": false,
+      "approval_weight": 1,
+      "rate_limits": {
+        "per_minute": 30,
+        "per_hour": 300,
+        "per_day": 3000
+      }
+    },
+    "CRAFTER": {
+      "description": "Campaign and content generation",
+      "role": "lead_generation",
+      "allowed_actions": [
+        "read_contact",
+        "get_templates",
+        "create_task"
+      ],
+      "denied_actions": [
+        "send_email",
+        "send_sms",
+        "bulk_send_email"
+      ],
+      "can_delegate": false,
+      "can_approve": false,
+      "approval_weight": 1,
+      "rate_limits": {
+        "per_minute": 20,
+        "per_hour": 150,
+        "per_day": 1500
+      },
+      "notes": "CRAFTER generates campaigns but cannot send - must go through GATEKEEPER"
+    },
+    "GATEKEEPER": {
+      "description": "AE approval gate for all outbound communications",
+      "role": "approval",
+      "allowed_actions": [
+        "read_contact",
+        "read_pipeline",
+        "send_email",
+        "send_sms",
+        "schedule_email",
+        "trigger_workflow",
+        "bulk_send_email"
+      ],
+      "denied_actions": [],
+      "can_delegate": false,
+      "can_approve": true,
+      "approval_weight": 2,
+      "rate_limits": {
+        "per_minute": 20,
+        "per_hour": 150,
+        "per_day": 150
+      },
+      "notes": "Single choke point for all outbound - enforces email limits"
+    },
+    "SCOUT": {
+      "description": "Pipeline scanner for opportunities",
+      "role": "pipeline",
+      "allowed_actions": [
+        "read_contact",
+        "read_pipeline",
+        "search_contacts"
+      ],
+      "denied_actions": [],
+      "can_delegate": false,
+      "can_approve": false,
+      "approval_weight": 1,
+      "rate_limits": {
+        "per_minute": 40,
+        "per_hour": 400,
+        "per_day": 4000
+      }
+    },
+    "OPERATOR": {
+      "description": "Pipeline operations and workflow triggers",
+      "role": "pipeline",
+      "allowed_actions": [
+        "read_contact",
+        "read_pipeline",
+        "update_opportunity",
+        "trigger_workflow"
+      ],
+      "denied_actions": [],
+      "can_delegate": false,
+      "can_approve": false,
+      "approval_weight": 1,
+      "rate_limits": {
+        "per_minute": 20,
+        "per_hour": 150,
+        "per_day": 1500
+      }
+    },
+    "COACH": {
+      "description": "Lead scoring and engagement coaching",
+      "role": "pipeline",
+      "allowed_actions": [
+        "read_contact",
+        "read_pipeline",
+        "update_contact",
+        "add_tag"
+      ],
+      "denied_actions": [],
+      "can_delegate": false,
+      "can_approve": false,
+      "approval_weight": 1,
+      "rate_limits": {
+        "per_minute": 30,
+        "per_hour": 300,
+        "per_day": 3000
+      }
+    },
+    "PIPER": {
+      "description": "Pipeline stage management",
+      "role": "pipeline",
+      "allowed_actions": [
+        "read_contact",
+        "read_pipeline",
+        "update_opportunity"
+      ],
+      "denied_actions": [],
+      "can_delegate": false,
+      "can_approve": false,
+      "approval_weight": 1,
+      "rate_limits": {
+        "per_minute": 20,
+        "per_hour": 200,
+        "per_day": 2000
+      }
+    },
+    "SCHEDULER": {
+      "description": "Calendar and meeting coordination",
+      "role": "scheduling",
+      "allowed_actions": [
+        "read_contact",
+        "read_calendar",
+        "create_calendar_event",
+        "update_calendar_event",
+        "delete_calendar_event"
+      ],
+      "denied_actions": [
+        "send_email"
+      ],
+      "can_delegate": false,
+      "can_approve": false,
+      "approval_weight": 1,
+      "rate_limits": {
+        "per_minute": 10,
+        "per_hour": 100,
+        "per_day": 500
+      },
+      "notes": "Calendar ops only - email sending routed through GATEKEEPER"
+    },
+    "RESEARCHER": {
+      "description": "Pre-meeting research and brief generation",
+      "role": "research",
+      "allowed_actions": [
+        "read_contact",
+        "read_pipeline",
+        "search_contacts"
+      ],
+      "denied_actions": [],
+      "can_delegate": false,
+      "can_approve": false,
+      "approval_weight": 1,
+      "rate_limits": {
+        "per_minute": 20,
+        "per_hour": 150,
+        "per_day": 1000
+      }
+    },
+    "PREPPER": {
+      "description": "Call preparation agent - enriches contacts with context before calls",
+      "role": "research",
+      "allowed_actions": [
+        "read_contact",
+        "read_pipeline",
+        "search_contacts",
+        "update_contact"
+      ],
+      "denied_actions": [
+        "send_email",
+        "bulk_update_contacts"
+      ],
+      "can_delegate": false,
+      "can_approve": false,
+      "approval_weight": 1,
+      "rate_limits": {
+        "per_minute": 10,
+        "per_hour": 50,
+        "per_day": 200
+      },
+      "notes": "Enriches GHL custom fields with call prep context for warm/hot leads"
+    }
+  },
+
+  "approval_rules": {
+    "bulk_operations": {
+      "threshold": 10,
+      "required_approvers": 1,
+      "approver_types": ["GATEKEEPER", "UNIFIED_QUEEN"],
+      "timeout_minutes": 60
+    },
+    "high_risk_outreach": {
+      "cold_email": {
+        "requires_approval": true,
+        "approver_types": ["GATEKEEPER"]
+      },
+      "follow_up_email": {
+        "requires_approval": false,
+        "auto_approve_if": "template_match >= 0.90"
+      }
+    },
+    "destructive_operations": {
+      "requires_approval": true,
+      "required_approvers": 2,
+      "approver_types": ["UNIFIED_QUEEN", "GATEKEEPER"],
+      "timeout_minutes": 30
+    }
+  },
+
+  "blocked_operations": [
+    {
+      "action": "bulk_delete",
+      "reason": "Bulk delete is permanently blocked for data safety",
+      "override_possible": false
+    },
+    {
+      "action": "export_all_contacts",
+      "reason": "Mass export blocked for GDPR compliance",
+      "override_possible": false
+    },
+    {
+      "action": "mass_unsubscribe",
+      "reason": "Mass unsubscribe requires manual intervention",
+      "override_possible": true,
+      "override_approvers": ["UNIFIED_QUEEN"]
+    }
+  ],
+
+  "rate_limit_defaults": {
+    "ghl_email": {
+      "per_minute": 2,
+      "per_hour": 20,
+      "per_day": 150,
+      "min_delay_seconds": 30
+    },
+    "ghl_api": {
+      "per_minute": 30,
+      "per_hour": 500,
+      "per_day": 5000
+    },
+    "google_calendar": {
+      "per_minute": 10,
+      "per_hour": 100,
+      "per_day": 1000
+    },
+    "linkedin_scraping": {
+      "per_minute": 5,
+      "per_hour": 30,
+      "per_day": 100
+    }
+  }
+}
