@@ -668,6 +668,14 @@ async def get_pending_emails(auth: bool = Depends(require_auth)):
                         email_data["email_id"] = email_data.get("email_id") or email_file.stem
                         email_data["timestamp"] = email_data.get("timestamp", "Unknown")
                         email_data["recipient_data"] = email_data.get("recipient_data", {})
+                        
+                        # Sanitize critical fields to prevent frontend crash
+                        email_data["to"] = email_data.get("to") or "unknown@example.com"
+                        email_data["subject"] = email_data.get("subject") or "No Subject"
+                        email_data["body"] = email_data.get("body") or "No Body Content"
+                        email_data["tier"] = email_data.get("tier", "tier_3")
+                        email_data["angle"] = email_data.get("angle", "General")
+                        
                         pending.append(email_data)
             except Exception:
                 pass
