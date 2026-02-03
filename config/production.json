@@ -1,0 +1,343 @@
+{
+    "mode": "production",
+    "description": "Production configuration for Chief AI Officer Alpha Swarm - Shadow Mode enabled",
+    "version": "1.0.0",
+    "created_at": "2026-01-23",
+    "external_apis_enabled": true,
+    "mock_services": {
+        "ghl": {
+            "enabled": false,
+            "url": null
+        },
+        "rb2b": {
+            "enabled": true,
+            "url": "http://localhost:8000/mock/rb2b"
+        },
+        "instantly": {
+            "enabled": false,
+            "url": null
+        },
+        "clay": {
+            "enabled": false,
+            "url": null
+        }
+    },
+    "external_apis": {
+        "ghl": {
+            "enabled": true,
+            "base_url": "https://services.leadconnectorhq.com",
+            "api_key_env": "GHL_PROD_API_KEY",
+            "location_id_env": "GHL_LOCATION_ID",
+            "timeout_seconds": 30,
+            "retry_attempts": 3,
+            "circuit_breaker": {
+                "enabled": true,
+                "failure_threshold": 5,
+                "recovery_timeout_seconds": 300
+            }
+        },
+        "rb2b": {
+            "enabled": true,
+            "base_url": "https://api.rb2b.com/v1",
+            "webhook_secret_env": "RB2B_WEBHOOK_SECRET",
+            "api_key_env": "RB2B_API_KEY",
+            "timeout_seconds": 15,
+            "retry_attempts": 2
+        },
+        "instantly": {
+            "enabled": false,
+            "note": "DISABLED - GHL is the exclusive email platform",
+            "base_url": "https://api.instantly.ai/api/v1",
+            "api_key_env": "INSTANTLY_API_KEY",
+            "timeout_seconds": 20,
+            "retry_attempts": 3,
+            "rate_limit": {
+                "requests_per_minute": 60,
+                "burst_limit": 10
+            }
+        },
+        "clay": {
+            "enabled": true,
+            "base_url": "https://api.clay.com/v1",
+            "api_key_env": "CLAY_API_KEY",
+            "timeout_seconds": 30,
+            "retry_attempts": 2,
+            "waterfall_enabled": true
+        },
+        "supabase": {
+            "enabled": true,
+            "url_env": "SUPABASE_URL",
+            "key_env": "SUPABASE_KEY",
+            "timeout_seconds": 15
+        },
+        "slack": {
+            "enabled": true,
+            "webhook_url_env": "SLACK_WEBHOOK_URL",
+            "bot_token_env": "SLACK_BOT_TOKEN"
+        },
+        "twilio": {
+            "enabled": true,
+            "account_sid_env": "TWILIO_ACCOUNT_SID",
+            "auth_token_env": "TWILIO_AUTH_TOKEN",
+            "from_number_env": "TWILIO_FROM_NUMBER"
+        }
+    },
+    "email_behavior": {
+        "actually_send": false,
+        "shadow_mode": true,
+        "shadow_mode_description": "Emails are validated but NOT sent - logged for review (Testing/Refining)",
+        "log_to_file": true,
+        "log_path": ".hive-mind/production_emails/",
+        "shadow_log_path": ".hive-mind/shadow_mode_emails/",
+        "require_approval": true,
+        "max_daily_sends": 0,
+        "transition_checklist": [
+            "Shadow mode review complete",
+            "Sample emails approved by AE",
+            "Domain health verified (>70)",
+            "Unsubscribe mechanism tested",
+            "Email limits configured correctly"
+        ]
+    },
+    "failure_injection": {
+        "enabled": false,
+        "rate": 0.0,
+        "types": []
+    },
+    "failure_tracker": {
+        "enabled": true,
+        "log_path": ".hive-mind/failures/",
+        "alert_threshold": 5,
+        "alert_window_minutes": 15,
+        "slack_alerts": true,
+        "categories_tracked": [
+            "api_error",
+            "validation_error",
+            "rate_limit",
+            "timeout",
+            "permission_denied",
+            "data_quality"
+        ],
+        "agents": {
+            "UNIFIED_QUEEN": {
+                "enabled": true,
+                "alert_on_critical": true,
+                "role": "Orchestrator - Master coordinator"
+            },
+            "HUNTER": {
+                "enabled": true,
+                "alert_on_critical": true,
+                "role": "Research + Sourcing (absorbs RESEARCHER)",
+                "absorbs": [
+                    "RESEARCHER"
+                ]
+            },
+            "ENRICHER": {
+                "enabled": true,
+                "alert_on_critical": true,
+                "role": "Data Enrichment"
+            },
+            "SEGMENTOR": {
+                "enabled": true,
+                "alert_on_critical": true,
+                "role": "ICP + Scoring"
+            },
+            "CRAFTER": {
+                "enabled": true,
+                "alert_on_critical": true,
+                "role": "Messaging (absorbs COACH personalization)",
+                "absorbs": [
+                    "COACH"
+                ]
+            },
+            "OPERATOR": {
+                "enabled": true,
+                "alert_on_critical": true,
+                "role": "Execution (absorbs GATEKEEPER, SCHEDULER, PIPER, SCOUT)",
+                "absorbs": [
+                    "GATEKEEPER",
+                    "SCHEDULER",
+                    "PIPER",
+                    "SCOUT"
+                ]
+            },
+            "GATEKEEPER": {
+                "enabled": false,
+                "alert_on_critical": false,
+                "role": "DISABLED - Merged into OPERATOR",
+                "merged_into": "OPERATOR"
+            },
+            "SCOUT": {
+                "enabled": false,
+                "alert_on_critical": false,
+                "role": "DISABLED - Merged into OPERATOR",
+                "merged_into": "OPERATOR"
+            },
+            "COACH": {
+                "enabled": false,
+                "alert_on_critical": false,
+                "role": "DISABLED - Merged into CRAFTER",
+                "merged_into": "CRAFTER"
+            },
+            "PIPER": {
+                "enabled": false,
+                "alert_on_critical": false,
+                "role": "DISABLED - Merged into OPERATOR",
+                "merged_into": "OPERATOR"
+            },
+            "SCHEDULER": {
+                "enabled": false,
+                "alert_on_critical": false,
+                "role": "DISABLED - Merged into OPERATOR",
+                "merged_into": "OPERATOR"
+            },
+            "RESEARCHER": {
+                "enabled": false,
+                "alert_on_critical": false,
+                "role": "DISABLED - Merged into HUNTER",
+                "merged_into": "HUNTER"
+            }
+        },
+        "active_agent_count": 6,
+        "consolidated_agents_note": "Reduced from 12 to 6 agents to simplify production. Disabled agents can be re-enabled when needed."
+    },
+    "guardrails": {
+        "require_approval_for_bulk": true,
+        "max_emails_per_campaign": 150,
+        "block_production_writes": true,
+        "require_grounding_evidence": true,
+        "audit_all_actions": true,
+        "email_limits": {
+            "monthly_limit": 2500,
+            "daily_limit": 25,
+            "hourly_limit": 15,
+            "per_domain_hourly_limit": 3,
+            "min_delay_seconds": 45
+        },
+        "blocked_actions": [
+            "bulk_delete",
+            "export_all_contacts",
+            "mass_unsubscribe"
+        ]
+    },
+    "logging": {
+        "level": "INFO",
+        "capture_all_failures": true,
+        "failure_log_path": ".hive-mind/failures/",
+        "audit_log_path": ".hive-mind/audit/",
+        "structured_logging": true,
+        "log_pii": false,
+        "retention_days": 90
+    },
+    "health_monitoring": {
+        "enabled": true,
+        "check_interval_seconds": 60,
+        "endpoints": {
+            "dashboard": "/api/health",
+            "agents": "/api/agents",
+            "integrations": "/api/integrations"
+        },
+        "alert_thresholds": {
+            "error_rate_percent": 5,
+            "latency_p99_ms": 5000,
+            "queue_depth": 100
+        }
+    },
+    "rollout_phase": {
+        "current": "parallel",
+        "phases": {
+            "shadow": {
+                "email_send": false,
+                "read_only_crm": true,
+                "log_all_actions": true,
+                "human_approval_required": true
+            },
+            "parallel": {
+                "email_send": false,
+                "read_only_crm": false,
+                "log_all_actions": true,
+                "human_approval_required": true,
+                "comparison_mode": true
+            },
+            "assisted": {
+                "email_send": true,
+                "read_only_crm": false,
+                "log_all_actions": true,
+                "human_approval_required": true,
+                "max_auto_approved_per_day": 10
+            },
+            "full": {
+                "email_send": true,
+                "read_only_crm": false,
+                "log_all_actions": true,
+                "human_approval_required": false,
+                "auto_approve_low_risk": true
+            }
+        }
+    },
+    "environment_variables_required": [
+        "GHL_PROD_API_KEY",
+        "GHL_LOCATION_ID",
+        "RB2B_WEBHOOK_SECRET",
+        "RB2B_API_KEY",
+        "INSTANTLY_API_KEY",
+        "CLAY_API_KEY",
+        "SUPABASE_URL",
+        "SUPABASE_KEY",
+        "SLACK_WEBHOOK_URL"
+    ],
+    "environment_variables_optional": [
+        "SLACK_BOT_TOKEN",
+        "TWILIO_ACCOUNT_SID",
+        "TWILIO_AUTH_TOKEN",
+        "TWILIO_FROM_NUMBER",
+        "SMTP_USER",
+        "SMTP_PASSWORD",
+        "ESCALATION_PHONE_L2",
+        "ESCALATION_PHONE_L3",
+        "ESCALATION_EMAIL_L2",
+        "ESCALATION_EMAIL_L3",
+        "ANTHROPIC_API_KEY",
+        "OPENAI_API_KEY"
+    ],
+    "llm_fallback": {
+        "enabled": true,
+        "description": "LLM Provider Fallback Chain: Claude -> GPT-4o -> GPT-4o-mini -> Human",
+        "providers": [
+            {
+                "name": "Claude Sonnet (Primary)",
+                "provider": "anthropic",
+                "model": "claude-sonnet-4-20250514",
+                "api_key_env": "ANTHROPIC_API_KEY",
+                "priority": 1,
+                "enabled": true
+            },
+            {
+                "name": "GPT-4o (Secondary)",
+                "provider": "openai",
+                "model": "gpt-4o",
+                "api_key_env": "OPENAI_API_KEY",
+                "priority": 2,
+                "enabled": true
+            },
+            {
+                "name": "GPT-4o-mini (Tertiary)",
+                "provider": "openai_mini",
+                "model": "gpt-4o-mini",
+                "api_key_env": "OPENAI_API_KEY",
+                "priority": 3,
+                "enabled": true
+            }
+        ],
+        "fallback_triggers": [
+            "rate_limit",
+            "timeout",
+            "api_error",
+            "circuit_open"
+        ],
+        "circuit_breaker": {
+            "failure_threshold": 3,
+            "recovery_timeout_seconds": 60
+        }
+    }
+}
