@@ -656,10 +656,13 @@ async def get_pending_emails(auth: bool = Depends(require_auth)):
     
     if shadow_log.exists():
         for email_file in sorted(shadow_log.glob("*.json"), reverse=True)[:20]:
-            try:
                 with open(email_file) as f:
                     email_data = json.load(f)
-                    if email_data.get("status") == "pending":
+                    
+                    # Backwards compatibility: Missing status = pending
+                    current_status = email_data.get("status", "pending")
+                    
+                    if current_status == "pending":
                         # Ensure we pass all necessary fields for the frontend
                         email_data["email_id"] = email_data.get("email_id") or email_file.stem
                         email_data["timestamp"] = email_data.get("timestamp", "Unknown")
