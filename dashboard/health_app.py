@@ -656,6 +656,7 @@ async def get_pending_emails(auth: bool = Depends(require_auth)):
     
     if shadow_log.exists():
         for email_file in sorted(shadow_log.glob("*.json"), reverse=True)[:20]:
+            try:
                 with open(email_file) as f:
                     email_data = json.load(f)
                     

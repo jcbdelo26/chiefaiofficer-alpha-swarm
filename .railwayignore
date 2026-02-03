@@ -26,3 +26,5 @@ node_modules/
 .hive-mind/knowledge/
 
 # NOTE: .hive-mind/shadow_mode_emails is implicitly ALLOWED because it is not listed.
+
+.venv
