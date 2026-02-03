@@ -19,14 +19,16 @@ import os
 import sys
 import json
 import asyncio
+from uuid import uuid4
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, List, Any, Optional
 
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, Query, Depends, Body
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, Query, Depends, Body, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse, FileResponse
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware
 import uvicorn
 
 PROJECT_ROOT = Path(__file__).parent.parent
@@ -41,6 +43,38 @@ from dotenv import load_dotenv
 
 # Load environment variables
 load_dotenv()
+
+# =============================================================================
+# CORRELATION ID MIDDLEWARE
+# =============================================================================
+
+class CorrelationIDMiddleware(BaseHTTPMiddleware):
+    """
+    Middleware that adds correlation IDs to all requests for request tracing.
+
+    - Checks for existing X-Correlation-ID header
+    - Generates new UUID if not present
+    - Adds correlation ID to response headers
+    - Stores in request state for access in route handlers
+    """
+
+    async def dispatch(self, request: Request, call_next):
+        # Get or generate correlation ID
+        correlation_id = request.headers.get("X-Correlation-ID")
+        if not correlation_id:
+            correlation_id = str(uuid4())
+
+        # Store in request state for route handlers
+        request.state.correlation_id = correlation_id
+
+        # Process request
+        response = await call_next(request)
+
+        # Add correlation ID to response headers
+        response.headers["X-Correlation-ID"] = correlation_id
+
+        return response
+
 
 # =============================================================================
 # AUTHENTICATION
@@ -82,6 +116,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Add correlation ID middleware for request tracing
+app.add_middleware(CorrelationIDMiddleware)
 
 # Serve static files
 STATIC_DIR = Path(__file__).parent / "static"
@@ -374,6 +411,79 @@ async def get_alerts() -> Dict[str, Any]:
     }
 
 
+# =============================================================================
+# FRONTEND ERROR REPORTING (for debug-mcp correlation)
+# =============================================================================
+
+@app.post("/api/errors/frontend")
+async def report_frontend_error(
+    request: Request,
+    error_data: Dict[str, Any] = Body(...)
+) -> Dict[str, Any]:
+    """
+    Receive frontend/browser errors for correlation with backend failures.
+
+    This endpoint should be called by the dashboard's JavaScript error handler
+    to report console errors, unhandled exceptions, and React error boundaries.
+
+    Expected payload:
+    {
+        "message": "Error message",
+        "stack": "Stack trace (optional)",
+        "url": "Page URL where error occurred",
+        "type": "error|warning|exception",
+        "user_agent": "Browser user agent (optional)"
+    }
+
+    The correlation ID from the request header is automatically attached.
+    """
+    # Get correlation ID from request state
+    correlation_id = getattr(request.state, "correlation_id", None)
+
+    # Build error entry
+    error_entry = {
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "message": error_data.get("message", "Unknown error"),
+        "stack": error_data.get("stack"),
+        "url": error_data.get("url"),
+        "console_type": error_data.get("type", "error"),
+        "user_agent": error_data.get("user_agent"),
+        "correlation_id": correlation_id,
+        "source": "frontend"
+    }
+
+    # Write to frontend errors log
+    frontend_log = PROJECT_ROOT / ".hive-mind" / "frontend_errors.jsonl"
+    frontend_log.parent.mkdir(parents=True, exist_ok=True)
+
+    try:
+        with open(frontend_log, "a") as f:
+            f.write(json.dumps(error_entry) + "\n")
+    except Exception as e:
+        print(f"Failed to log frontend error: {e}")
+
+    return {
+        "status": "logged",
+        "correlation_id": correlation_id,
+        "timestamp": error_entry["timestamp"]
+    }
+
+
+@app.get("/api/debug/correlation-id")
+async def get_correlation_id(request: Request) -> Dict[str, Any]:
+    """
+    Get the current request's correlation ID.
+
+    Useful for debugging and for the frontend to know which
+    correlation ID to attach to error reports.
+    """
+    correlation_id = getattr(request.state, "correlation_id", None)
+    return {
+        "correlation_id": correlation_id,
+        "timestamp": datetime.now(timezone.utc).isoformat()
+    }
+
+
 @app.post("/api/actions/record")
 async def record_action(
     component: str,
@@ -544,8 +654,8 @@ async def get_pending_emails(auth: bool = Depends(require_auth)):
 
 @app.post("/api/emails/{email_id}/approve")
 async def approve_email(
-    email_id: str, 
-    approver: str = "dashboard_user", 
+    email_id: str,
+    approver: str = Query("dashboard_user", description="Who is approving"),
     auth: bool = Depends(require_auth),
     edited_body: Optional[str] = Body(None),
     feedback: Optional[str] = Body(None)
@@ -560,25 +670,35 @@ async def approve_email(
     5. Updates status and queues for send.
     """
     shadow_log = PROJECT_ROOT / ".hive-mind" / "shadow_mode_emails"
+
+    # Ensure the directory exists
+    if not shadow_log.exists():
+        print(f"ERROR: Shadow email directory not found at {shadow_log}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Email storage directory not found. Please contact support."
+        )
+
     email_file = None
     email_data = None
-    
+
     # Find the email file
-    if shadow_log.exists():
-        for f in shadow_log.glob("*.json"):
-            try:
-                with open(f) as fp:
-                    data = json.load(fp)
-                    if data.get("email_id") == email_id or f.stem == email_id:
-                        email_file = f
-                        email_data = data
-                        break
-            except Exception:
-                continue
-    
+    for f in shadow_log.glob("*.json"):
+        try:
+            with open(f) as fp:
+                data = json.load(fp)
+                if data.get("email_id") == email_id or f.stem == email_id:
+                    email_file = f
+                    email_data = data
+                    break
+        except Exception as e:
+            print(f"Error reading email file {f}: {e}")
+            continue
+
     if not email_file or not email_data:
-        raise HTTPException(status_code=404, detail=f"Email {email_id} not found")
-    
+        print(f"ERROR: Email {email_id} not found in {shadow_log}")
+        raise HTTPException(status_code=404, detail=f"Email {email_id} not found in queue")
+
     if email_data.get("status") == "approved":
         raise HTTPException(status_code=400, detail="Email already approved")
     
@@ -728,32 +848,47 @@ async def approve_email(
 
 
 @app.post("/api/emails/{email_id}/reject")
-async def reject_email(email_id: str, reason: Optional[str] = None, approver: str = "dashboard_user", auth: bool = Depends(require_auth)):
+async def reject_email(
+    email_id: str,
+    reason: Optional[str] = Query(None, description="Reason for rejection"),
+    approver: str = Query("dashboard_user", description="Who is rejecting"),
+    auth: bool = Depends(require_auth)
+):
     """
     Reject an email.
-    
+
     Finds the email and marks it as rejected with reason.
     Logs the rejection for agent training.
     """
     shadow_log = PROJECT_ROOT / ".hive-mind" / "shadow_mode_emails"
+
+    # Ensure the directory exists
+    if not shadow_log.exists():
+        print(f"ERROR: Shadow email directory not found at {shadow_log}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Email storage directory not found. Please contact support."
+        )
+
     email_file = None
     email_data = None
-    
+
     # Find the email file
-    if shadow_log.exists():
-        for f in shadow_log.glob("*.json"):
-            try:
-                with open(f) as fp:
-                    data = json.load(fp)
-                    if data.get("email_id") == email_id or f.stem == email_id:
-                        email_file = f
-                        email_data = data
-                        break
-            except Exception:
-                continue
-    
+    for f in shadow_log.glob("*.json"):
+        try:
+            with open(f) as fp:
+                data = json.load(fp)
+                if data.get("email_id") == email_id or f.stem == email_id:
+                    email_file = f
+                    email_data = data
+                    break
+        except Exception as e:
+            print(f"Error reading email file {f}: {e}")
+            continue
+
     if not email_file or not email_data:
-        raise HTTPException(status_code=404, detail=f"Email {email_id} not found")
+        print(f"ERROR: Email {email_id} not found in {shadow_log}")
+        raise HTTPException(status_code=404, detail=f"Email {email_id} not found in queue")
     
     if email_data.get("status") == "rejected":
         raise HTTPException(status_code=400, detail="Email already rejected")
@@ -809,105 +944,6 @@ async def reject_email(email_id: str, reason: Optional[str] = None, approver: st
         "approver": approver,
         "timestamp": datetime.now().isoformat()
     }
-
-
-
-# =============================================================================
-# ADMIN HELPER ENDPOINTS
-# =============================================================================
-
-@app.post("/api/admin/regenerate_queue")
-async def regenerate_queue(token: str = Query(None)):
-    """
-    Trigger regeneration of all pending emails in the queue.
-    Uses new MessagingStrategy templates.
-    """
-    require_auth(token)
-    
-    try:
-        updated_count = 0
-        shadow_dir = PROJECT_ROOT / ".hive-mind" / "shadow_mode_emails"
-        
-        if not shadow_dir.exists():
-            return {"status": "error", "message": "Shadow email directory not found"}
-        
-        # Init strategies
-        messaging = MessagingStrategy()
-        detector = SignalDetector()
-        
-        for email_file in shadow_dir.glob("*.json"):
-            try:
-                with open(email_file, "r") as f:
-                    data = json.load(f)
-                
-                if data.get("status", "pending") != "pending":
-                    continue
-                
-                # Reconstruct context for regeneration
-                recipient = data.get("recipient_data", {})
-                
-                # Tech stack extraction
-                tech_stack_str = "your tech stack"
-                if "context" in data:
-                     # Attempt to extract from context if available
-                     context_triggers = data["context"].get("triggers", [])
-                
-                contact_info = {
-                    "first_name": recipient.get("name", "").split(" ")[0],
-                    "company_name": recipient.get("company"),
-                    "job_title": recipient.get("title"),
-                    "tier": 1 if data.get("priority") == "high" else 3,
-                    "technologies": [] # Will need extraction logic if we want tech stack
-                }
-                
-                # Detect signals from available data
-                signals = detector.detect_signals(contact_info)
-                primary_signal = detector.get_primary_signal(signals)
-                
-                # Select Template
-                template_id, subject_tmpl, body_tmpl = messaging.select_template(contact_info, primary_signal)
-                
-                # Format
-                formatted_subject = subject_tmpl.format(
-                    first_name=contact_info["first_name"] or "there",
-                    company=contact_info["company_name"] or "your company",
-                    industry="your industry",
-                    title=contact_info["job_title"] or "Leader",
-                    tech_stack=tech_stack_str
-                )
-                
-                formatted_body = body_tmpl.format(
-                    first_name=contact_info["first_name"] or "there",
-                    company=contact_info["company_name"] or "your company",
-                    industry="your industry",
-                    title=contact_info["job_title"] or "Leader",
-                    tech_stack=tech_stack_str
-                )
-                
-                # Update File
-                data["subject"] = formatted_subject
-                data["body"] = formatted_body
-                data["template_id"] = template_id
-                data["regenerated_at"] = datetime.now(timezone.utc).isoformat()
-                data["regeneration_note"] = "Applied Email Overhaul v2"
-                
-                with open(email_file, "w") as f:
-                    json.dump(data, f, indent=2)
-                
-                updated_count += 1
-                
-            except Exception as e:
-                print(f"Error updating {email_file}: {e}")
-                continue
-        
-        return {
-            "status": "success", 
-            "updated_count": updated_count,
-            "message": f"Successfully regenerated {updated_count} emails using new strategies."
-        }
-        
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.get("/api/queue-status")
