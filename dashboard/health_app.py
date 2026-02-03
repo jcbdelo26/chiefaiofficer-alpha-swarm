@@ -19,7 +19,7 @@ import os
 import sys
 import json
 import asyncio
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, List, Any, Optional
 
@@ -34,6 +34,9 @@ sys.path.insert(0, str(PROJECT_ROOT))
 
 from core.unified_health_monitor import get_health_monitor, HealthMonitor
 from core.precision_scorecard import get_scorecard, reset_scorecard
+from core.messaging_strategy import MessagingStrategy
+from core.signal_detector import SignalDetector
+from core.ghl_outreach import OutreachConfig, GHLOutreachClient, EmailTemplate, OutreachType
 from dotenv import load_dotenv
 
 # Load environment variables
@@ -172,9 +175,112 @@ async def root():
     return HTMLResponse("<h1>Health Dashboard</h1><p>Static files not found.</p>")
 
 
+# =============================================================================
+# ADMIN HELPER ENDPOINTS
+# =============================================================================
+
+@app.post("/api/admin/regenerate_queue")
+async def regenerate_queue(token: str = Query(None)):
+    """
+    Trigger regeneration of all pending emails in the queue.
+    Uses new MessagingStrategy templates.
+    """
+    require_auth(token)
+    
+    try:
+        updated_count = 0
+        shadow_dir = PROJECT_ROOT / ".hive-mind" / "shadow_mode_emails"
+        
+        if not shadow_dir.exists():
+            return {"status": "error", "message": "Shadow email directory not found"}
+        
+        # Init strategies
+        messaging = MessagingStrategy()
+        detector = SignalDetector()
+        
+        for email_file in shadow_dir.glob("*.json"):
+            try:
+                with open(email_file, "r") as f:
+                    data = json.load(f)
+                
+                if data.get("status") != "pending":
+                    continue
+                
+                # Reconstruct context for regeneration
+                recipient = data.get("recipient_data", {})
+                
+                # Tech stack extraction
+                tech_stack_str = "your tech stack"
+                if "context" in data:
+                     # Attempt to extract from context if available
+                     context_triggers = data["context"].get("triggers", [])
+                     # This is imperfect as we don't store raw tech stack in dashboard json usually
+                     # But we can try to infer or just use generic placeholders which is better than nothing
+                
+                contact_info = {
+                    "first_name": recipient.get("name", "").split(" ")[0],
+                    "company_name": recipient.get("company"),
+                    "job_title": recipient.get("title"),
+                    "tier": 1 if data.get("priority") == "high" else 3
+                }
+                
+                # Run Detection (Simulated based on Tier)
+                # Since we don't have raw signals, we use the tier to pick best available logic
+                # For high priority (Tier 1), we check if we can detect intent
+                
+                # Detect signals from available data
+                signals = detector.detect_signals(contact_info)
+                primary_signal = detector.get_primary_signal(signals)
+                
+                # Select Template
+                template_id, subject_tmpl, body_tmpl = messaging.select_template(contact_info, primary_signal)
+                
+                # Format
+                formatted_subject = subject_tmpl.format(
+                    first_name=contact_info["first_name"] or "there",
+                    company=contact_info["company_name"] or "your company",
+                    industry="your industry",
+                    title=contact_info["job_title"] or "Leader",
+                    tech_stack=tech_stack_str
+                )
+                
+                formatted_body = body_tmpl.format(
+                    first_name=contact_info["first_name"] or "there",
+                    company=contact_info["company_name"] or "your company",
+                    industry="your industry",
+                    title=contact_info["job_title"] or "Leader",
+                    tech_stack=tech_stack_str
+                )
+                
+                # Update File
+                data["subject"] = formatted_subject
+                data["body"] = formatted_body
+                data["template_id"] = template_id
+                data["regenerated_at"] = datetime.now(timezone.utc).isoformat()
+                data["regeneration_note"] = "Applied Email Overhaul v2"
+                
+                with open(email_file, "w") as f:
+                    json.dump(data, f, indent=2)
+                
+                updated_count += 1
+                
+            except Exception as e:
+                print(f"Error updating {email_file}: {e}")
+                continue
+        
+        return {
+            "status": "success", 
+            "updated_count": updated_count,
+            "message": f"Successfully regenerated {updated_count} emails using new strategies."
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.get("/api/health")
-async def get_health() -> Dict[str, Any]:
+async def health_check(token: str = Query(None)):
     """Get current health status of all components."""
+    require_auth(token)
     monitor = get_health_monitor()
     return monitor.get_health_status()
 
@@ -505,20 +611,21 @@ async def approve_email(
         # Guard against synthetic/test data in live mode
         if contact_id and not contact_id.startswith("synthetic_"):
             try:
-                # Init client with production config limits
-                from core.ghl_outreach import OutreachConfig
-                
                 # Extract limits from loaded config
                 # Default to 150/3000 if not found in config
                 # Note: config structure is guardrails -> email_limits
                 email_limits = project_config.get("guardrails", {}).get("email_limits", {})
-                
+
                 outreach_config = OutreachConfig(
                     monthly_limit=email_limits.get("monthly_limit", 3000),
                     daily_limit=email_limits.get("daily_limit", 150),
                     min_delay_seconds=email_limits.get("min_delay_seconds", 60)
                 )
-                
+
+                # Load GHL credentials from environment
+                api_key = os.getenv("GHL_API_KEY") or os.getenv("GHL_PROD_API_KEY")
+                location_id = os.getenv("GHL_LOCATION_ID")
+
                 if api_key and location_id:
                     client = GHLOutreachClient(api_key, location_id, config=outreach_config)
                     
@@ -702,6 +809,105 @@ async def reject_email(email_id: str, reason: Optional[str] = None, approver: st
         "approver": approver,
         "timestamp": datetime.now().isoformat()
     }
+
+
+
+# =============================================================================
+# ADMIN HELPER ENDPOINTS
+# =============================================================================
+
+@app.post("/api/admin/regenerate_queue")
+async def regenerate_queue(token: str = Query(None)):
+    """
+    Trigger regeneration of all pending emails in the queue.
+    Uses new MessagingStrategy templates.
+    """
+    require_auth(token)
+    
+    try:
+        updated_count = 0
+        shadow_dir = PROJECT_ROOT / ".hive-mind" / "shadow_mode_emails"
+        
+        if not shadow_dir.exists():
+            return {"status": "error", "message": "Shadow email directory not found"}
+        
+        # Init strategies
+        messaging = MessagingStrategy()
+        detector = SignalDetector()
+        
+        for email_file in shadow_dir.glob("*.json"):
+            try:
+                with open(email_file, "r") as f:
+                    data = json.load(f)
+                
+                if data.get("status", "pending") != "pending":
+                    continue
+                
+                # Reconstruct context for regeneration
+                recipient = data.get("recipient_data", {})
+                
+                # Tech stack extraction
+                tech_stack_str = "your tech stack"
+                if "context" in data:
+                     # Attempt to extract from context if available
+                     context_triggers = data["context"].get("triggers", [])
+                
+                contact_info = {
+                    "first_name": recipient.get("name", "").split(" ")[0],
+                    "company_name": recipient.get("company"),
+                    "job_title": recipient.get("title"),
+                    "tier": 1 if data.get("priority") == "high" else 3,
+                    "technologies": [] # Will need extraction logic if we want tech stack
+                }
+                
+                # Detect signals from available data
+                signals = detector.detect_signals(contact_info)
+                primary_signal = detector.get_primary_signal(signals)
+                
+                # Select Template
+                template_id, subject_tmpl, body_tmpl = messaging.select_template(contact_info, primary_signal)
+                
+                # Format
+                formatted_subject = subject_tmpl.format(
+                    first_name=contact_info["first_name"] or "there",
+                    company=contact_info["company_name"] or "your company",
+                    industry="your industry",
+                    title=contact_info["job_title"] or "Leader",
+                    tech_stack=tech_stack_str
+                )
+                
+                formatted_body = body_tmpl.format(
+                    first_name=contact_info["first_name"] or "there",
+                    company=contact_info["company_name"] or "your company",
+                    industry="your industry",
+                    title=contact_info["job_title"] or "Leader",
+                    tech_stack=tech_stack_str
+                )
+                
+                # Update File
+                data["subject"] = formatted_subject
+                data["body"] = formatted_body
+                data["template_id"] = template_id
+                data["regenerated_at"] = datetime.now(timezone.utc).isoformat()
+                data["regeneration_note"] = "Applied Email Overhaul v2"
+                
+                with open(email_file, "w") as f:
+                    json.dump(data, f, indent=2)
+                
+                updated_count += 1
+                
+            except Exception as e:
+                print(f"Error updating {email_file}: {e}")
+                continue
+        
+        return {
+            "status": "success", 
+            "updated_count": updated_count,
+            "message": f"Successfully regenerated {updated_count} emails using new strategies."
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.get("/api/queue-status")

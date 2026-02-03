@@ -7,10 +7,9 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <title>ChiefAIOfficer - Sales Dashboard v2.2</title>
+    <title>ChiefAIOfficer - Sales Dashboard v2.3</title>
     <style>
         :root {
-            /* ... existing vars ... */
             --bg-dark: #0a0f1a;
             --bg-card: #111827;
             --bg-hover: #1f2937;
@@ -28,9 +27,634 @@
             --blue-bg: rgba(59, 130, 246, 0.1);
         }
 
-        /* ... existing styles ... */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-        /* ENHANCED EMAIL BODY STYLES */
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-primary);
+            min-height: 100vh;
+        }
+
+        /* NAV */
+        .nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 32px;
+            border-bottom: 1px solid var(--border);
+            background: var(--bg-card);
+        }
+
+        .nav-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 600;
+            font-size: 18px;
+        }
+
+        .nav-brand img {
+            height: 32px;
+        }
+
+        .nav-user {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .nav-user .status {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .nav-user .status .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--green);
+        }
+
+        .nav-tabs {
+            display: flex;
+            gap: 8px;
+        }
+
+        .nav-tab {
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 14px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            border: none;
+            background: transparent;
+        }
+
+        .nav-tab:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+        }
+
+        .nav-tab.active {
+            background: var(--blue-bg);
+            color: var(--blue);
+        }
+
+        /* MAIN LAYOUT */
+        .main {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 32px;
+        }
+
+        /* CONSTRAINT BANNER */
+        .constraint-banner {
+            background: linear-gradient(135deg, var(--red-bg), transparent);
+            border: 1px solid var(--red);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .constraint-banner.success {
+            background: linear-gradient(135deg, var(--green-bg), transparent);
+            border-color: var(--green);
+        }
+
+        .constraint-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .constraint-icon {
+            font-size: 32px;
+        }
+
+        .constraint-text h3 {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+        }
+
+        .constraint-text p {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .constraint-actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: var(--green);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #059669;
+        }
+
+        .btn-secondary {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            background: var(--border);
+        }
+
+        /* SCORECARD GRID */
+        .scorecard {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            margin-bottom: 32px;
+        }
+
+        @media (max-width: 1024px) {
+            .scorecard {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 640px) {
+            .scorecard {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .metric-card {
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 24px;
+            border: 1px solid var(--border);
+        }
+
+        .metric-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .metric-label {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .metric-status {
+            font-size: 18px;
+        }
+
+        .metric-value {
+            font-size: 36px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .metric-value.green {
+            color: var(--green);
+        }
+
+        .metric-value.yellow {
+            color: var(--yellow);
+        }
+
+        .metric-value.red {
+            color: var(--red);
+        }
+
+        .metric-target {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .metric-trend {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 13px;
+            margin-top: 8px;
+        }
+
+        .metric-trend.up {
+            color: var(--green);
+        }
+
+        .metric-trend.down {
+            color: var(--red);
+        }
+
+        /* PENDING APPROVALS SECTION */
+        .section {
+            background: var(--bg-card);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            margin-bottom: 24px;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .section-title {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .section-badge {
+            background: var(--red);
+            color: white;
+            font-size: 12px;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-weight: 600;
+        }
+
+        /* PRIORITY BADGES */
+        .priority-hot {
+            background: var(--red);
+            color: white;
+            font-size: 10px;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .priority-warm {
+            background: var(--yellow);
+            color: #000;
+            font-size: 10px;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .priority-low {
+            background: var(--green);
+            color: white;
+            font-size: 10px;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        /* SEGMENT FILTERS */
+        .filter-bar {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            padding: 6px 12px;
+            font-size: 12px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            background: transparent;
+            color: var(--text-secondary);
+            cursor: pointer;
+        }
+
+        .filter-btn:hover,
+        .filter-btn.active {
+            background: var(--blue-bg);
+            border-color: var(--blue);
+            color: var(--blue);
+        }
+
+        /* BULK ACTIONS */
+        .bulk-actions {
+            display: flex;
+            gap: 8px;
+            margin-left: auto;
+        }
+
+        /* EMAIL QUEUE */
+        .email-list {
+            padding: 0;
+        }
+
+        .email-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 24px;
+            border-bottom: 1px solid var(--border);
+            transition: background 0.2s;
+        }
+
+        .email-item:hover {
+            background: var(--bg-hover);
+        }
+
+        .email-item:last-child {
+            border-bottom: none;
+        }
+
+        .email-info {
+            flex: 1;
+        }
+
+        .email-subject {
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+
+        .email-meta {
+            font-size: 12px;
+            color: var(--text-muted);
+            display: flex;
+            gap: 16px;
+        }
+
+        .email-tier {
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .email-tier.tier1 {
+            background: var(--green-bg);
+            color: var(--green);
+        }
+
+        .email-tier.tier2 {
+            background: var(--blue-bg);
+            color: var(--blue);
+        }
+
+        .email-tier.tier3 {
+            background: var(--yellow-bg);
+            color: var(--yellow);
+        }
+
+        .email-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 12px;
+            border-radius: 6px;
+        }
+
+        .btn-approve {
+            background: var(--green);
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-approve:hover {
+            background: #059669;
+        }
+
+        .btn-reject {
+            background: transparent;
+            color: var(--red);
+            border: 1px solid var(--red);
+            cursor: pointer;
+        }
+
+        .btn-reject:hover {
+            background: var(--red-bg);
+        }
+
+        .btn-preview {
+            background: transparent;
+            color: var(--text-secondary);
+            border: 1px solid var(--border);
+            cursor: pointer;
+        }
+
+        .btn-preview:hover {
+            background: var(--bg-hover);
+        }
+
+        /* TWO COLUMN LAYOUT */
+        .two-col {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 24px;
+        }
+
+        @media (max-width: 1024px) {
+            .two-col {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* ACTIVITY FEED */
+        .activity-item {
+            display: flex;
+            gap: 12px;
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .activity-item:last-child {
+            border-bottom: none;
+        }
+
+        .activity-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+
+        .activity-icon.sent {
+            background: var(--green-bg);
+        }
+
+        .activity-icon.reply {
+            background: var(--blue-bg);
+        }
+
+        .activity-icon.meeting {
+            background: var(--yellow-bg);
+        }
+
+        .activity-text {
+            flex: 1;
+        }
+
+        .activity-text p {
+            font-size: 13px;
+            margin-bottom: 2px;
+        }
+
+        .activity-text span {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        /* EMAIL PREVIEW MODAL */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal {
+            background: var(--bg-card);
+            border-radius: 12px;
+            width: 90%;
+            max-width: 900px;
+            max-height: 85vh;
+            overflow: hidden;
+            border: 1px solid var(--border);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 24px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .modal-header h3 {
+            font-size: 16px;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 20px;
+            cursor: pointer;
+        }
+
+        .modal-body {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 24px;
+            padding: 24px;
+            overflow-y: auto;
+            max-height: 60vh;
+        }
+
+        .modal-main {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .modal-sidebar {
+            background: var(--bg-dark);
+            border-left: 1px solid var(--border);
+            padding-left: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .email-preview-field {
+            margin-bottom: 16px;
+        }
+
+        .email-preview-field label {
+            display: block;
+            font-size: 11px;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+        }
+
+        .email-preview-field .value {
+            font-size: 14px;
+            padding: 12px;
+            background: var(--bg-dark);
+            border-radius: 6px;
+            border: 1px solid var(--border);
+        }
+
+        .email-preview-field .body {
+            white-space: pre-wrap;
+            line-height: 1.6;
+        }
+
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            padding: 16px 24px;
+            border-top: 1px solid var(--border);
+        }
+
+        /* EMPTY STATE */
+        .empty-state {
+            text-align: center;
+            padding: 48px 24px;
+            color: var(--text-secondary);
+        }
+
+        .empty-state .icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+
+        .empty-state h3 {
+            font-size: 16px;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+
+        /* EMAIL BODY EDIT STYLES - FOR HTML RENDERING FIX */
         .body-edit {
             width: 100%;
             min-height: 200px;
@@ -65,19 +689,20 @@
             cursor: pointer;
         }
 
-        /* Additional HTML rendering fixes */
         .body-edit br {
             display: block;
             content: "";
             margin-top: 0.5em;
         }
 
-        .body-edit strong, .body-edit b {
+        .body-edit strong,
+        .body-edit b {
             font-weight: 600;
             color: var(--text-primary);
         }
 
-        .body-edit em, .body-edit i {
+        .body-edit em,
+        .body-edit i {
             font-style: italic;
         }
 
@@ -88,44 +713,77 @@
             color: var(--text-secondary);
         }
 
-        /* Ensure focus state is visible for editing */
         .body-edit:focus {
             outline: 2px solid var(--blue);
             outline-offset: 2px;
         }
 
-        /* Email signature styling */
-        .body-edit .signature,
-        .body-edit [style*="font-size: small"],
-        .body-edit [style*="color: gray"] {
-            color: var(--text-muted);
-            font-size: 0.9em;
-        }
-
-        /* Prevent content overflow */
         .body-edit img {
             max-width: 100%;
             height: auto;
         }
 
-        /* Placeholder text when empty */
         .body-edit:empty:before {
             content: "Click to edit email body...";
             color: var(--text-muted);
             font-style: italic;
         }
 
+        .feedback-input {
+            width: 100%;
+            min-height: 80px;
+            background: var(--bg-dark);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 12px;
+            font-family: inherit;
+            resize: vertical;
+            margin-top: 4px;
+        }
+
+        /* SIDEBAR LAYOUT */
+        .sidebar-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 16px;
+        }
+
+        .sidebar-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .sidebar-field {
+            margin-bottom: 12px;
+        }
+
+        .sidebar-field label {
+            display: block;
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+        }
+
+        .sidebar-field .value {
+            font-size: 14px;
+            color: var(--text-primary);
+            font-weight: 500;
+        }
     </style>
 </head>
 
 <body>
-    <!-- (Navigation and Main Content skipped for brevity, keeping same) -->
-    <!-- ... -->
     <nav class="nav">
         <div class="nav-brand">
             <span>📊</span>
             <span>ChiefAIOfficer Sales Dashboard <small
-                    style="font-size:11px; color:#666; margin-left:8px;">v2.2</small></span>
+                    style="font-size:11px; color:#666; margin-left:8px;">v2.3</small></span>
         </div>
         <div class="nav-tabs">
             <button class="nav-tab active" onclick="showTab('overview')">Overview</button>
@@ -144,7 +802,6 @@
 
     <!-- MAIN CONTENT -->
     <main class="main">
-        <!-- (Constraint Banner and Scorecard skipped) -->
         <div class="constraint-banner" id="constraintBanner">
             <div class="constraint-left">
                 <span class="constraint-icon">⚠️</span>
@@ -239,7 +896,7 @@
     <div class="modal-overlay" id="emailModal">
         <div class="modal">
             <div class="modal-header">
-                <h3>Email Editor & Preview</h3>
+                <h3>Email Editor &amp; Preview</h3>
                 <button class="modal-close" onclick="closeModal()">×</button>
             </div>
             <div class="modal-body" id="emailPreviewBody">
@@ -248,28 +905,24 @@
             <div class="modal-footer">
                 <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
                 <button class="btn btn-reject btn-sm" onclick="rejectEmail()">Reject</button>
-                <button class="btn btn-approve" onclick="approveEmail()">✓ Approve & Send</button>
+                <button class="btn btn-approve" onclick="approveEmail()">✓ Approve &amp; Send</button>
             </div>
         </div>
     </div>
 
     <script>
-        // ... (Mock Data skipped, fetch functions needed in real version) ...
-        const pendingEmails = []; // Will be fetched from API in real usage
+        const pendingEmails = [];
         const recentActivity = [];
 
         async function fetchPendingEmails() {
             try {
-                // Get token from URL
                 const urlParams = new URLSearchParams(window.location.search);
                 const token = urlParams.get('token');
 
                 const response = await fetch(`/api/pending-emails?auth_token=${token}&token=${token}`);
                 if (response.ok) {
                     const data = await response.json();
-                    // Update mock array with real data if available
                     if (data.pending_emails && data.pending_emails.length > 0) {
-                        // Clear mock data
                         pendingEmails.length = 0;
                         data.pending_emails.forEach(e => {
                             pendingEmails.push({
@@ -297,31 +950,38 @@
             }
         }
 
-        // Call fetch on load
-        document.addEventListener('DOMContentLoaded', fetchPendingEmails);
+        fetchPendingEmails();
 
-        // RENDER FUNCTIONS (Same as before)
+        function getToken() {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get('token');
+        }
+
         function renderPendingEmails() {
-            const container = document.getElementById('emailList');
+            const list = document.getElementById('emailList');
+            const filteredEmails = currentFilter === 'all'
+                ? pendingEmails
+                : pendingEmails.filter(e => classifyPriority(e) === currentFilter);
 
-            if (pendingEmails.length === 0) {
-                container.innerHTML = `
+            if (filteredEmails.length === 0) {
+                list.innerHTML = `
                     <div class="empty-state">
                         <div class="icon">✅</div>
                         <h3>All caught up!</h3>
-                        <p>No emails pending approval.</p>
+                        <p>No pending emails to review</p>
                     </div>
                 `;
                 document.getElementById('pendingCount').textContent = '0';
                 return;
             }
 
-            document.getElementById('pendingCount').textContent = pendingEmails.length;
+            document.getElementById('pendingCount').textContent = filteredEmails.length;
 
-            container.innerHTML = pendingEmails.map(email => `
-                <div class="email-item" data-id="${email.id}">
+            list.innerHTML = filteredEmails.map(email => `
+                <div class="email-item">
                     <div class="email-info">
                         <div class="email-subject">
+                            ${getPriorityBadge(email)}
                             <span class="email-tier ${email.tier}">${email.tierLabel}</span>
                             ${email.subject}
                         </div>
@@ -339,109 +999,63 @@
         }
 
         function renderActivityFeed() {
-            // (Same as before)
-            const container = document.getElementById('activityFeed');
-            container.innerHTML = `
-                <div class="activity-item">
-                    <div class="activity-icon info">ℹ️</div>
-                    <div class="activity-text"><p>System in Live Mode (Limit 25/day)</p><span>Now</span></div>
-                </div>
-            `;
-        }
-
-        // Initial render
-        renderActivityFeed();
-
-        // =====================================================================
-        // EMAIL APPROVAL FUNCTIONS (UPDATED v2.2)
-        // =====================================================================
-
-        /**
-         * Sanitize HTML to prevent XSS while allowing safe formatting tags.
-         * Allows: p, br, strong, b, em, i, ul, ol, li, a (with href), blockquote
-         */
-        function sanitizeEmailHtml(html) {
-            if (!html) return '';
-            
-            // Create a temporary element to parse HTML
-            const temp = document.createElement('div');
-            temp.innerHTML = html;
-            
-            // Remove script tags and event handlers
-            const scripts = temp.querySelectorAll('script, style, iframe, object, embed');
-            scripts.forEach(el => el.remove());
-            
-            // Remove event handlers from all elements
-            const allElements = temp.querySelectorAll('*');
-            allElements.forEach(el => {
-                // Remove event handlers
-                Array.from(el.attributes).forEach(attr => {
-                    if (attr.name.startsWith('on')) {
-                        el.removeAttribute(attr.name);
-                    }
-                });
-                // Sanitize href to prevent javascript: URLs
-                if (el.hasAttribute('href')) {
-                    const href = el.getAttribute('href');
-                    if (href && href.toLowerCase().startsWith('javascript:')) {
-                        el.setAttribute('href', '#');
-                    }
-                }
-            });
-            
-            return temp.innerHTML;
-        }
-
-        /**
-         * Convert plain text with newlines to HTML paragraphs.
-         */
-        function textToHtml(text) {
-            if (!text) return '';
-            // If already contains HTML tags, just sanitize
-            if (/<[a-z][\s\S]*>/i.test(text)) {
-                return sanitizeEmailHtml(text);
+            const feed = document.getElementById('activityFeed');
+            if (recentActivity.length === 0) {
+                feed.innerHTML = `
+                    <div class="activity-item">
+                        <div class="activity-icon sent">📧</div>
+                        <div class="activity-text">
+                            <p>Swarm is running. Waiting for activity...</p>
+                            <span>Live Mode (Limit 25/day)</span>
+                        </div>
+                    </div>
+                `;
+                return;
             }
-            // Convert plain text to paragraphs
-            return text.split(/\n\n+/).map(para => 
-                `<p>${para.replace(/\n/g, '<br>')}</p>`
-            ).join('');
+
+            feed.innerHTML = recentActivity.map(act => `
+                <div class="activity-item">
+                    <div class="activity-icon ${act.type}">${act.icon}</div>
+                    <div class="activity-text">
+                        <p>${act.message}</p>
+                        <span>${act.time}</span>
+                    </div>
+                </div>
+            `).join('');
         }
+
+        let currentEmailId = null;
 
         function previewEmail(emailId) {
+            currentEmailId = emailId;
             const email = pendingEmails.find(e => e.id === emailId);
             if (!email) return;
 
-            currentEmailId = emailId;
-
             document.getElementById('emailPreviewBody').innerHTML = `
-                <!-- MAIN CONTENT (LEFT) -->
                 <div class="modal-main">
+                    <!-- TO -->
                     <div class="email-preview-field">
                         <label>To</label>
                         <div class="value">${email.recipientName} &lt;${email.recipient}&gt;</div>
                     </div>
+                    <!-- SUBJECT -->
                     <div class="email-preview-field">
                         <label>Subject</label>
                         <div class="value">${email.subject}</div>
                     </div>
-                    
                     <!-- EDITABLE BODY -->
                     <div class="email-preview-field">
                         <label>Email Body (Click to Edit)</label>
-                        <div id="emailBodyInput" class="body-edit" contenteditable="true" style="overflow-y: auto;">${textToHtml(email.body)}</div>
+                        <div id="emailBodyInput" class="body-edit" contenteditable="true">${email.body}</div>
                     </div>
-
-                    <!-- FEEDBACK FIELD -->
+                    <!-- FEEDBACK -->
                     <div class="email-preview-field">
-                        <label>Feedback for AI (Help the agents learn)</label>
+                        <label>Feedback for AI (Help the Agents Learn)</label>
                         <textarea id="feedbackInput" class="feedback-input" placeholder="e.g. 'Good angle, but make the intro shorter next time' or 'This person is not a decision maker'"></textarea>
                     </div>
                 </div>
-
-                <!-- SIDEBAR (RIGHT) -->
                 <div class="modal-sidebar">
                     <div class="sidebar-title">Lead Insights</div>
-                    
                     <div class="sidebar-field">
                         <label>Target</label>
                         <div class="value">${email.recipientName}</div>
@@ -489,7 +1103,6 @@
             const editedBody = document.getElementById('emailBodyInput').innerHTML;
             const feedback = document.getElementById('feedbackInput').value;
 
-            // Optimistic update
             closeModal();
             const index = pendingEmails.findIndex(e => e.id === currentEmailId);
             if (index > -1) pendingEmails.splice(index, 1);
@@ -505,11 +1118,12 @@
                     })
                 });
 
-                if (!response.ok) throw new Error('API Error');
-                // showToast('✓ Email approved'); // Toast function not defined in snippet, rely on UI update
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(errorData.detail || `Server error (${response.status})`);
+                }
             } catch (e) {
                 alert('Error approving email: ' + e.message);
-                // Revert optimistic update? For simplicity, we just alert.
             }
         }
 
@@ -530,24 +1144,21 @@
             renderPendingEmails();
 
             try {
-                // Send feedback as 'reason' query param
                 const response = await fetch(`/api/emails/${currentEmailId}/reject?token=${token}&reason=${encodeURIComponent(feedback)}`, {
                     method: 'POST'
                 });
-                if (!response.ok) throw new Error('API Error');
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(errorData.detail || `Server error (${response.status})`);
+                }
             } catch (e) {
                 alert('Error rejecting email: ' + e.message);
             }
         }
 
-        // =====================================================================
-        // UTILITY FUNCTIONS
-        // =====================================================================
-
         function showTab(tab) {
             document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
             event.target.classList.add('active');
-            // TODO: Implement tab switching
         }
 
         function viewConstraintFix() {
@@ -579,14 +1190,9 @@
             setTimeout(() => toast.remove(), 3000);
         }
 
-        // =====================================================================
-        // FILTER AND BULK ACTIONS
-        // =====================================================================
-
         let currentFilter = 'all';
 
         function classifyPriority(email) {
-            // Mirror the backend classification logic
             const tier = (email.tier || 'tier_3').toLowerCase();
             let employees = 0;
 
@@ -603,12 +1209,8 @@
 
         function filterEmails(priority) {
             currentFilter = priority;
-
-            // Update button states
             document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
             event.target.classList.add('active');
-
-            // Filter and re-render
             renderPendingEmails();
         }
 
@@ -651,16 +1253,10 @@
             }
         }
 
-        // =====================================================================
-        // INIT
-        // =====================================================================
-
         renderPendingEmails();
         renderActivityFeed();
 
-        // Auto-refresh every 30 seconds
         setInterval(() => {
-            // TODO: Fetch from API
             console.log('Auto-refresh...');
         }, 30000);
     </script>
