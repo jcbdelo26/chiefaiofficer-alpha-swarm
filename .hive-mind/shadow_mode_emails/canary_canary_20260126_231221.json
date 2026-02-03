@@ -1,8 +1,0 @@
-{
-  "canary_test": true,
-  "would_send_to": "chris@chiefaiofficer.com",
-  "subject": "[CANARY TEST] Pipeline Validation",
-  "timestamp": "2026-01-26T15:12:24.061798+00:00",
-  "shadow_mode": true,
-  "actually_sent": false
-}
