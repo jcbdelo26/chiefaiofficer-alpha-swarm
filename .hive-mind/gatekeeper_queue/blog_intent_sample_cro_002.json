@@ -1,0 +1,37 @@
+{
+  "queue_id": "blog_intent_sample_cro_002",
+  "type": "blog_triggered_email",
+  "priority": "high",
+  "visitor": {
+    "id": "sample_cro_002",
+    "email": "sarah.chen@techcorp.io",
+    "name": "Sarah Chen",
+    "company": "TechCorp",
+    "title": "Chief Revenue Officer"
+  },
+  "email": {
+    "subject": "Quick thought on your AI frameworks research, Sarah",
+    "body": "Hi Sarah,\n\nI noticed you were checking out our sales AI frameworks guide earlier today. As a CRO at a tech company, I imagine you're constantly looking for ways to accelerate execution while keeping sales, marketing, and CS aligned.\n\nI noticed we might have crossed paths at Salesforce - small world! I was there during the Lightning rollout, which taught me a lot about the challenges of getting teams to adopt new frameworks at scale.\n\nQuick question: What's creating the most friction for your revenue teams right now when it comes to leveraging AI insights? Is it more about getting everyone on the same playbook, or making sure critical signals don't get buried in the noise?\n\nIf you're interested, I'd love to show you a 10-minute walkthrough of how we're helping CROs implement AI frameworks that actually stick. We've found some interesting patterns around what makes adoption successful vs. what becomes shelfware.\n\nWould you have time for a brief call later today or tomorrow?\n\nBest,\nDani\n\n--\nDani Apgar\nHead of Partnerships & Revenue\nChief AI Officer Inc.\ndani@chiefaiofficer.com | chiefaiofficer.com\nBook a 15-min intro: https://caio.cx/meet",
+    "template_used": "sales_ai",
+    "generated_by": "gemini_crafter"
+  },
+  "context": {
+    "intent_score": 100,
+    "icp_tier": "tier_1",
+    "triggers": [
+      "sales_ai",
+      "general"
+    ],
+    "warm_connections": [
+      {
+        "type": "former_colleague",
+        "shared": "Salesforce",
+        "team_member": "Dani Apgar"
+      }
+    ],
+    "pages_viewed": [
+      "/blog/sales-ai-frameworks-2026"
+    ]
+  },
+  "created_at": "2026-01-30T16:34:41.025828+00:00"
+}

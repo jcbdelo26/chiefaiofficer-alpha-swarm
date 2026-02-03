@@ -1,0 +1,4382 @@
+{
+  "events": [
+    {
+      "id": "6820cd4a-c7a9-4cd7-8447-17b8f18121a9",
+      "type": "meeting_booked",
+      "timestamp": "2026-01-17T09:43:31.055579+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "camp_tier1_001",
+      "agent_output_id": "output_001",
+      "metadata": {
+        "icp_tier": "tier1",
+        "template_id": "pain_discovery"
+      },
+      "processed": true
+    },
+    {
+      "id": "f08ed6cb-4b5a-4c2a-89da-7c3194f821e4",
+      "type": "reply_positive",
+      "timestamp": "2026-01-17T09:43:31.056006+00:00",
+      "lead_id": "lead_002",
+      "campaign_id": "camp_tier1_001",
+      "agent_output_id": null,
+      "metadata": {
+        "icp_tier": "tier1",
+        "template_id": "pain_discovery"
+      },
+      "processed": true
+    },
+    {
+      "id": "fc0dd60b-f4c6-49ba-9df7-d6225d741113",
+      "type": "reply_negative",
+      "timestamp": "2026-01-17T09:43:31.056334+00:00",
+      "lead_id": "lead_003",
+      "campaign_id": "camp_tier2_001",
+      "agent_output_id": null,
+      "metadata": {
+        "icp_tier": "tier2",
+        "template_id": "case_study"
+      },
+      "processed": true
+    },
+    {
+      "id": "ffcde6fa-ce68-441b-be86-150f8601d0ff",
+      "type": "unsubscribe",
+      "timestamp": "2026-01-17T09:43:31.056663+00:00",
+      "lead_id": "lead_004",
+      "campaign_id": "camp_tier3_001",
+      "agent_output_id": null,
+      "metadata": {
+        "icp_tier": "tier3"
+      },
+      "processed": true
+    },
+    {
+      "id": "a223612c-e82d-4661-a199-be7116ce1295",
+      "type": "ae_approved",
+      "timestamp": "2026-01-17T09:43:31.057145+00:00",
+      "lead_id": "lead_005",
+      "campaign_id": "camp_tier1_002",
+      "agent_output_id": null,
+      "metadata": {
+        "ae_id": "ae_john",
+        "comment": "Great personalization"
+      },
+      "processed": true
+    },
+    {
+      "id": "ebbbc3fb-efd4-4355-99ef-86cc3520fafd",
+      "type": "ae_rejected",
+      "timestamp": "2026-01-17T09:43:31.057619+00:00",
+      "lead_id": "lead_006",
+      "campaign_id": "camp_tier2_002",
+      "agent_output_id": null,
+      "metadata": {
+        "ae_id": "ae_jane",
+        "reason": "Wrong industry angle"
+      },
+      "processed": true
+    },
+    {
+      "id": "448ad979-8c09-4070-b94d-20cf31927b8f",
+      "type": "open",
+      "timestamp": "2026-01-17T09:43:31.058556+00:00",
+      "lead_id": "user@company.com",
+      "campaign_id": "camp_001",
+      "agent_output_id": null,
+      "metadata": {
+        "source": "instantly",
+        "raw_event": "email_opened",
+        "payload": {
+          "event_type": "email_opened",
+          "lead_email": "user@company.com",
+          "campaign_id": "camp_001"
+        }
+      },
+      "processed": true
+    },
+    {
+      "id": "39b94862-dcac-46e8-b430-7ef83a6a5194",
+      "type": "click",
+      "timestamp": "2026-01-17T09:43:31.059406+00:00",
+      "lead_id": "user@company.com",
+      "campaign_id": "camp_001",
+      "agent_output_id": null,
+      "metadata": {
+        "source": "instantly",
+        "raw_event": "email_clicked",
+        "payload": {
+          "event_type": "email_clicked",
+          "lead_email": "user@company.com",
+          "campaign_id": "camp_001"
+        }
+      },
+      "processed": true
+    },
+    {
+      "id": "2c7f7d1b-f7f1-4957-be59-53f35abaec1d",
+      "type": "reply_positive",
+      "timestamp": "2026-01-17T09:43:31.060249+00:00",
+      "lead_id": "user@company.com",
+      "campaign_id": "camp_001",
+      "agent_output_id": null,
+      "metadata": {
+        "source": "instantly",
+        "raw_event": "email_replied",
+        "payload": {
+          "event_type": "email_replied",
+          "lead_email": "user@company.com",
+          "campaign_id": "camp_001",
+          "sentiment": "positive"
+        }
+      },
+      "processed": true
+    },
+    {
+      "id": "d61c50fb-15e0-4676-be36-16b6e46d3c3e",
+      "type": "bounce",
+      "timestamp": "2026-01-17T09:43:31.060942+00:00",
+      "lead_id": "bad@invalid.com",
+      "campaign_id": "camp_002",
+      "agent_output_id": null,
+      "metadata": {
+        "source": "instantly",
+        "raw_event": "email_bounced",
+        "payload": {
+          "event_type": "email_bounced",
+          "lead_email": "bad@invalid.com",
+          "campaign_id": "camp_002"
+        }
+      },
+      "processed": true
+    },
+    {
+      "id": "1e3021cb-8058-47a4-b2af-1e3f93d281e5",
+      "type": "meeting_booked",
+      "timestamp": "2026-01-17T09:43:31.061890+00:00",
+      "lead_id": "contact_001",
+      "campaign_id": "ghl_camp_001",
+      "agent_output_id": null,
+      "metadata": {
+        "source": "ghl",
+        "raw_event": "appointment.booked",
+        "payload": {
+          "event": "appointment.booked",
+          "contact_id": "contact_001",
+          "campaign_id": "ghl_camp_001"
+        }
+      },
+      "processed": true
+    },
+    {
+      "id": "5594c22c-8f2a-4703-81e7-8fb5965ece43",
+      "type": "meeting_no_show",
+      "timestamp": "2026-01-17T09:43:31.062636+00:00",
+      "lead_id": "contact_002",
+      "campaign_id": "ghl_camp_001",
+      "agent_output_id": null,
+      "metadata": {
+        "source": "ghl",
+        "raw_event": "appointment.no_show",
+        "payload": {
+          "event": "appointment.no_show",
+          "contact_id": "contact_002",
+          "campaign_id": "ghl_camp_001"
+        }
+      },
+      "processed": true
+    },
+    {
+      "id": "e629ff4a-377b-44ac-97a9-4d345f722ccb",
+      "type": "reply_negative",
+      "timestamp": "2026-01-17T09:43:31.063382+00:00",
+      "lead_id": "contact_003",
+      "campaign_id": "ghl_camp_002",
+      "agent_output_id": null,
+      "metadata": {
+        "source": "ghl",
+        "raw_event": "contact.reply",
+        "payload": {
+          "event": "contact.reply",
+          "contact_id": "contact_003",
+          "campaign_id": "ghl_camp_002",
+          "sentiment": "negative"
+        }
+      },
+      "processed": true
+    },
+    {
+      "id": "70134e6a-264a-4321-9174-0ccb868ecee0",
+      "type": "open",
+      "timestamp": "2026-01-19T15:31:20.808303+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "df5e13d7-c19a-4af9-a4f9-e8899c704e78",
+      "type": "click",
+      "timestamp": "2026-01-19T15:31:20.809503+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "5e4cbc53-cc15-4f65-af26-6feb0710e116",
+      "type": "reply_positive",
+      "timestamp": "2026-01-19T15:31:20.810534+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "58a69991-cce6-41ad-8cda-51b87026bbe8",
+      "type": "meeting_booked",
+      "timestamp": "2026-01-19T15:31:20.811371+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "edc8279e-0458-4c7d-b820-2e63fc9d9b92",
+      "type": "open",
+      "timestamp": "2026-01-19T15:31:20.815490+00:00",
+      "lead_id": "lead_002",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "d63b2626-91aa-4a12-8289-b5ca3d85c6f5",
+      "type": "unsubscribe",
+      "timestamp": "2026-01-19T15:31:20.816377+00:00",
+      "lead_id": "lead_003",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "9dc13e04-a06c-4a69-869c-f59a22668477",
+      "type": "open",
+      "timestamp": "2026-01-19T15:32:41.842066+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "ca7b2bd6-b391-4475-8163-3d6ae363908a",
+      "type": "click",
+      "timestamp": "2026-01-19T15:32:41.842825+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "4b970f5d-616b-49fc-8ab1-28280ce26fa7",
+      "type": "reply_positive",
+      "timestamp": "2026-01-19T15:32:41.843620+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "4da38d61-4f3e-404d-875a-fa27fe32674b",
+      "type": "meeting_booked",
+      "timestamp": "2026-01-19T15:32:41.844369+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "8bed91dc-a60d-4c79-a458-32fdce560d42",
+      "type": "open",
+      "timestamp": "2026-01-19T15:32:41.845098+00:00",
+      "lead_id": "lead_002",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "870cf873-5112-44df-ad05-cec8c79dc0d7",
+      "type": "unsubscribe",
+      "timestamp": "2026-01-19T15:32:41.845910+00:00",
+      "lead_id": "lead_003",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "0279302f-f748-4798-a2e9-b63ac5d94796",
+      "type": "open",
+      "timestamp": "2026-01-19T15:34:07.157634+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "c0af96b9-0aa8-422b-beaf-4676cb4821ff",
+      "type": "click",
+      "timestamp": "2026-01-19T15:34:07.158450+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "65c5d4fc-34a9-4fc3-a789-66a54cedd50f",
+      "type": "reply_positive",
+      "timestamp": "2026-01-19T15:34:07.159214+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "bf56b0df-7063-4e7c-b710-7e9781567550",
+      "type": "meeting_booked",
+      "timestamp": "2026-01-19T15:34:07.159984+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "c3e1f67a-e89a-4b59-816c-94ad9fc60e99",
+      "type": "open",
+      "timestamp": "2026-01-19T15:34:07.160772+00:00",
+      "lead_id": "lead_002",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "a1bc4127-d071-49c4-adc5-d4f5133d6f97",
+      "type": "unsubscribe",
+      "timestamp": "2026-01-19T15:34:07.162199+00:00",
+      "lead_id": "lead_003",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "2af25a9c-a95a-4fbf-a7f8-ff667412611e",
+      "type": "ae_approved",
+      "timestamp": "2026-01-19T15:34:07.183737+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_test_001",
+      "agent_output_id": null,
+      "metadata": {
+        "email_length": 296
+      },
+      "processed": true
+    },
+    {
+      "id": "5092cc07-4cd9-4763-af27-9b4ecb5649b8",
+      "type": "open",
+      "timestamp": "2026-01-19T15:34:07.184687+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_test_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "79ae47d2-d599-4b1e-9943-eabe73792f6e",
+      "type": "reply_positive",
+      "timestamp": "2026-01-19T15:34:07.185579+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_test_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "d8deceaf-42f3-49c2-9409-13f00be4f10d",
+      "type": "open",
+      "timestamp": "2026-01-19T15:34:37.339781+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "f58e663b-bce5-4358-9fd9-2ee0ac6ec1bd",
+      "type": "click",
+      "timestamp": "2026-01-19T15:34:37.341358+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "669574f3-4348-43f0-84a5-036f48875161",
+      "type": "reply_positive",
+      "timestamp": "2026-01-19T15:34:37.342386+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "7920e189-d94c-4898-ab31-136bf30651f0",
+      "type": "meeting_booked",
+      "timestamp": "2026-01-19T15:34:37.343504+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "fc9ad1b0-e335-43e1-80c1-9a314fde7314",
+      "type": "open",
+      "timestamp": "2026-01-19T15:34:37.344559+00:00",
+      "lead_id": "lead_002",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "1c44fa83-77b1-46f2-b210-f6c716fb84f3",
+      "type": "unsubscribe",
+      "timestamp": "2026-01-19T15:34:37.345548+00:00",
+      "lead_id": "lead_003",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "5a94587c-6f4f-4f12-81b2-4ae09fb6bbe0",
+      "type": "ae_approved",
+      "timestamp": "2026-01-19T15:34:37.363815+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_test_001",
+      "agent_output_id": null,
+      "metadata": {
+        "email_length": 296
+      },
+      "processed": true
+    },
+    {
+      "id": "872c019d-a206-47a4-9655-0ddb5e99ccca",
+      "type": "open",
+      "timestamp": "2026-01-19T15:34:37.364934+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_test_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "131af735-cef6-4368-9b00-fb182c5a41e7",
+      "type": "reply_positive",
+      "timestamp": "2026-01-19T15:34:37.365955+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_test_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "da4efd30-86e2-41f1-a5c8-0c50554286ec",
+      "type": "open",
+      "timestamp": "2026-01-19T15:34:58.055903+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "d780840b-4ec5-4067-b0d5-0b54f207ab40",
+      "type": "click",
+      "timestamp": "2026-01-19T15:34:58.057179+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "8458f9e4-417d-438e-8514-7d986ef8d690",
+      "type": "reply_positive",
+      "timestamp": "2026-01-19T15:34:58.058242+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "6d0b2b63-6153-46a8-8c1c-b6ad0ef69c05",
+      "type": "meeting_booked",
+      "timestamp": "2026-01-19T15:34:58.059328+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "6768919b-5d83-4152-8406-30d27fff4f5d",
+      "type": "open",
+      "timestamp": "2026-01-19T15:34:58.060445+00:00",
+      "lead_id": "lead_002",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "9aaf8df9-2178-43fe-9f01-074f5396ed65",
+      "type": "unsubscribe",
+      "timestamp": "2026-01-19T15:34:58.061593+00:00",
+      "lead_id": "lead_003",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "642bf0d9-d228-488f-b01b-bcab27db3c36",
+      "type": "ae_approved",
+      "timestamp": "2026-01-19T15:34:58.074820+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_test_001",
+      "agent_output_id": null,
+      "metadata": {
+        "email_length": 296
+      },
+      "processed": true
+    },
+    {
+      "id": "8feae081-01b1-457a-97e9-e2c23505b436",
+      "type": "open",
+      "timestamp": "2026-01-19T15:34:58.076007+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_test_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "9eaf713c-7a04-40c4-8acf-ede76b6210b9",
+      "type": "reply_positive",
+      "timestamp": "2026-01-19T15:34:58.077220+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_test_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "558431a5-5a7e-4473-96ff-bea903fef190",
+      "type": "open",
+      "timestamp": "2026-01-20T17:33:03.477621+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "e6185780-935c-4d92-8ae0-b871bdd4407d",
+      "type": "click",
+      "timestamp": "2026-01-20T17:33:03.479099+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "85b42911-0c66-4467-b6bd-85105665022d",
+      "type": "reply_positive",
+      "timestamp": "2026-01-20T17:33:03.480373+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "f2ff5c3e-94a0-494b-a711-b7f724e7dac1",
+      "type": "meeting_booked",
+      "timestamp": "2026-01-20T17:33:03.481655+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "807eacf4-3040-45c3-b4c4-b6180d0b206c",
+      "type": "open",
+      "timestamp": "2026-01-20T17:33:03.482897+00:00",
+      "lead_id": "lead_002",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "c1007afc-573d-4ac0-bc09-1728036bd154",
+      "type": "unsubscribe",
+      "timestamp": "2026-01-20T17:33:03.484123+00:00",
+      "lead_id": "lead_003",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "cb8b5849-859e-4f97-822d-e65cc8b17c88",
+      "type": "ae_approved",
+      "timestamp": "2026-01-20T17:33:03.504568+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_test_001",
+      "agent_output_id": null,
+      "metadata": {
+        "email_length": 296
+      },
+      "processed": true
+    },
+    {
+      "id": "de973f1d-48b4-4634-84ac-496aa70b469f",
+      "type": "open",
+      "timestamp": "2026-01-20T17:33:03.506308+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_test_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "a38e50cd-7c97-4260-80f5-9a904a97dbae",
+      "type": "reply_positive",
+      "timestamp": "2026-01-20T17:33:03.508485+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_test_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "3498a38a-38f7-4273-96ef-bb713701b25d",
+      "type": "open",
+      "timestamp": "2026-01-21T20:37:48.174061+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "ed9b3bcb-c080-499f-a7c6-75bfc6a7c5d7",
+      "type": "click",
+      "timestamp": "2026-01-21T20:37:48.175946+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "5bbc1e12-3a90-410b-8244-e3f9f4f33f20",
+      "type": "reply_positive",
+      "timestamp": "2026-01-21T20:37:48.177361+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "c77bc92c-bfd4-430e-b6d4-7f8b26a08aeb",
+      "type": "meeting_booked",
+      "timestamp": "2026-01-21T20:37:48.178767+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "4623056b-c14c-4313-8c85-f30096f0aada",
+      "type": "open",
+      "timestamp": "2026-01-21T20:37:48.180200+00:00",
+      "lead_id": "lead_002",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "a059d385-57f8-4264-a7e6-abcbc563b240",
+      "type": "unsubscribe",
+      "timestamp": "2026-01-21T20:37:48.181877+00:00",
+      "lead_id": "lead_003",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "754b4dd0-2e65-4610-95dd-480b1dec4ff1",
+      "type": "ae_approved",
+      "timestamp": "2026-01-21T20:37:48.199548+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_test_001",
+      "agent_output_id": null,
+      "metadata": {
+        "email_length": 296
+      },
+      "processed": true
+    },
+    {
+      "id": "df44c81e-176d-4d31-9ba2-2874e34cba5c",
+      "type": "open",
+      "timestamp": "2026-01-21T20:37:48.201144+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_test_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "c2e457cf-93ba-4881-a2ef-962ba5e5df28",
+      "type": "reply_positive",
+      "timestamp": "2026-01-21T20:37:48.202623+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_test_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "a424eb72-351c-49ec-a4c5-4aef0b778a71",
+      "type": "open",
+      "timestamp": "2026-01-21T20:57:41.252174+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "fa7ac62c-73f6-4ee9-902f-26f68ed45ced",
+      "type": "click",
+      "timestamp": "2026-01-21T20:57:41.253999+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "ad9b81af-03f9-4fc5-b9a4-f8972253a504",
+      "type": "reply_positive",
+      "timestamp": "2026-01-21T20:57:41.255551+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "eab0f91b-290a-4b17-9847-54296eba9a01",
+      "type": "meeting_booked",
+      "timestamp": "2026-01-21T20:57:41.257092+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "1ade8116-61a5-414b-b544-82c4c48f9c96",
+      "type": "open",
+      "timestamp": "2026-01-21T20:57:41.258617+00:00",
+      "lead_id": "lead_002",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "ad9dedde-57cd-4510-abfc-7a294158854f",
+      "type": "unsubscribe",
+      "timestamp": "2026-01-21T20:57:41.260176+00:00",
+      "lead_id": "lead_003",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "4fb9630a-ca09-4eea-ad68-0e802e7d597d",
+      "type": "ae_approved",
+      "timestamp": "2026-01-21T20:57:41.280827+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_test_001",
+      "agent_output_id": null,
+      "metadata": {
+        "email_length": 296
+      },
+      "processed": true
+    },
+    {
+      "id": "2c27814e-8b70-4508-a8b9-0efb65e997d8",
+      "type": "open",
+      "timestamp": "2026-01-21T20:57:41.282551+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_test_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "96c8585a-b066-41c6-a240-a8335130373b",
+      "type": "reply_positive",
+      "timestamp": "2026-01-21T20:57:41.284219+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_test_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "9bfe6b0b-1e1e-47c6-9171-9154a38e6d76",
+      "type": "open",
+      "timestamp": "2026-01-21T21:02:00.516500+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "94b69b35-4d3d-44d5-8b8b-327dcbf3ac29",
+      "type": "click",
+      "timestamp": "2026-01-21T21:02:00.518382+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "0882de12-6161-4576-94c5-15e8d3598b84",
+      "type": "reply_positive",
+      "timestamp": "2026-01-21T21:02:00.520148+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "31319632-d382-4fe4-b79d-8f22d16f5157",
+      "type": "meeting_booked",
+      "timestamp": "2026-01-21T21:02:00.521815+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "8e1cbeb7-a6d9-407f-bce4-fbbce18eae78",
+      "type": "open",
+      "timestamp": "2026-01-21T21:02:00.523484+00:00",
+      "lead_id": "lead_002",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "705c45f2-c88e-4792-92f5-01aa6435c10c",
+      "type": "unsubscribe",
+      "timestamp": "2026-01-21T21:02:00.525134+00:00",
+      "lead_id": "lead_003",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "eee237e7-52be-4e8b-809b-fe6bdc8eb9fb",
+      "type": "ae_approved",
+      "timestamp": "2026-01-21T21:02:00.550757+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_test_001",
+      "agent_output_id": null,
+      "metadata": {
+        "email_length": 296
+      },
+      "processed": true
+    },
+    {
+      "id": "acdf3356-72b1-4fe8-a94d-09fc1ca04607",
+      "type": "open",
+      "timestamp": "2026-01-21T21:02:00.552590+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_test_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "cf3fa9ef-1b7d-41cc-98f9-6c4bb61054df",
+      "type": "reply_positive",
+      "timestamp": "2026-01-21T21:02:00.554294+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_test_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "1aa86127-c087-4174-bd66-6b164bf2e5b8",
+      "type": "open",
+      "timestamp": "2026-01-21T21:04:20.820922+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "8b0847bb-f449-49e8-991e-534741aed504",
+      "type": "click",
+      "timestamp": "2026-01-21T21:04:20.822998+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "65b530e8-9a4b-4f3c-9407-2f29391f7dbf",
+      "type": "reply_positive",
+      "timestamp": "2026-01-21T21:04:20.824883+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "daf7f1dd-3d18-4aba-93ad-60f1ba8b0366",
+      "type": "meeting_booked",
+      "timestamp": "2026-01-21T21:04:20.826717+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "bb075792-3ad5-464a-9140-a94be40a289c",
+      "type": "open",
+      "timestamp": "2026-01-21T21:04:20.828541+00:00",
+      "lead_id": "lead_002",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "f7c4e544-355b-4127-926b-ee99eae9086f",
+      "type": "unsubscribe",
+      "timestamp": "2026-01-21T21:04:20.830366+00:00",
+      "lead_id": "lead_003",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "fb88113d-d666-4b4a-bb06-043b6c6f1b04",
+      "type": "ae_approved",
+      "timestamp": "2026-01-21T21:04:20.849323+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_test_001",
+      "agent_output_id": null,
+      "metadata": {
+        "email_length": 296
+      },
+      "processed": true
+    },
+    {
+      "id": "b0e6e331-3eb8-40cc-b66d-59e190189523",
+      "type": "open",
+      "timestamp": "2026-01-21T21:04:20.851214+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_test_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "67daec2c-791a-4bf0-a5c0-49cdc6c8260a",
+      "type": "reply_positive",
+      "timestamp": "2026-01-21T21:04:20.853126+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_test_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "abc47065-38af-481c-90f4-9676925f3095",
+      "type": "open",
+      "timestamp": "2026-01-21T21:16:17.031353+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "e573c2c6-ac7c-4df1-a693-fcaa08453ae6",
+      "type": "click",
+      "timestamp": "2026-01-21T21:16:17.034599+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "9fac400b-198b-4bff-b2e3-37e303d1aa5c",
+      "type": "reply_positive",
+      "timestamp": "2026-01-21T21:16:17.041540+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "25a7b37f-d1e0-4bdc-a91d-fe4489ca0b40",
+      "type": "meeting_booked",
+      "timestamp": "2026-01-21T21:16:17.043843+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "4ebe82e8-21d0-4330-ac07-7bcd3be280c0",
+      "type": "open",
+      "timestamp": "2026-01-21T21:16:17.045981+00:00",
+      "lead_id": "lead_002",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "de0057c3-4046-4d5c-97e8-d4986893033c",
+      "type": "unsubscribe",
+      "timestamp": "2026-01-21T21:16:17.048098+00:00",
+      "lead_id": "lead_003",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "b12b9887-cda7-4f57-90ed-96bd93eac019",
+      "type": "ae_approved",
+      "timestamp": "2026-01-21T21:16:17.068771+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_test_001",
+      "agent_output_id": null,
+      "metadata": {
+        "email_length": 296
+      },
+      "processed": true
+    },
+    {
+      "id": "3cc0f665-9368-4e16-875e-6f6d1ded7c4c",
+      "type": "open",
+      "timestamp": "2026-01-21T21:16:17.071405+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_test_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "8583a466-522b-4d5c-a661-75b521b2d545",
+      "type": "reply_positive",
+      "timestamp": "2026-01-21T21:16:17.074144+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_test_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "eb435a8c-16c6-4206-881b-a4d634cd7255",
+      "type": "open",
+      "timestamp": "2026-01-21T21:49:42.300483+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "fb1f13f1-ab2f-4909-9d21-182cad3da9ef",
+      "type": "click",
+      "timestamp": "2026-01-21T21:49:42.310729+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "8b59f586-2176-48b6-88ca-8c4fd472bf61",
+      "type": "reply_positive",
+      "timestamp": "2026-01-21T21:49:42.324274+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "d8158579-a654-4639-9e1b-b7408ce4e6ec",
+      "type": "meeting_booked",
+      "timestamp": "2026-01-21T21:49:42.328323+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "4d628679-3f34-4920-b0ba-e58cf539ef66",
+      "type": "open",
+      "timestamp": "2026-01-21T21:49:42.334423+00:00",
+      "lead_id": "lead_002",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "5e705e61-89dc-4899-b0ca-c39d239422f1",
+      "type": "unsubscribe",
+      "timestamp": "2026-01-21T21:49:42.340168+00:00",
+      "lead_id": "lead_003",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "1b19a7e0-9a77-467a-b52b-7c40865bb2b8",
+      "type": "ae_approved",
+      "timestamp": "2026-01-21T21:49:42.399853+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_test_001",
+      "agent_output_id": null,
+      "metadata": {
+        "email_length": 296
+      },
+      "processed": true
+    },
+    {
+      "id": "1804cfb9-30db-495b-9483-c90728dd98be",
+      "type": "open",
+      "timestamp": "2026-01-21T21:49:42.406770+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_test_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "8a19b777-a6f9-4cf9-908a-847422753440",
+      "type": "reply_positive",
+      "timestamp": "2026-01-21T21:49:42.411949+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_test_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "a1bcc059-18db-44a2-a18f-a180036540ff",
+      "type": "open",
+      "timestamp": "2026-01-21T21:52:01.443642+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "b970f9eb-73bd-4dd8-8a47-b419739ff6f4",
+      "type": "click",
+      "timestamp": "2026-01-21T21:52:01.452094+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "defa2075-6ee5-429d-b402-05c5c8ce5b51",
+      "type": "reply_positive",
+      "timestamp": "2026-01-21T21:52:01.456892+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "23636552-94db-4edf-9713-eba25e6efcc7",
+      "type": "meeting_booked",
+      "timestamp": "2026-01-21T21:52:01.464888+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "4fc4510e-4038-4148-90f9-910ff9ecbdc4",
+      "type": "open",
+      "timestamp": "2026-01-21T21:52:01.468963+00:00",
+      "lead_id": "lead_002",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "b925eb72-22fd-4fc3-b6aa-8fe7fabc32a0",
+      "type": "unsubscribe",
+      "timestamp": "2026-01-21T21:52:01.476527+00:00",
+      "lead_id": "lead_003",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "cdd61552-3c1d-4b13-9b90-d5d0b1ab9e8f",
+      "type": "ae_approved",
+      "timestamp": "2026-01-21T21:52:01.532649+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_test_001",
+      "agent_output_id": null,
+      "metadata": {
+        "email_length": 296
+      },
+      "processed": true
+    },
+    {
+      "id": "b1fcb4ef-f178-490f-b7b2-890c6ce0680c",
+      "type": "open",
+      "timestamp": "2026-01-21T21:52:01.539203+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_test_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "5be02c32-5597-41a6-8227-29f0412170d3",
+      "type": "reply_positive",
+      "timestamp": "2026-01-21T21:52:01.544811+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_test_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "72bcbcc1-b380-4df4-96db-e20423f1b7a0",
+      "type": "open",
+      "timestamp": "2026-01-21T22:41:03.511491+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "dcb20c23-d84d-4f9e-b1c8-d2d33792c7d3",
+      "type": "click",
+      "timestamp": "2026-01-21T22:41:03.514159+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "1de81479-5967-47d5-a45c-4ce600b24562",
+      "type": "reply_positive",
+      "timestamp": "2026-01-21T22:41:03.516585+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "00c2caf4-eae0-4af6-86e3-3d7790066a28",
+      "type": "meeting_booked",
+      "timestamp": "2026-01-21T22:41:03.518990+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "5f760a18-7877-446e-b963-0e89d9554b32",
+      "type": "open",
+      "timestamp": "2026-01-21T22:41:03.521349+00:00",
+      "lead_id": "lead_002",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "ecc23526-30e7-4b80-acc2-0b2e69e30d44",
+      "type": "unsubscribe",
+      "timestamp": "2026-01-21T22:41:03.523729+00:00",
+      "lead_id": "lead_003",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "9086f991-2328-4bde-8abe-5225175f0d08",
+      "type": "ae_approved",
+      "timestamp": "2026-01-21T22:41:03.544735+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_test_001",
+      "agent_output_id": null,
+      "metadata": {
+        "email_length": 296
+      },
+      "processed": true
+    },
+    {
+      "id": "56627f4b-0a78-482e-91ce-b87efa69a788",
+      "type": "open",
+      "timestamp": "2026-01-21T22:41:03.547325+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_test_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "4f7ca896-1166-4006-8196-e86011ee47f4",
+      "type": "reply_positive",
+      "timestamp": "2026-01-21T22:41:03.550067+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_test_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "df3154d3-9733-4524-a206-67560282faf1",
+      "type": "open",
+      "timestamp": "2026-01-22T10:39:56.602242+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "b6704da9-d343-4276-9819-99a399bcafc9",
+      "type": "click",
+      "timestamp": "2026-01-22T10:39:56.607792+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "c5bc8244-3959-49d0-9a10-d0bf050c6565",
+      "type": "reply_positive",
+      "timestamp": "2026-01-22T10:39:56.611870+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "5e238ef8-087e-40d7-9b8c-99d62b0167d3",
+      "type": "meeting_booked",
+      "timestamp": "2026-01-22T10:39:56.615877+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "e46530aa-3465-4c41-85a9-6121f83841e5",
+      "type": "open",
+      "timestamp": "2026-01-22T10:39:56.621425+00:00",
+      "lead_id": "lead_002",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "2a74f629-d9b7-41c5-b9ca-6afa7ab3560f",
+      "type": "unsubscribe",
+      "timestamp": "2026-01-22T10:39:56.628436+00:00",
+      "lead_id": "lead_003",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "44fcf073-7e56-4b48-99d3-304e2b5b1386",
+      "type": "ae_approved",
+      "timestamp": "2026-01-22T10:39:56.660272+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_test_001",
+      "agent_output_id": null,
+      "metadata": {
+        "email_length": 296
+      },
+      "processed": true
+    },
+    {
+      "id": "a9c3112a-6cc9-44d2-8406-f34b475c956f",
+      "type": "open",
+      "timestamp": "2026-01-22T10:39:56.664286+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_test_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "31235515-4478-499b-9cbb-6514aa665856",
+      "type": "reply_positive",
+      "timestamp": "2026-01-22T10:39:56.669020+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_test_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "30b0d810-455d-4a4a-876d-dfd4216bc3bf",
+      "type": "open",
+      "timestamp": "2026-01-22T10:58:06.789920+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "790f35df-1a6d-4cf1-a3ca-0d4c5cba7bcc",
+      "type": "click",
+      "timestamp": "2026-01-22T10:58:06.792741+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "5d1952ca-2877-440b-82c1-e367d19f3d76",
+      "type": "reply_positive",
+      "timestamp": "2026-01-22T10:58:06.795609+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "953bc9ff-0149-4a96-8cdb-33a364faf2c9",
+      "type": "meeting_booked",
+      "timestamp": "2026-01-22T10:58:06.798463+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "f92b5e1d-5321-44a3-8538-4ceb05fa1d1e",
+      "type": "open",
+      "timestamp": "2026-01-22T10:58:06.801346+00:00",
+      "lead_id": "lead_002",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "0a33da20-706f-488b-840e-44a95ab7f529",
+      "type": "unsubscribe",
+      "timestamp": "2026-01-22T10:58:06.804874+00:00",
+      "lead_id": "lead_003",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "e3f5c7d9-5b98-4b9c-b032-2408276906a2",
+      "type": "ae_approved",
+      "timestamp": "2026-01-22T10:58:06.823297+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_test_001",
+      "agent_output_id": null,
+      "metadata": {
+        "email_length": 296
+      },
+      "processed": true
+    },
+    {
+      "id": "97b0d064-d9ec-417e-a8b3-41a4ae3cd2a1",
+      "type": "open",
+      "timestamp": "2026-01-22T10:58:06.826847+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_test_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "f8da5687-a768-45ec-a310-c9ceefdf5800",
+      "type": "reply_positive",
+      "timestamp": "2026-01-22T10:58:06.830678+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_test_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "72f1fb27-c831-4a8f-b40c-5784b964a893",
+      "type": "open",
+      "timestamp": "2026-01-22T11:01:16.652877+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "337961ea-2ef8-4229-b4af-1adbca84f502",
+      "type": "click",
+      "timestamp": "2026-01-22T11:01:16.655960+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "7b445e70-137d-483d-a582-93830f0ccc08",
+      "type": "reply_positive",
+      "timestamp": "2026-01-22T11:01:16.659242+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "a2751061-de51-4088-994e-1e3115a46dbe",
+      "type": "meeting_booked",
+      "timestamp": "2026-01-22T11:01:16.663036+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "f76c3844-1dd9-4251-a370-4749363d9861",
+      "type": "open",
+      "timestamp": "2026-01-22T11:01:16.667429+00:00",
+      "lead_id": "lead_002",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "c2f0d908-364a-454e-803f-c1de76f681b7",
+      "type": "unsubscribe",
+      "timestamp": "2026-01-22T11:01:16.672139+00:00",
+      "lead_id": "lead_003",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "6d6ca7c0-6d3d-4b69-a10d-d8e935626be3",
+      "type": "ae_approved",
+      "timestamp": "2026-01-22T11:01:16.700429+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_test_001",
+      "agent_output_id": null,
+      "metadata": {
+        "email_length": 296
+      },
+      "processed": true
+    },
+    {
+      "id": "6a71e6d6-c1ab-4e04-9622-4a9b5aac4b2f",
+      "type": "open",
+      "timestamp": "2026-01-22T11:01:16.705255+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_test_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "5cbba5f2-c9c2-465c-8e52-9c484a7029b5",
+      "type": "reply_positive",
+      "timestamp": "2026-01-22T11:01:16.710772+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_test_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "90a22582-902e-4a2e-b2eb-aa9a49763910",
+      "type": "open",
+      "timestamp": "2026-01-22T11:09:35.501031+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "1cff5a6d-91ea-4cce-9fbd-9a1dec694aa4",
+      "type": "click",
+      "timestamp": "2026-01-22T11:09:35.504075+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "2255e128-85b1-4475-a47c-707abe25fdf8",
+      "type": "reply_positive",
+      "timestamp": "2026-01-22T11:09:35.506995+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "e911f83e-0b67-4ed7-89e7-85026d540fce",
+      "type": "meeting_booked",
+      "timestamp": "2026-01-22T11:09:35.511110+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "f294fcd1-24d2-476d-88cd-69efffc2ec61",
+      "type": "open",
+      "timestamp": "2026-01-22T11:09:35.516101+00:00",
+      "lead_id": "lead_002",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "3b710108-874b-4d3d-915e-b140a77bcb03",
+      "type": "unsubscribe",
+      "timestamp": "2026-01-22T11:09:35.519362+00:00",
+      "lead_id": "lead_003",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "f57ef0bc-5c70-49a0-ac69-9e85f08729b9",
+      "type": "ae_approved",
+      "timestamp": "2026-01-22T11:09:35.539015+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_test_001",
+      "agent_output_id": null,
+      "metadata": {
+        "email_length": 296
+      },
+      "processed": true
+    },
+    {
+      "id": "34695a26-ddf9-44f8-bdb4-bf51bc4ace09",
+      "type": "open",
+      "timestamp": "2026-01-22T11:09:35.542530+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_test_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "b089fc90-3418-4acf-a799-4338c6b0fee1",
+      "type": "reply_positive",
+      "timestamp": "2026-01-22T11:09:35.545737+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_test_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "453fafaf-514c-4d81-ad01-bc3369884a0d",
+      "type": "open",
+      "timestamp": "2026-01-22T11:13:47.192308+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "c646ba63-5cd2-4af1-b45e-6763b83b8d34",
+      "type": "click",
+      "timestamp": "2026-01-22T11:13:47.195615+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "eabb275b-2a7a-4bdb-944e-d0adb2454bdc",
+      "type": "reply_positive",
+      "timestamp": "2026-01-22T11:13:47.198720+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "fb164aa9-cb69-4f7f-9890-cf7d88f34216",
+      "type": "meeting_booked",
+      "timestamp": "2026-01-22T11:13:47.201856+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "8082a402-a5cc-44bc-a3c8-bd71793b4695",
+      "type": "open",
+      "timestamp": "2026-01-22T11:13:47.206813+00:00",
+      "lead_id": "lead_002",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "23d3d620-d882-46dd-813a-49a4cd3349b1",
+      "type": "unsubscribe",
+      "timestamp": "2026-01-22T11:13:47.210005+00:00",
+      "lead_id": "lead_003",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "88c3829b-9747-4bca-b6b1-07555f5aca47",
+      "type": "ae_approved",
+      "timestamp": "2026-01-22T11:13:47.231401+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_test_001",
+      "agent_output_id": null,
+      "metadata": {
+        "email_length": 296
+      },
+      "processed": true
+    },
+    {
+      "id": "178d0ca8-7c42-4f7f-98b1-2f327d14f2ab",
+      "type": "open",
+      "timestamp": "2026-01-22T11:13:47.234968+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_test_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "5ece6acb-4bd8-497d-b685-15aaf75904d6",
+      "type": "reply_positive",
+      "timestamp": "2026-01-22T11:13:47.238173+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_test_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "6a411e6e-31e3-4a48-9252-891e2c3fb706",
+      "type": "open",
+      "timestamp": "2026-01-22T11:16:23.682651+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "09622aac-9804-4f4e-91ed-b39d0b036c92",
+      "type": "click",
+      "timestamp": "2026-01-22T11:16:23.687953+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "d647378d-b5b4-4a35-a25b-eadd2d30c6c3",
+      "type": "reply_positive",
+      "timestamp": "2026-01-22T11:16:23.693467+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "68533ac0-14a5-4fd8-94af-e852f6c6950a",
+      "type": "meeting_booked",
+      "timestamp": "2026-01-22T11:16:23.701858+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "7106c9a3-60f2-41dd-a224-b12d30d3a148",
+      "type": "open",
+      "timestamp": "2026-01-22T11:16:23.706813+00:00",
+      "lead_id": "lead_002",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "c8c41a73-480b-4c0d-a1d5-6f7ab4b0b265",
+      "type": "unsubscribe",
+      "timestamp": "2026-01-22T11:16:23.711580+00:00",
+      "lead_id": "lead_003",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "e3ffea73-5fa5-4707-ba6a-3b21f47b3e83",
+      "type": "ae_approved",
+      "timestamp": "2026-01-22T11:16:23.742061+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_test_001",
+      "agent_output_id": null,
+      "metadata": {
+        "email_length": 296
+      },
+      "processed": true
+    },
+    {
+      "id": "61de977b-6668-4ed6-a58c-33694b5169df",
+      "type": "open",
+      "timestamp": "2026-01-22T11:16:23.745833+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_test_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "2c8cff90-a8ca-4b4c-b648-c7f436f28ec7",
+      "type": "reply_positive",
+      "timestamp": "2026-01-22T11:16:23.751131+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_test_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "651354d6-9923-4499-9ff0-49191f06a980",
+      "type": "open",
+      "timestamp": "2026-01-22T11:17:42.316941+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "b0ce6090-481c-42d1-b23c-95f1b7f07944",
+      "type": "click",
+      "timestamp": "2026-01-22T11:17:42.322874+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "642f5eaf-705c-4dad-99e7-b80d2442602f",
+      "type": "reply_positive",
+      "timestamp": "2026-01-22T11:17:42.328683+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "99ee38c0-51a7-42a3-9a77-d029a0c963d7",
+      "type": "meeting_booked",
+      "timestamp": "2026-01-22T11:17:42.334512+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "8476b380-058f-4247-bd6e-6adaf261d071",
+      "type": "open",
+      "timestamp": "2026-01-22T11:17:42.340381+00:00",
+      "lead_id": "lead_002",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "97e249ec-f486-44bc-8525-c1f9a91060a9",
+      "type": "unsubscribe",
+      "timestamp": "2026-01-22T11:17:42.346263+00:00",
+      "lead_id": "lead_003",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "1e52c746-7a1e-491b-b21f-ece2fd1789e8",
+      "type": "ae_approved",
+      "timestamp": "2026-01-22T11:17:42.373397+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_test_001",
+      "agent_output_id": null,
+      "metadata": {
+        "email_length": 296
+      },
+      "processed": true
+    },
+    {
+      "id": "0ed20c16-c323-4360-b0a0-f4cc0f41f9cd",
+      "type": "open",
+      "timestamp": "2026-01-22T11:17:42.379587+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_test_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "66b932eb-9040-4d82-981a-535c48220ee4",
+      "type": "reply_positive",
+      "timestamp": "2026-01-22T11:17:42.385571+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_test_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "c264af48-2252-434d-8863-b27abd2c2112",
+      "type": "open",
+      "timestamp": "2026-01-22T11:20:36.514476+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "5e0b4cd3-c587-4348-bf0f-55a89104bd19",
+      "type": "click",
+      "timestamp": "2026-01-22T11:20:36.519462+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "c1b02792-d09c-42af-8b9b-90c20a43ccc1",
+      "type": "reply_positive",
+      "timestamp": "2026-01-22T11:20:36.523263+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "83793876-25c8-4310-8e99-ad3aa8b810ba",
+      "type": "meeting_booked",
+      "timestamp": "2026-01-22T11:20:36.526941+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "ec3c8d41-af54-4812-aaac-8792a3e1da18",
+      "type": "open",
+      "timestamp": "2026-01-22T11:20:36.531360+00:00",
+      "lead_id": "lead_002",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "e2bbd61c-d8fa-426f-9fa5-07f3255bcc65",
+      "type": "unsubscribe",
+      "timestamp": "2026-01-22T11:20:36.535462+00:00",
+      "lead_id": "lead_003",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "86c17b27-b226-459a-a6f4-5af605d5fe3e",
+      "type": "ae_approved",
+      "timestamp": "2026-01-22T11:20:36.560749+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_test_001",
+      "agent_output_id": null,
+      "metadata": {
+        "email_length": 296
+      },
+      "processed": true
+    },
+    {
+      "id": "118f2424-e6cd-48ea-8909-e9f838738e6d",
+      "type": "open",
+      "timestamp": "2026-01-22T11:20:36.565597+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_test_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "3f8bb9c6-17f0-4d82-899e-3722ee782a9c",
+      "type": "reply_positive",
+      "timestamp": "2026-01-22T11:20:36.569665+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_test_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "732a4532-5041-467c-97e9-d3fbfc92b288",
+      "type": "open",
+      "timestamp": "2026-01-22T12:04:08.198571+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "e1773367-311b-4abd-8b60-b6891dbf43b8",
+      "type": "click",
+      "timestamp": "2026-01-22T12:04:08.206364+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "cd39e501-8b28-4703-9cea-44c712743b9d",
+      "type": "reply_positive",
+      "timestamp": "2026-01-22T12:04:08.213746+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "7f38d453-972a-497d-812d-d5de8d9d2079",
+      "type": "meeting_booked",
+      "timestamp": "2026-01-22T12:04:08.220860+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "2e36a62b-b526-4d86-ad93-b72fc9ef47b5",
+      "type": "open",
+      "timestamp": "2026-01-22T12:04:08.227817+00:00",
+      "lead_id": "lead_002",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "8e8b668c-ebfa-464e-9667-89c19088bc30",
+      "type": "unsubscribe",
+      "timestamp": "2026-01-22T12:04:08.231852+00:00",
+      "lead_id": "lead_003",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "150cac7e-6e5c-40fc-a107-6f8fa36c8cc1",
+      "type": "ae_approved",
+      "timestamp": "2026-01-22T12:04:08.256729+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_test_001",
+      "agent_output_id": null,
+      "metadata": {
+        "email_length": 296
+      },
+      "processed": true
+    },
+    {
+      "id": "b0c27043-a729-40b2-93e3-3b63eab75c51",
+      "type": "open",
+      "timestamp": "2026-01-22T12:04:08.263594+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_test_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "bb9c3fae-e0d6-4993-af7d-fefc9d74b19d",
+      "type": "reply_positive",
+      "timestamp": "2026-01-22T12:04:08.270365+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_test_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "a7803ea5-532f-4764-b460-6ff365de5e7b",
+      "type": "open",
+      "timestamp": "2026-01-22T20:50:46.900821+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "47e0d41d-71c2-471a-845e-2dec0676324b",
+      "type": "click",
+      "timestamp": "2026-01-22T20:50:46.905244+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "5139c61f-7357-4468-ac49-ca7e143d4e63",
+      "type": "reply_positive",
+      "timestamp": "2026-01-22T20:50:46.909516+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "b23a996a-f740-4d21-b0f0-453ea365e2d1",
+      "type": "meeting_booked",
+      "timestamp": "2026-01-22T20:50:46.914537+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "6150876d-2214-43ab-a7dc-1b3c2ef51d05",
+      "type": "open",
+      "timestamp": "2026-01-22T20:50:46.918372+00:00",
+      "lead_id": "lead_002",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "28e5ce75-3487-4837-9b02-ce955259de13",
+      "type": "unsubscribe",
+      "timestamp": "2026-01-22T20:50:46.922173+00:00",
+      "lead_id": "lead_003",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "39d29248-22d9-48cd-89f4-cb41b4614bff",
+      "type": "ae_approved",
+      "timestamp": "2026-01-22T20:50:46.946307+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_test_001",
+      "agent_output_id": null,
+      "metadata": {
+        "email_length": 296
+      },
+      "processed": true
+    },
+    {
+      "id": "0ec487ac-1304-4399-8c9a-b70a28d1ec73",
+      "type": "open",
+      "timestamp": "2026-01-22T20:50:46.950374+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_test_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "58f5b2c0-f6ef-42ed-bf85-70e8e9c4dd12",
+      "type": "reply_positive",
+      "timestamp": "2026-01-22T20:50:46.954241+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_test_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "bc2868ed-86d6-4c35-a070-1875b278d05f",
+      "type": "open",
+      "timestamp": "2026-01-22T20:56:05.549616+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "0c53dc1e-6044-4312-a0d7-e8004b856696",
+      "type": "click",
+      "timestamp": "2026-01-22T20:56:05.553902+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "bca70248-cb6f-4981-8347-aad56024e800",
+      "type": "reply_positive",
+      "timestamp": "2026-01-22T20:56:05.557865+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "754ec87a-7c15-4be8-a31f-b3d55d9acfb9",
+      "type": "meeting_booked",
+      "timestamp": "2026-01-22T20:56:05.562086+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "e24e6ccc-fe9f-4cc1-93e5-94a010d9fc73",
+      "type": "open",
+      "timestamp": "2026-01-22T20:56:05.566129+00:00",
+      "lead_id": "lead_002",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "c378af22-88ed-478d-af7f-6ade1f95fc92",
+      "type": "unsubscribe",
+      "timestamp": "2026-01-22T20:56:05.570038+00:00",
+      "lead_id": "lead_003",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "fa47d4b4-2e39-4aef-ae8e-b46fc9de14f9",
+      "type": "ae_approved",
+      "timestamp": "2026-01-22T20:56:05.592913+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_test_001",
+      "agent_output_id": null,
+      "metadata": {
+        "email_length": 296
+      },
+      "processed": true
+    },
+    {
+      "id": "f20f4d7d-b742-4ef4-92c7-18a78521590e",
+      "type": "open",
+      "timestamp": "2026-01-22T20:56:05.597369+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_test_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "3c7ab9c9-43c2-4124-a1b0-6e8b2dcd1414",
+      "type": "reply_positive",
+      "timestamp": "2026-01-22T20:56:05.601478+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_test_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "3928d13a-e637-4835-ab9d-504c4403ad78",
+      "type": "open",
+      "timestamp": "2026-01-22T21:00:23.679092+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "f7ede0e1-048d-4ff9-b2d1-58fc299d584f",
+      "type": "click",
+      "timestamp": "2026-01-22T21:00:23.683762+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "4ec86195-8908-402d-b742-818bee3fb5fa",
+      "type": "reply_positive",
+      "timestamp": "2026-01-22T21:00:23.688095+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "4f6255db-e76e-4edc-ac5e-574364e52309",
+      "type": "meeting_booked",
+      "timestamp": "2026-01-22T21:00:23.692208+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "a0296cd3-f470-4df4-94cc-eda7a2be21e9",
+      "type": "open",
+      "timestamp": "2026-01-22T21:00:23.696610+00:00",
+      "lead_id": "lead_002",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "017fe8c1-823f-4218-86e7-2714b8228d61",
+      "type": "unsubscribe",
+      "timestamp": "2026-01-22T21:00:23.701090+00:00",
+      "lead_id": "lead_003",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "7d3dc6ba-3908-44b0-b61a-6a72a9e15b84",
+      "type": "ae_approved",
+      "timestamp": "2026-01-22T21:00:23.725125+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_test_001",
+      "agent_output_id": null,
+      "metadata": {
+        "email_length": 296
+      },
+      "processed": true
+    },
+    {
+      "id": "4b1026ed-1cbf-4949-a31e-87c8f1716c4e",
+      "type": "open",
+      "timestamp": "2026-01-22T21:00:23.729515+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_test_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "7ea01d07-eefb-4127-b251-2554e14a6ca0",
+      "type": "reply_positive",
+      "timestamp": "2026-01-22T21:00:23.733886+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_test_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "60fd5190-aff5-4cc4-b18f-6666ade87205",
+      "type": "open",
+      "timestamp": "2026-01-23T12:09:18.967154+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "a8042602-84b8-4346-ad96-795149d44aab",
+      "type": "click",
+      "timestamp": "2026-01-23T12:09:18.972167+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "9d0831ad-1207-49aa-8b80-d426f8bea388",
+      "type": "reply_positive",
+      "timestamp": "2026-01-23T12:09:18.977565+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "3baa588b-bb05-4eea-b5e5-f283fdcdb85c",
+      "type": "meeting_booked",
+      "timestamp": "2026-01-23T12:09:18.982144+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "84995d47-477f-4ff4-845a-737811da40c6",
+      "type": "open",
+      "timestamp": "2026-01-23T12:09:18.986573+00:00",
+      "lead_id": "lead_002",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "98bc0205-8a17-4871-b5ff-2128549f99e8",
+      "type": "unsubscribe",
+      "timestamp": "2026-01-23T12:09:18.992055+00:00",
+      "lead_id": "lead_003",
+      "campaign_id": "campaign_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "f267b735-ec09-4d75-9037-fb1801ed2d6f",
+      "type": "ae_approved",
+      "timestamp": "2026-01-23T12:09:19.019680+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_test_001",
+      "agent_output_id": null,
+      "metadata": {
+        "email_length": 296
+      },
+      "processed": true
+    },
+    {
+      "id": "49f13fb3-5be4-4aa3-9f3a-10f503498ed7",
+      "type": "open",
+      "timestamp": "2026-01-23T12:09:19.026372+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_test_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    },
+    {
+      "id": "24656c6b-4550-4a1a-847a-04313c18045e",
+      "type": "reply_positive",
+      "timestamp": "2026-01-23T12:09:19.031158+00:00",
+      "lead_id": "lead_001",
+      "campaign_id": "campaign_test_001",
+      "agent_output_id": null,
+      "metadata": {},
+      "processed": true
+    }
+  ],
+  "signals": [
+    {
+      "feedback_id": "6820cd4a-c7a9-4cd7-8447-17b8f18121a9",
+      "category": "positive",
+      "pattern": "meeting_booked:manual:tier_tier1:pain_discovery",
+      "reward": 1.0,
+      "applied": false
+    },
+    {
+      "feedback_id": "f08ed6cb-4b5a-4c2a-89da-7c3194f821e4",
+      "category": "positive",
+      "pattern": "reply_positive:manual:tier_tier1:pain_discovery",
+      "reward": 0.7,
+      "applied": false
+    },
+    {
+      "feedback_id": "fc0dd60b-f4c6-49ba-9df7-d6225d741113",
+      "category": "negative",
+      "pattern": "reply_negative:manual:tier_tier2:case_study",
+      "reward": -0.3,
+      "applied": false
+    },
+    {
+      "feedback_id": "ffcde6fa-ce68-441b-be86-150f8601d0ff",
+      "category": "negative",
+      "pattern": "unsubscribe:manual:tier_tier3",
+      "reward": -0.5,
+      "applied": false
+    },
+    {
+      "feedback_id": "a223612c-e82d-4661-a199-be7116ce1295",
+      "category": "positive",
+      "pattern": "ae_approved:manual",
+      "reward": 0.5,
+      "applied": false
+    },
+    {
+      "feedback_id": "ebbbc3fb-efd4-4355-99ef-86cc3520fafd",
+      "category": "negative",
+      "pattern": "ae_rejected:manual",
+      "reward": -0.6,
+      "applied": false
+    },
+    {
+      "feedback_id": "448ad979-8c09-4070-b94d-20cf31927b8f",
+      "category": "positive",
+      "pattern": "open:instantly",
+      "reward": 0.1,
+      "applied": false
+    },
+    {
+      "feedback_id": "39b94862-dcac-46e8-b430-7ef83a6a5194",
+      "category": "positive",
+      "pattern": "click:instantly",
+      "reward": 0.15,
+      "applied": false
+    },
+    {
+      "feedback_id": "2c7f7d1b-f7f1-4957-be59-53f35abaec1d",
+      "category": "positive",
+      "pattern": "reply_positive:instantly",
+      "reward": 0.7,
+      "applied": false
+    },
+    {
+      "feedback_id": "d61c50fb-15e0-4676-be36-16b6e46d3c3e",
+      "category": "negative",
+      "pattern": "bounce:instantly",
+      "reward": -0.2,
+      "applied": false
+    },
+    {
+      "feedback_id": "1e3021cb-8058-47a4-b2af-1e3f93d281e5",
+      "category": "positive",
+      "pattern": "meeting_booked:ghl",
+      "reward": 1.0,
+      "applied": false
+    },
+    {
+      "feedback_id": "5594c22c-8f2a-4703-81e7-8fb5965ece43",
+      "category": "negative",
+      "pattern": "meeting_no_show:ghl",
+      "reward": -0.4,
+      "applied": false
+    },
+    {
+      "feedback_id": "e629ff4a-377b-44ac-97a9-4d345f722ccb",
+      "category": "negative",
+      "pattern": "reply_negative:ghl",
+      "reward": -0.3,
+      "applied": false
+    },
+    {
+      "feedback_id": "70134e6a-264a-4321-9174-0ccb868ecee0",
+      "category": "positive",
+      "pattern": "open:manual",
+      "reward": 0.1,
+      "applied": false
+    },
+    {
+      "feedback_id": "df5e13d7-c19a-4af9-a4f9-e8899c704e78",
+      "category": "positive",
+      "pattern": "click:manual",
+      "reward": 0.15,
+      "applied": false
+    },
+    {
+      "feedback_id": "5e4cbc53-cc15-4f65-af26-6feb0710e116",
+      "category": "positive",
+      "pattern": "reply_positive:manual",
+      "reward": 0.7,
+      "applied": false
+    },
+    {
+      "feedback_id": "58a69991-cce6-41ad-8cda-51b87026bbe8",
+      "category": "positive",
+      "pattern": "meeting_booked:manual",
+      "reward": 1.0,
+      "applied": false
+    },
+    {
+      "feedback_id": "edc8279e-0458-4c7d-b820-2e63fc9d9b92",
+      "category": "positive",
+      "pattern": "open:manual",
+      "reward": 0.1,
+      "applied": false
+    },
+    {
+      "feedback_id": "d63b2626-91aa-4a12-8289-b5ca3d85c6f5",
+      "category": "negative",
+      "pattern": "unsubscribe:manual",
+      "reward": -0.5,
+      "applied": false
+    },
+    {
+      "feedback_id": "9dc13e04-a06c-4a69-869c-f59a22668477",
+      "category": "positive",
+      "pattern": "open:manual",
+      "reward": 0.1,
+      "applied": false
+    },
+    {
+      "feedback_id": "ca7b2bd6-b391-4475-8163-3d6ae363908a",
+      "category": "positive",
+      "pattern": "click:manual",
+      "reward": 0.15,
+      "applied": false
+    },
+    {
+      "feedback_id": "4b970f5d-616b-49fc-8ab1-28280ce26fa7",
+      "category": "positive",
+      "pattern": "reply_positive:manual",
+      "reward": 0.7,
+      "applied": false
+    },
+    {
+      "feedback_id": "4da38d61-4f3e-404d-875a-fa27fe32674b",
+      "category": "positive",
+      "pattern": "meeting_booked:manual",
+      "reward": 1.0,
+      "applied": false
+    },
+    {
+      "feedback_id": "8bed91dc-a60d-4c79-a458-32fdce560d42",
+      "category": "positive",
+      "pattern": "open:manual",
+      "reward": 0.1,
+      "applied": false
+    },
+    {
+      "feedback_id": "870cf873-5112-44df-ad05-cec8c79dc0d7",
+      "category": "negative",
+      "pattern": "unsubscribe:manual",
+      "reward": -0.5,
+      "applied": false
+    },
+    {
+      "feedback_id": "0279302f-f748-4798-a2e9-b63ac5d94796",
+      "category": "positive",
+      "pattern": "open:manual",
+      "reward": 0.1,
+      "applied": false
+    },
+    {
+      "feedback_id": "c0af96b9-0aa8-422b-beaf-4676cb4821ff",
+      "category": "positive",
+      "pattern": "click:manual",
+      "reward": 0.15,
+      "applied": false
+    },
+    {
+      "feedback_id": "65c5d4fc-34a9-4fc3-a789-66a54cedd50f",
+      "category": "positive",
+      "pattern": "reply_positive:manual",
+      "reward": 0.7,
+      "applied": false
+    },
+    {
+      "feedback_id": "bf56b0df-7063-4e7c-b710-7e9781567550",
+      "category": "positive",
+      "pattern": "meeting_booked:manual",
+      "reward": 1.0,
+      "applied": false
+    },
+    {
+      "feedback_id": "c3e1f67a-e89a-4b59-816c-94ad9fc60e99",
+      "category": "positive",
+      "pattern": "open:manual",
+      "reward": 0.1,
+      "applied": false
+    },
+    {
+      "feedback_id": "a1bc4127-d071-49c4-adc5-d4f5133d6f97",
+      "category": "negative",
+      "pattern": "unsubscribe:manual",
+      "reward": -0.5,
+      "applied": false
+    },
+    {
+      "feedback_id": "2af25a9c-a95a-4fbf-a7f8-ff667412611e",
+      "category": "positive",
+      "pattern": "ae_approved:manual",
+      "reward": 0.5,
+      "applied": false
+    },
+    {
+      "feedback_id": "5092cc07-4cd9-4763-af27-9b4ecb5649b8",
+      "category": "positive",
+      "pattern": "open:manual",
+      "reward": 0.1,
+      "applied": false
+    },
+    {
+      "feedback_id": "79ae47d2-d599-4b1e-9943-eabe73792f6e",
+      "category": "positive",
+      "pattern": "reply_positive:manual",
+      "reward": 0.7,
+      "applied": false
+    },
+    {
+      "feedback_id": "d8deceaf-42f3-49c2-9409-13f00be4f10d",
+      "category": "positive",
+      "pattern": "open:manual",
+      "reward": 0.1,
+      "applied": false
+    },
+    {
+      "feedback_id": "f58e663b-bce5-4358-9fd9-2ee0ac6ec1bd",
+      "category": "positive",
+      "pattern": "click:manual",
+      "reward": 0.15,
+      "applied": false
+    },
+    {
+      "feedback_id": "669574f3-4348-43f0-84a5-036f48875161",
+      "category": "positive",
+      "pattern": "reply_positive:manual",
+      "reward": 0.7,
+      "applied": false
+    },
+    {
+      "feedback_id": "7920e189-d94c-4898-ab31-136bf30651f0",
+      "category": "positive",
+      "pattern": "meeting_booked:manual",
+      "reward": 1.0,
+      "applied": false
+    },
+    {
+      "feedback_id": "fc9ad1b0-e335-43e1-80c1-9a314fde7314",
+      "category": "positive",
+      "pattern": "open:manual",
+      "reward": 0.1,
+      "applied": false
+    },
+    {
+      "feedback_id": "1c44fa83-77b1-46f2-b210-f6c716fb84f3",
+      "category": "negative",
+      "pattern": "unsubscribe:manual",
+      "reward": -0.5,
+      "applied": false
+    },
+    {
+      "feedback_id": "5a94587c-6f4f-4f12-81b2-4ae09fb6bbe0",
+      "category": "positive",
+      "pattern": "ae_approved:manual",
+      "reward": 0.5,
+      "applied": false
+    },
+    {
+      "feedback_id": "872c019d-a206-47a4-9655-0ddb5e99ccca",
+      "category": "positive",
+      "pattern": "open:manual",
+      "reward": 0.1,
+      "applied": false
+    },
+    {
+      "feedback_id": "131af735-cef6-4368-9b00-fb182c5a41e7",
+      "category": "positive",
+      "pattern": "reply_positive:manual",
+      "reward": 0.7,
+      "applied": false
+    },
+    {
+      "feedback_id": "da4efd30-86e2-41f1-a5c8-0c50554286ec",
+      "category": "positive",
+      "pattern": "open:manual",
+      "reward": 0.1,
+      "applied": false
+    },
+    {
+      "feedback_id": "d780840b-4ec5-4067-b0d5-0b54f207ab40",
+      "category": "positive",
+      "pattern": "click:manual",
+      "reward": 0.15,
+      "applied": false
+    },
+    {
+      "feedback_id": "8458f9e4-417d-438e-8514-7d986ef8d690",
+      "category": "positive",
+      "pattern": "reply_positive:manual",
+      "reward": 0.7,
+      "applied": false
+    },
+    {
+      "feedback_id": "6d0b2b63-6153-46a8-8c1c-b6ad0ef69c05",
+      "category": "positive",
+      "pattern": "meeting_booked:manual",
+      "reward": 1.0,
+      "applied": false
+    },
+    {
+      "feedback_id": "6768919b-5d83-4152-8406-30d27fff4f5d",
+      "category": "positive",
+      "pattern": "open:manual",
+      "reward": 0.1,
+      "applied": false
+    },
+    {
+      "feedback_id": "9aaf8df9-2178-43fe-9f01-074f5396ed65",
+      "category": "negative",
+      "pattern": "unsubscribe:manual",
+      "reward": -0.5,
+      "applied": false
+    },
+    {
+      "feedback_id": "642bf0d9-d228-488f-b01b-bcab27db3c36",
+      "category": "positive",
+      "pattern": "ae_approved:manual",
+      "reward": 0.5,
+      "applied": false
+    },
+    {
+      "feedback_id": "8feae081-01b1-457a-97e9-e2c23505b436",
+      "category": "positive",
+      "pattern": "open:manual",
+      "reward": 0.1,
+      "applied": false
+    },
+    {
+      "feedback_id": "9eaf713c-7a04-40c4-8acf-ede76b6210b9",
+      "category": "positive",
+      "pattern": "reply_positive:manual",
+      "reward": 0.7,
+      "applied": false
+    },
+    {
+      "feedback_id": "558431a5-5a7e-4473-96ff-bea903fef190",
+      "category": "positive",
+      "pattern": "open:manual",
+      "reward": 0.1,
+      "applied": false
+    },
+    {
+      "feedback_id": "e6185780-935c-4d92-8ae0-b871bdd4407d",
+      "category": "positive",
+      "pattern": "click:manual",
+      "reward": 0.15,
+      "applied": false
+    },
+    {
+      "feedback_id": "85b42911-0c66-4467-b6bd-85105665022d",
+      "category": "positive",
+      "pattern": "reply_positive:manual",
+      "reward": 0.7,
+      "applied": false
+    },
+    {
+      "feedback_id": "f2ff5c3e-94a0-494b-a711-b7f724e7dac1",
+      "category": "positive",
+      "pattern": "meeting_booked:manual",
+      "reward": 1.0,
+      "applied": false
+    },
+    {
+      "feedback_id": "807eacf4-3040-45c3-b4c4-b6180d0b206c",
+      "category": "positive",
+      "pattern": "open:manual",
+      "reward": 0.1,
+      "applied": false
+    },
+    {
+      "feedback_id": "c1007afc-573d-4ac0-bc09-1728036bd154",
+      "category": "negative",
+      "pattern": "unsubscribe:manual",
+      "reward": -0.5,
+      "applied": false
+    },
+    {
+      "feedback_id": "cb8b5849-859e-4f97-822d-e65cc8b17c88",
+      "category": "positive",
+      "pattern": "ae_approved:manual",
+      "reward": 0.5,
+      "applied": false
+    },
+    {
+      "feedback_id": "de973f1d-48b4-4634-84ac-496aa70b469f",
+      "category": "positive",
+      "pattern": "open:manual",
+      "reward": 0.1,
+      "applied": false
+    },
+    {
+      "feedback_id": "a38e50cd-7c97-4260-80f5-9a904a97dbae",
+      "category": "positive",
+      "pattern": "reply_positive:manual",
+      "reward": 0.7,
+      "applied": false
+    },
+    {
+      "feedback_id": "3498a38a-38f7-4273-96ef-bb713701b25d",
+      "category": "positive",
+      "pattern": "open:manual",
+      "reward": 0.1,
+      "applied": false
+    },
+    {
+      "feedback_id": "ed9b3bcb-c080-499f-a7c6-75bfc6a7c5d7",
+      "category": "positive",
+      "pattern": "click:manual",
+      "reward": 0.15,
+      "applied": false
+    },
+    {
+      "feedback_id": "5bbc1e12-3a90-410b-8244-e3f9f4f33f20",
+      "category": "positive",
+      "pattern": "reply_positive:manual",
+      "reward": 0.7,
+      "applied": false
+    },
+    {
+      "feedback_id": "c77bc92c-bfd4-430e-b6d4-7f8b26a08aeb",
+      "category": "positive",
+      "pattern": "meeting_booked:manual",
+      "reward": 1.0,
+      "applied": false
+    },
+    {
+      "feedback_id": "4623056b-c14c-4313-8c85-f30096f0aada",
+      "category": "positive",
+      "pattern": "open:manual",
+      "reward": 0.1,
+      "applied": false
+    },
+    {
+      "feedback_id": "a059d385-57f8-4264-a7e6-abcbc563b240",
+      "category": "negative",
+      "pattern": "unsubscribe:manual",
+      "reward": -0.5,
+      "applied": false
+    },
+    {
+      "feedback_id": "754b4dd0-2e65-4610-95dd-480b1dec4ff1",
+      "category": "positive",
+      "pattern": "ae_approved:manual",
+      "reward": 0.5,
+      "applied": false
+    },
+    {
+      "feedback_id": "df44c81e-176d-4d31-9ba2-2874e34cba5c",
+      "category": "positive",
+      "pattern": "open:manual",
+      "reward": 0.1,
+      "applied": false
+    },
+    {
+      "feedback_id": "c2e457cf-93ba-4881-a2ef-962ba5e5df28",
+      "category": "positive",
+      "pattern": "reply_positive:manual",
+      "reward": 0.7,
+      "applied": false
+    },
+    {
+      "feedback_id": "a424eb72-351c-49ec-a4c5-4aef0b778a71",
+      "category": "positive",
+      "pattern": "open:manual",
+      "reward": 0.1,
+      "applied": false
+    },
+    {
+      "feedback_id": "fa7ac62c-73f6-4ee9-902f-26f68ed45ced",
+      "category": "positive",
+      "pattern": "click:manual",
+      "reward": 0.15,
+      "applied": false
+    },
+    {
+      "feedback_id": "ad9b81af-03f9-4fc5-b9a4-f8972253a504",
+      "category": "positive",
+      "pattern": "reply_positive:manual",
+      "reward": 0.7,
+      "applied": false
+    },
+    {
+      "feedback_id": "eab0f91b-290a-4b17-9847-54296eba9a01",
+      "category": "positive",
+      "pattern": "meeting_booked:manual",
+      "reward": 1.0,
+      "applied": false
+    },
+    {
+      "feedback_id": "1ade8116-61a5-414b-b544-82c4c48f9c96",
+      "category": "positive",
+      "pattern": "open:manual",
+      "reward": 0.1,
+      "applied": false
+    },
+    {
+      "feedback_id": "ad9dedde-57cd-4510-abfc-7a294158854f",
+      "category": "negative",
+      "pattern": "unsubscribe:manual",
+      "reward": -0.5,
+      "applied": false
+    },
+    {
+      "feedback_id": "4fb9630a-ca09-4eea-ad68-0e802e7d597d",
+      "category": "positive",
+      "pattern": "ae_approved:manual",
+      "reward": 0.5,
+      "applied": false
+    },
+    {
+      "feedback_id": "2c27814e-8b70-4508-a8b9-0efb65e997d8",
+      "category": "positive",
+      "pattern": "open:manual",
+      "reward": 0.1,
+      "applied": false
+    },
+    {
+      "feedback_id": "96c8585a-b066-41c6-a240-a8335130373b",
+      "category": "positive",
+      "pattern": "reply_positive:manual",
+      "reward": 0.7,
+      "applied": false
+    },
+    {
+      "feedback_id": "9bfe6b0b-1e1e-47c6-9171-9154a38e6d76",
+      "category": "positive",
+      "pattern": "open:manual",
+      "reward": 0.1,
+      "applied": false
+    },
+    {
+      "feedback_id": "94b69b35-4d3d-44d5-8b8b-327dcbf3ac29",
+      "category": "positive",
+      "pattern": "click:manual",
+      "reward": 0.15,
+      "applied": false
+    },
+    {
+      "feedback_id": "0882de12-6161-4576-94c5-15e8d3598b84",
+      "category": "positive",
+      "pattern": "reply_positive:manual",
+      "reward": 0.7,
+      "applied": false
+    },
+    {
+      "feedback_id": "31319632-d382-4fe4-b79d-8f22d16f5157",
+      "category": "positive",
+      "pattern": "meeting_booked:manual",
+      "reward": 1.0,
+      "applied": false
+    },
+    {
+      "feedback_id": "8e1cbeb7-a6d9-407f-bce4-fbbce18eae78",
+      "category": "positive",
+      "pattern": "open:manual",
+      "reward": 0.1,
+      "applied": false
+    },
+    {
+      "feedback_id": "705c45f2-c88e-4792-92f5-01aa6435c10c",
+      "category": "negative",
+      "pattern": "unsubscribe:manual",
+      "reward": -0.5,
+      "applied": false
+    },
+    {
+      "feedback_id": "eee237e7-52be-4e8b-809b-fe6bdc8eb9fb",
+      "category": "positive",
+      "pattern": "ae_approved:manual",
+      "reward": 0.5,
+      "applied": false
+    },
+    {
+      "feedback_id": "acdf3356-72b1-4fe8-a94d-09fc1ca04607",
+      "category": "positive",
+      "pattern": "open:manual",
+      "reward": 0.1,
+      "applied": false
+    },
+    {
+      "feedback_id": "cf3fa9ef-1b7d-41cc-98f9-6c4bb61054df",
+      "category": "positive",
+      "pattern": "reply_positive:manual",
+      "reward": 0.7,
+      "applied": false
+    },
+    {
+      "feedback_id": "1aa86127-c087-4174-bd66-6b164bf2e5b8",
+      "category": "positive",
+      "pattern": "open:manual",
+      "reward": 0.1,
+      "applied": false
+    },
+    {
+      "feedback_id": "8b0847bb-f449-49e8-991e-534741aed504",
+      "category": "positive",
+      "pattern": "click:manual",
+      "reward": 0.15,
+      "applied": false
+    },
+    {
+      "feedback_id": "65b530e8-9a4b-4f3c-9407-2f29391f7dbf",
+      "category": "positive",
+      "pattern": "reply_positive:manual",
+      "reward": 0.7,
+      "applied": false
+    },
+    {
+      "feedback_id": "daf7f1dd-3d18-4aba-93ad-60f1ba8b0366",
+      "category": "positive",
+      "pattern": "meeting_booked:manual",
+      "reward": 1.0,
+      "applied": false
+    },
+    {
+      "feedback_id": "bb075792-3ad5-464a-9140-a94be40a289c",
+      "category": "positive",
+      "pattern": "open:manual",
+      "reward": 0.1,
+      "applied": false
+    },
+    {
+      "feedback_id": "f7c4e544-355b-4127-926b-ee99eae9086f",
+      "category": "negative",
+      "pattern": "unsubscribe:manual",
+      "reward": -0.5,
+      "applied": false
+    },
+    {
+      "feedback_id": "fb88113d-d666-4b4a-bb06-043b6c6f1b04",
+      "category": "positive",
+      "pattern": "ae_approved:manual",
+      "reward": 0.5,
+      "applied": false
+    },
+    {
+      "feedback_id": "b0e6e331-3eb8-40cc-b66d-59e190189523",
+      "category": "positive",
+      "pattern": "open:manual",
+      "reward": 0.1,
+      "applied": false
+    },
+    {
+      "feedback_id": "67daec2c-791a-4bf0-a5c0-49cdc6c8260a",
+      "category": "positive",
+      "pattern": "reply_positive:manual",
+      "reward": 0.7,
+      "applied": false
+    },
+    {
+      "feedback_id": "abc47065-38af-481c-90f4-9676925f3095",
+      "category": "positive",
+      "pattern": "open:manual",
+      "reward": 0.1,
+      "applied": false
+    },
+    {
+      "feedback_id": "e573c2c6-ac7c-4df1-a693-fcaa08453ae6",
+      "category": "positive",
+      "pattern": "click:manual",
+      "reward": 0.15,
+      "applied": false
+    },
+    {
+      "feedback_id": "9fac400b-198b-4bff-b2e3-37e303d1aa5c",
+      "category": "positive",
+      "pattern": "reply_positive:manual",
+      "reward": 0.7,
+      "applied": false
+    },
+    {
+      "feedback_id": "25a7b37f-d1e0-4bdc-a91d-fe4489ca0b40",
+      "category": "positive",
+      "pattern": "meeting_booked:manual",
+      "reward": 1.0,
+      "applied": false
+    },
+    {
+      "feedback_id": "4ebe82e8-21d0-4330-ac07-7bcd3be280c0",
+      "category": "positive",
+      "pattern": "open:manual",
+      "reward": 0.1,
+      "applied": false
+    },
+    {
+      "feedback_id": "de0057c3-4046-4d5c-97e8-d4986893033c",
+      "category": "negative",
+      "pattern": "unsubscribe:manual",
+      "reward": -0.5,
+      "applied": false
+    },
+    {
+      "feedback_id": "b12b9887-cda7-4f57-90ed-96bd93eac019",
+      "category": "positive",
+      "pattern": "ae_approved:manual",
+      "reward": 0.5,
+      "applied": false
+    },
+    {
+      "feedback_id": "3cc0f665-9368-4e16-875e-6f6d1ded7c4c",
+      "category": "positive",
+      "pattern": "open:manual",
+      "reward": 0.1,
+      "applied": false
+    },
+    {
+      "feedback_id": "8583a466-522b-4d5c-a661-75b521b2d545",
+      "category": "positive",
+      "pattern": "reply_positive:manual",
+      "reward": 0.7,
+      "applied": false
+    },
+    {
+      "feedback_id": "eb435a8c-16c6-4206-881b-a4d634cd7255",
+      "category": "positive",
+      "pattern": "open:manual",
+      "reward": 0.1,
+      "applied": false
+    },
+    {
+      "feedback_id": "fb1f13f1-ab2f-4909-9d21-182cad3da9ef",
+      "category": "positive",
+      "pattern": "click:manual",
+      "reward": 0.15,
+      "applied": false
+    },
+    {
+      "feedback_id": "8b59f586-2176-48b6-88ca-8c4fd472bf61",
+      "category": "positive",
+      "pattern": "reply_positive:manual",
+      "reward": 0.7,
+      "applied": false
+    },
+    {
+      "feedback_id": "d8158579-a654-4639-9e1b-b7408ce4e6ec",
+      "category": "positive",
+      "pattern": "meeting_booked:manual",
+      "reward": 1.0,
+      "applied": false
+    },
+    {
+      "feedback_id": "4d628679-3f34-4920-b0ba-e58cf539ef66",
+      "category": "positive",
+      "pattern": "open:manual",
+      "reward": 0.1,
+      "applied": false
+    },
+    {
+      "feedback_id": "5e705e61-89dc-4899-b0ca-c39d239422f1",
+      "category": "negative",
+      "pattern": "unsubscribe:manual",
+      "reward": -0.5,
+      "applied": false
+    },
+    {
+      "feedback_id": "1b19a7e0-9a77-467a-b52b-7c40865bb2b8",
+      "category": "positive",
+      "pattern": "ae_approved:manual",
+      "reward": 0.5,
+      "applied": false
+    },
+    {
+      "feedback_id": "1804cfb9-30db-495b-9483-c90728dd98be",
+      "category": "positive",
+      "pattern": "open:manual",
+      "reward": 0.1,
+      "applied": false
+    },
+    {
+      "feedback_id": "8a19b777-a6f9-4cf9-908a-847422753440",
+      "category": "positive",
+      "pattern": "reply_positive:manual",
+      "reward": 0.7,
+      "applied": false
+    },
+    {
+      "feedback_id": "a1bcc059-18db-44a2-a18f-a180036540ff",
+      "category": "positive",
+      "pattern": "open:manual",
+      "reward": 0.1,
+      "applied": false
+    },
+    {
+      "feedback_id": "b970f9eb-73bd-4dd8-8a47-b419739ff6f4",
+      "category": "positive",
+      "pattern": "click:manual",
+      "reward": 0.15,
+      "applied": false
+    },
+    {
+      "feedback_id": "defa2075-6ee5-429d-b402-05c5c8ce5b51",
+      "category": "positive",
+      "pattern": "reply_positive:manual",
+      "reward": 0.7,
+      "applied": false
+    },
+    {
+      "feedback_id": "23636552-94db-4edf-9713-eba25e6efcc7",
+      "category": "positive",
+      "pattern": "meeting_booked:manual",
+      "reward": 1.0,
+      "applied": false
+    },
+    {
+      "feedback_id": "4fc4510e-4038-4148-90f9-910ff9ecbdc4",
+      "category": "positive",
+      "pattern": "open:manual",
+      "reward": 0.1,
+      "applied": false
+    },
+    {
+      "feedback_id": "b925eb72-22fd-4fc3-b6aa-8fe7fabc32a0",
+      "category": "negative",
+      "pattern": "unsubscribe:manual",
+      "reward": -0.5,
+      "applied": false
+    },
+    {
+      "feedback_id": "cdd61552-3c1d-4b13-9b90-d5d0b1ab9e8f",
+      "category": "positive",
+      "pattern": "ae_approved:manual",
+      "reward": 0.5,
+      "applied": false
+    },
+    {
+      "feedback_id": "b1fcb4ef-f178-490f-b7b2-890c6ce0680c",
+      "category": "positive",
+      "pattern": "open:manual",
+      "reward": 0.1,
+      "applied": false
+    },
+    {
+      "feedback_id": "5be02c32-5597-41a6-8227-29f0412170d3",
+      "category": "positive",
+      "pattern": "reply_positive:manual",
+      "reward": 0.7,
+      "applied": false
+    },
+    {
+      "feedback_id": "72bcbcc1-b380-4df4-96db-e20423f1b7a0",
+      "category": "positive",
+      "pattern": "open:manual",
+      "reward": 0.1,
+      "applied": false
+    },
+    {
+      "feedback_id": "dcb20c23-d84d-4f9e-b1c8-d2d33792c7d3",
+      "category": "positive",
+      "pattern": "click:manual",
+      "reward": 0.15,
+      "applied": false
+    },
+    {
+      "feedback_id": "1de81479-5967-47d5-a45c-4ce600b24562",
+      "category": "positive",
+      "pattern": "reply_positive:manual",
+      "reward": 0.7,
+      "applied": false
+    },
+    {
+      "feedback_id": "00c2caf4-eae0-4af6-86e3-3d7790066a28",
+      "category": "positive",
+      "pattern": "meeting_booked:manual",
+      "reward": 1.0,
+      "applied": false
+    },
+    {
+      "feedback_id": "5f760a18-7877-446e-b963-0e89d9554b32",
+      "category": "positive",
+      "pattern": "open:manual",
+      "reward": 0.1,
+      "applied": false
+    },
+    {
+      "feedback_id": "ecc23526-30e7-4b80-acc2-0b2e69e30d44",
+      "category": "negative",
+      "pattern": "unsubscribe:manual",
+      "reward": -0.5,
+      "applied": false
+    },
+    {
+      "feedback_id": "9086f991-2328-4bde-8abe-5225175f0d08",
+      "category": "positive",
+      "pattern": "ae_approved:manual",
+      "reward": 0.5,
+      "applied": false
+    },
+    {
+      "feedback_id": "56627f4b-0a78-482e-91ce-b87efa69a788",
+      "category": "positive",
+      "pattern": "open:manual",
+      "reward": 0.1,
+      "applied": false
+    },
+    {
+      "feedback_id": "4f7ca896-1166-4006-8196-e86011ee47f4",
+      "category": "positive",
+      "pattern": "reply_positive:manual",
+      "reward": 0.7,
+      "applied": false
+    },
+    {
+      "feedback_id": "df3154d3-9733-4524-a206-67560282faf1",
+      "category": "positive",
+      "pattern": "open:manual",
+      "reward": 0.1,
+      "applied": false
+    },
+    {
+      "feedback_id": "b6704da9-d343-4276-9819-99a399bcafc9",
+      "category": "positive",
+      "pattern": "click:manual",
+      "reward": 0.15,
+      "applied": false
+    },
+    {
+      "feedback_id": "c5bc8244-3959-49d0-9a10-d0bf050c6565",
+      "category": "positive",
+      "pattern": "reply_positive:manual",
+      "reward": 0.7,
+      "applied": false
+    },
+    {
+      "feedback_id": "5e238ef8-087e-40d7-9b8c-99d62b0167d3",
+      "category": "positive",
+      "pattern": "meeting_booked:manual",
+      "reward": 1.0,
+      "applied": false
+    },
+    {
+      "feedback_id": "e46530aa-3465-4c41-85a9-6121f83841e5",
+      "category": "positive",
+      "pattern": "open:manual",
+      "reward": 0.1,
+      "applied": false
+    },
+    {
+      "feedback_id": "2a74f629-d9b7-41c5-b9ca-6afa7ab3560f",
+      "category": "negative",
+      "pattern": "unsubscribe:manual",
+      "reward": -0.5,
+      "applied": false
+    },
+    {
+      "feedback_id": "44fcf073-7e56-4b48-99d3-304e2b5b1386",
+      "category": "positive",
+      "pattern": "ae_approved:manual",
+      "reward": 0.5,
+      "applied": false
+    },
+    {
+      "feedback_id": "a9c3112a-6cc9-44d2-8406-f34b475c956f",
+      "category": "positive",
+      "pattern": "open:manual",
+      "reward": 0.1,
+      "applied": false
+    },
+    {
+      "feedback_id": "31235515-4478-499b-9cbb-6514aa665856",
+      "category": "positive",
+      "pattern": "reply_positive:manual",
+      "reward": 0.7,
+      "applied": false
+    },
+    {
+      "feedback_id": "30b0d810-455d-4a4a-876d-dfd4216bc3bf",
+      "category": "positive",
+      "pattern": "open:manual",
+      "reward": 0.1,
+      "applied": false
+    },
+    {
+      "feedback_id": "790f35df-1a6d-4cf1-a3ca-0d4c5cba7bcc",
+      "category": "positive",
+      "pattern": "click:manual",
+      "reward": 0.15,
+      "applied": false
+    },
+    {
+      "feedback_id": "5d1952ca-2877-440b-82c1-e367d19f3d76",
+      "category": "positive",
+      "pattern": "reply_positive:manual",
+      "reward": 0.7,
+      "applied": false
+    },
+    {
+      "feedback_id": "953bc9ff-0149-4a96-8cdb-33a364faf2c9",
+      "category": "positive",
+      "pattern": "meeting_booked:manual",
+      "reward": 1.0,
+      "applied": false
+    },
+    {
+      "feedback_id": "f92b5e1d-5321-44a3-8538-4ceb05fa1d1e",
+      "category": "positive",
+      "pattern": "open:manual",
+      "reward": 0.1,
+      "applied": false
+    },
+    {
+      "feedback_id": "0a33da20-706f-488b-840e-44a95ab7f529",
+      "category": "negative",
+      "pattern": "unsubscribe:manual",
+      "reward": -0.5,
+      "applied": false
+    },
+    {
+      "feedback_id": "e3f5c7d9-5b98-4b9c-b032-2408276906a2",
+      "category": "positive",
+      "pattern": "ae_approved:manual",
+      "reward": 0.5,
+      "applied": false
+    },
+    {
+      "feedback_id": "97b0d064-d9ec-417e-a8b3-41a4ae3cd2a1",
+      "category": "positive",
+      "pattern": "open:manual",
+      "reward": 0.1,
+      "applied": false
+    },
+    {
+      "feedback_id": "f8da5687-a768-45ec-a310-c9ceefdf5800",
+      "category": "positive",
+      "pattern": "reply_positive:manual",
+      "reward": 0.7,
+      "applied": false
+    },
+    {
+      "feedback_id": "72f1fb27-c831-4a8f-b40c-5784b964a893",
+      "category": "positive",
+      "pattern": "open:manual",
+      "reward": 0.1,
+      "applied": false
+    },
+    {
+      "feedback_id": "337961ea-2ef8-4229-b4af-1adbca84f502",
+      "category": "positive",
+      "pattern": "click:manual",
+      "reward": 0.15,
+      "applied": false
+    },
+    {
+      "feedback_id": "7b445e70-137d-483d-a582-93830f0ccc08",
+      "category": "positive",
+      "pattern": "reply_positive:manual",
+      "reward": 0.7,
+      "applied": false
+    },
+    {
+      "feedback_id": "a2751061-de51-4088-994e-1e3115a46dbe",
+      "category": "positive",
+      "pattern": "meeting_booked:manual",
+      "reward": 1.0,
+      "applied": false
+    },
+    {
+      "feedback_id": "f76c3844-1dd9-4251-a370-4749363d9861",
+      "category": "positive",
+      "pattern": "open:manual",
+      "reward": 0.1,
+      "applied": false
+    },
+    {
+      "feedback_id": "c2f0d908-364a-454e-803f-c1de76f681b7",
+      "category": "negative",
+      "pattern": "unsubscribe:manual",
+      "reward": -0.5,
+      "applied": false
+    },
+    {
+      "feedback_id": "6d6ca7c0-6d3d-4b69-a10d-d8e935626be3",
+      "category": "positive",
+      "pattern": "ae_approved:manual",
+      "reward": 0.5,
+      "applied": false
+    },
+    {
+      "feedback_id": "6a71e6d6-c1ab-4e04-9622-4a9b5aac4b2f",
+      "category": "positive",
+      "pattern": "open:manual",
+      "reward": 0.1,
+      "applied": false
+    },
+    {
+      "feedback_id": "5cbba5f2-c9c2-465c-8e52-9c484a7029b5",
+      "category": "positive",
+      "pattern": "reply_positive:manual",
+      "reward": 0.7,
+      "applied": false
+    },
+    {
+      "feedback_id": "90a22582-902e-4a2e-b2eb-aa9a49763910",
+      "category": "positive",
+      "pattern": "open:manual",
+      "reward": 0.1,
+      "applied": false
+    },
+    {
+      "feedback_id": "1cff5a6d-91ea-4cce-9fbd-9a1dec694aa4",
+      "category": "positive",
+      "pattern": "click:manual",
+      "reward": 0.15,
+      "applied": false
+    },
+    {
+      "feedback_id": "2255e128-85b1-4475-a47c-707abe25fdf8",
+      "category": "positive",
+      "pattern": "reply_positive:manual",
+      "reward": 0.7,
+      "applied": false
+    },
+    {
+      "feedback_id": "e911f83e-0b67-4ed7-89e7-85026d540fce",
+      "category": "positive",
+      "pattern": "meeting_booked:manual",
+      "reward": 1.0,
+      "applied": false
+    },
+    {
+      "feedback_id": "f294fcd1-24d2-476d-88cd-69efffc2ec61",
+      "category": "positive",
+      "pattern": "open:manual",
+      "reward": 0.1,
+      "applied": false
+    },
+    {
+      "feedback_id": "3b710108-874b-4d3d-915e-b140a77bcb03",
+      "category": "negative",
+      "pattern": "unsubscribe:manual",
+      "reward": -0.5,
+      "applied": false
+    },
+    {
+      "feedback_id": "f57ef0bc-5c70-49a0-ac69-9e85f08729b9",
+      "category": "positive",
+      "pattern": "ae_approved:manual",
+      "reward": 0.5,
+      "applied": false
+    },
+    {
+      "feedback_id": "34695a26-ddf9-44f8-bdb4-bf51bc4ace09",
+      "category": "positive",
+      "pattern": "open:manual",
+      "reward": 0.1,
+      "applied": false
+    },
+    {
+      "feedback_id": "b089fc90-3418-4acf-a799-4338c6b0fee1",
+      "category": "positive",
+      "pattern": "reply_positive:manual",
+      "reward": 0.7,
+      "applied": false
+    },
+    {
+      "feedback_id": "453fafaf-514c-4d81-ad01-bc3369884a0d",
+      "category": "positive",
+      "pattern": "open:manual",
+      "reward": 0.1,
+      "applied": false
+    },
+    {
+      "feedback_id": "c646ba63-5cd2-4af1-b45e-6763b83b8d34",
+      "category": "positive",
+      "pattern": "click:manual",
+      "reward": 0.15,
+      "applied": false
+    },
+    {
+      "feedback_id": "eabb275b-2a7a-4bdb-944e-d0adb2454bdc",
+      "category": "positive",
+      "pattern": "reply_positive:manual",
+      "reward": 0.7,
+      "applied": false
+    },
+    {
+      "feedback_id": "fb164aa9-cb69-4f7f-9890-cf7d88f34216",
+      "category": "positive",
+      "pattern": "meeting_booked:manual",
+      "reward": 1.0,
+      "applied": false
+    },
+    {
+      "feedback_id": "8082a402-a5cc-44bc-a3c8-bd71793b4695",
+      "category": "positive",
+      "pattern": "open:manual",
+      "reward": 0.1,
+      "applied": false
+    },
+    {
+      "feedback_id": "23d3d620-d882-46dd-813a-49a4cd3349b1",
+      "category": "negative",
+      "pattern": "unsubscribe:manual",
+      "reward": -0.5,
+      "applied": false
+    },
+    {
+      "feedback_id": "88c3829b-9747-4bca-b6b1-07555f5aca47",
+      "category": "positive",
+      "pattern": "ae_approved:manual",
+      "reward": 0.5,
+      "applied": false
+    },
+    {
+      "feedback_id": "178d0ca8-7c42-4f7f-98b1-2f327d14f2ab",
+      "category": "positive",
+      "pattern": "open:manual",
+      "reward": 0.1,
+      "applied": false
+    },
+    {
+      "feedback_id": "5ece6acb-4bd8-497d-b685-15aaf75904d6",
+      "category": "positive",
+      "pattern": "reply_positive:manual",
+      "reward": 0.7,
+      "applied": false
+    },
+    {
+      "feedback_id": "6a411e6e-31e3-4a48-9252-891e2c3fb706",
+      "category": "positive",
+      "pattern": "open:manual",
+      "reward": 0.1,
+      "applied": false
+    },
+    {
+      "feedback_id": "09622aac-9804-4f4e-91ed-b39d0b036c92",
+      "category": "positive",
+      "pattern": "click:manual",
+      "reward": 0.15,
+      "applied": false
+    },
+    {
+      "feedback_id": "d647378d-b5b4-4a35-a25b-eadd2d30c6c3",
+      "category": "positive",
+      "pattern": "reply_positive:manual",
+      "reward": 0.7,
+      "applied": false
+    },
+    {
+      "feedback_id": "68533ac0-14a5-4fd8-94af-e852f6c6950a",
+      "category": "positive",
+      "pattern": "meeting_booked:manual",
+      "reward": 1.0,
+      "applied": false
+    },
+    {
+      "feedback_id": "7106c9a3-60f2-41dd-a224-b12d30d3a148",
+      "category": "positive",
+      "pattern": "open:manual",
+      "reward": 0.1,
+      "applied": false
+    },
+    {
+      "feedback_id": "c8c41a73-480b-4c0d-a1d5-6f7ab4b0b265",
+      "category": "negative",
+      "pattern": "unsubscribe:manual",
+      "reward": -0.5,
+      "applied": false
+    },
+    {
+      "feedback_id": "e3ffea73-5fa5-4707-ba6a-3b21f47b3e83",
+      "category": "positive",
+      "pattern": "ae_approved:manual",
+      "reward": 0.5,
+      "applied": false
+    },
+    {
+      "feedback_id": "61de977b-6668-4ed6-a58c-33694b5169df",
+      "category": "positive",
+      "pattern": "open:manual",
+      "reward": 0.1,
+      "applied": false
+    },
+    {
+      "feedback_id": "2c8cff90-a8ca-4b4c-b648-c7f436f28ec7",
+      "category": "positive",
+      "pattern": "reply_positive:manual",
+      "reward": 0.7,
+      "applied": false
+    },
+    {
+      "feedback_id": "651354d6-9923-4499-9ff0-49191f06a980",
+      "category": "positive",
+      "pattern": "open:manual",
+      "reward": 0.1,
+      "applied": false
+    },
+    {
+      "feedback_id": "b0ce6090-481c-42d1-b23c-95f1b7f07944",
+      "category": "positive",
+      "pattern": "click:manual",
+      "reward": 0.15,
+      "applied": false
+    },
+    {
+      "feedback_id": "642f5eaf-705c-4dad-99e7-b80d2442602f",
+      "category": "positive",
+      "pattern": "reply_positive:manual",
+      "reward": 0.7,
+      "applied": false
+    },
+    {
+      "feedback_id": "99ee38c0-51a7-42a3-9a77-d029a0c963d7",
+      "category": "positive",
+      "pattern": "meeting_booked:manual",
+      "reward": 1.0,
+      "applied": false
+    },
+    {
+      "feedback_id": "8476b380-058f-4247-bd6e-6adaf261d071",
+      "category": "positive",
+      "pattern": "open:manual",
+      "reward": 0.1,
+      "applied": false
+    },
+    {
+      "feedback_id": "97e249ec-f486-44bc-8525-c1f9a91060a9",
+      "category": "negative",
+      "pattern": "unsubscribe:manual",
+      "reward": -0.5,
+      "applied": false
+    },
+    {
+      "feedback_id": "1e52c746-7a1e-491b-b21f-ece2fd1789e8",
+      "category": "positive",
+      "pattern": "ae_approved:manual",
+      "reward": 0.5,
+      "applied": false
+    },
+    {
+      "feedback_id": "0ed20c16-c323-4360-b0a0-f4cc0f41f9cd",
+      "category": "positive",
+      "pattern": "open:manual",
+      "reward": 0.1,
+      "applied": false
+    },
+    {
+      "feedback_id": "66b932eb-9040-4d82-981a-535c48220ee4",
+      "category": "positive",
+      "pattern": "reply_positive:manual",
+      "reward": 0.7,
+      "applied": false
+    },
+    {
+      "feedback_id": "c264af48-2252-434d-8863-b27abd2c2112",
+      "category": "positive",
+      "pattern": "open:manual",
+      "reward": 0.1,
+      "applied": false
+    },
+    {
+      "feedback_id": "5e0b4cd3-c587-4348-bf0f-55a89104bd19",
+      "category": "positive",
+      "pattern": "click:manual",
+      "reward": 0.15,
+      "applied": false
+    },
+    {
+      "feedback_id": "c1b02792-d09c-42af-8b9b-90c20a43ccc1",
+      "category": "positive",
+      "pattern": "reply_positive:manual",
+      "reward": 0.7,
+      "applied": false
+    },
+    {
+      "feedback_id": "83793876-25c8-4310-8e99-ad3aa8b810ba",
+      "category": "positive",
+      "pattern": "meeting_booked:manual",
+      "reward": 1.0,
+      "applied": false
+    },
+    {
+      "feedback_id": "ec3c8d41-af54-4812-aaac-8792a3e1da18",
+      "category": "positive",
+      "pattern": "open:manual",
+      "reward": 0.1,
+      "applied": false
+    },
+    {
+      "feedback_id": "e2bbd61c-d8fa-426f-9fa5-07f3255bcc65",
+      "category": "negative",
+      "pattern": "unsubscribe:manual",
+      "reward": -0.5,
+      "applied": false
+    },
+    {
+      "feedback_id": "86c17b27-b226-459a-a6f4-5af605d5fe3e",
+      "category": "positive",
+      "pattern": "ae_approved:manual",
+      "reward": 0.5,
+      "applied": false
+    },
+    {
+      "feedback_id": "118f2424-e6cd-48ea-8909-e9f838738e6d",
+      "category": "positive",
+      "pattern": "open:manual",
+      "reward": 0.1,
+      "applied": false
+    },
+    {
+      "feedback_id": "3f8bb9c6-17f0-4d82-899e-3722ee782a9c",
+      "category": "positive",
+      "pattern": "reply_positive:manual",
+      "reward": 0.7,
+      "applied": false
+    },
+    {
+      "feedback_id": "732a4532-5041-467c-97e9-d3fbfc92b288",
+      "category": "positive",
+      "pattern": "open:manual",
+      "reward": 0.1,
+      "applied": false
+    },
+    {
+      "feedback_id": "e1773367-311b-4abd-8b60-b6891dbf43b8",
+      "category": "positive",
+      "pattern": "click:manual",
+      "reward": 0.15,
+      "applied": false
+    },
+    {
+      "feedback_id": "cd39e501-8b28-4703-9cea-44c712743b9d",
+      "category": "positive",
+      "pattern": "reply_positive:manual",
+      "reward": 0.7,
+      "applied": false
+    },
+    {
+      "feedback_id": "7f38d453-972a-497d-812d-d5de8d9d2079",
+      "category": "positive",
+      "pattern": "meeting_booked:manual",
+      "reward": 1.0,
+      "applied": false
+    },
+    {
+      "feedback_id": "2e36a62b-b526-4d86-ad93-b72fc9ef47b5",
+      "category": "positive",
+      "pattern": "open:manual",
+      "reward": 0.1,
+      "applied": false
+    },
+    {
+      "feedback_id": "8e8b668c-ebfa-464e-9667-89c19088bc30",
+      "category": "negative",
+      "pattern": "unsubscribe:manual",
+      "reward": -0.5,
+      "applied": false
+    },
+    {
+      "feedback_id": "150cac7e-6e5c-40fc-a107-6f8fa36c8cc1",
+      "category": "positive",
+      "pattern": "ae_approved:manual",
+      "reward": 0.5,
+      "applied": false
+    },
+    {
+      "feedback_id": "b0c27043-a729-40b2-93e3-3b63eab75c51",
+      "category": "positive",
+      "pattern": "open:manual",
+      "reward": 0.1,
+      "applied": false
+    },
+    {
+      "feedback_id": "bb9c3fae-e0d6-4993-af7d-fefc9d74b19d",
+      "category": "positive",
+      "pattern": "reply_positive:manual",
+      "reward": 0.7,
+      "applied": false
+    },
+    {
+      "feedback_id": "a7803ea5-532f-4764-b460-6ff365de5e7b",
+      "category": "positive",
+      "pattern": "open:manual",
+      "reward": 0.1,
+      "applied": false
+    },
+    {
+      "feedback_id": "47e0d41d-71c2-471a-845e-2dec0676324b",
+      "category": "positive",
+      "pattern": "click:manual",
+      "reward": 0.15,
+      "applied": false
+    },
+    {
+      "feedback_id": "5139c61f-7357-4468-ac49-ca7e143d4e63",
+      "category": "positive",
+      "pattern": "reply_positive:manual",
+      "reward": 0.7,
+      "applied": false
+    },
+    {
+      "feedback_id": "b23a996a-f740-4d21-b0f0-453ea365e2d1",
+      "category": "positive",
+      "pattern": "meeting_booked:manual",
+      "reward": 1.0,
+      "applied": false
+    },
+    {
+      "feedback_id": "6150876d-2214-43ab-a7dc-1b3c2ef51d05",
+      "category": "positive",
+      "pattern": "open:manual",
+      "reward": 0.1,
+      "applied": false
+    },
+    {
+      "feedback_id": "28e5ce75-3487-4837-9b02-ce955259de13",
+      "category": "negative",
+      "pattern": "unsubscribe:manual",
+      "reward": -0.5,
+      "applied": false
+    },
+    {
+      "feedback_id": "39d29248-22d9-48cd-89f4-cb41b4614bff",
+      "category": "positive",
+      "pattern": "ae_approved:manual",
+      "reward": 0.5,
+      "applied": false
+    },
+    {
+      "feedback_id": "0ec487ac-1304-4399-8c9a-b70a28d1ec73",
+      "category": "positive",
+      "pattern": "open:manual",
+      "reward": 0.1,
+      "applied": false
+    },
+    {
+      "feedback_id": "58f5b2c0-f6ef-42ed-bf85-70e8e9c4dd12",
+      "category": "positive",
+      "pattern": "reply_positive:manual",
+      "reward": 0.7,
+      "applied": false
+    },
+    {
+      "feedback_id": "bc2868ed-86d6-4c35-a070-1875b278d05f",
+      "category": "positive",
+      "pattern": "open:manual",
+      "reward": 0.1,
+      "applied": false
+    },
+    {
+      "feedback_id": "0c53dc1e-6044-4312-a0d7-e8004b856696",
+      "category": "positive",
+      "pattern": "click:manual",
+      "reward": 0.15,
+      "applied": false
+    },
+    {
+      "feedback_id": "bca70248-cb6f-4981-8347-aad56024e800",
+      "category": "positive",
+      "pattern": "reply_positive:manual",
+      "reward": 0.7,
+      "applied": false
+    },
+    {
+      "feedback_id": "754ec87a-7c15-4be8-a31f-b3d55d9acfb9",
+      "category": "positive",
+      "pattern": "meeting_booked:manual",
+      "reward": 1.0,
+      "applied": false
+    },
+    {
+      "feedback_id": "e24e6ccc-fe9f-4cc1-93e5-94a010d9fc73",
+      "category": "positive",
+      "pattern": "open:manual",
+      "reward": 0.1,
+      "applied": false
+    },
+    {
+      "feedback_id": "c378af22-88ed-478d-af7f-6ade1f95fc92",
+      "category": "negative",
+      "pattern": "unsubscribe:manual",
+      "reward": -0.5,
+      "applied": false
+    },
+    {
+      "feedback_id": "fa47d4b4-2e39-4aef-ae8e-b46fc9de14f9",
+      "category": "positive",
+      "pattern": "ae_approved:manual",
+      "reward": 0.5,
+      "applied": false
+    },
+    {
+      "feedback_id": "f20f4d7d-b742-4ef4-92c7-18a78521590e",
+      "category": "positive",
+      "pattern": "open:manual",
+      "reward": 0.1,
+      "applied": false
+    },
+    {
+      "feedback_id": "3c7ab9c9-43c2-4124-a1b0-6e8b2dcd1414",
+      "category": "positive",
+      "pattern": "reply_positive:manual",
+      "reward": 0.7,
+      "applied": false
+    },
+    {
+      "feedback_id": "3928d13a-e637-4835-ab9d-504c4403ad78",
+      "category": "positive",
+      "pattern": "open:manual",
+      "reward": 0.1,
+      "applied": false
+    },
+    {
+      "feedback_id": "f7ede0e1-048d-4ff9-b2d1-58fc299d584f",
+      "category": "positive",
+      "pattern": "click:manual",
+      "reward": 0.15,
+      "applied": false
+    },
+    {
+      "feedback_id": "4ec86195-8908-402d-b742-818bee3fb5fa",
+      "category": "positive",
+      "pattern": "reply_positive:manual",
+      "reward": 0.7,
+      "applied": false
+    },
+    {
+      "feedback_id": "4f6255db-e76e-4edc-ac5e-574364e52309",
+      "category": "positive",
+      "pattern": "meeting_booked:manual",
+      "reward": 1.0,
+      "applied": false
+    },
+    {
+      "feedback_id": "a0296cd3-f470-4df4-94cc-eda7a2be21e9",
+      "category": "positive",
+      "pattern": "open:manual",
+      "reward": 0.1,
+      "applied": false
+    },
+    {
+      "feedback_id": "017fe8c1-823f-4218-86e7-2714b8228d61",
+      "category": "negative",
+      "pattern": "unsubscribe:manual",
+      "reward": -0.5,
+      "applied": false
+    },
+    {
+      "feedback_id": "7d3dc6ba-3908-44b0-b61a-6a72a9e15b84",
+      "category": "positive",
+      "pattern": "ae_approved:manual",
+      "reward": 0.5,
+      "applied": false
+    },
+    {
+      "feedback_id": "4b1026ed-1cbf-4949-a31e-87c8f1716c4e",
+      "category": "positive",
+      "pattern": "open:manual",
+      "reward": 0.1,
+      "applied": false
+    },
+    {
+      "feedback_id": "7ea01d07-eefb-4127-b251-2554e14a6ca0",
+      "category": "positive",
+      "pattern": "reply_positive:manual",
+      "reward": 0.7,
+      "applied": false
+    },
+    {
+      "feedback_id": "60fd5190-aff5-4cc4-b18f-6666ade87205",
+      "category": "positive",
+      "pattern": "open:manual",
+      "reward": 0.1,
+      "applied": false
+    },
+    {
+      "feedback_id": "a8042602-84b8-4346-ad96-795149d44aab",
+      "category": "positive",
+      "pattern": "click:manual",
+      "reward": 0.15,
+      "applied": false
+    },
+    {
+      "feedback_id": "9d0831ad-1207-49aa-8b80-d426f8bea388",
+      "category": "positive",
+      "pattern": "reply_positive:manual",
+      "reward": 0.7,
+      "applied": false
+    },
+    {
+      "feedback_id": "3baa588b-bb05-4eea-b5e5-f283fdcdb85c",
+      "category": "positive",
+      "pattern": "meeting_booked:manual",
+      "reward": 1.0,
+      "applied": false
+    },
+    {
+      "feedback_id": "84995d47-477f-4ff4-845a-737811da40c6",
+      "category": "positive",
+      "pattern": "open:manual",
+      "reward": 0.1,
+      "applied": false
+    },
+    {
+      "feedback_id": "98bc0205-8a17-4871-b5ff-2128549f99e8",
+      "category": "negative",
+      "pattern": "unsubscribe:manual",
+      "reward": -0.5,
+      "applied": false
+    },
+    {
+      "feedback_id": "f267b735-ec09-4d75-9037-fb1801ed2d6f",
+      "category": "positive",
+      "pattern": "ae_approved:manual",
+      "reward": 0.5,
+      "applied": false
+    },
+    {
+      "feedback_id": "49f13fb3-5be4-4aa3-9f3a-10f503498ed7",
+      "category": "positive",
+      "pattern": "open:manual",
+      "reward": 0.1,
+      "applied": false
+    },
+    {
+      "feedback_id": "24656c6b-4550-4a1a-847a-04313c18045e",
+      "category": "positive",
+      "pattern": "reply_positive:manual",
+      "reward": 0.7,
+      "applied": false
+    }
+  ],
+  "saved_at": "2026-01-23T12:09:19.031657+00:00"
+}

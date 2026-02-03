@@ -1,0 +1,42 @@
+{
+  "company_name": "Acme Technology Corp",
+  "website": "https://acmetech.com",
+  "industry": "Technology",
+  "company_size": "51-200 employees",
+  "headquarters": null,
+  "description": "Company information for query: Acme Technology Corp company overview",
+  "tech_stack": [
+    "Salesforce",
+    "Slack",
+    "AWS",
+    "React"
+  ],
+  "recent_news": [
+    {
+      "title": "Acme Technology Corp Announces Q4 Growth",
+      "source": "TechCrunch",
+      "date": "2026-01-17T01:59:33.842372",
+      "summary": "Strong performance reported by Acme Technology Corp.",
+      "url": "https://techcrunch.com/acme-technology-corp"
+    },
+    {
+      "title": "Acme Technology Corp Expands Team",
+      "source": "LinkedIn",
+      "date": "2026-01-10T01:59:33.842409",
+      "summary": "Acme Technology Corp hiring for multiple positions.",
+      "url": "https://linkedin.com/company/acme-technology-corp"
+    }
+  ],
+  "competitors": [],
+  "pain_points": [
+    "Technical debt",
+    "Scaling operations efficiently",
+    "Scaling challenges"
+  ],
+  "linkedin_url": null,
+  "funding": null,
+  "employee_count": 100,
+  "revenue_estimate": "$10M-$50M ARR",
+  "researched_at": "2026-01-21T17:59:33.841156+00:00",
+  "confidence": 0.9
+}

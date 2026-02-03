@@ -1,0 +1,53 @@
+{
+  "entries": [
+    {
+      "timestamp": "2026-01-17T21:29:27.851132",
+      "action_id": "32207d14",
+      "action_type": "send_email",
+      "agent_name": "hunter_test",
+      "status": "blocked_permission",
+      "success": false,
+      "error": "Agent 'hunter_test' lacks permission: SEND_EMAIL",
+      "parameters_hash": 5808783807122257548,
+      "has_grounding": true,
+      "grounding_source": "supabase"
+    },
+    {
+      "timestamp": "2026-01-17T21:29:27.862519",
+      "action_id": "52231311",
+      "action_type": "send_email",
+      "agent_name": "ghl_master_test",
+      "status": "rate_limited",
+      "success": false,
+      "error": "EMAIL_LIMITS: Outside working hours (8:00-18:00); EMAIL_CONTENT: Contains spam trigger words: free, guarantee, act now",
+      "parameters_hash": 8685482206750769346,
+      "has_grounding": true,
+      "grounding_source": "supabase"
+    },
+    {
+      "timestamp": "2026-01-17T21:29:27.886853",
+      "action_id": "e4f1ecdd",
+      "action_type": "send_email",
+      "agent_name": "ghl_master_test",
+      "status": "rate_limited",
+      "success": false,
+      "error": "EMAIL_LIMITS: Outside working hours (8:00-18:00)",
+      "parameters_hash": -547824930608213598,
+      "has_grounding": true,
+      "grounding_source": "supabase"
+    },
+    {
+      "timestamp": "2026-01-17T21:29:27.902904",
+      "action_id": "8f476ba3",
+      "action_type": "bulk_delete",
+      "agent_name": "ghl_master_test",
+      "status": "blocked_permission",
+      "success": false,
+      "error": "Agent 'ghl_master_test' lacks permission: DELETE_CONTACTS",
+      "parameters_hash": 3469970344545528010,
+      "has_grounding": true,
+      "grounding_source": "manual"
+    }
+  ],
+  "last_updated": "2026-01-17T21:29:27.908801"
+}

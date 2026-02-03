@@ -1,0 +1,31 @@
+{
+  "tested_at": "2026-01-16T18:24:42.758578",
+  "passed": 3,
+  "failed": 3,
+  "results": {
+    "Supabase": {
+      "success": true,
+      "message": "Connected - leads table accessible"
+    },
+    "GoHighLevel": {
+      "success": false,
+      "message": "HTTP 401"
+    },
+    "Instantly": {
+      "success": false,
+      "message": "HTTP 401"
+    },
+    "LinkedIn": {
+      "success": false,
+      "message": "HTTP 403"
+    },
+    "Clay": {
+      "success": true,
+      "message": "API key configured"
+    },
+    "RB2B": {
+      "success": true,
+      "message": "API key configured"
+    }
+  }
+}

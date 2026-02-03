@@ -1,0 +1,139 @@
+============================= test session starts =============================
+platform win32 -- Python 3.13.5, pytest-9.0.2, pluggy-1.6.0 -- C:\Python313\python.exe
+cachedir: .pytest_cache
+rootdir: D:\Agent Swarm Orchestration\chiefaiofficer-alpha-swarm
+configfile: pytest.ini
+plugins: anyio-4.12.1, asyncio-1.3.0
+asyncio: mode=Mode.AUTO, debug=False, asyncio_default_fixture_loop_scope=function, asyncio_default_test_loop_scope=function
+collecting ... collected 3 items
+
+tests/test_swarm_integration.py::test_queen_researcher_handoff FAILED    [ 33%]
+tests/test_swarm_integration.py::test_researcher_scheduler_chain FAILED  [ 66%]
+tests/test_swarm_integration.py::test_lead_to_meeting_e2e FAILED         [100%]
+
+================================== FAILURES ===================================
+________________________ test_queen_researcher_handoff ________________________
+
+integration_queen = <tests.test_swarm_integration.IntegrationQueen object at 0x000002690E700980>
+
+    @pytest.mark.asyncio
+    async def test_queen_researcher_handoff(integration_queen):
+        """
+        Test 1: Queen -> Researcher
+        Verify Queen correctly delegates a research task and captures the structured output.
+        """
+        # Setup Router to send to Researcher
+        integration_queen.router.select_agent.return_value = AgentName.RESEARCHER
+    
+        # Create Task
+        task = integration_queen.create_task(
+            task_type="company_intel",
+            parameters={"company_name": "TestCorp", "domain": "testcorp.com"},
+            priority=TaskPriority.HIGH
+        )
+    
+        # Execute
+        await integration_queen.submit_task(task)
+        # Since worker loop isn't running in this mocked integration, we manually trigger routing/execution logic
+        # But usually start() runs worker loop. Let's just call _execute_task directly for reliability in unit/integ tests.
+        integration_queen.router.route.return_value = AgentName.RESEARCHER # For _execute_task call
+    
+        await integration_queen._execute_task(task)
+    
+        # Verify
+>       assert task.status.value == "completed"
+E       AssertionError: assert 'pending' == 'completed'
+E         
+E         - completed
+E         + pending
+
+tests\test_swarm_integration.py:180: AssertionError
+---------------------------- Captured stdout setup ----------------------------
+Loaded RL policy with 2 states
+------------------------------ Captured log call ------------------------------
+WARNING  unified_queen:unified_queen_orchestrator.py:990 Task d7dd139ca282 failed, retrying (1)
+_______________________ test_researcher_scheduler_chain _______________________
+
+integration_queen = <tests.test_swarm_integration.IntegrationQueen object at 0x000002690ED04910>
+
+    @pytest.mark.asyncio
+    async def test_researcher_scheduler_chain(integration_queen):
+        """
+        Test 2: Researcher -> Scheduler Chain (Simulated)
+        Simulate a simplified control loop where Research Output feeds Scheduling Input.
+        """
+        # Step 1: Research
+        integration_queen.router.route.return_value = AgentName.RESEARCHER
+        r_task = integration_queen.create_task(
+            task_type="meeting_prep",
+            parameters={"email": "ceo@bigcorp.com", "name": "Big CEO"}
+        )
+        await integration_queen._execute_task(r_task)
+    
+>       assert r_task.status.value == "completed"
+E       AssertionError: assert 'pending' == 'completed'
+E         
+E         - completed
+E         + pending
+
+tests\test_swarm_integration.py:198: AssertionError
+---------------------------- Captured stdout setup ----------------------------
+Loaded RL policy with 2 states
+------------------------------ Captured log call ------------------------------
+WARNING  unified_queen:unified_queen_orchestrator.py:990 Task c06ea7a99685 failed, retrying (1)
+__________________________ test_lead_to_meeting_e2e ___________________________
+
+integration_queen = <tests.test_swarm_integration.IntegrationQueen object at 0x000002690ED06D50>
+
+    @pytest.mark.asyncio
+    async def test_lead_to_meeting_e2e(integration_queen):
+        """
+        Test 3: Full End-to-End Simulation
+        Queen coordinates a multi-step workflow.
+        """
+        # This test verifies that the `IntegrationQueen` can handle switching contexts/agents
+    
+        # 1. Lead Gen (Simulated as we don't have simulated Hunter yet, assume simple input)
+        lead = {"company": "StartupAI", "domain": "startup.ai"}
+    
+        # 2. Research
+        integration_queen.router.route.return_value = AgentName.RESEARCHER
+        task1 = integration_queen.create_task("company_intel", {"company_name": lead["company"], "domain": lead["domain"]})
+        await integration_queen._execute_task(task1)
+    
+        # 3. Schedule
+        integration_queen.router.route.return_value = AgentName.SCHEDULER
+        task2 = integration_queen.create_task("scheduling_request", {"prospect_timezone": "EST", "duration_minutes": 45})
+        await integration_queen._execute_task(task2)
+    
+>       proposals = task2.result["result"]["proposals"]
+                    ^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: 'NoneType' object is not subscriptable
+
+tests\test_swarm_integration.py:245: TypeError
+---------------------------- Captured stdout setup ----------------------------
+Loaded RL policy with 2 states
+------------------------------ Captured log call ------------------------------
+WARNING  unified_queen:unified_queen_orchestrator.py:990 Task 61c759017d20 failed, retrying (1)
+WARNING  unified_queen:unified_queen_orchestrator.py:990 Task c6ee1d68ea30 failed, retrying (1)
+============================== warnings summary ===============================
+tests/test_swarm_integration.py::test_queen_researcher_handoff
+tests/test_swarm_integration.py::test_researcher_scheduler_chain
+tests/test_swarm_integration.py::test_lead_to_meeting_e2e
+  D:\Agent Swarm Orchestration\chiefaiofficer-alpha-swarm\execution\unified_queen_orchestrator.py:990: RuntimeWarning: coroutine 'AsyncMockMixin._execute_mock_call' was never awaited
+    logger.warning(f"Task {task.id} failed, retrying ({task.retry_count})")
+  Enable tracemalloc to get traceback where the object was allocated.
+  See https://docs.pytest.org/en/stable/how-to/capture-warnings.html#resource-warnings for more info.
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests/test_swarm_integration.py::test_queen_researcher_handoff - AssertionError: assert 'pending' == 'completed'
+  
+  - completed
+  + pending
+FAILED tests/test_swarm_integration.py::test_researcher_scheduler_chain - AssertionError: assert 'pending' == 'completed'
+  
+  - completed
+  + pending
+FAILED tests/test_swarm_integration.py::test_lead_to_meeting_e2e - TypeError: 'NoneType' object is not subscriptable
+======================== 3 failed, 3 warnings in 3.03s ========================

@@ -1,0 +1,164 @@
+{
+  "deployment_id": "shadow_20260124_011914",
+  "started_at": "2026-01-23T17:19:14.224647+00:00",
+  "completed_at": "2026-01-23T17:19:14.608913+00:00",
+  "config_valid": true,
+  "credentials_status": [
+    {
+      "name": "GHL Production API Key",
+      "env_var": "GHL_PROD_API_KEY",
+      "is_set": false,
+      "is_critical": true,
+      "value_length": 0,
+      "masked_value": "NOT SET"
+    },
+    {
+      "name": "GHL Location ID",
+      "env_var": "GHL_LOCATION_ID",
+      "is_set": true,
+      "is_critical": true,
+      "value_length": 20,
+      "masked_value": "FgaF...TkhR"
+    },
+    {
+      "name": "Supabase URL",
+      "env_var": "SUPABASE_URL",
+      "is_set": true,
+      "is_critical": true,
+      "value_length": 40,
+      "masked_value": "http...e.co"
+    },
+    {
+      "name": "Supabase Key",
+      "env_var": "SUPABASE_KEY",
+      "is_set": true,
+      "is_critical": true,
+      "value_length": 208,
+      "masked_value": "eyJh...sh8I"
+    },
+    {
+      "name": "RB2B API Key",
+      "env_var": "RB2B_API_KEY",
+      "is_set": false,
+      "is_critical": false,
+      "value_length": 0,
+      "masked_value": "NOT SET"
+    },
+    {
+      "name": "Clay API Key",
+      "env_var": "CLAY_API_KEY",
+      "is_set": true,
+      "is_critical": false,
+      "value_length": 20,
+      "masked_value": "ad8a...722a"
+    },
+    {
+      "name": "Slack Webhook URL",
+      "env_var": "SLACK_WEBHOOK_URL",
+      "is_set": true,
+      "is_critical": false,
+      "value_length": 44,
+      "masked_value": "http.../ZZZ"
+    },
+    {
+      "name": "Instantly API Key",
+      "env_var": "INSTANTLY_API_KEY",
+      "is_set": true,
+      "is_critical": false,
+      "value_length": 68,
+      "masked_value": "YmM5...Sw=="
+    }
+  ],
+  "missing_critical_credentials": [
+    "GHL_PROD_API_KEY"
+  ],
+  "contacts_fetched": 5,
+  "contacts_processed": 5,
+  "processing_results": [
+    {
+      "contact_id": "synthetic_0001",
+      "contact_name": "Test1 User",
+      "contact_email": "test1@example.com",
+      "processing_status": "shadow_complete",
+      "icp_score": 1.0,
+      "tier": "tier_1",
+      "would_send_email": true,
+      "email_subject": "Test1, AI is transforming RevOps at companies like TechCorp",
+      "email_body_preview": "Hi Test1,\n\nI noticed you're leading VP of Sales at TechCorp. Companies your size are seeing \n20-30% operational cost reductions with AI-powered revenue operations.\n\nWould you be open to a 15-minute ca...",
+      "errors": [],
+      "warnings": [
+        "Guardrails: Agent CRAFTER not permitted to perform send_email"
+      ],
+      "processed_at": "2026-01-23T17:19:14.606597+00:00"
+    },
+    {
+      "contact_id": "synthetic_0002",
+      "contact_name": "Test2 User",
+      "contact_email": "test2@example.com",
+      "processing_status": "shadow_complete",
+      "icp_score": 1.0,
+      "tier": "tier_1",
+      "would_send_email": true,
+      "email_subject": "Test2, AI is transforming RevOps at companies like DataFlow Inc",
+      "email_body_preview": "Hi Test2,\n\nI noticed you're leading Director of Revenue Operations at DataFlow Inc. Companies your size are seeing \n20-30% operational cost reductions with AI-powered revenue operations.\n\nWould you be...",
+      "errors": [],
+      "warnings": [
+        "Guardrails: Agent CRAFTER not permitted to perform send_email"
+      ],
+      "processed_at": "2026-01-23T17:19:14.607374+00:00"
+    },
+    {
+      "contact_id": "synthetic_0003",
+      "contact_name": "Test3 User",
+      "contact_email": "test3@example.com",
+      "processing_status": "shadow_complete",
+      "icp_score": 1.0,
+      "tier": "tier_1",
+      "would_send_email": true,
+      "email_subject": "Test3, AI is transforming RevOps at companies like CloudScale",
+      "email_body_preview": "Hi Test3,\n\nI noticed you're leading CRO at CloudScale. Companies your size are seeing \n20-30% operational cost reductions with AI-powered revenue operations.\n\nWould you be open to a 15-minute call to ...",
+      "errors": [],
+      "warnings": [
+        "Guardrails: Agent CRAFTER not permitted to perform send_email"
+      ],
+      "processed_at": "2026-01-23T17:19:14.607707+00:00"
+    },
+    {
+      "contact_id": "synthetic_0004",
+      "contact_name": "Test4 User",
+      "contact_email": "test4@example.com",
+      "processing_status": "shadow_complete",
+      "icp_score": 0.9500000000000001,
+      "tier": "tier_1",
+      "would_send_email": true,
+      "email_subject": "Test4, AI is transforming RevOps at companies like RevenuePro",
+      "email_body_preview": "Hi Test4,\n\nI noticed you're leading Head of Growth at RevenuePro. Companies your size are seeing \n20-30% operational cost reductions with AI-powered revenue operations.\n\nWould you be open to a 15-minu...",
+      "errors": [],
+      "warnings": [
+        "Guardrails: Agent CRAFTER not permitted to perform send_email"
+      ],
+      "processed_at": "2026-01-23T17:19:14.608000+00:00"
+    },
+    {
+      "contact_id": "synthetic_0005",
+      "contact_name": "Test5 User",
+      "contact_email": "test5@example.com",
+      "processing_status": "shadow_complete",
+      "icp_score": 1.0,
+      "tier": "tier_1",
+      "would_send_email": true,
+      "email_subject": "Test5, AI is transforming RevOps at companies like SalesForce Clone",
+      "email_body_preview": "Hi Test5,\n\nI noticed you're leading Sales Manager at SalesForce Clone. Companies your size are seeing \n20-30% operational cost reductions with AI-powered revenue operations.\n\nWould you be open to a 15...",
+      "errors": [],
+      "warnings": [
+        "Guardrails: Agent CRAFTER not permitted to perform send_email"
+      ],
+      "processed_at": "2026-01-23T17:19:14.608324+00:00"
+    }
+  ],
+  "errors": [],
+  "warnings": [
+    "Using synthetic test data (GHL unavailable)"
+  ],
+  "status": "completed_with_warnings"
+}

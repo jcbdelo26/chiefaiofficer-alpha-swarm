@@ -1,0 +1,216 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+{% block page_title %}Campaign Review Dashboard{% endblock %}
+
+{% block content %}
+<!-- Stats Cards -->
+<div class="stats-grid">
+    <div class="stat-card pending">
+        <div class="stat-icon">📬</div>
+        <div class="stat-content">
+            <div class="stat-value">{{ stats.pending }}</div>
+            <div class="stat-label">Pending Review</div>
+        </div>
+    </div>
+
+    <div class="stat-card approved">
+        <div class="stat-icon">✅</div>
+        <div class="stat-content">
+            <div class="stat-value">{{ stats.approved_today }}</div>
+            <div class="stat-label">Approved Today</div>
+        </div>
+    </div>
+
+    <div class="stat-card rejected">
+        <div class="stat-icon">❌</div>
+        <div class="stat-content">
+            <div class="stat-value">{{ stats.rejected_today }}</div>
+            <div class="stat-label">Rejected Today</div>
+        </div>
+    </div>
+
+    <div class="stat-card leads">
+        <div class="stat-icon">👥</div>
+        <div class="stat-content">
+            <div class="stat-value">{{ stats.total_leads }}</div>
+            <div class="stat-label">Total Leads Pending</div>
+        </div>
+    </div>
+</div>
+
+<!-- Segment Breakdown -->
+{% if stats.by_segment %}
+<div class="card segment-breakdown">
+    <h3>Pending by Segment</h3>
+    <div class="segment-bars">
+        {% for segment, count in stats.by_segment.items() %}
+        <div class="segment-bar">
+            <span class="segment-name">{{ segment.replace('_', ' ').title() }}</span>
+            <div class="bar-container">
+                <div class="bar" style="width: {{ (count / stats.pending * 100) | int }}%"></div>
+            </div>
+            <span class="segment-count">{{ count }}</span>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Pending Campaigns -->
+<div class="card">
+    <div class="card-header">
+        <h3>Campaigns Awaiting Review</h3>
+        {% if total_pending > 10 %}
+        <a href="{{ url_for('campaigns_list') }}" class="btn btn-secondary">View All ({{ total_pending }})</a>
+        {% endif %}
+    </div>
+
+    {% if pending_campaigns %}
+    <table class="campaigns-table">
+        <thead>
+            <tr>
+                <th>Campaign</th>
+                <th>Segment</th>
+                <th>Leads</th>
+                <th>Created</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for campaign in pending_campaigns %}
+            <tr class="campaign-row" data-campaign-id="{{ campaign.id }}">
+                <td>
+                    <a href="{{ url_for('campaign_detail', campaign_id=campaign.id) }}" class="campaign-name">
+                        {{ campaign.name or campaign.id }}
+                    </a>
+                </td>
+                <td>
+                    <span class="segment-badge {{ campaign.segment }}">
+                        {{ campaign.segment.replace('_', ' ').title() }}
+                    </span>
+                </td>
+                <td>{{ campaign.lead_count or campaign.leads|length }}</td>
+                <td>{{ campaign.created_at[:10] if campaign.created_at else 'N/A' }}</td>
+                <td class="actions">
+                    <button class="btn btn-sm btn-success" onclick="approveInline('{{ campaign.id }}')">
+                        ✓ Approve
+                    </button>
+                    <button class="btn btn-sm btn-danger" onclick="showRejectModal('{{ campaign.id }}')">
+                        ✗ Reject
+                    </button>
+                    <a href="{{ url_for('campaign_detail', campaign_id=campaign.id) }}"
+                        class="btn btn-sm btn-secondary">
+                        👁 View
+                    </a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state">
+        <div class="empty-icon">✨</div>
+        <h4>All caught up!</h4>
+        <p>No campaigns pending review.</p>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Reject Modal -->
+<div id="rejectModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Reject Campaign</h3>
+            <button class="modal-close" onclick="closeRejectModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" id="rejectCampaignId">
+            <label for="rejectReason">Rejection Reason (required for learning)</label>
+            <select id="rejectReasonSelect" onchange="updateRejectReason()">
+                <option value="">-- Select Reason --</option>
+                <option value="Poor ICP Fit">Poor ICP Fit</option>
+                <option value="Wrong Tone">Wrong Tone</option>
+                <option value="Bad Personalization">Bad Personalization</option>
+                <option value="Compliance Issue">Compliance Issue</option>
+                <option value="Company Too Small">Company Too Small</option>
+                <option value="Wrong Industry">Wrong Industry</option>
+                <option value="Other">Other (specify)</option>
+            </select>
+            <textarea id="rejectReason" placeholder="Provide details for improvement..."></textarea>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeRejectModal()">Cancel</button>
+            <button class="btn btn-danger" onclick="confirmReject()">Reject Campaign</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let currentRejectId = null;
+
+    function approveInline(campaignId) {
+        if (!confirm('Approve this campaign?')) return;
+
+        fetch(`/api/campaign/${campaignId}/approve`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ reviewer: 'AE' })
+        })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    document.querySelector(`[data-campaign-id="${campaignId}"]`).remove();
+                    location.reload();
+                } else {
+                    alert('Failed to approve: ' + data.message);
+                }
+            });
+    }
+
+    function showRejectModal(campaignId) {
+        currentRejectId = campaignId;
+        document.getElementById('rejectCampaignId').value = campaignId;
+        document.getElementById('rejectModal').style.display = 'flex';
+    }
+
+    function closeRejectModal() {
+        document.getElementById('rejectModal').style.display = 'none';
+        document.getElementById('rejectReason').value = '';
+        document.getElementById('rejectReasonSelect').value = '';
+        currentRejectId = null;
+    }
+
+    function updateRejectReason() {
+        const select = document.getElementById('rejectReasonSelect');
+        const textarea = document.getElementById('rejectReason');
+        if (select.value && select.value !== 'Other') {
+            textarea.value = select.value;
+        }
+    }
+
+    function confirmReject() {
+        const reason = document.getElementById('rejectReason').value.trim();
+
+        if (!reason) {
+            alert('Please provide a rejection reason');
+            return;
+        }
+
+        fetch(`/api/campaign/${currentRejectId}/reject`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ reviewer: 'AE', notes: reason })
+        })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    closeRejectModal();
+                    location.reload();
+                } else {
+                    alert('Failed to reject: ' + data.message);
+                }
+            });
+    }
+</script>
+{% endblock %}

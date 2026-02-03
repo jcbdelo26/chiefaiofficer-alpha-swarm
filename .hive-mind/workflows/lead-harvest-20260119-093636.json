@@ -1,0 +1,81 @@
+{
+  "workflow": "lead-harvesting",
+  "mode": "test",
+  "started_at": "2026-01-19T09:36:36.094239+00:00",
+  "completed_at": "2026-01-19T09:36:36.547995+00:00",
+  "total_duration_seconds": 0.44575023651123047,
+  "success": true,
+  "steps": [
+    {
+      "step": "normalize",
+      "success": true,
+      "duration_seconds": 0.0007841587066650391,
+      "records_processed": 5,
+      "records_output": 5,
+      "error_message": null,
+      "output_file": null,
+      "cost_usd": 0.0,
+      "metadata": {
+        "source": "D:\\Agent Swarm Orchestration\\chiefaiofficer-alpha-swarm\\.hive-mind\\testing\\test-leads.json"
+      }
+    },
+    {
+      "step": "enrich",
+      "success": true,
+      "duration_seconds": 0.39780759811401367,
+      "records_processed": 5,
+      "records_output": 4,
+      "error_message": null,
+      "output_file": "D:\\Agent Swarm Orchestration\\chiefaiofficer-alpha-swarm\\.hive-mind\\testing\\enricher_test_results.json",
+      "cost_usd": 0.75,
+      "metadata": {
+        "success_rate": "80.0%",
+        "api_calls": 5
+      }
+    },
+    {
+      "step": "segment",
+      "success": true,
+      "duration_seconds": 0.04692196846008301,
+      "records_processed": 4,
+      "records_output": 4,
+      "error_message": null,
+      "output_file": "D:\\Agent Swarm Orchestration\\chiefaiofficer-alpha-swarm\\.hive-mind\\testing\\segmentor_test_results.json",
+      "cost_usd": 0.0,
+      "metadata": {
+        "tier_distribution": {
+          "tier_4": 1,
+          "tier_3": 3
+        }
+      }
+    },
+    {
+      "step": "store",
+      "success": true,
+      "duration_seconds": 0.00023651123046875,
+      "records_processed": 4,
+      "records_output": 4,
+      "error_message": null,
+      "output_file": null,
+      "cost_usd": 0.0,
+      "metadata": {
+        "test_mode": true
+      }
+    }
+  ],
+  "metrics": {
+    "leads_input": 5,
+    "leads_enriched": 4,
+    "leads_segmented": 4,
+    "leads_stored": 4,
+    "success_rate_percent": 80.0,
+    "total_cost_usd": 0.75,
+    "cost_per_lead_usd": 0.1875,
+    "time_per_lead_seconds": 0.0891500473022461,
+    "tier_distribution": {
+      "tier_4": 1,
+      "tier_3": 3
+    }
+  },
+  "error_message": null
+}

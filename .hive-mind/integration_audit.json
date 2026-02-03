@@ -1,0 +1,401 @@
+{
+  "entries": [
+    {
+      "success": true,
+      "integration": "ghl",
+      "action": "read_contact",
+      "agent": "HUNTER",
+      "data": {
+        "action": "read_contact",
+        "status": "executed",
+        "params": {
+          "contact_id": "123"
+        }
+      },
+      "error": null,
+      "latency_ms": 0.8225440979003906,
+      "timestamp": "2026-01-20T18:52:31.026468"
+    },
+    {
+      "success": true,
+      "integration": "ghl",
+      "action": "send_email",
+      "agent": "GATEKEEPER",
+      "data": {
+        "action": "send_email",
+        "status": "executed",
+        "params": {
+          "contact_id": "123",
+          "subject": "Test"
+        }
+      },
+      "error": null,
+      "latency_ms": 0.7770061492919922,
+      "timestamp": "2026-01-20T18:52:31.033399"
+    },
+    {
+      "success": true,
+      "integration": "ghl",
+      "action": "read_contact",
+      "agent": "HUNTER",
+      "data": {
+        "action": "read_contact",
+        "status": "executed",
+        "params": {
+          "contact_id": "123"
+        }
+      },
+      "error": null,
+      "latency_ms": 0.8757114410400391,
+      "timestamp": "2026-01-20T18:52:59.300748"
+    },
+    {
+      "success": true,
+      "integration": "ghl",
+      "action": "send_email",
+      "agent": "GATEKEEPER",
+      "data": {
+        "action": "send_email",
+        "status": "executed",
+        "params": {
+          "contact_id": "123",
+          "subject": "Test"
+        }
+      },
+      "error": null,
+      "latency_ms": 0.9214878082275391,
+      "timestamp": "2026-01-20T18:52:59.315944"
+    },
+    {
+      "success": true,
+      "integration": "ghl",
+      "action": "read_contact",
+      "agent": "HUNTER",
+      "data": {
+        "action": "read_contact",
+        "status": "executed",
+        "params": {
+          "contact_id": "123"
+        }
+      },
+      "error": null,
+      "latency_ms": 0.8931159973144531,
+      "timestamp": "2026-01-20T19:41:10.486888"
+    },
+    {
+      "success": true,
+      "integration": "ghl",
+      "action": "send_email",
+      "agent": "GATEKEEPER",
+      "data": {
+        "action": "send_email",
+        "status": "executed",
+        "params": {
+          "contact_id": "123",
+          "subject": "Test"
+        }
+      },
+      "error": null,
+      "latency_ms": 0.9076595306396484,
+      "timestamp": "2026-01-20T19:41:10.504383"
+    },
+    {
+      "success": true,
+      "integration": "ghl",
+      "action": "read_contact",
+      "agent": "HUNTER",
+      "data": {
+        "action": "read_contact",
+        "status": "executed",
+        "params": {
+          "contact_id": "123"
+        }
+      },
+      "error": null,
+      "latency_ms": 1.1675357818603516,
+      "timestamp": "2026-01-22T11:12:21.113808"
+    },
+    {
+      "success": true,
+      "integration": "ghl",
+      "action": "send_email",
+      "agent": "GATEKEEPER",
+      "data": {
+        "action": "send_email",
+        "status": "executed",
+        "params": {
+          "contact_id": "123",
+          "subject": "Test"
+        }
+      },
+      "error": null,
+      "latency_ms": 1.1599063873291016,
+      "timestamp": "2026-01-22T11:12:21.183275"
+    },
+    {
+      "success": true,
+      "integration": "ghl",
+      "action": "read_contact",
+      "agent": "HUNTER",
+      "data": {
+        "action": "read_contact",
+        "status": "executed",
+        "params": {
+          "contact_id": "123"
+        }
+      },
+      "error": null,
+      "latency_ms": 1.6796588897705078,
+      "timestamp": "2026-01-22T11:16:36.250163"
+    },
+    {
+      "success": true,
+      "integration": "ghl",
+      "action": "send_email",
+      "agent": "GATEKEEPER",
+      "data": {
+        "action": "send_email",
+        "status": "executed",
+        "params": {
+          "contact_id": "123",
+          "subject": "Test"
+        }
+      },
+      "error": null,
+      "latency_ms": 1.711130142211914,
+      "timestamp": "2026-01-22T11:16:36.354149"
+    },
+    {
+      "success": true,
+      "integration": "ghl",
+      "action": "read_contact",
+      "agent": "HUNTER",
+      "data": {
+        "action": "read_contact",
+        "status": "executed",
+        "params": {
+          "contact_id": "123"
+        }
+      },
+      "error": null,
+      "latency_ms": 1.9330978393554688,
+      "timestamp": "2026-01-22T11:19:18.237198"
+    },
+    {
+      "success": true,
+      "integration": "ghl",
+      "action": "send_email",
+      "agent": "GATEKEEPER",
+      "data": {
+        "action": "send_email",
+        "status": "executed",
+        "params": {
+          "contact_id": "123",
+          "subject": "Test"
+        }
+      },
+      "error": null,
+      "latency_ms": 1.2013912200927734,
+      "timestamp": "2026-01-22T11:19:18.345142"
+    },
+    {
+      "success": true,
+      "integration": "ghl",
+      "action": "read_contact",
+      "agent": "HUNTER",
+      "data": {
+        "action": "read_contact",
+        "status": "executed",
+        "params": {
+          "contact_id": "123"
+        }
+      },
+      "error": null,
+      "latency_ms": 1.3065338134765625,
+      "timestamp": "2026-01-22T11:19:36.581947"
+    },
+    {
+      "success": true,
+      "integration": "ghl",
+      "action": "send_email",
+      "agent": "GATEKEEPER",
+      "data": {
+        "action": "send_email",
+        "status": "executed",
+        "params": {
+          "contact_id": "123",
+          "subject": "Test"
+        }
+      },
+      "error": null,
+      "latency_ms": 1.3272762298583984,
+      "timestamp": "2026-01-22T11:19:36.664498"
+    },
+    {
+      "success": true,
+      "integration": "ghl",
+      "action": "read_contact",
+      "agent": "HUNTER",
+      "data": {
+        "action": "read_contact",
+        "status": "executed",
+        "params": {
+          "contact_id": "123"
+        }
+      },
+      "error": null,
+      "latency_ms": 1.3387203216552734,
+      "timestamp": "2026-01-22T11:23:52.023105"
+    },
+    {
+      "success": true,
+      "integration": "ghl",
+      "action": "send_email",
+      "agent": "GATEKEEPER",
+      "data": {
+        "action": "send_email",
+        "status": "executed",
+        "params": {
+          "contact_id": "123",
+          "subject": "Test"
+        }
+      },
+      "error": null,
+      "latency_ms": 1.5094280242919922,
+      "timestamp": "2026-01-22T11:23:52.130701"
+    },
+    {
+      "success": true,
+      "integration": "ghl",
+      "action": "read_contact",
+      "agent": "HUNTER",
+      "data": {
+        "action": "read_contact",
+        "status": "executed",
+        "params": {
+          "contact_id": "123"
+        }
+      },
+      "error": null,
+      "latency_ms": 2.0189285278320312,
+      "timestamp": "2026-01-22T12:07:26.150527"
+    },
+    {
+      "success": true,
+      "integration": "ghl",
+      "action": "send_email",
+      "agent": "GATEKEEPER",
+      "data": {
+        "action": "send_email",
+        "status": "executed",
+        "params": {
+          "contact_id": "123",
+          "subject": "Test"
+        }
+      },
+      "error": null,
+      "latency_ms": 1.85394287109375,
+      "timestamp": "2026-01-22T12:07:26.269912"
+    },
+    {
+      "success": true,
+      "integration": "ghl",
+      "action": "read_contact",
+      "agent": "HUNTER",
+      "data": {
+        "action": "read_contact",
+        "status": "executed",
+        "params": {
+          "contact_id": "123"
+        }
+      },
+      "error": null,
+      "latency_ms": 1.1785030364990234,
+      "timestamp": "2026-01-22T20:54:17.991934"
+    },
+    {
+      "success": true,
+      "integration": "ghl",
+      "action": "send_email",
+      "agent": "GATEKEEPER",
+      "data": {
+        "action": "send_email",
+        "status": "executed",
+        "params": {
+          "contact_id": "123",
+          "subject": "Test"
+        }
+      },
+      "error": null,
+      "latency_ms": 1.1603832244873047,
+      "timestamp": "2026-01-22T20:54:18.078300"
+    },
+    {
+      "success": true,
+      "integration": "ghl",
+      "action": "read_contact",
+      "agent": "HUNTER",
+      "data": {
+        "action": "read_contact",
+        "status": "executed",
+        "params": {
+          "contact_id": "123"
+        }
+      },
+      "error": null,
+      "latency_ms": 1.1458396911621094,
+      "timestamp": "2026-01-22T20:59:35.309171"
+    },
+    {
+      "success": true,
+      "integration": "ghl",
+      "action": "send_email",
+      "agent": "GATEKEEPER",
+      "data": {
+        "action": "send_email",
+        "status": "executed",
+        "params": {
+          "contact_id": "123",
+          "subject": "Test"
+        }
+      },
+      "error": null,
+      "latency_ms": 1.2240409851074219,
+      "timestamp": "2026-01-22T20:59:35.410096"
+    },
+    {
+      "success": true,
+      "integration": "ghl",
+      "action": "read_contact",
+      "agent": "HUNTER",
+      "data": {
+        "action": "read_contact",
+        "status": "executed",
+        "params": {
+          "contact_id": "123"
+        }
+      },
+      "error": null,
+      "latency_ms": 1.5256404876708984,
+      "timestamp": "2026-01-22T21:03:54.032197"
+    },
+    {
+      "success": true,
+      "integration": "ghl",
+      "action": "send_email",
+      "agent": "GATEKEEPER",
+      "data": {
+        "action": "send_email",
+        "status": "executed",
+        "params": {
+          "contact_id": "123",
+          "subject": "Test"
+        }
+      },
+      "error": null,
+      "latency_ms": 1.2507438659667969,
+      "timestamp": "2026-01-22T21:03:54.127768"
+    }
+  ],
+  "last_updated": "2026-01-22T21:03:54.135916"
+}

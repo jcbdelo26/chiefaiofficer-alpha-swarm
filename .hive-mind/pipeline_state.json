@@ -1,0 +1,13 @@
+{
+  "metrics": {
+    "total_processed": 1,
+    "successful_distillations": 1,
+    "consolidations_run": 1,
+    "patterns_retrieved": 9,
+    "last_run": "2026-01-20T20:42:57.596453"
+  },
+  "ewc_weights": {
+    "L_e4f07bef5d7e": 0.5023880520846276
+  },
+  "saved_at": "2026-01-20T20:42:57.598108"
+}

@@ -1,0 +1,25 @@
+{
+  "email": "long@example.com",
+  "name": "long",
+  "company": "example.com",
+  "current_stage": "qualification",
+  "thread_id": "b234258ca7cb",
+  "last_contact": "2026-01-22T04:16:53.763371",
+  "total_exchanges": 1,
+  "tone_profile": {
+    "formality": 0.5,
+    "warmth": 0.5,
+    "urgency": 0.0,
+    "complexity": 0.1,
+    "assertiveness": 0.5,
+    "sentiment": 0.0,
+    "avg_sentence_length": 5.0,
+    "vocabulary_richness": 0.0,
+    "keywords": [
+      "test",
+      "sentence"
+    ]
+  },
+  "tags": [],
+  "metadata": {}
+}

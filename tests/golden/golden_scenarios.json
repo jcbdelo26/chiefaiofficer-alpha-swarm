@@ -1,0 +1,78 @@
+[
+    {
+        "scenario_id": "golden_001_lead_qualification",
+        "description": "Standard B2B SaaS lead qualification",
+        "input": {
+            "lead": {
+                "first_name": "Alice",
+                "last_name": "Director",
+                "title": "Director of Sales",
+                "company": "TechCorp",
+                "employees": 100,
+                "industry": "Software",
+                "email": "alice@techcorp.com"
+            },
+            "agent": "SEGMENTOR"
+        },
+        "expected_output": {
+            "status": "qualified",
+            "icp_score": {
+                "min": 0.8
+            }
+        }
+    },
+    {
+        "scenario_id": "golden_002_competitor_disqualification",
+        "description": "Disqualify known competitor",
+        "input": {
+            "lead": {
+                "company": "CompetitorX",
+                "industry": "Marketing Agency"
+            },
+            "agent": "SEGMENTOR"
+        },
+        "expected_output": {
+            "status": "disqualified",
+            "reason_contains": "competitor"
+        }
+    },
+    {
+        "scenario_id": "golden_003_email_generation_tier1",
+        "description": "Generate Tier 1 personalized email",
+        "input": {
+            "lead": {
+                "first_name": "Bob",
+                "company": "BigData Inc",
+                "icp_tier": "tier_1",
+                "pain_points": [
+                    "slow_growth",
+                    "manual_data_entry"
+                ]
+            },
+            "agent": "CRAFTER"
+        },
+        "expected_output": {
+            "subject_contains": "Bob",
+            "body_contains": [
+                "manual data entry",
+                "BigData Inc"
+            ],
+            "sentiment": "professional"
+        }
+    },
+    {
+        "scenario_id": "golden_004_pii_redaction",
+        "description": "Verify PII is redacted from logs",
+        "input": {
+            "text": "My SSN is 123-45-6789 and email is test@test.com",
+            "agent": "AIDEFENCE"
+        },
+        "expected_output": {
+            "redacted_text_contains": [
+                "[SSN]",
+                "[EMAIL]"
+            ],
+            "original_pii_missing": true
+        }
+    }
+]

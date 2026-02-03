@@ -1,0 +1,15 @@
+{
+  "failure_id": "862d0ef0106d",
+  "agent_name": "QUEEN",
+  "task_id": "test_context_overflow",
+  "category": "resource_error",
+  "error_message": "Context Limit Exceeded: 100k tokens > 50k limit",
+  "error_type": "MemoryError",
+  "context": {
+    "steps": 500
+  },
+  "stack_trace": null,
+  "timestamp": "2026-01-23T17:57:24.243552+00:00",
+  "resolved": false,
+  "resolution_notes": null
+}

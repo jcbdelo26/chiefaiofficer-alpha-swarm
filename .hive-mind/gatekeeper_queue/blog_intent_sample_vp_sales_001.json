@@ -1,0 +1,41 @@
+{
+  "queue_id": "blog_intent_sample_vp_sales_001",
+  "type": "blog_triggered_email",
+  "priority": "high",
+  "visitor": {
+    "id": "sample_vp_sales_001",
+    "email": "mike.johnson@acmesaas.com",
+    "name": "Mike Johnson",
+    "company": "Acme SaaS",
+    "title": "VP of Sales"
+  },
+  "email": {
+    "subject": "Mike - quick Q about sales cycle friction at Acme",
+    "body": "Hi Mike,\n\nI saw you were reading our piece on how P&G cut product development time by 22% using AI.\n\nMy colleague Dani Apgar spent time at Gong and mentioned how critical it was for sales leaders to have faster visibility into what's actually moving deals forward vs. creating drag.\n\nAs VP of Sales at Acme, I'm curious - what's the biggest friction point between your sales team getting customer insights and product actually shipping features that close deals?\n\nIf you're exploring ways to shorten those cycles without adding headcount or complexity, I can walk you through our 10-min AI framework that's helping teams like yours make faster, better decisions.\n\nWould you have time for a quick call later today or tomorrow?\n\nBest,\nDani Apgar\nHead of Partnerships & Revenue, Chief AI Officer Inc.\ndani@chiefaiofficer.com | chiefaiofficer.com\nBook a 15-min intro: https://caio.cx/meet",
+    "template_used": "case_study_pg",
+    "generated_by": "gemini_crafter"
+  },
+  "context": {
+    "intent_score": 100,
+    "icp_tier": "tier_1",
+    "triggers": [
+      "ai_case_study"
+    ],
+    "warm_connections": [
+      {
+        "type": "same_previous_company",
+        "shared": "Gong",
+        "team_member": "Dani Apgar"
+      },
+      {
+        "type": "former_colleague",
+        "shared": "Outreach",
+        "team_member": "Dani Apgar"
+      }
+    ],
+    "pages_viewed": [
+      "/blog/how-pg-cut-product-development-time-22-percent"
+    ]
+  },
+  "created_at": "2026-01-30T16:34:30.153592+00:00"
+}

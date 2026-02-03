@@ -1,0 +1,2090 @@
+[
+  {
+    "action_type": "send_email",
+    "approver_id": null,
+    "approver_notes": null,
+    "created_at": "2026-01-22T18:14:16.161743+00:00",
+    "description": "send_email requested by gatekeeper",
+    "metadata": {
+      "rpi_workflow": true,
+      "segment": "enterprise",
+      "urgency": "normal"
+    },
+    "payload": {
+      "avg_icp_score": 75.0,
+      "campaign_id": "campaign-456",
+      "campaign_name": "Test Campaign",
+      "lead_count": 50,
+      "tier": "tier2"
+    },
+    "request_id": "req_119e912a",
+    "requester_agent": "gatekeeper",
+    "risk_score": 0.0,
+    "status": "auto_approved",
+    "updated_at": "2026-01-22T18:14:16.161743+00:00"
+  },
+  {
+    "action_type": "send_email",
+    "approver_id": null,
+    "approver_notes": null,
+    "created_at": "2026-01-22T18:14:16.193223+00:00",
+    "description": "send_email requested by gatekeeper",
+    "metadata": {
+      "rpi_workflow": true,
+      "segment": "enterprise",
+      "urgency": "critical"
+    },
+    "payload": {
+      "avg_icp_score": 75.0,
+      "campaign_id": "campaign-456",
+      "campaign_name": "Test Campaign",
+      "lead_count": 50,
+      "tier": "tier2"
+    },
+    "request_id": "req_569c555b",
+    "requester_agent": "gatekeeper",
+    "risk_score": 0.0,
+    "status": "auto_approved",
+    "updated_at": "2026-01-22T18:14:16.193223+00:00"
+  },
+  {
+    "action_type": "send_email",
+    "approver_id": null,
+    "approver_notes": null,
+    "created_at": "2026-01-22T18:14:18.642360+00:00",
+    "description": "send_email requested by gatekeeper",
+    "metadata": {
+      "rpi_workflow": true,
+      "segment": "enterprise",
+      "urgency": "normal"
+    },
+    "payload": {
+      "avg_icp_score": 75.0,
+      "campaign_id": "campaign-456",
+      "campaign_name": "Test Campaign",
+      "lead_count": 50,
+      "tier": "tier2"
+    },
+    "request_id": "req_130b6052",
+    "requester_agent": "gatekeeper",
+    "risk_score": 0.0,
+    "status": "auto_approved",
+    "updated_at": "2026-01-22T18:14:18.642360+00:00"
+  },
+  {
+    "action_type": "send_email",
+    "approver_id": null,
+    "approver_notes": null,
+    "created_at": "2026-01-22T18:14:18.664850+00:00",
+    "description": "send_email requested by gatekeeper",
+    "metadata": {
+      "rpi_workflow": true,
+      "segment": "smb",
+      "urgency": "normal"
+    },
+    "payload": {
+      "avg_icp_score": 85.0,
+      "campaign_id": "auto-campaign",
+      "campaign_name": "Calendar Update Campaign",
+      "lead_count": 10,
+      "tier": "tier3"
+    },
+    "request_id": "req_b791aefc",
+    "requester_agent": "gatekeeper",
+    "risk_score": 0.0,
+    "status": "auto_approved",
+    "updated_at": "2026-01-22T18:14:18.664850+00:00"
+  },
+  {
+    "action_type": "send_email",
+    "approver_id": null,
+    "approver_notes": null,
+    "created_at": "2026-01-22T18:14:18.715590+00:00",
+    "description": "send_email requested by gatekeeper",
+    "metadata": {
+      "rpi_workflow": true,
+      "segment": "enterprise",
+      "urgency": "normal"
+    },
+    "payload": {
+      "avg_icp_score": 75.0,
+      "campaign_id": "campaign-456",
+      "campaign_name": "Test Campaign",
+      "lead_count": 50,
+      "tier": "tier2"
+    },
+    "request_id": "req_8ac88d30",
+    "requester_agent": "gatekeeper",
+    "risk_score": 0.0,
+    "status": "auto_approved",
+    "updated_at": "2026-01-22T18:14:18.715590+00:00"
+  },
+  {
+    "action_type": "send_email",
+    "approver_id": null,
+    "approver_notes": null,
+    "created_at": "2026-01-22T18:14:45.968078+00:00",
+    "description": "send_email requested by gatekeeper",
+    "metadata": {
+      "rpi_workflow": true,
+      "segment": "enterprise",
+      "urgency": "normal"
+    },
+    "payload": {
+      "avg_icp_score": 75.0,
+      "campaign_id": "campaign-456",
+      "campaign_name": "Test Campaign",
+      "lead_count": 50,
+      "tier": "tier2"
+    },
+    "request_id": "req_b637162b",
+    "requester_agent": "gatekeeper",
+    "risk_score": 0.0,
+    "status": "auto_approved",
+    "updated_at": "2026-01-22T18:14:45.968078+00:00"
+  },
+  {
+    "action_type": "send_email",
+    "approver_id": null,
+    "approver_notes": null,
+    "created_at": "2026-01-22T18:14:45.996027+00:00",
+    "description": "send_email requested by gatekeeper",
+    "metadata": {
+      "rpi_workflow": true,
+      "segment": "enterprise",
+      "urgency": "critical"
+    },
+    "payload": {
+      "avg_icp_score": 75.0,
+      "campaign_id": "campaign-456",
+      "campaign_name": "Test Campaign",
+      "lead_count": 50,
+      "tier": "tier2"
+    },
+    "request_id": "req_43136f48",
+    "requester_agent": "gatekeeper",
+    "risk_score": 0.0,
+    "status": "auto_approved",
+    "updated_at": "2026-01-22T18:14:45.996027+00:00"
+  },
+  {
+    "action_type": "send_email",
+    "approver_id": null,
+    "approver_notes": null,
+    "created_at": "2026-01-22T18:14:46.285095+00:00",
+    "description": "send_email requested by gatekeeper",
+    "metadata": {
+      "rpi_workflow": true,
+      "segment": "enterprise",
+      "urgency": "normal"
+    },
+    "payload": {
+      "avg_icp_score": 75.0,
+      "campaign_id": "campaign-456",
+      "campaign_name": "Test Campaign",
+      "lead_count": 50,
+      "tier": "tier2"
+    },
+    "request_id": "req_82fc505d",
+    "requester_agent": "gatekeeper",
+    "risk_score": 0.0,
+    "status": "auto_approved",
+    "updated_at": "2026-01-22T18:14:46.285095+00:00"
+  },
+  {
+    "action_type": "send_email",
+    "approver_id": null,
+    "approver_notes": null,
+    "created_at": "2026-01-22T18:14:46.300310+00:00",
+    "description": "send_email requested by gatekeeper",
+    "metadata": {
+      "rpi_workflow": true,
+      "segment": "smb",
+      "urgency": "normal"
+    },
+    "payload": {
+      "avg_icp_score": 85.0,
+      "campaign_id": "auto-campaign",
+      "campaign_name": "Calendar Update Campaign",
+      "lead_count": 10,
+      "tier": "tier3"
+    },
+    "request_id": "req_dfb38b89",
+    "requester_agent": "gatekeeper",
+    "risk_score": 0.0,
+    "status": "auto_approved",
+    "updated_at": "2026-01-22T18:14:46.300310+00:00"
+  },
+  {
+    "action_type": "send_email",
+    "approver_id": null,
+    "approver_notes": null,
+    "created_at": "2026-01-22T18:14:46.353256+00:00",
+    "description": "send_email requested by gatekeeper",
+    "metadata": {
+      "rpi_workflow": true,
+      "segment": "enterprise",
+      "urgency": "normal"
+    },
+    "payload": {
+      "avg_icp_score": 75.0,
+      "campaign_id": "campaign-456",
+      "campaign_name": "Test Campaign",
+      "lead_count": 50,
+      "tier": "tier2"
+    },
+    "request_id": "req_28cca864",
+    "requester_agent": "gatekeeper",
+    "risk_score": 0.0,
+    "status": "auto_approved",
+    "updated_at": "2026-01-22T18:14:46.353256+00:00"
+  },
+  {
+    "action_type": "send_email",
+    "approver_id": null,
+    "approver_notes": null,
+    "created_at": "2026-01-22T18:51:28.812641+00:00",
+    "description": "send_email requested by gatekeeper",
+    "metadata": {
+      "rpi_workflow": true,
+      "segment": "enterprise",
+      "urgency": "normal"
+    },
+    "payload": {
+      "avg_icp_score": 75.0,
+      "campaign_id": "campaign-456",
+      "campaign_name": "Test Campaign",
+      "lead_count": 50,
+      "tier": "tier2"
+    },
+    "request_id": "req_aa3f508f",
+    "requester_agent": "gatekeeper",
+    "risk_score": 0.0,
+    "status": "auto_approved",
+    "updated_at": "2026-01-22T18:51:28.812641+00:00"
+  },
+  {
+    "action_type": "send_email",
+    "approver_id": null,
+    "approver_notes": null,
+    "created_at": "2026-01-22T18:51:28.842467+00:00",
+    "description": "send_email requested by gatekeeper",
+    "metadata": {
+      "rpi_workflow": true,
+      "segment": "enterprise",
+      "urgency": "critical"
+    },
+    "payload": {
+      "avg_icp_score": 75.0,
+      "campaign_id": "campaign-456",
+      "campaign_name": "Test Campaign",
+      "lead_count": 50,
+      "tier": "tier2"
+    },
+    "request_id": "req_866bc236",
+    "requester_agent": "gatekeeper",
+    "risk_score": 0.0,
+    "status": "auto_approved",
+    "updated_at": "2026-01-22T18:51:28.842467+00:00"
+  },
+  {
+    "action_type": "send_email",
+    "approver_id": null,
+    "approver_notes": null,
+    "created_at": "2026-01-22T18:51:29.129883+00:00",
+    "description": "send_email requested by gatekeeper",
+    "metadata": {
+      "rpi_workflow": true,
+      "segment": "enterprise",
+      "urgency": "normal"
+    },
+    "payload": {
+      "avg_icp_score": 75.0,
+      "campaign_id": "campaign-456",
+      "campaign_name": "Test Campaign",
+      "lead_count": 50,
+      "tier": "tier2"
+    },
+    "request_id": "req_8b597b47",
+    "requester_agent": "gatekeeper",
+    "risk_score": 0.0,
+    "status": "auto_approved",
+    "updated_at": "2026-01-22T18:51:29.129883+00:00"
+  },
+  {
+    "action_type": "send_email",
+    "approver_id": null,
+    "approver_notes": null,
+    "created_at": "2026-01-22T18:51:29.144003+00:00",
+    "description": "send_email requested by gatekeeper",
+    "metadata": {
+      "rpi_workflow": true,
+      "segment": "smb",
+      "urgency": "normal"
+    },
+    "payload": {
+      "avg_icp_score": 85.0,
+      "campaign_id": "auto-campaign",
+      "campaign_name": "Calendar Update Campaign",
+      "lead_count": 10,
+      "tier": "tier3"
+    },
+    "request_id": "req_1acde525",
+    "requester_agent": "gatekeeper",
+    "risk_score": 0.0,
+    "status": "auto_approved",
+    "updated_at": "2026-01-22T18:51:29.144003+00:00"
+  },
+  {
+    "action_type": "send_email",
+    "approver_id": null,
+    "approver_notes": null,
+    "created_at": "2026-01-22T18:51:29.195799+00:00",
+    "description": "send_email requested by gatekeeper",
+    "metadata": {
+      "rpi_workflow": true,
+      "segment": "enterprise",
+      "urgency": "normal"
+    },
+    "payload": {
+      "avg_icp_score": 75.0,
+      "campaign_id": "campaign-456",
+      "campaign_name": "Test Campaign",
+      "lead_count": 50,
+      "tier": "tier2"
+    },
+    "request_id": "req_186d848e",
+    "requester_agent": "gatekeeper",
+    "risk_score": 0.0,
+    "status": "auto_approved",
+    "updated_at": "2026-01-22T18:51:29.195799+00:00"
+  },
+  {
+    "action_type": "send_email",
+    "approver_id": null,
+    "approver_notes": null,
+    "created_at": "2026-01-22T18:51:31.740005+00:00",
+    "description": "send_email requested by gatekeeper",
+    "metadata": {
+      "rpi_workflow": true,
+      "segment": "enterprise",
+      "urgency": "normal"
+    },
+    "payload": {
+      "avg_icp_score": 75.0,
+      "campaign_id": "campaign-456",
+      "campaign_name": "Test Campaign",
+      "lead_count": 50,
+      "tier": "tier2"
+    },
+    "request_id": "req_fb698cba",
+    "requester_agent": "gatekeeper",
+    "risk_score": 0.0,
+    "status": "auto_approved",
+    "updated_at": "2026-01-22T18:51:31.740005+00:00"
+  },
+  {
+    "action_type": "send_email",
+    "approver_id": null,
+    "approver_notes": null,
+    "created_at": "2026-01-22T18:51:31.783941+00:00",
+    "description": "send_email requested by gatekeeper",
+    "metadata": {
+      "rpi_workflow": true,
+      "segment": "enterprise",
+      "urgency": "critical"
+    },
+    "payload": {
+      "avg_icp_score": 75.0,
+      "campaign_id": "campaign-456",
+      "campaign_name": "Test Campaign",
+      "lead_count": 50,
+      "tier": "tier2"
+    },
+    "request_id": "req_34fcbc8c",
+    "requester_agent": "gatekeeper",
+    "risk_score": 0.0,
+    "status": "auto_approved",
+    "updated_at": "2026-01-22T18:51:31.783941+00:00"
+  },
+  {
+    "action_type": "send_email",
+    "approver_id": null,
+    "approver_notes": null,
+    "created_at": "2026-01-22T18:51:32.094616+00:00",
+    "description": "send_email requested by gatekeeper",
+    "metadata": {
+      "rpi_workflow": true,
+      "segment": "enterprise",
+      "urgency": "normal"
+    },
+    "payload": {
+      "avg_icp_score": 75.0,
+      "campaign_id": "campaign-456",
+      "campaign_name": "Test Campaign",
+      "lead_count": 50,
+      "tier": "tier2"
+    },
+    "request_id": "req_17ea6abb",
+    "requester_agent": "gatekeeper",
+    "risk_score": 0.0,
+    "status": "auto_approved",
+    "updated_at": "2026-01-22T18:51:32.094616+00:00"
+  },
+  {
+    "action_type": "send_email",
+    "approver_id": null,
+    "approver_notes": null,
+    "created_at": "2026-01-22T18:51:32.111766+00:00",
+    "description": "send_email requested by gatekeeper",
+    "metadata": {
+      "rpi_workflow": true,
+      "segment": "smb",
+      "urgency": "normal"
+    },
+    "payload": {
+      "avg_icp_score": 85.0,
+      "campaign_id": "auto-campaign",
+      "campaign_name": "Calendar Update Campaign",
+      "lead_count": 10,
+      "tier": "tier3"
+    },
+    "request_id": "req_e34390ac",
+    "requester_agent": "gatekeeper",
+    "risk_score": 0.0,
+    "status": "auto_approved",
+    "updated_at": "2026-01-22T18:51:32.111766+00:00"
+  },
+  {
+    "action_type": "send_email",
+    "approver_id": null,
+    "approver_notes": null,
+    "created_at": "2026-01-22T18:51:32.168119+00:00",
+    "description": "send_email requested by gatekeeper",
+    "metadata": {
+      "rpi_workflow": true,
+      "segment": "enterprise",
+      "urgency": "normal"
+    },
+    "payload": {
+      "avg_icp_score": 75.0,
+      "campaign_id": "campaign-456",
+      "campaign_name": "Test Campaign",
+      "lead_count": 50,
+      "tier": "tier2"
+    },
+    "request_id": "req_a6ec40e1",
+    "requester_agent": "gatekeeper",
+    "risk_score": 0.0,
+    "status": "auto_approved",
+    "updated_at": "2026-01-22T18:51:32.168119+00:00"
+  },
+  {
+    "action_type": "send_email",
+    "approver_id": null,
+    "approver_notes": null,
+    "created_at": "2026-01-22T18:51:44.334117+00:00",
+    "description": "send_email requested by gatekeeper",
+    "metadata": {
+      "rpi_workflow": true,
+      "segment": "enterprise",
+      "urgency": "normal"
+    },
+    "payload": {
+      "avg_icp_score": 75.0,
+      "campaign_id": "campaign-456",
+      "campaign_name": "Test Campaign",
+      "lead_count": 50,
+      "tier": "tier2"
+    },
+    "request_id": "req_3e0a76bb",
+    "requester_agent": "gatekeeper",
+    "risk_score": 0.0,
+    "status": "auto_approved",
+    "updated_at": "2026-01-22T18:51:44.334117+00:00"
+  },
+  {
+    "action_type": "send_email",
+    "approver_id": null,
+    "approver_notes": null,
+    "created_at": "2026-01-22T18:51:44.365855+00:00",
+    "description": "send_email requested by gatekeeper",
+    "metadata": {
+      "rpi_workflow": true,
+      "segment": "enterprise",
+      "urgency": "critical"
+    },
+    "payload": {
+      "avg_icp_score": 75.0,
+      "campaign_id": "campaign-456",
+      "campaign_name": "Test Campaign",
+      "lead_count": 50,
+      "tier": "tier2"
+    },
+    "request_id": "req_7c552f20",
+    "requester_agent": "gatekeeper",
+    "risk_score": 0.0,
+    "status": "auto_approved",
+    "updated_at": "2026-01-22T18:51:44.365855+00:00"
+  },
+  {
+    "action_type": "send_email",
+    "approver_id": null,
+    "approver_notes": null,
+    "created_at": "2026-01-22T18:51:44.674627+00:00",
+    "description": "send_email requested by gatekeeper",
+    "metadata": {
+      "rpi_workflow": true,
+      "segment": "enterprise",
+      "urgency": "normal"
+    },
+    "payload": {
+      "avg_icp_score": 75.0,
+      "campaign_id": "campaign-456",
+      "campaign_name": "Test Campaign",
+      "lead_count": 50,
+      "tier": "tier2"
+    },
+    "request_id": "req_96f4279a",
+    "requester_agent": "gatekeeper",
+    "risk_score": 0.0,
+    "status": "auto_approved",
+    "updated_at": "2026-01-22T18:51:44.674627+00:00"
+  },
+  {
+    "action_type": "send_email",
+    "approver_id": null,
+    "approver_notes": null,
+    "created_at": "2026-01-22T18:51:44.692797+00:00",
+    "description": "send_email requested by gatekeeper",
+    "metadata": {
+      "rpi_workflow": true,
+      "segment": "smb",
+      "urgency": "normal"
+    },
+    "payload": {
+      "avg_icp_score": 85.0,
+      "campaign_id": "auto-campaign",
+      "campaign_name": "Calendar Update Campaign",
+      "lead_count": 10,
+      "tier": "tier3"
+    },
+    "request_id": "req_e1deaf47",
+    "requester_agent": "gatekeeper",
+    "risk_score": 0.0,
+    "status": "auto_approved",
+    "updated_at": "2026-01-22T18:51:44.692797+00:00"
+  },
+  {
+    "action_type": "send_email",
+    "approver_id": null,
+    "approver_notes": null,
+    "created_at": "2026-01-22T18:51:44.750423+00:00",
+    "description": "send_email requested by gatekeeper",
+    "metadata": {
+      "rpi_workflow": true,
+      "segment": "enterprise",
+      "urgency": "normal"
+    },
+    "payload": {
+      "avg_icp_score": 75.0,
+      "campaign_id": "campaign-456",
+      "campaign_name": "Test Campaign",
+      "lead_count": 50,
+      "tier": "tier2"
+    },
+    "request_id": "req_b214da9e",
+    "requester_agent": "gatekeeper",
+    "risk_score": 0.0,
+    "status": "auto_approved",
+    "updated_at": "2026-01-22T18:51:44.750423+00:00"
+  },
+  {
+    "action_type": "send_email",
+    "approver_id": null,
+    "approver_notes": null,
+    "created_at": "2026-01-22T18:52:37.725518+00:00",
+    "description": "send_email requested by gatekeeper",
+    "metadata": {
+      "rpi_workflow": true,
+      "segment": "enterprise",
+      "urgency": "normal"
+    },
+    "payload": {
+      "avg_icp_score": 75.0,
+      "campaign_id": "campaign-456",
+      "campaign_name": "Test Campaign",
+      "lead_count": 50,
+      "tier": "tier2"
+    },
+    "request_id": "req_349c0e62",
+    "requester_agent": "gatekeeper",
+    "risk_score": 0.0,
+    "status": "auto_approved",
+    "updated_at": "2026-01-22T18:52:37.725518+00:00"
+  },
+  {
+    "action_type": "send_email",
+    "approver_id": null,
+    "approver_notes": null,
+    "created_at": "2026-01-22T18:52:37.760509+00:00",
+    "description": "send_email requested by gatekeeper",
+    "metadata": {
+      "rpi_workflow": true,
+      "segment": "enterprise",
+      "urgency": "critical"
+    },
+    "payload": {
+      "avg_icp_score": 75.0,
+      "campaign_id": "campaign-456",
+      "campaign_name": "Test Campaign",
+      "lead_count": 50,
+      "tier": "tier2"
+    },
+    "request_id": "req_86e2e4b1",
+    "requester_agent": "gatekeeper",
+    "risk_score": 0.0,
+    "status": "auto_approved",
+    "updated_at": "2026-01-22T18:52:37.760509+00:00"
+  },
+  {
+    "action_type": "send_email",
+    "approver_id": null,
+    "approver_notes": null,
+    "created_at": "2026-01-22T18:52:38.067480+00:00",
+    "description": "send_email requested by gatekeeper",
+    "metadata": {
+      "rpi_workflow": true,
+      "segment": "enterprise",
+      "urgency": "normal"
+    },
+    "payload": {
+      "avg_icp_score": 75.0,
+      "campaign_id": "campaign-456",
+      "campaign_name": "Test Campaign",
+      "lead_count": 50,
+      "tier": "tier2"
+    },
+    "request_id": "req_18758e4c",
+    "requester_agent": "gatekeeper",
+    "risk_score": 0.0,
+    "status": "auto_approved",
+    "updated_at": "2026-01-22T18:52:38.067480+00:00"
+  },
+  {
+    "action_type": "send_email",
+    "approver_id": null,
+    "approver_notes": null,
+    "created_at": "2026-01-22T18:52:38.085605+00:00",
+    "description": "send_email requested by gatekeeper",
+    "metadata": {
+      "rpi_workflow": true,
+      "segment": "smb",
+      "urgency": "normal"
+    },
+    "payload": {
+      "avg_icp_score": 85.0,
+      "campaign_id": "auto-campaign",
+      "campaign_name": "Calendar Update Campaign",
+      "lead_count": 10,
+      "tier": "tier3"
+    },
+    "request_id": "req_546f1ca9",
+    "requester_agent": "gatekeeper",
+    "risk_score": 0.0,
+    "status": "auto_approved",
+    "updated_at": "2026-01-22T18:52:38.085605+00:00"
+  },
+  {
+    "action_type": "send_email",
+    "approver_id": null,
+    "approver_notes": null,
+    "created_at": "2026-01-22T18:52:38.143979+00:00",
+    "description": "send_email requested by gatekeeper",
+    "metadata": {
+      "rpi_workflow": true,
+      "segment": "enterprise",
+      "urgency": "normal"
+    },
+    "payload": {
+      "avg_icp_score": 75.0,
+      "campaign_id": "campaign-456",
+      "campaign_name": "Test Campaign",
+      "lead_count": 50,
+      "tier": "tier2"
+    },
+    "request_id": "req_8816c8e8",
+    "requester_agent": "gatekeeper",
+    "risk_score": 0.0,
+    "status": "auto_approved",
+    "updated_at": "2026-01-22T18:52:38.143979+00:00"
+  },
+  {
+    "action_type": "send_email",
+    "approver_id": null,
+    "approver_notes": null,
+    "created_at": "2026-01-22T18:53:09.100249+00:00",
+    "description": "send_email requested by gatekeeper",
+    "metadata": {
+      "rpi_workflow": true,
+      "segment": "enterprise",
+      "urgency": "normal"
+    },
+    "payload": {
+      "avg_icp_score": 75.0,
+      "campaign_id": "campaign-456",
+      "campaign_name": "Test Campaign",
+      "lead_count": 50,
+      "tier": "tier2"
+    },
+    "request_id": "req_436de030",
+    "requester_agent": "gatekeeper",
+    "risk_score": 0.0,
+    "status": "auto_approved",
+    "updated_at": "2026-01-22T18:53:09.100249+00:00"
+  },
+  {
+    "action_type": "send_email",
+    "approver_id": null,
+    "approver_notes": null,
+    "created_at": "2026-01-22T18:53:09.135488+00:00",
+    "description": "send_email requested by gatekeeper",
+    "metadata": {
+      "rpi_workflow": true,
+      "segment": "enterprise",
+      "urgency": "critical"
+    },
+    "payload": {
+      "avg_icp_score": 75.0,
+      "campaign_id": "campaign-456",
+      "campaign_name": "Test Campaign",
+      "lead_count": 50,
+      "tier": "tier2"
+    },
+    "request_id": "req_7e6a0a5e",
+    "requester_agent": "gatekeeper",
+    "risk_score": 0.0,
+    "status": "auto_approved",
+    "updated_at": "2026-01-22T18:53:09.135488+00:00"
+  },
+  {
+    "action_type": "send_email",
+    "approver_id": null,
+    "approver_notes": null,
+    "created_at": "2026-01-22T18:53:09.453904+00:00",
+    "description": "send_email requested by gatekeeper",
+    "metadata": {
+      "rpi_workflow": true,
+      "segment": "enterprise",
+      "urgency": "normal"
+    },
+    "payload": {
+      "avg_icp_score": 75.0,
+      "campaign_id": "campaign-456",
+      "campaign_name": "Test Campaign",
+      "lead_count": 50,
+      "tier": "tier2"
+    },
+    "request_id": "req_64bd1494",
+    "requester_agent": "gatekeeper",
+    "risk_score": 0.0,
+    "status": "auto_approved",
+    "updated_at": "2026-01-22T18:53:09.453904+00:00"
+  },
+  {
+    "action_type": "send_email",
+    "approver_id": null,
+    "approver_notes": null,
+    "created_at": "2026-01-22T18:53:09.472775+00:00",
+    "description": "send_email requested by gatekeeper",
+    "metadata": {
+      "rpi_workflow": true,
+      "segment": "smb",
+      "urgency": "normal"
+    },
+    "payload": {
+      "avg_icp_score": 85.0,
+      "campaign_id": "auto-campaign",
+      "campaign_name": "Calendar Update Campaign",
+      "lead_count": 10,
+      "tier": "tier3"
+    },
+    "request_id": "req_f684d3a8",
+    "requester_agent": "gatekeeper",
+    "risk_score": 0.0,
+    "status": "auto_approved",
+    "updated_at": "2026-01-22T18:53:09.472775+00:00"
+  },
+  {
+    "action_type": "send_email",
+    "approver_id": null,
+    "approver_notes": null,
+    "created_at": "2026-01-22T18:53:09.533093+00:00",
+    "description": "send_email requested by gatekeeper",
+    "metadata": {
+      "rpi_workflow": true,
+      "segment": "enterprise",
+      "urgency": "normal"
+    },
+    "payload": {
+      "avg_icp_score": 75.0,
+      "campaign_id": "campaign-456",
+      "campaign_name": "Test Campaign",
+      "lead_count": 50,
+      "tier": "tier2"
+    },
+    "request_id": "req_42177bd1",
+    "requester_agent": "gatekeeper",
+    "risk_score": 0.0,
+    "status": "auto_approved",
+    "updated_at": "2026-01-22T18:53:09.533093+00:00"
+  },
+  {
+    "action_type": "send_email",
+    "approver_id": null,
+    "approver_notes": null,
+    "created_at": "2026-01-22T18:53:33.095334+00:00",
+    "description": "send_email requested by gatekeeper",
+    "metadata": {
+      "rpi_workflow": true,
+      "segment": "enterprise",
+      "urgency": "normal"
+    },
+    "payload": {
+      "avg_icp_score": 75.0,
+      "campaign_id": "campaign-456",
+      "campaign_name": "Test Campaign",
+      "lead_count": 50,
+      "tier": "tier2"
+    },
+    "request_id": "req_a5620f45",
+    "requester_agent": "gatekeeper",
+    "risk_score": 0.0,
+    "status": "auto_approved",
+    "updated_at": "2026-01-22T18:53:33.095334+00:00"
+  },
+  {
+    "action_type": "send_email",
+    "approver_id": null,
+    "approver_notes": null,
+    "created_at": "2026-01-22T18:53:46.856412+00:00",
+    "description": "send_email requested by gatekeeper",
+    "metadata": {
+      "rpi_workflow": true,
+      "segment": "enterprise",
+      "urgency": "normal"
+    },
+    "payload": {
+      "avg_icp_score": 75.0,
+      "campaign_id": "campaign-456",
+      "campaign_name": "Test Campaign",
+      "lead_count": 50,
+      "tier": "tier2"
+    },
+    "request_id": "req_6b878c33",
+    "requester_agent": "gatekeeper",
+    "risk_score": 0.0,
+    "status": "auto_approved",
+    "updated_at": "2026-01-22T18:53:46.856412+00:00"
+  },
+  {
+    "action_type": "send_email",
+    "approver_id": null,
+    "approver_notes": null,
+    "created_at": "2026-01-22T18:53:46.890316+00:00",
+    "description": "send_email requested by gatekeeper",
+    "metadata": {
+      "rpi_workflow": true,
+      "segment": "enterprise",
+      "urgency": "critical"
+    },
+    "payload": {
+      "avg_icp_score": 75.0,
+      "campaign_id": "campaign-456",
+      "campaign_name": "Test Campaign",
+      "lead_count": 50,
+      "tier": "tier2"
+    },
+    "request_id": "req_4a45e5ef",
+    "requester_agent": "gatekeeper",
+    "risk_score": 0.0,
+    "status": "auto_approved",
+    "updated_at": "2026-01-22T18:53:46.890316+00:00"
+  },
+  {
+    "action_type": "send_email",
+    "approver_id": null,
+    "approver_notes": null,
+    "created_at": "2026-01-22T18:53:47.212629+00:00",
+    "description": "send_email requested by gatekeeper",
+    "metadata": {
+      "rpi_workflow": true,
+      "segment": "enterprise",
+      "urgency": "normal"
+    },
+    "payload": {
+      "avg_icp_score": 75.0,
+      "campaign_id": "campaign-456",
+      "campaign_name": "Test Campaign",
+      "lead_count": 50,
+      "tier": "tier2"
+    },
+    "request_id": "req_b1d2e340",
+    "requester_agent": "gatekeeper",
+    "risk_score": 0.0,
+    "status": "auto_approved",
+    "updated_at": "2026-01-22T18:53:47.212629+00:00"
+  },
+  {
+    "action_type": "send_email",
+    "approver_id": null,
+    "approver_notes": null,
+    "created_at": "2026-01-22T18:53:47.231675+00:00",
+    "description": "send_email requested by gatekeeper",
+    "metadata": {
+      "rpi_workflow": true,
+      "segment": "smb",
+      "urgency": "normal"
+    },
+    "payload": {
+      "avg_icp_score": 85.0,
+      "campaign_id": "auto-campaign",
+      "campaign_name": "Calendar Update Campaign",
+      "lead_count": 10,
+      "tier": "tier3"
+    },
+    "request_id": "req_782410f3",
+    "requester_agent": "gatekeeper",
+    "risk_score": 0.0,
+    "status": "auto_approved",
+    "updated_at": "2026-01-22T18:53:47.231675+00:00"
+  },
+  {
+    "action_type": "send_email",
+    "approver_id": null,
+    "approver_notes": null,
+    "created_at": "2026-01-22T18:53:47.291551+00:00",
+    "description": "send_email requested by gatekeeper",
+    "metadata": {
+      "rpi_workflow": true,
+      "segment": "enterprise",
+      "urgency": "normal"
+    },
+    "payload": {
+      "avg_icp_score": 75.0,
+      "campaign_id": "campaign-456",
+      "campaign_name": "Test Campaign",
+      "lead_count": 50,
+      "tier": "tier2"
+    },
+    "request_id": "req_02102bf5",
+    "requester_agent": "gatekeeper",
+    "risk_score": 0.0,
+    "status": "auto_approved",
+    "updated_at": "2026-01-22T18:53:47.291551+00:00"
+  },
+  {
+    "action_type": "send_email",
+    "approver_id": null,
+    "approver_notes": null,
+    "created_at": "2026-01-22T18:54:02.271912+00:00",
+    "description": "send_email requested by gatekeeper",
+    "metadata": {
+      "rpi_workflow": true,
+      "segment": "enterprise",
+      "urgency": "normal"
+    },
+    "payload": {
+      "avg_icp_score": 75.0,
+      "campaign_id": "campaign-456",
+      "campaign_name": "Test Campaign",
+      "lead_count": 50,
+      "tier": "tier2"
+    },
+    "request_id": "req_2ec01dab",
+    "requester_agent": "gatekeeper",
+    "risk_score": 0.0,
+    "status": "auto_approved",
+    "updated_at": "2026-01-22T18:54:02.271912+00:00"
+  },
+  {
+    "action_type": "send_email",
+    "approver_id": null,
+    "approver_notes": null,
+    "created_at": "2026-01-22T18:54:14.565572+00:00",
+    "description": "send_email requested by gatekeeper",
+    "metadata": {
+      "rpi_workflow": true,
+      "segment": "enterprise",
+      "urgency": "normal"
+    },
+    "payload": {
+      "avg_icp_score": 75.0,
+      "campaign_id": "campaign-456",
+      "campaign_name": "Test Campaign",
+      "lead_count": 50,
+      "tier": "tier2"
+    },
+    "request_id": "req_3529a5d0",
+    "requester_agent": "gatekeeper",
+    "risk_score": 0.0,
+    "status": "auto_approved",
+    "updated_at": "2026-01-22T18:54:14.565572+00:00"
+  },
+  {
+    "action_type": "send_email",
+    "approver_id": null,
+    "approver_notes": null,
+    "created_at": "2026-01-22T18:54:14.599113+00:00",
+    "description": "send_email requested by gatekeeper",
+    "metadata": {
+      "rpi_workflow": true,
+      "segment": "enterprise",
+      "urgency": "critical"
+    },
+    "payload": {
+      "avg_icp_score": 75.0,
+      "campaign_id": "campaign-456",
+      "campaign_name": "Test Campaign",
+      "lead_count": 50,
+      "tier": "tier2"
+    },
+    "request_id": "req_6a2e640e",
+    "requester_agent": "gatekeeper",
+    "risk_score": 0.0,
+    "status": "auto_approved",
+    "updated_at": "2026-01-22T18:54:14.599113+00:00"
+  },
+  {
+    "action_type": "send_email",
+    "approver_id": null,
+    "approver_notes": null,
+    "created_at": "2026-01-22T18:54:14.917712+00:00",
+    "description": "send_email requested by gatekeeper",
+    "metadata": {
+      "rpi_workflow": true,
+      "segment": "enterprise",
+      "urgency": "normal"
+    },
+    "payload": {
+      "avg_icp_score": 75.0,
+      "campaign_id": "campaign-456",
+      "campaign_name": "Test Campaign",
+      "lead_count": 50,
+      "tier": "tier2"
+    },
+    "request_id": "req_24b845c8",
+    "requester_agent": "gatekeeper",
+    "risk_score": 0.0,
+    "status": "auto_approved",
+    "updated_at": "2026-01-22T18:54:14.917712+00:00"
+  },
+  {
+    "action_type": "send_email",
+    "approver_id": null,
+    "approver_notes": null,
+    "created_at": "2026-01-22T18:54:14.936989+00:00",
+    "description": "send_email requested by gatekeeper",
+    "metadata": {
+      "rpi_workflow": true,
+      "segment": "smb",
+      "urgency": "normal"
+    },
+    "payload": {
+      "avg_icp_score": 85.0,
+      "campaign_id": "auto-campaign",
+      "campaign_name": "Calendar Update Campaign",
+      "lead_count": 10,
+      "tier": "tier3"
+    },
+    "request_id": "req_3a12990a",
+    "requester_agent": "gatekeeper",
+    "risk_score": 0.0,
+    "status": "auto_approved",
+    "updated_at": "2026-01-22T18:54:14.936989+00:00"
+  },
+  {
+    "action_type": "send_email",
+    "approver_id": null,
+    "approver_notes": null,
+    "created_at": "2026-01-22T18:54:57.256240+00:00",
+    "description": "send_email requested by gatekeeper",
+    "metadata": {
+      "rpi_workflow": true,
+      "segment": "enterprise",
+      "urgency": "normal"
+    },
+    "payload": {
+      "avg_icp_score": 75.0,
+      "campaign_id": "campaign-456",
+      "campaign_name": "Test Campaign",
+      "lead_count": 50,
+      "tier": "tier2"
+    },
+    "request_id": "req_ff56429b",
+    "requester_agent": "gatekeeper",
+    "risk_score": 0.0,
+    "status": "auto_approved",
+    "updated_at": "2026-01-22T18:54:57.256240+00:00"
+  },
+  {
+    "action_type": "send_email",
+    "approver_id": null,
+    "approver_notes": null,
+    "created_at": "2026-01-22T18:54:57.283198+00:00",
+    "description": "send_email requested by gatekeeper",
+    "metadata": {
+      "rpi_workflow": true,
+      "segment": "smb",
+      "urgency": "normal"
+    },
+    "payload": {
+      "avg_icp_score": 85.0,
+      "campaign_id": "auto-campaign",
+      "campaign_name": "Calendar Update Campaign",
+      "lead_count": 10,
+      "tier": "tier3"
+    },
+    "request_id": "req_6738d80c",
+    "requester_agent": "gatekeeper",
+    "risk_score": 0.0,
+    "status": "auto_approved",
+    "updated_at": "2026-01-22T18:54:57.283198+00:00"
+  },
+  {
+    "action_type": "send_email",
+    "approver_id": null,
+    "approver_notes": null,
+    "created_at": "2026-01-22T18:55:06.944447+00:00",
+    "description": "send_email requested by gatekeeper",
+    "metadata": {
+      "rpi_workflow": true,
+      "segment": "enterprise",
+      "urgency": "normal"
+    },
+    "payload": {
+      "avg_icp_score": 75.0,
+      "campaign_id": "campaign-456",
+      "campaign_name": "Test Campaign",
+      "lead_count": 50,
+      "tier": "tier2"
+    },
+    "request_id": "req_8cf4a6c6",
+    "requester_agent": "gatekeeper",
+    "risk_score": 0.0,
+    "status": "auto_approved",
+    "updated_at": "2026-01-22T18:55:06.944447+00:00"
+  },
+  {
+    "action_type": "send_email",
+    "approver_id": null,
+    "approver_notes": null,
+    "created_at": "2026-01-22T18:55:06.977868+00:00",
+    "description": "send_email requested by gatekeeper",
+    "metadata": {
+      "rpi_workflow": true,
+      "segment": "enterprise",
+      "urgency": "critical"
+    },
+    "payload": {
+      "avg_icp_score": 75.0,
+      "campaign_id": "campaign-456",
+      "campaign_name": "Test Campaign",
+      "lead_count": 50,
+      "tier": "tier2"
+    },
+    "request_id": "req_92aca70e",
+    "requester_agent": "gatekeeper",
+    "risk_score": 0.0,
+    "status": "auto_approved",
+    "updated_at": "2026-01-22T18:55:06.977868+00:00"
+  },
+  {
+    "action_type": "send_email",
+    "approver_id": null,
+    "approver_notes": null,
+    "created_at": "2026-01-22T18:55:16.011711+00:00",
+    "description": "send_email requested by gatekeeper",
+    "metadata": {
+      "rpi_workflow": true,
+      "segment": "enterprise",
+      "urgency": "normal"
+    },
+    "payload": {
+      "avg_icp_score": 75.0,
+      "campaign_id": "campaign-456",
+      "campaign_name": "Test Campaign",
+      "lead_count": 50,
+      "tier": "tier2"
+    },
+    "request_id": "req_4f9ce95a",
+    "requester_agent": "gatekeeper",
+    "risk_score": 0.0,
+    "status": "auto_approved",
+    "updated_at": "2026-01-22T18:55:16.011711+00:00"
+  },
+  {
+    "action_type": "send_email",
+    "approver_id": null,
+    "approver_notes": null,
+    "created_at": "2026-01-22T18:55:16.050506+00:00",
+    "description": "send_email requested by gatekeeper",
+    "metadata": {
+      "rpi_workflow": true,
+      "segment": "enterprise",
+      "urgency": "critical"
+    },
+    "payload": {
+      "avg_icp_score": 75.0,
+      "campaign_id": "campaign-456",
+      "campaign_name": "Test Campaign",
+      "lead_count": 50,
+      "tier": "tier2"
+    },
+    "request_id": "req_a77d50aa",
+    "requester_agent": "gatekeeper",
+    "risk_score": 0.0,
+    "status": "auto_approved",
+    "updated_at": "2026-01-22T18:55:16.050506+00:00"
+  },
+  {
+    "action_type": "send_email",
+    "approver_id": null,
+    "approver_notes": null,
+    "created_at": "2026-01-22T18:55:57.597629+00:00",
+    "description": "send_email requested by gatekeeper",
+    "metadata": {
+      "rpi_workflow": true,
+      "segment": "enterprise",
+      "urgency": "normal"
+    },
+    "payload": {
+      "avg_icp_score": 75.0,
+      "campaign_id": "campaign-456",
+      "campaign_name": "Test Campaign",
+      "lead_count": 50,
+      "tier": "tier2"
+    },
+    "request_id": "req_b380bb9a",
+    "requester_agent": "gatekeeper",
+    "risk_score": 0.1,
+    "status": "auto_approved",
+    "updated_at": "2026-01-22T18:55:57.597629+00:00"
+  },
+  {
+    "action_type": "send_email",
+    "approver_id": null,
+    "approver_notes": null,
+    "created_at": "2026-01-22T18:55:57.633009+00:00",
+    "description": "send_email requested by gatekeeper",
+    "metadata": {
+      "rpi_workflow": true,
+      "segment": "enterprise",
+      "urgency": "critical"
+    },
+    "payload": {
+      "avg_icp_score": 75.0,
+      "campaign_id": "campaign-456",
+      "campaign_name": "Test Campaign",
+      "lead_count": 50,
+      "tier": "tier2"
+    },
+    "request_id": "req_b96a8031",
+    "requester_agent": "gatekeeper",
+    "risk_score": 0.9,
+    "status": "pending",
+    "updated_at": "2026-01-22T18:55:57.633009+00:00"
+  },
+  {
+    "action_type": "send_email",
+    "approver_id": null,
+    "approver_notes": null,
+    "created_at": "2026-01-22T18:55:57.832973+00:00",
+    "description": "send_email requested by gatekeeper",
+    "metadata": {
+      "rpi_workflow": true,
+      "segment": "enterprise",
+      "urgency": "normal"
+    },
+    "payload": {
+      "avg_icp_score": 75.0,
+      "campaign_id": "campaign-456",
+      "campaign_name": "Test Campaign",
+      "lead_count": 50,
+      "tier": "tier2"
+    },
+    "request_id": "req_923abd5e",
+    "requester_agent": "gatekeeper",
+    "risk_score": 0.1,
+    "status": "auto_approved",
+    "updated_at": "2026-01-22T18:55:57.832973+00:00"
+  },
+  {
+    "action_type": "send_email",
+    "approver_id": null,
+    "approver_notes": null,
+    "created_at": "2026-01-22T18:55:57.852738+00:00",
+    "description": "send_email requested by gatekeeper",
+    "metadata": {
+      "rpi_workflow": true,
+      "segment": "smb",
+      "urgency": "normal"
+    },
+    "payload": {
+      "avg_icp_score": 85.0,
+      "campaign_id": "auto-campaign",
+      "campaign_name": "Calendar Update Campaign",
+      "lead_count": 10,
+      "tier": "tier3"
+    },
+    "request_id": "req_de7b469a",
+    "requester_agent": "gatekeeper",
+    "risk_score": 0.1,
+    "status": "auto_approved",
+    "updated_at": "2026-01-22T18:55:57.852738+00:00"
+  },
+  {
+    "action_type": "send_email",
+    "approver_id": null,
+    "approver_notes": null,
+    "created_at": "2026-01-22T18:55:57.913224+00:00",
+    "description": "send_email requested by gatekeeper",
+    "metadata": {
+      "rpi_workflow": true,
+      "segment": "enterprise",
+      "urgency": "normal"
+    },
+    "payload": {
+      "avg_icp_score": 75.0,
+      "campaign_id": "campaign-456",
+      "campaign_name": "Test Campaign",
+      "lead_count": 50,
+      "tier": "tier2"
+    },
+    "request_id": "req_81c1e3b0",
+    "requester_agent": "gatekeeper",
+    "risk_score": 0.1,
+    "status": "auto_approved",
+    "updated_at": "2026-01-22T18:55:57.913224+00:00"
+  },
+  {
+    "action_type": "send_email",
+    "approver_id": null,
+    "approver_notes": null,
+    "created_at": "2026-01-22T19:14:07.765714+00:00",
+    "description": "send_email requested by gatekeeper",
+    "metadata": {
+      "rpi_workflow": true,
+      "segment": "enterprise",
+      "urgency": "normal"
+    },
+    "payload": {
+      "avg_icp_score": 75.0,
+      "campaign_id": "campaign-456",
+      "campaign_name": "Test Campaign",
+      "lead_count": 50,
+      "tier": "tier2"
+    },
+    "request_id": "req_40d01385",
+    "requester_agent": "gatekeeper",
+    "risk_score": 0.1,
+    "status": "auto_approved",
+    "updated_at": "2026-01-22T19:14:07.765714+00:00"
+  },
+  {
+    "action_type": "send_email",
+    "approver_id": null,
+    "approver_notes": null,
+    "created_at": "2026-01-22T19:14:07.798862+00:00",
+    "description": "send_email requested by gatekeeper",
+    "metadata": {
+      "rpi_workflow": true,
+      "segment": "enterprise",
+      "urgency": "critical"
+    },
+    "payload": {
+      "avg_icp_score": 75.0,
+      "campaign_id": "campaign-456",
+      "campaign_name": "Test Campaign",
+      "lead_count": 50,
+      "tier": "tier2"
+    },
+    "request_id": "req_3d65d372",
+    "requester_agent": "gatekeeper",
+    "risk_score": 0.9,
+    "status": "pending",
+    "updated_at": "2026-01-22T19:14:07.798862+00:00"
+  },
+  {
+    "action_type": "send_email",
+    "approver_id": null,
+    "approver_notes": null,
+    "created_at": "2026-01-22T19:14:08.043897+00:00",
+    "description": "send_email requested by gatekeeper",
+    "metadata": {
+      "rpi_workflow": true,
+      "segment": "enterprise",
+      "urgency": "normal"
+    },
+    "payload": {
+      "avg_icp_score": 75.0,
+      "campaign_id": "campaign-456",
+      "campaign_name": "Test Campaign",
+      "lead_count": 50,
+      "tier": "tier2"
+    },
+    "request_id": "req_aecf4132",
+    "requester_agent": "gatekeeper",
+    "risk_score": 0.1,
+    "status": "auto_approved",
+    "updated_at": "2026-01-22T19:14:08.043897+00:00"
+  },
+  {
+    "action_type": "send_email",
+    "approver_id": null,
+    "approver_notes": null,
+    "created_at": "2026-01-22T19:14:08.063045+00:00",
+    "description": "send_email requested by gatekeeper",
+    "metadata": {
+      "rpi_workflow": true,
+      "segment": "smb",
+      "urgency": "normal"
+    },
+    "payload": {
+      "avg_icp_score": 85.0,
+      "campaign_id": "auto-campaign",
+      "campaign_name": "Calendar Update Campaign",
+      "lead_count": 10,
+      "tier": "tier3"
+    },
+    "request_id": "req_49f62b5f",
+    "requester_agent": "gatekeeper",
+    "risk_score": 0.1,
+    "status": "auto_approved",
+    "updated_at": "2026-01-22T19:14:08.063045+00:00"
+  },
+  {
+    "action_type": "send_email",
+    "approver_id": null,
+    "approver_notes": null,
+    "created_at": "2026-01-22T19:14:08.123948+00:00",
+    "description": "send_email requested by gatekeeper",
+    "metadata": {
+      "rpi_workflow": true,
+      "segment": "enterprise",
+      "urgency": "normal"
+    },
+    "payload": {
+      "avg_icp_score": 75.0,
+      "campaign_id": "campaign-456",
+      "campaign_name": "Test Campaign",
+      "lead_count": 50,
+      "tier": "tier2"
+    },
+    "request_id": "req_5933cd1a",
+    "requester_agent": "gatekeeper",
+    "risk_score": 0.1,
+    "status": "auto_approved",
+    "updated_at": "2026-01-22T19:14:08.123948+00:00"
+  },
+  {
+    "action_type": "bulk_email",
+    "approver_id": null,
+    "approver_notes": null,
+    "created_at": "2026-01-22T20:50:10.594140+00:00",
+    "description": "bulk_email requested by gatekeeper",
+    "metadata": {
+      "rpi_workflow": false,
+      "segment": "Tech CEOs",
+      "urgency": "normal"
+    },
+    "payload": {
+      "avg_icp_score": 0.9,
+      "campaign_id": "camp_001",
+      "campaign_name": "Test Campaign",
+      "lead_count": 100,
+      "tier": ""
+    },
+    "request_id": "req_33a5bced",
+    "requester_agent": "gatekeeper",
+    "risk_score": 0.1,
+    "status": "auto_approved",
+    "updated_at": "2026-01-22T20:50:10.594140+00:00"
+  },
+  {
+    "action_type": "send_email",
+    "approver_id": null,
+    "approver_notes": null,
+    "created_at": "2026-01-22T20:50:47.048092+00:00",
+    "description": "send_email requested by gatekeeper",
+    "metadata": {
+      "rpi_workflow": true,
+      "segment": "enterprise",
+      "urgency": "normal"
+    },
+    "payload": {
+      "avg_icp_score": 75.0,
+      "campaign_id": "campaign-456",
+      "campaign_name": "Test Campaign",
+      "lead_count": 50,
+      "tier": "tier2"
+    },
+    "request_id": "req_6156dfc3",
+    "requester_agent": "gatekeeper",
+    "risk_score": 0.1,
+    "status": "auto_approved",
+    "updated_at": "2026-01-22T20:50:47.048092+00:00"
+  },
+  {
+    "action_type": "send_email",
+    "approver_id": null,
+    "approver_notes": null,
+    "created_at": "2026-01-22T20:50:47.096893+00:00",
+    "description": "send_email requested by gatekeeper",
+    "metadata": {
+      "rpi_workflow": true,
+      "segment": "enterprise",
+      "urgency": "critical"
+    },
+    "payload": {
+      "avg_icp_score": 75.0,
+      "campaign_id": "campaign-456",
+      "campaign_name": "Test Campaign",
+      "lead_count": 50,
+      "tier": "tier2"
+    },
+    "request_id": "req_76f0f66a",
+    "requester_agent": "gatekeeper",
+    "risk_score": 0.9,
+    "status": "pending",
+    "updated_at": "2026-01-22T20:50:47.096893+00:00"
+  },
+  {
+    "action_type": "bulk_email",
+    "approver_id": null,
+    "approver_notes": null,
+    "created_at": "2026-01-22T20:50:47.510545+00:00",
+    "description": "bulk_email requested by gatekeeper",
+    "metadata": {
+      "rpi_workflow": false,
+      "segment": "Tech CEOs",
+      "urgency": "normal"
+    },
+    "payload": {
+      "avg_icp_score": 0.9,
+      "campaign_id": "camp_001",
+      "campaign_name": "Test Campaign",
+      "lead_count": 100,
+      "tier": ""
+    },
+    "request_id": "req_3660a6fa",
+    "requester_agent": "gatekeeper",
+    "risk_score": 0.1,
+    "status": "auto_approved",
+    "updated_at": "2026-01-22T20:50:47.510545+00:00"
+  },
+  {
+    "action_type": "send_email",
+    "approver_id": null,
+    "approver_notes": null,
+    "created_at": "2026-01-22T20:50:48.664320+00:00",
+    "description": "send_email requested by gatekeeper",
+    "metadata": {
+      "rpi_workflow": true,
+      "segment": "enterprise",
+      "urgency": "normal"
+    },
+    "payload": {
+      "avg_icp_score": 75.0,
+      "campaign_id": "campaign-456",
+      "campaign_name": "Test Campaign",
+      "lead_count": 50,
+      "tier": "tier2"
+    },
+    "request_id": "req_cd8a3773",
+    "requester_agent": "gatekeeper",
+    "risk_score": 0.1,
+    "status": "auto_approved",
+    "updated_at": "2026-01-22T20:50:48.664320+00:00"
+  },
+  {
+    "action_type": "send_email",
+    "approver_id": null,
+    "approver_notes": null,
+    "created_at": "2026-01-22T20:50:48.874103+00:00",
+    "description": "send_email requested by gatekeeper",
+    "metadata": {
+      "rpi_workflow": true,
+      "segment": "smb",
+      "urgency": "normal"
+    },
+    "payload": {
+      "avg_icp_score": 85.0,
+      "campaign_id": "auto-campaign",
+      "campaign_name": "Calendar Update Campaign",
+      "lead_count": 10,
+      "tier": "tier3"
+    },
+    "request_id": "req_d43b2fda",
+    "requester_agent": "gatekeeper",
+    "risk_score": 0.1,
+    "status": "auto_approved",
+    "updated_at": "2026-01-22T20:50:48.874103+00:00"
+  },
+  {
+    "action_type": "send_email",
+    "approver_id": null,
+    "approver_notes": null,
+    "created_at": "2026-01-22T20:50:48.935885+00:00",
+    "description": "send_email requested by gatekeeper",
+    "metadata": {
+      "rpi_workflow": true,
+      "segment": "enterprise",
+      "urgency": "normal"
+    },
+    "payload": {
+      "avg_icp_score": 75.0,
+      "campaign_id": "campaign-456",
+      "campaign_name": "Test Campaign",
+      "lead_count": 50,
+      "tier": "tier2"
+    },
+    "request_id": "req_43260347",
+    "requester_agent": "gatekeeper",
+    "risk_score": 0.1,
+    "status": "auto_approved",
+    "updated_at": "2026-01-22T20:50:48.935885+00:00"
+  },
+  {
+    "action_type": "bulk_email",
+    "approver_id": null,
+    "approver_notes": null,
+    "created_at": "2026-01-22T20:54:19.396210+00:00",
+    "description": "bulk_email requested by gatekeeper",
+    "metadata": {
+      "rpi_workflow": false,
+      "segment": "Tech CEOs",
+      "urgency": "normal"
+    },
+    "payload": {
+      "avg_icp_score": 0.9,
+      "campaign_id": "camp_001",
+      "campaign_name": "Test Campaign",
+      "lead_count": 100,
+      "tier": ""
+    },
+    "request_id": "req_df258901",
+    "requester_agent": "gatekeeper",
+    "risk_score": 0.1,
+    "status": "auto_approved",
+    "updated_at": "2026-01-22T20:54:19.396210+00:00"
+  },
+  {
+    "action_type": "send_email",
+    "approver_id": null,
+    "approver_notes": null,
+    "created_at": "2026-01-22T20:55:53.309200+00:00",
+    "description": "send_email requested by gatekeeper",
+    "metadata": {
+      "rpi_workflow": true,
+      "segment": "enterprise",
+      "urgency": "normal"
+    },
+    "payload": {
+      "avg_icp_score": 75.0,
+      "campaign_id": "campaign-456",
+      "campaign_name": "Test Campaign",
+      "lead_count": 50,
+      "tier": "tier2"
+    },
+    "request_id": "req_a2e86950",
+    "requester_agent": "gatekeeper",
+    "risk_score": 0.1,
+    "status": "auto_approved",
+    "updated_at": "2026-01-22T20:55:53.309200+00:00"
+  },
+  {
+    "action_type": "send_email",
+    "approver_id": null,
+    "approver_notes": null,
+    "created_at": "2026-01-22T20:55:53.333097+00:00",
+    "description": "send_email requested by gatekeeper",
+    "metadata": {
+      "rpi_workflow": true,
+      "segment": "smb",
+      "urgency": "normal"
+    },
+    "payload": {
+      "avg_icp_score": 85.0,
+      "campaign_id": "auto-campaign",
+      "campaign_name": "Calendar Update Campaign",
+      "lead_count": 10,
+      "tier": "tier3"
+    },
+    "request_id": "req_edce9cff",
+    "requester_agent": "gatekeeper",
+    "risk_score": 0.1,
+    "status": "auto_approved",
+    "updated_at": "2026-01-22T20:55:53.333097+00:00"
+  },
+  {
+    "action_type": "send_email",
+    "approver_id": null,
+    "approver_notes": null,
+    "created_at": "2026-01-22T20:56:05.714969+00:00",
+    "description": "send_email requested by gatekeeper",
+    "metadata": {
+      "rpi_workflow": true,
+      "segment": "enterprise",
+      "urgency": "normal"
+    },
+    "payload": {
+      "avg_icp_score": 75.0,
+      "campaign_id": "campaign-456",
+      "campaign_name": "Test Campaign",
+      "lead_count": 50,
+      "tier": "tier2"
+    },
+    "request_id": "req_e5ef266b",
+    "requester_agent": "gatekeeper",
+    "risk_score": 0.1,
+    "status": "auto_approved",
+    "updated_at": "2026-01-22T20:56:05.714969+00:00"
+  },
+  {
+    "action_type": "send_email",
+    "approver_id": "test_ae",
+    "approver_notes": "Approved",
+    "created_at": "2026-01-22T20:56:05.754576+00:00",
+    "description": "send_email requested by gatekeeper",
+    "metadata": {
+      "rpi_workflow": true,
+      "segment": "enterprise",
+      "urgency": "critical"
+    },
+    "payload": {
+      "avg_icp_score": 75.0,
+      "campaign_id": "campaign-456",
+      "campaign_name": "Test Campaign",
+      "lead_count": 50,
+      "tier": "tier2"
+    },
+    "request_id": "req_09a431fc",
+    "requester_agent": "gatekeeper",
+    "risk_score": 0.9,
+    "status": "approved",
+    "updated_at": "2026-01-22T21:00:11.122799+00:00"
+  },
+  {
+    "action_type": "send_email",
+    "approver_id": null,
+    "approver_notes": null,
+    "created_at": "2026-01-22T20:56:05.927287+00:00",
+    "description": "send_email requested by gatekeeper",
+    "metadata": {
+      "rpi_workflow": true,
+      "segment": "enterprise",
+      "urgency": "normal"
+    },
+    "payload": {
+      "avg_icp_score": 75.0,
+      "campaign_id": "campaign-456",
+      "campaign_name": "Test Campaign",
+      "lead_count": 50,
+      "tier": "tier2"
+    },
+    "request_id": "req_eaaf8eda",
+    "requester_agent": "gatekeeper",
+    "risk_score": 0.1,
+    "status": "auto_approved",
+    "updated_at": "2026-01-22T20:56:05.927287+00:00"
+  },
+  {
+    "action_type": "send_email",
+    "approver_id": null,
+    "approver_notes": null,
+    "created_at": "2026-01-22T20:56:05.951789+00:00",
+    "description": "send_email requested by gatekeeper",
+    "metadata": {
+      "rpi_workflow": true,
+      "segment": "smb",
+      "urgency": "normal"
+    },
+    "payload": {
+      "avg_icp_score": 85.0,
+      "campaign_id": "auto-campaign",
+      "campaign_name": "Calendar Update Campaign",
+      "lead_count": 10,
+      "tier": "tier3"
+    },
+    "request_id": "req_53a412dd",
+    "requester_agent": "gatekeeper",
+    "risk_score": 0.1,
+    "status": "auto_approved",
+    "updated_at": "2026-01-22T20:56:05.951789+00:00"
+  },
+  {
+    "action_type": "send_email",
+    "approver_id": null,
+    "approver_notes": null,
+    "created_at": "2026-01-22T20:56:06.014156+00:00",
+    "description": "send_email requested by gatekeeper",
+    "metadata": {
+      "rpi_workflow": true,
+      "segment": "enterprise",
+      "urgency": "normal"
+    },
+    "payload": {
+      "avg_icp_score": 75.0,
+      "campaign_id": "campaign-456",
+      "campaign_name": "Test Campaign",
+      "lead_count": 50,
+      "tier": "tier2"
+    },
+    "request_id": "req_01d4ace5",
+    "requester_agent": "gatekeeper",
+    "risk_score": 0.1,
+    "status": "auto_approved",
+    "updated_at": "2026-01-22T20:56:06.014156+00:00"
+  },
+  {
+    "action_type": "send_email",
+    "approver_id": null,
+    "approver_notes": null,
+    "created_at": "2026-01-22T21:00:23.817216+00:00",
+    "description": "send_email requested by gatekeeper",
+    "metadata": {
+      "rpi_workflow": true,
+      "segment": "enterprise",
+      "urgency": "normal"
+    },
+    "payload": {
+      "avg_icp_score": 75.0,
+      "campaign_id": "campaign-456",
+      "campaign_name": "Test Campaign",
+      "lead_count": 50,
+      "tier": "tier2"
+    },
+    "request_id": "req_9edd4cb7",
+    "requester_agent": "gatekeeper",
+    "risk_score": 0.1,
+    "status": "auto_approved",
+    "updated_at": "2026-01-22T21:00:23.817216+00:00"
+  },
+  {
+    "action_type": "send_email",
+    "approver_id": "system_timeout",
+    "approver_notes": "Approval timeout exceeded (4+ hours)",
+    "created_at": "2026-01-22T21:00:23.875522+00:00",
+    "description": "send_email requested by gatekeeper",
+    "metadata": {
+      "rpi_workflow": true,
+      "segment": "enterprise",
+      "urgency": "critical"
+    },
+    "payload": {
+      "avg_icp_score": 75.0,
+      "campaign_id": "campaign-456",
+      "campaign_name": "Test Campaign",
+      "lead_count": 50,
+      "tier": "tier2"
+    },
+    "request_id": "req_4f9b5137",
+    "requester_agent": "gatekeeper",
+    "risk_score": 0.9,
+    "status": "rejected",
+    "updated_at": "2026-01-23T12:09:19.242549+00:00"
+  },
+  {
+    "action_type": "send_email",
+    "approver_id": null,
+    "approver_notes": null,
+    "created_at": "2026-01-22T21:00:24.080749+00:00",
+    "description": "send_email requested by gatekeeper",
+    "metadata": {
+      "rpi_workflow": true,
+      "segment": "enterprise",
+      "urgency": "normal"
+    },
+    "payload": {
+      "avg_icp_score": 75.0,
+      "campaign_id": "campaign-456",
+      "campaign_name": "Test Campaign",
+      "lead_count": 50,
+      "tier": "tier2"
+    },
+    "request_id": "req_2128852f",
+    "requester_agent": "gatekeeper",
+    "risk_score": 0.1,
+    "status": "auto_approved",
+    "updated_at": "2026-01-22T21:00:24.080749+00:00"
+  },
+  {
+    "action_type": "send_email",
+    "approver_id": null,
+    "approver_notes": null,
+    "created_at": "2026-01-22T21:00:24.105282+00:00",
+    "description": "send_email requested by gatekeeper",
+    "metadata": {
+      "rpi_workflow": true,
+      "segment": "smb",
+      "urgency": "normal"
+    },
+    "payload": {
+      "avg_icp_score": 85.0,
+      "campaign_id": "auto-campaign",
+      "campaign_name": "Calendar Update Campaign",
+      "lead_count": 10,
+      "tier": "tier3"
+    },
+    "request_id": "req_39417980",
+    "requester_agent": "gatekeeper",
+    "risk_score": 0.1,
+    "status": "auto_approved",
+    "updated_at": "2026-01-22T21:00:24.105282+00:00"
+  },
+  {
+    "action_type": "send_email",
+    "approver_id": null,
+    "approver_notes": null,
+    "created_at": "2026-01-22T21:00:24.165668+00:00",
+    "description": "send_email requested by gatekeeper",
+    "metadata": {
+      "rpi_workflow": true,
+      "segment": "enterprise",
+      "urgency": "normal"
+    },
+    "payload": {
+      "avg_icp_score": 75.0,
+      "campaign_id": "campaign-456",
+      "campaign_name": "Test Campaign",
+      "lead_count": 50,
+      "tier": "tier2"
+    },
+    "request_id": "req_b83e0771",
+    "requester_agent": "gatekeeper",
+    "risk_score": 0.1,
+    "status": "auto_approved",
+    "updated_at": "2026-01-22T21:00:24.165668+00:00"
+  },
+  {
+    "action_type": "send_email",
+    "approver_id": null,
+    "approver_notes": null,
+    "created_at": "2026-01-23T12:09:19.126714+00:00",
+    "description": "send_email requested by gatekeeper",
+    "metadata": {
+      "rpi_workflow": true,
+      "segment": "enterprise",
+      "urgency": "normal"
+    },
+    "payload": {
+      "avg_icp_score": 75.0,
+      "campaign_id": "campaign-456",
+      "campaign_name": "Test Campaign",
+      "lead_count": 50,
+      "tier": "tier2"
+    },
+    "request_id": "req_9e91977f",
+    "requester_agent": "gatekeeper",
+    "risk_score": 0.1,
+    "status": "auto_approved",
+    "updated_at": "2026-01-23T12:09:19.126714+00:00"
+  },
+  {
+    "action_type": "send_email",
+    "approver_id": null,
+    "approver_notes": null,
+    "created_at": "2026-01-23T12:09:19.165949+00:00",
+    "description": "send_email requested by gatekeeper",
+    "metadata": {
+      "rpi_workflow": true,
+      "segment": "enterprise",
+      "urgency": "critical"
+    },
+    "payload": {
+      "avg_icp_score": 75.0,
+      "campaign_id": "campaign-456",
+      "campaign_name": "Test Campaign",
+      "lead_count": 50,
+      "tier": "tier2"
+    },
+    "request_id": "req_41a1d2d3",
+    "requester_agent": "gatekeeper",
+    "risk_score": 0.9,
+    "status": "pending",
+    "updated_at": "2026-01-23T12:09:19.165949+00:00"
+  },
+  {
+    "action_type": "send_email",
+    "approver_id": null,
+    "approver_notes": null,
+    "created_at": "2026-01-23T12:09:22.395506+00:00",
+    "description": "send_email requested by gatekeeper",
+    "metadata": {
+      "rpi_workflow": true,
+      "segment": "enterprise",
+      "urgency": "normal"
+    },
+    "payload": {
+      "avg_icp_score": 75.0,
+      "campaign_id": "campaign-456",
+      "campaign_name": "Test Campaign",
+      "lead_count": 50,
+      "tier": "tier2"
+    },
+    "request_id": "req_103f2ceb",
+    "requester_agent": "gatekeeper",
+    "risk_score": 0.1,
+    "status": "auto_approved",
+    "updated_at": "2026-01-23T12:09:22.395506+00:00"
+  },
+  {
+    "action_type": "send_email",
+    "approver_id": null,
+    "approver_notes": null,
+    "created_at": "2026-01-23T12:09:22.419581+00:00",
+    "description": "send_email requested by gatekeeper",
+    "metadata": {
+      "rpi_workflow": true,
+      "segment": "smb",
+      "urgency": "normal"
+    },
+    "payload": {
+      "avg_icp_score": 85.0,
+      "campaign_id": "auto-campaign",
+      "campaign_name": "Calendar Update Campaign",
+      "lead_count": 10,
+      "tier": "tier3"
+    },
+    "request_id": "req_ea1071b2",
+    "requester_agent": "gatekeeper",
+    "risk_score": 0.1,
+    "status": "auto_approved",
+    "updated_at": "2026-01-23T12:09:22.419581+00:00"
+  },
+  {
+    "action_type": "send_email",
+    "approver_id": null,
+    "approver_notes": null,
+    "created_at": "2026-01-23T12:09:22.479119+00:00",
+    "description": "send_email requested by gatekeeper",
+    "metadata": {
+      "rpi_workflow": true,
+      "segment": "enterprise",
+      "urgency": "normal"
+    },
+    "payload": {
+      "avg_icp_score": 75.0,
+      "campaign_id": "campaign-456",
+      "campaign_name": "Test Campaign",
+      "lead_count": 50,
+      "tier": "tier2"
+    },
+    "request_id": "req_1f43f906",
+    "requester_agent": "gatekeeper",
+    "risk_score": 0.1,
+    "status": "auto_approved",
+    "updated_at": "2026-01-23T12:09:22.479119+00:00"
+  }
+]

@@ -1,0 +1,19 @@
+{
+    "name": "instantly-mcp",
+    "version": "1.0.0",
+    "description": "Instantly.ai email outreach MCP server",
+    "author": "Chiefaiofficer.com",
+    "tools": [
+        "instantly_create_campaign",
+        "instantly_add_leads",
+        "instantly_get_analytics",
+        "instantly_pause_campaign",
+        "instantly_list_campaigns",
+        "instantly_create_sequence"
+    ],
+    "dependencies": {
+        "mcp": ">=0.1.0",
+        "requests": ">=2.31.0"
+    },
+    "entrypoint": "server.py"
+}

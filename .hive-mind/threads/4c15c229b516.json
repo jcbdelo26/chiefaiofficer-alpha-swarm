@@ -1,0 +1,39 @@
+{
+  "thread_id": "4c15c229b516",
+  "saved_at": "2026-01-23T20:09:19.053629",
+  "message_count": 2,
+  "messages": [
+    {
+      "message_id": "<cf6a826a-694b-47ab-89aa-392e7198ae1a@caio-swarm.local>",
+      "subject": "Re: Meeting",
+      "from_email": "john@example.com",
+      "from_name": "",
+      "to_emails": [
+        "sales@company.com"
+      ],
+      "cc_emails": [],
+      "date": "",
+      "body_text": "Yes, let's do Tuesday at 2pm.",
+      "body_html": null,
+      "in_reply_to": null,
+      "references": [],
+      "headers": {}
+    },
+    {
+      "message_id": "<b599a30a-c7a7-47fd-b298-786ebdd0fc78@caio-swarm.local>",
+      "subject": "Meeting",
+      "from_email": "sales@company.com",
+      "from_name": "",
+      "to_emails": [
+        "john@example.com"
+      ],
+      "cc_emails": [],
+      "date": "",
+      "body_text": "When are you available?",
+      "body_html": null,
+      "in_reply_to": null,
+      "references": [],
+      "headers": {}
+    }
+  ]
+}

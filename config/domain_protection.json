@@ -1,0 +1,133 @@
+{
+  "domain_protection": {
+    "primary_domain": "b2b.chiefaiofficer.com",
+    "description": "Domain reputation protection configuration for cold outreach",
+    
+    "auto_pause_triggers": {
+      "bounces_per_hour": {
+        "threshold": 5,
+        "action": "pause",
+        "pause_hours": 4,
+        "alert_dani": true,
+        "description": "5+ bounces in 1 hour triggers 4-hour pause"
+      },
+      "spam_complaints": {
+        "threshold": 1,
+        "action": "pause",
+        "pause_hours": 24,
+        "alert_dani": true,
+        "description": "Any spam complaint triggers immediate 24-hour pause"
+      },
+      "unsubscribes_per_day": {
+        "threshold": 10,
+        "action": "pause",
+        "pause_hours": 12,
+        "alert_dani": true,
+        "description": "10+ unsubscribes in 1 day triggers review"
+      },
+      "bounce_rate_percent": {
+        "threshold": 2,
+        "action": "pause",
+        "pause_hours": 8,
+        "alert_dani": true,
+        "description": "Bounce rate >2% indicates list quality issues"
+      },
+      "low_reply_rate_percent": {
+        "threshold": 2,
+        "check_after_sends": 50,
+        "action": "alert",
+        "alert_dani": true,
+        "description": "Reply rate <2% after 50 sends indicates messaging issues"
+      }
+    },
+    
+    "warmup_schedule": {
+      "week_1": {
+        "daily_limit": 25,
+        "description": "Conservative warmup - monitor all metrics"
+      },
+      "week_2": {
+        "daily_limit": 50,
+        "requires": "bounce_rate < 2% AND no spam complaints"
+      },
+      "week_3": {
+        "daily_limit": 100,
+        "requires": "reply_rate > 3% AND open_rate > 30%"
+      },
+      "week_4_plus": {
+        "daily_limit": 150,
+        "requires": "all metrics healthy for 7 days"
+      }
+    },
+    
+    "health_thresholds": {
+      "healthy": {
+        "bounce_rate_max": 2,
+        "spam_rate_max": 0.1,
+        "open_rate_min": 30,
+        "reply_rate_min": 3,
+        "unsubscribe_rate_max": 1
+      },
+      "warning": {
+        "bounce_rate_max": 5,
+        "spam_rate_max": 0.3,
+        "open_rate_min": 20,
+        "reply_rate_min": 1,
+        "unsubscribe_rate_max": 2
+      },
+      "critical": {
+        "description": "Exceeding these triggers immediate pause",
+        "bounce_rate": 5,
+        "spam_rate": 0.5,
+        "open_rate_below": 15,
+        "reply_rate_below": 0.5
+      }
+    }
+  },
+  
+  "future_domains": {
+    "phase_2": {
+      "domain": "business.chiefaiofficer.com",
+      "purpose": "Tier 3 outreach - lower value leads",
+      "warmup_start": "after Week 4 if b2b healthy",
+      "status": "planned"
+    },
+    "phase_3_instantly": {
+      "domains": [
+        "outreach1.chiefaiofficer.com",
+        "outreach2.chiefaiofficer.com"
+      ],
+      "purpose": "High-volume scaling via Instantly",
+      "warmup_start": "Month 2+",
+      "status": "planned",
+      "notes": "Protects primary b2b domain by offloading volume"
+    }
+  },
+  
+  "domain_routing_strategy": {
+    "tier_1_c_suite": {
+      "domain": "b2b.chiefaiofficer.com",
+      "reason": "Best reputation for high-value targets"
+    },
+    "tier_2_influencers": {
+      "domain": "b2b.chiefaiofficer.com",
+      "reason": "Good reputation needed for decision influencers"
+    },
+    "tier_3_general": {
+      "domain": "business.chiefaiofficer.com",
+      "fallback": "b2b.chiefaiofficer.com",
+      "reason": "Secondary domain for volume, preserves primary reputation",
+      "available": false
+    }
+  },
+  
+  "monitoring": {
+    "check_interval_minutes": 15,
+    "alert_channel": "#approvals",
+    "alert_contact": "dani@chiefaiofficer.com",
+    "dashboard_url": "/sales"
+  },
+  
+  "last_updated": "2026-01-28",
+  "updated_by": "system"
+}

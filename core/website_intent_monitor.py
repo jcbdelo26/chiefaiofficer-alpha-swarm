@@ -36,8 +36,10 @@ import re
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 from typing import Dict, List, Any, Optional, Tuple, Set
-from dataclasses import dataclass, field, asdict
 from enum import Enum
+from dataclasses import dataclass, field, asdict
+from core.messaging_strategy import MessagingStrategy
+from core.signal_detector import SignalDetector, SignalType, DetectedSignal
 
 PROJECT_ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
@@ -251,9 +253,14 @@ TEAM_NETWORK: Dict[str, Dict[str, Any]] = {
 }
 
 
+
+from core.signal_detector import SignalDetector
+from core.messaging_strategy import MessagingStrategy
+
 class WebsiteIntentMonitor:
     """
     Monitors website visitors for high-intent blog visits and warm connections.
+    Uses Signal-Based Scouting to select the perfect email angle.
     """
     
     def __init__(self):
@@ -263,10 +270,76 @@ class WebsiteIntentMonitor:
         self.blog_triggers = BLOG_TRIGGERS
         self.team_network = TEAM_NETWORK
         
+        # New Signal-Based Components
+        self.signal_detector = SignalDetector()
+        self.messaging_strategy = MessagingStrategy()
+        
         self._processed_visitors: Dict[str, VisitorIntent] = {}
         self._load_state()
         
-        logger.info("Website Intent Monitor initialized")
+        logger.info("Website Intent Monitor initialized (Signal-Based)")
+    
+    # ... (state loading/saving methods remain same) ...
+
+    def generate_personalized_email(
+        self,
+        visitor: VisitorIntent
+    ) -> Dict[str, str]:
+        """
+        Generate personalized email using MessagingStrategy.
+        """
+        # 1. Convert VisitorIntent to lead-like dict for SignalDetector
+        lead_data = {
+            "email": visitor.email,
+            "first_name": visitor.first_name,
+            "last_name": visitor.last_name,
+            "company": visitor.company_name,
+            "job_title": visitor.job_title,
+            "pages_viewed": visitor.pages_viewed,
+            # Add work history if available for finding former colleagues
+            "work_history": [
+                {"company": c["shared_entity"]} 
+                for c in visitor.warm_connections
+            ] if visitor.warm_connections else []
+        }
+        
+        # 2. Detect Signals
+        signals = self.signal_detector.detect_signals(lead_data)
+        primary_signal = self.signal_detector.get_primary_signal(signals)
+        
+        # 3. Select Template
+        # Map ICP tier from visitor intent to messaging strategy tier
+        if visitor.icp_tier == "tier_1":
+            lead_data["tier"] = 1
+        elif visitor.icp_tier == "tier_2":
+            lead_data["tier"] = 2
+        else:
+            lead_data["tier"] = 3
+            
+        tmpl_id, subject_tmpl, body_tmpl = self.messaging_strategy.select_template(lead_data, primary_signal)
+        
+        # 4. Personalize
+        try:
+            # Basic fallback for missing fields
+            safe_data = lead_data.copy()
+            for key in ["company", "first_name", "job_title", "industry"]:
+                if not safe_data.get(key):
+                    safe_data[key] = f"your {key}" if key != "first_name" else "there"
+            
+            subject = subject_tmpl.format(**safe_data)
+            body = body_tmpl.format(**safe_data)
+        except Exception as e:
+            logger.warning(f"Template personalization failed: {e}")
+            subject = f"Quick question for {visitor.first_name}"
+            body = f"Hi {visitor.first_name},\n\nSaw you checking out our site. Would love to chat."
+            
+        return {
+            "subject": subject,
+            "body": body,
+            "template_used": tmpl_id,
+            "generated_by": "signal_messaging_strategy"
+        }
+
     
     def _load_state(self):
         """Load processed visitors state."""
@@ -437,89 +510,155 @@ class WebsiteIntentMonitor:
         visitor: VisitorIntent
     ) -> Dict[str, str]:
         """
-        Generate personalized email using CRAFTER via Gemini.
-        
-        Returns:
-            Dict with 'subject', 'body', 'template_used'
+        Generate personalized email using MessagingStrategy (New Architecture).
+        Strictly adheres to Head of Sales Requirements templates.
         """
         try:
-            from core.agent_llm_mixin import crafter_create
-        except ImportError:
-            logger.warning("LLM routing not available, using template fallback")
-            return self._template_fallback_email(visitor)
-        
-        # Get primary trigger for template
-        primary_trigger = visitor.blog_triggers_matched[0] if visitor.blog_triggers_matched else None
-        
-        # Build connection context
-        connection_context = ""
-        if visitor.warm_connections:
-            best_conn = max(visitor.warm_connections, key=lambda c: c.confidence)
-            if best_conn.connection_type == ConnectionType.FORMER_COLLEAGUE:
-                connection_context = f"""
-The visitor previously worked at {best_conn.shared_entity}, same as our {best_conn.our_team_member}.
-Mention this shared background naturally - "I noticed we might have crossed paths at {best_conn.shared_entity}..."
-"""
-            elif best_conn.connection_type == ConnectionType.SAME_PREVIOUS_COMPANY:
-                connection_context = f"""
-The visitor currently works at a company where our {best_conn.our_team_member} previously worked ({best_conn.shared_entity}).
-Mention this connection: "My colleague {best_conn.our_team_member} spent time at {best_conn.shared_entity}..."
-"""
-        
-        prompt = f"""Generate a personalized cold email for this website visitor.
-
-VISITOR INFO:
-- Name: {visitor.first_name or 'Unknown'} {visitor.last_name or ''}
-- Title: {visitor.job_title or 'Sales Leader'}
-- Company: {visitor.company_name or 'their company'}
-- Blog page viewed: {visitor.pages_viewed[0] if visitor.pages_viewed else 'our content'}
-
-TRIGGER CONTEXT:
-{primary_trigger.opening_hook if primary_trigger else "I saw you were reading our content."}
-
-Pain points to address: {', '.join(primary_trigger.pain_points) if primary_trigger else "efficiency, speed, visibility"}
-
-{connection_context}
-
-EMAIL REQUIREMENTS:
-1. Subject line: personalized, curiosity-driving, no spam triggers
-2. Opening: Reference the specific content they viewed
-3. Body: 
-   - Connect their role to the pain points
-   - Ask an engaging question about their friction points
-   - Offer value (10-min AI framework walkthrough)
-4. CTA: Soft close with "later today or tomorrow"
-5. Signature: Dani Apgar, Head of Partnerships & Revenue, Chief AI Officer Inc.
-   dani@chiefaiofficer.com | chiefaiofficer.com
-   Book a 15-min intro: https://caio.cx/meet
-
-TONE: Professional but conversational. No corporate jargon. Direct and helpful.
-
-Return JSON format:
-{{"subject": "...", "body": "..."}}
-"""
-        
-        try:
-            response = await crafter_create(prompt)
+            # 1. Prepare Lead Data for Signal Detection
+            lead_data = visitor.to_dict()
+            lead_data["tier"] = 1 if visitor.icp_tier == "tier_1" else 2 if visitor.icp_tier == "tier_2" else 3
             
-            # Parse JSON from response
-            content = response.content
-            json_match = re.search(r'\{[^}]+\}', content, re.DOTALL)
-            if json_match:
-                email_data = json.loads(json_match.group())
-                email_data["template_used"] = primary_trigger.email_template_id if primary_trigger else "generic"
-                email_data["generated_by"] = "gemini_crafter"
-                return email_data
-            else:
-                logger.warning("Could not parse email JSON from LLM response")
-                return self._template_fallback_email(visitor)
+            # Add explicit fields for signal detection
+            if visitor.tech_stack:
+                lead_data["technologies"] = visitor.tech_stack
+            
+            # 2. Detect Signals (if not already captured)
+            # Note: VisitorIntent might not have full raw data, but it has processed fields
+            signals = self.signal_detector.detect_signals(lead_data)
+            
+            # If we have explicit triggers from blog visits, prioritize them
+            if visitor.blog_triggers_matched:
+                # Map blog triggers to signals if applicable
+                pass 
+                
+            primary_signal = self.signal_detector.get_primary_signal(signals)
+            
+            # 3. Select Template
+            # This ensures we use the EXACT templates from HoS Requirements
+            template_id, subject_tmpl, body_tmpl = self.messaging_strategy.select_template(lead_data, primary_signal)
+            
+            # 4. Format Content
+            # Extract safe values
+            first_name = visitor.first_name or "there"
+            company = visitor.company_name or "your company"
+            industry = visitor.industry or "your industry" 
+            title = visitor.job_title or "Leader"
+            tech_stack = ", ".join(visitor.tech_stack[:3]) if getattr(visitor, 'tech_stack', None) else "your tech stack"
+            
+            # Format Subject
+            subject = subject_tmpl.format(
+                first_name=first_name,
+                company=company,
+                industry=industry,
+                title=title,
+                tech_stack=tech_stack
+            )
+            
+            # Format Body
+            body = body_tmpl.format(
+                first_name=first_name,
+                company=company,
+                industry=industry,
+                title=title,
+                tech_stack=tech_stack
+            )
+            
+            return {
+                "subject": subject,
+                "body": body,
+                "template_used": template_id,
+                "signal_detected": primary_signal.type.value,
+                "generated_by": "messaging_strategy_v2"
+            }
                 
         except Exception as e:
-            logger.error(f"LLM email generation failed: {e}")
+            logger.error(f"Email generation failed: {e}")
             return self._template_fallback_email(visitor)
+
+    def regenerate_active_queue(self):
+        """
+        Regenerate all pending emails in the dashboard queue using the new templates.
+        Targeting: .hive-mind/shadow_mode_emails/
+        """
+        logger.info("♻️ STARTING QUEUE REGENERATION...")
+        shadow_dir = PROJECT_ROOT / ".hive-mind" / "shadow_mode_emails"
+        count = 0
+        
+        if not shadow_dir.exists():
+            logger.warning("No shadow_mode_emails directory found.")
+            return
+            
+        for email_file in shadow_dir.glob("*.json"):
+            try:
+                with open(email_file, "r") as f:
+                    data = json.load(f)
+                
+                if data.get("status") != "pending":
+                    continue
+                    
+                # Reconstruct Visitor Context
+                # We need to map the dashboard JSON back to a structure generate_personalized_email can use
+                # Or just call select_template directly
+                
+                recipient = data.get("recipient_data", {})
+                lead_data = {
+                    "first_name": recipient.get("name", "").split(" ")[0],
+                    "company_name": recipient.get("company"),
+                    "job_title": recipient.get("title"),
+                    "tier": 1 if data.get("priority") == "high" else 3, # Approx mapping
+                    # Extract context for signals
+                }
+                
+                # Use context triggers to simulate signals
+                context = data.get("context", {})
+                triggers = context.get("triggers", [])
+                
+                # Mock signal detection based on existing context
+                # If we have tech stack in raw data, we'd use it, but here we might have to infer
+                
+                # Run selection
+                # Note: To do this perfectly, we'd need the raw visitor object.
+                # But for now, let's apply the BEST FIT template based on what we have.
+                
+                # For this patch, let's re-run detection if possible, or just default to Executive Buy-In for high intent
+                
+                # Create a minimal visitor object to pass to generate_personalized_email?
+                # No, too complex to mock. Let's call strategy directly.
+                
+                # Detect signals from context (e.g. if we saved them?)
+                # If not, let's run detection on the limited data we have
+                signals = self.signal_detector.detect_signals(lead_data)
+                primary_signal = self.signal_detector.get_primary_signal(signals)
+                
+                template_id, subject_tmpl, body_tmpl = self.messaging_strategy.select_template(lead_data, primary_signal)
+                
+                # Format
+                first_name = lead_data["first_name"] or "there"
+                company = lead_data["company_name"] or "your company"
+                
+                subject = subject_tmpl.format(first_name=first_name, company=company, industry="your industry", title=lead_data["job_title"], tech_stack="your stack")
+                body = body_tmpl.format(first_name=first_name, company=company, industry="your industry", title=lead_data["job_title"], tech_stack="your stack")
+                
+                # Update Data
+                data["subject"] = subject
+                data["body"] = body
+                data["template_id"] = template_id
+                data["regenerated_at"] = datetime.now(timezone.utc).isoformat()
+                
+                # Save
+                with open(email_file, "w") as f:
+                    json.dump(data, f, indent=2)
+                
+                count += 1
+                logger.info(f"Updated email {email_file.name} with template {template_id}")
+                
+            except Exception as e:
+                logger.error(f"Failed to regenerate {email_file.name}: {e}")
+                
+        logger.info(f"✅ REGENERATION COMPLETE. Updated {count} emails.")
     
     def _template_fallback_email(self, visitor: VisitorIntent) -> Dict[str, str]:
-        """Fallback template when LLM is unavailable."""
+        """Fallback template when generation fails."""
         trigger = visitor.blog_triggers_matched[0] if visitor.blog_triggers_matched else None
         
         first_name = visitor.first_name or "there"
@@ -560,13 +699,15 @@ Book a 15-min intro: https://caio.cx/meet"""
     
     async def process_visitor(
         self,
-        visitor_data: Dict[str, Any]
+        visitor_data: Dict[str, Any],
+        force_update: bool = False
     ) -> Optional[VisitorIntent]:
         """
         Process an RB2B visitor webhook and determine action.
         
         Args:
             visitor_data: RB2B webhook payload with visitor info
+            force_update: If True, re-process even if already processed (e.g. for enrichment)
         
         Returns:
             VisitorIntent if actionable, None if skipped
@@ -578,7 +719,7 @@ Book a 15-min intro: https://caio.cx/meet"""
             ).hexdigest()[:12]
         
         # Dedup check
-        if visitor_id in self._processed_ids:
+        if visitor_id in self._processed_ids and not force_update:
             logger.info(f"Visitor {visitor_id} already processed, skipping")
             return None
         

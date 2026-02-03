@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Precision Scorecard - Beta Swarm</title>
+    <style>
+        :root {
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --border: #334155;
+            --green: #22c55e;
+            --yellow: #eab308;
+            --red: #ef4444;
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            padding: 24px;
+        }
+        
+        /* HEADER */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 32px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .header h1 {
+            font-size: 24px;
+            font-weight: 600;
+        }
+        
+        .header .sync {
+            color: var(--text-secondary);
+            font-size: 13px;
+        }
+        
+        .header .sync button {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-left: 12px;
+        }
+        
+        .header .sync button:hover {
+            background: var(--border);
+        }
+        
+        /* CONSTRAINT BANNER */
+        .constraint {
+            background: var(--bg-secondary);
+            border: 1px solid var(--red);
+            border-left: 4px solid var(--red);
+            border-radius: 8px;
+            padding: 20px 24px;
+            margin-bottom: 32px;
+        }
+        
+        .constraint.none {
+            border-color: var(--green);
+        }
+        
+        .constraint-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+        
+        .constraint-header .icon {
+            font-size: 24px;
+        }
+        
+        .constraint-header .label {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-secondary);
+        }
+        
+        .constraint-header .metric-name {
+            font-size: 18px;
+            font-weight: 600;
+        }
+        
+        .constraint-body {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-top: 16px;
+        }
+        
+        .constraint-item {
+            padding: 12px 16px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 6px;
+        }
+        
+        .constraint-item .label {
+            font-size: 11px;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+        }
+        
+        .constraint-item .value {
+            font-size: 14px;
+        }
+        
+        .constraint-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+        }
+        
+        .constraint-actions button {
+            padding: 8px 16px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+        }
+        
+        .constraint-actions .primary {
+            background: var(--green);
+            color: white;
+        }
+        
+        .constraint-actions .secondary {
+            background: var(--bg-primary);
+            color: var(--text-secondary);
+            border: 1px solid var(--border);
+        }
+        
+        /* CATEGORY GRID */
+        .categories {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+        }
+        
+        @media (max-width: 1024px) {
+            .categories {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        
+        @media (max-width: 640px) {
+            .categories {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .category {
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            padding: 20px;
+        }
+        
+        .category-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        
+        .category-header h2 {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-secondary);
+        }
+        
+        .category-header .status {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+        
+        .metric {
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .metric:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+        
+        .metric-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+        }
+        
+        .metric-name {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+        
+        .metric-status {
+            font-size: 16px;
+        }
+        
+        .metric-value {
+            font-size: 24px;
+            font-weight: 600;
+        }
+        
+        .metric-value.on_track { color: var(--green); }
+        .metric-value.at_risk { color: var(--yellow); }
+        .metric-value.off_track { color: var(--red); }
+        
+        .metric-target {
+            font-size: 11px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+        
+        /* NO DATA STATE */
+        .no-data {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-secondary);
+        }
+        
+        .no-data h2 {
+            font-size: 18px;
+            margin-bottom: 8px;
+            color: var(--text-primary);
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>📊 Precision Scorecard</h1>
+        <div class="sync">
+            <span id="lastSync">Loading...</span>
+            <button onclick="refresh()">↻ Refresh</button>
+        </div>
+    </div>
+    
+    <div id="constraint" class="constraint">
+        <!-- Populated by JS -->
+    </div>
+    
+    <div id="categories" class="categories">
+        <!-- Populated by JS -->
+    </div>
+
+    <script>
+        const API_URL = '/api/scorecard';
+        
+        async function fetchScorecard() {
+            try {
+                const response = await fetch(API_URL);
+                if (!response.ok) throw new Error('API error');
+                return await response.json();
+            } catch (error) {
+                console.error('Fetch failed:', error);
+                return null;
+            }
+        }
+        
+        function renderConstraint(constraint) {
+            const el = document.getElementById('constraint');
+            
+            if (!constraint) {
+                el.className = 'constraint none';
+                el.innerHTML = `
+                    <div class="constraint-header">
+                        <span class="icon">✅</span>
+                        <div>
+                            <div class="label">Status</div>
+                            <div class="metric-name">All Systems On Track</div>
+                        </div>
+                    </div>
+                    <p style="color: var(--text-secondary); margin-top: 12px;">
+                        No constraints detected. All 12 metrics are meeting their targets.
+                    </p>
+                `;
+                return;
+            }
+            
+            const severityIcon = {
+                'critical': '🚨',
+                'high': '⚠️',
+                'medium': '📊'
+            }[constraint.severity] || '⚠️';
+            
+            el.className = 'constraint';
+            el.innerHTML = `
+                <div class="constraint-header">
+                    <span class="icon">${severityIcon}</span>
+                    <div>
+                        <div class="label">Your #1 Constraint</div>
+                        <div class="metric-name">${constraint.metric_name}</div>
+                    </div>
+                </div>
+                
+                <div class="constraint-body">
+                    <div class="constraint-item">
+                        <div class="label">Current vs Target</div>
+                        <div class="value">${constraint.current_value} → ${constraint.target_value} (${constraint.gap_percentage.toFixed(1)}%)</div>
+                    </div>
+                    <div class="constraint-item">
+                        <div class="label">Owner</div>
+                        <div class="value">@${constraint.owner}</div>
+                    </div>
+                    <div class="constraint-item">
+                        <div class="label">Why</div>
+                        <div class="value">${constraint.root_cause}</div>
+                    </div>
+                    <div class="constraint-item">
+                        <div class="label">Fix</div>
+                        <div class="value">${constraint.recommended_action}</div>
+                    </div>
+                </div>
+                
+                <div class="constraint-actions">
+                    <button class="primary" onclick="markFixed('${constraint.metric_id}')">✓ Mark as Fixed</button>
+                    <button class="secondary" onclick="snooze('${constraint.metric_id}')">Snooze 24h</button>
+                </div>
+            `;
+        }
+        
+        function renderCategories(data) {
+            const el = document.getElementById('categories');
+            const categories = data.scorecard.metrics_by_category;
+            
+            const categoryOrder = ['pipeline', 'outreach', 'conversion', 'health'];
+            const categoryLabels = {
+                'pipeline': 'Pipeline',
+                'outreach': 'Outreach',
+                'conversion': 'Conversion',
+                'health': 'Health'
+            };
+            
+            let html = '';
+            
+            for (const cat of categoryOrder) {
+                const metrics = categories[cat] || [];
+                const onTrack = metrics.filter(m => m.status === 'on_track').length;
+                
+                html += `
+                    <div class="category">
+                        <div class="category-header">
+                            <h2>${categoryLabels[cat]}</h2>
+                            <span class="status">${onTrack}/${metrics.length} on track</span>
+                        </div>
+                `;
+                
+                for (const metric of metrics) {
+                    html += `
+                        <div class="metric">
+                            <div class="metric-top">
+                                <span class="metric-name">${metric.name}</span>
+                                <span class="metric-status">${metric.status_emoji}</span>
+                            </div>
+                            <div class="metric-value ${metric.status}">${metric.value}${metric.unit}</div>
+                            <div class="metric-target">Target: ${metric.target}${metric.unit} ${metric.trend_arrow}</div>
+                        </div>
+                    `;
+                }
+                
+                html += '</div>';
+            }
+            
+            el.innerHTML = html;
+        }
+        
+        async function refresh() {
+            document.getElementById('lastSync').textContent = 'Refreshing...';
+            
+            // Call refresh endpoint first
+            try {
+                await fetch('/api/scorecard/refresh', { method: 'POST' });
+            } catch (e) {
+                console.log('Refresh endpoint not available');
+            }
+            
+            const data = await fetchScorecard();
+            
+            if (data) {
+                renderConstraint(data.constraint);
+                renderCategories(data);
+                
+                const syncTime = new Date(data.last_refresh || data.generated_at);
+                document.getElementById('lastSync').textContent = 
+                    `Last sync: ${syncTime.toLocaleTimeString()}`;
+            } else {
+                document.getElementById('lastSync').textContent = 'Error loading data';
+            }
+        }
+        
+        function markFixed(metricId) {
+            alert(`TODO: Implement mark fixed for ${metricId}`);
+        }
+        
+        function snooze(metricId) {
+            alert(`TODO: Implement snooze for ${metricId}`);
+        }
+        
+        // Initial load - use mock data if API unavailable
+        async function init() {
+            const data = await fetchScorecard();
+            
+            if (data) {
+                renderConstraint(data.constraint);
+                renderCategories(data);
+                
+                const syncTime = new Date(data.last_refresh || data.generated_at);
+                document.getElementById('lastSync').textContent = 
+                    `Last sync: ${syncTime.toLocaleTimeString()}`;
+            } else {
+                // Use mock data for standalone viewing
+                const mockData = {
+                    constraint: {
+                        metric_name: "Lead Velocity Rate",
+                        current_value: -5,
+                        target_value: 10,
+                        gap_percentage: -150,
+                        root_cause: "HUNTER scraping sources returning fewer results",
+                        recommended_action: "Review and rotate scraping sources",
+                        owner: "HUNTER",
+                        severity: "high",
+                        metric_id: "lead_velocity_rate"
+                    },
+                    scorecard: {
+                        metrics_by_category: {
+                            pipeline: [
+                                { name: "Lead Velocity Rate", value: -5, target: 10, unit: "%", status: "off_track", status_emoji: "🔴", trend_arrow: "↓" },
+                                { name: "ICP Match Rate", value: 78, target: 75, unit: "%", status: "on_track", status_emoji: "🟢", trend_arrow: "↑" },
+                                { name: "Enrichment Rate", value: 85, target: 90, unit: "%", status: "at_risk", status_emoji: "🟡", trend_arrow: "→" }
+                            ],
+                            outreach: [
+                                { name: "Email Open Rate", value: 52, target: 50, unit: "%", status: "on_track", status_emoji: "🟢", trend_arrow: "↑" },
+                                { name: "Reply Rate", value: 6.5, target: 8, unit: "%", status: "at_risk", status_emoji: "🟡", trend_arrow: "↓" },
+                                { name: "Positive Reply Rate", value: 55, target: 50, unit: "%", status: "on_track", status_emoji: "🟢", trend_arrow: "→" }
+                            ],
+                            conversion: [
+                                { name: "Meeting Book Rate", value: 1.8, target: 2, unit: "%", status: "at_risk", status_emoji: "🟡", trend_arrow: "↓" },
+                                { name: "AE Approval Rate", value: 72, target: 70, unit: "%", status: "on_track", status_emoji: "🟢", trend_arrow: "↑" },
+                                { name: "Pipeline → Close", value: 18, target: 20, unit: "%", status: "at_risk", status_emoji: "🟡", trend_arrow: "→" }
+                            ],
+                            health: [
+                                { name: "Agent Success Rate", value: 96, target: 95, unit: "%", status: "on_track", status_emoji: "🟢", trend_arrow: "→" },
+                                { name: "Swarm Uptime", value: 99.8, target: 99, unit: "%", status: "on_track", status_emoji: "🟢", trend_arrow: "→" },
+                                { name: "Queue Health", value: 92, target: 90, unit: "%", status: "on_track", status_emoji: "🟢", trend_arrow: "↑" }
+                            ]
+                        }
+                    },
+                    generated_at: new Date().toISOString()
+                };
+                
+                renderConstraint(mockData.constraint);
+                renderCategories(mockData);
+                document.getElementById('lastSync').textContent = 'Demo mode (no API)';
+            }
+        }
+        
+        init();
+    </script>
+</body>
+</html>

@@ -1,0 +1,89 @@
+{
+  "test_id": "unsub_20260126_191801",
+  "tests": [
+    {
+      "test": "content_validation",
+      "name": "Valid email with unsubscribe",
+      "passed": true,
+      "issues": []
+    },
+    {
+      "test": "content_validation",
+      "name": "Invalid email - missing unsubscribe",
+      "passed": false,
+      "issues": [
+        "Missing unsubscribe/opt-out mechanism (CAN-SPAM violation)"
+      ]
+    },
+    {
+      "test": "content_validation",
+      "name": "Valid email with opt-out link",
+      "passed": true,
+      "issues": []
+    },
+    {
+      "test": "suppression_check",
+      "email": "test@example.com",
+      "is_suppressed": false,
+      "reason": "Suppression list not found (OK to send)"
+    },
+    {
+      "test": "ghl_suppression",
+      "email": "test@chiefaiofficer.com",
+      "is_suppressed": false,
+      "info": {
+        "contact_id": "FXyamJqrEP8r1eyr4JN4",
+        "email": "test@chiefaiofficer.com",
+        "tags": [
+          "canary-test",
+          "internal",
+          "do-not-email-externally",
+          "email_corporate",
+          "ai ownership - active sequence"
+        ],
+        "dnd": false,
+        "doNotContact": false
+      }
+    },
+    {
+      "test": "unsubscribe_simulation",
+      "dry_run": true,
+      "result": {
+        "email": "test@chiefaiofficer.com",
+        "dry_run": true,
+        "steps": [
+          {
+            "step": "find_contact",
+            "status": "found",
+            "contact_id": "FXyamJqrEP8r1eyr4JN4"
+          },
+          {
+            "step": "check_tags",
+            "current_tags": [
+              "canary-test",
+              "internal",
+              "do-not-email-externally",
+              "email_corporate",
+              "ai ownership - active sequence"
+            ],
+            "already_unsubscribed": false
+          },
+          {
+            "step": "add_unsubscribe_tag",
+            "status": "skipped (dry_run)",
+            "would_add_tags": [
+              "unsubscribed",
+              "do-not-contact"
+            ]
+          },
+          {
+            "step": "add_to_suppression_list",
+            "status": "skipped (dry_run)"
+          }
+        ],
+        "success": true
+      }
+    }
+  ],
+  "overall_pass": true
+}

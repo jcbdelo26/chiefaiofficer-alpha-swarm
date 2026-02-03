@@ -1,0 +1,5 @@
+{
+    "contacts": [],
+    "last_updated": "2026-01-26T00:00:00Z",
+    "description": "Contracts that failed Clay enrichment or missing critical data. These are excluded from campaigns."
+}

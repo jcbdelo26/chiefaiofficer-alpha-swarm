@@ -1,0 +1,323 @@
+{
+  "segmented_at": "2026-01-19T15:20:46.824686+00:00",
+  "lead_count": 4,
+  "tier_distribution": {
+    "tier_4": 1,
+    "tier_3": 3
+  },
+  "campaign_distribution": {
+    "nurture_sequence": 4
+  },
+  "avg_icp_score": 37.25,
+  "tier_thresholds": {
+    "tier_1": 80,
+    "tier_2": 60,
+    "tier_3": 40
+  },
+  "annealing_enabled": true,
+  "leads": [
+    {
+      "lead_id": "test-lead-001",
+      "linkedin_url": "https://linkedin.com/in/jennifer-morrison-test",
+      "name": "Jennifer Morrison",
+      "title": "VP of Sales Operations",
+      "company": "ScaleForce Solutions",
+      "icp_score": 23,
+      "icp_tier": "tier_4",
+      "intent_score": 25,
+      "source_type": "",
+      "source_name": "",
+      "segment_tags": [
+        "tier_4",
+        "unknown",
+        "industry_software",
+        "has_email"
+      ],
+      "score_breakdown": {
+        "company_size": 15,
+        "title_seniority": 0,
+        "industry_fit": 0,
+        "tech_stack": 8,
+        "tech_signals": [
+          "crm_user"
+        ],
+        "intent_signals": 0
+      },
+      "disqualification_reason": null,
+      "needs_review": false,
+      "email": "jmorrison@scaleforcesolutions.com",
+      "company_size": 532,
+      "industry": "Software",
+      "recommended_campaign": "nurture_sequence",
+      "personalization_hooks": [
+        "Reference their tech stack",
+        "Mention growth stage messaging"
+      ],
+      "segmented_at": "2026-01-19T15:20:46.815573+00:00",
+      "original_lead": {
+        "id": "test-lead-001",
+        "segment": "segment_a",
+        "tier": 1,
+        "email": "chris+test1@chiefaiofficer.com",
+        "first_name": "Jennifer",
+        "last_name": "Morrison",
+        "company": "ScaleForce Solutions",
+        "title": "VP of Sales Operations",
+        "linkedin_url": "https://linkedin.com/in/jennifer-morrison-test",
+        "industry": "B2B SaaS",
+        "employee_count": 200,
+        "revenue_range": "$25M-$50M",
+        "crm_in_use": "Salesforce",
+        "pain_points": [
+          "Sales team spending 60% time on admin instead of selling",
+          "Data fragmentation across CRM, LinkedIn, Email tools",
+          "Inconsistent lead qualification across SDR team",
+          "High CAC with low lead qualification speed"
+        ],
+        "buying_signals": [
+          "Recently closed Series B funding",
+          "Posted job listing for RevOps Manager last week",
+          "Attended SaaStr Annual 2024",
+          "CEO posted about AI transformation initiatives"
+        ],
+        "qualification_checks": {
+          "tech_stack_check": true,
+          "intent_signal": true,
+          "gap_test": false,
+          "funding_signal": true,
+          "ai_initiative": true
+        },
+        "created_at": "2026-01-19T10:00:00Z",
+        "source": "test_data"
+      }
+    },
+    {
+      "lead_id": "test-lead-002",
+      "linkedin_url": "https://linkedin.com/in/marcus-chen-test",
+      "name": "Marcus Chen",
+      "title": "Chief Revenue Officer",
+      "company": "TechVelocity Inc",
+      "icp_score": 41,
+      "icp_tier": "tier_3",
+      "intent_score": 0,
+      "source_type": "",
+      "source_name": "",
+      "segment_tags": [
+        "tier_3",
+        "unknown",
+        "industry_technology",
+        "has_email"
+      ],
+      "score_breakdown": {
+        "company_size": 15,
+        "title_seniority": 0,
+        "industry_fit": 15,
+        "tech_stack": 11,
+        "tech_signals": [
+          "marketing_tech",
+          "crm_user"
+        ],
+        "intent_signals": 0
+      },
+      "disqualification_reason": null,
+      "needs_review": false,
+      "email": "mchen@techvelocityinc.com",
+      "company_size": 702,
+      "industry": "Technology",
+      "recommended_campaign": "nurture_sequence",
+      "personalization_hooks": [
+        "Reference their tech stack",
+        "Mention growth stage messaging"
+      ],
+      "segmented_at": "2026-01-19T15:20:46.816596+00:00",
+      "original_lead": {
+        "id": "test-lead-002",
+        "segment": "segment_a",
+        "tier": 1,
+        "email": "chris+test2@chiefaiofficer.com",
+        "first_name": "Marcus",
+        "last_name": "Chen",
+        "company": "TechVelocity Inc",
+        "title": "Chief Revenue Officer",
+        "linkedin_url": "https://linkedin.com/in/marcus-chen-test",
+        "industry": "Enterprise Software",
+        "employee_count": 150,
+        "revenue_range": "$20M-$40M",
+        "crm_in_use": "HubSpot",
+        "pain_points": [
+          "Competitors already automating low-hanging fruit of sales cycle",
+          "AI FOMO - knows they need AI but lacks cohesive roadmap",
+          "Scaling bottlenecks as human teams can't keep pace",
+          "SDRs spending 3+ hours daily on manual research"
+        ],
+        "buying_signals": [
+          "CRO recently promoted from VP Sales",
+          "Company expanding into new market segments",
+          "Downloaded whitepaper on AI in sales",
+          "High SDR to AE ratio (4:1)"
+        ],
+        "qualification_checks": {
+          "tech_stack_check": true,
+          "intent_signal": true,
+          "gap_test": true,
+          "funding_signal": false,
+          "ai_initiative": false
+        },
+        "created_at": "2026-01-19T10:05:00Z",
+        "source": "test_data"
+      }
+    },
+    {
+      "lead_id": "test-lead-003",
+      "linkedin_url": "https://linkedin.com/in/sarah-blackwell-test",
+      "name": "Sarah Blackwell",
+      "title": "Managing Partner",
+      "company": "Blackwell & Associates LLP",
+      "icp_score": 40,
+      "icp_tier": "tier_3",
+      "intent_score": 30,
+      "source_type": "",
+      "source_name": "",
+      "segment_tags": [
+        "tier_3",
+        "unknown",
+        "industry_healthcare_tech",
+        "has_email"
+      ],
+      "score_breakdown": {
+        "company_size": 10,
+        "title_seniority": 0,
+        "industry_fit": 15,
+        "tech_stack": 15,
+        "tech_signals": [
+          "marketing_tech",
+          "crm_user",
+          "sales_tech"
+        ],
+        "intent_signals": 0
+      },
+      "disqualification_reason": null,
+      "needs_review": false,
+      "email": "sblackwell@blackwellassociatesl.com",
+      "company_size": 6112,
+      "industry": "Healthcare Tech",
+      "recommended_campaign": "nurture_sequence",
+      "personalization_hooks": [
+        "Reference their tech stack",
+        "Mention growth stage messaging"
+      ],
+      "segmented_at": "2026-01-19T15:20:46.816970+00:00",
+      "original_lead": {
+        "id": "test-lead-003",
+        "segment": "segment_b",
+        "tier": 2,
+        "email": "chris+test3@chiefaiofficer.com",
+        "first_name": "Sarah",
+        "last_name": "Blackwell",
+        "company": "Blackwell & Associates LLP",
+        "title": "Managing Partner",
+        "linkedin_url": "https://linkedin.com/in/sarah-blackwell-test",
+        "industry": "Legal",
+        "employee_count": 75,
+        "revenue_range": "$15M-$30M",
+        "crm_in_use": "Pipedrive",
+        "pain_points": [
+          "High billable hour leakage from admin work",
+          "Manual documentation overhead consuming partner time",
+          "Partners spending too much time on BD instead of client work",
+          "No systematic approach to client referral tracking"
+        ],
+        "buying_signals": [
+          "Recently evaluated CRM automation tools",
+          "Posted about growth challenges on LinkedIn",
+          "Expanding into new practice areas",
+          "Hiring for business development role"
+        ],
+        "qualification_checks": {
+          "tech_stack_check": true,
+          "intent_signal": false,
+          "gap_test": false,
+          "funding_signal": false,
+          "ai_initiative": false
+        },
+        "created_at": "2026-01-19T10:10:00Z",
+        "source": "test_data"
+      }
+    },
+    {
+      "lead_id": "test-lead-004",
+      "linkedin_url": "https://linkedin.com/in/david-patterson-test",
+      "name": "David Patterson",
+      "title": "VP of Marketing",
+      "company": "ModernCart Commerce",
+      "icp_score": 45,
+      "icp_tier": "tier_3",
+      "intent_score": 30,
+      "source_type": "",
+      "source_name": "",
+      "segment_tags": [
+        "tier_3",
+        "unknown",
+        "industry_enterprise_software",
+        "has_email"
+      ],
+      "score_breakdown": {
+        "company_size": 10,
+        "title_seniority": 0,
+        "industry_fit": 20,
+        "tech_stack": 15,
+        "tech_signals": [
+          "crm_user"
+        ],
+        "intent_signals": 0
+      },
+      "disqualification_reason": null,
+      "needs_review": false,
+      "email": "dpatterson@moderncartcommerce.com",
+      "company_size": 5345,
+      "industry": "Enterprise Software",
+      "recommended_campaign": "nurture_sequence",
+      "personalization_hooks": [
+        "Reference their tech stack",
+        "Mention growth stage messaging"
+      ],
+      "segmented_at": "2026-01-19T15:20:46.820537+00:00",
+      "original_lead": {
+        "id": "test-lead-004",
+        "segment": "segment_c",
+        "tier": 2,
+        "email": "chris+test4@chiefaiofficer.com",
+        "first_name": "David",
+        "last_name": "Patterson",
+        "company": "ModernCart Commerce",
+        "title": "VP of Marketing",
+        "linkedin_url": "https://linkedin.com/in/david-patterson-test",
+        "industry": "E-commerce",
+        "employee_count": 180,
+        "revenue_range": "$75M GMV",
+        "crm_in_use": "Salesforce",
+        "pain_points": [
+          "Personalized marketing requiring massive manual effort",
+          "Data silos between marketing, sales, and support",
+          "High CAC with inconsistent ROAS",
+          "Customer support automation at scale"
+        ],
+        "buying_signals": [
+          "Scaling customer acquisition efforts",
+          "Hiring for growth marketing roles",
+          "Recently invested in CDP infrastructure",
+          "Posts about personalization at scale challenges"
+        ],
+        "qualification_checks": {
+          "tech_stack_check": true,
+          "intent_signal": true,
+          "gap_test": false,
+          "funding_signal": false,
+          "ai_initiative": true
+        },
+        "created_at": "2026-01-19T10:15:00Z",
+        "source": "test_data"
+      }
+    }
+  ]
+}

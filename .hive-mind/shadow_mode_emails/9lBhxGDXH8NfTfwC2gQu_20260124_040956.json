@@ -1,0 +1,16 @@
+{
+  "shadow_mode": true,
+  "would_have_sent": true,
+  "actual_sent": false,
+  "contact_id": "9lBhxGDXH8NfTfwC2gQu",
+  "contact_name": "None None",
+  "to": "[REDACTED]",
+  "subject": "Resource for None",
+  "body_preview": "Hi None,\n\nThought you might find value in our AI Readiness Assessment tool.\n\nhttps://ai-readiness-assessment-549851735707.us-west1.run.app/\n\nBest,\nChris\n\nReply STOP to unsubscribe....",
+  "icp_score": 0.5,
+  "tier": "tier_3",
+  "timestamp": "2026-01-23T20:09:56.131293+00:00",
+  "warnings": [
+    "Guardrails: Agent CRAFTER not permitted to perform send_email"
+  ]
+}

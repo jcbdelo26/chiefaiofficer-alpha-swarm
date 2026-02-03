@@ -1,0 +1,24 @@
+{
+  "email": "john@example.com",
+  "name": "John Doe",
+  "title": null,
+  "linkedin_url": null,
+  "company": null,
+  "department": null,
+  "seniority": "unknown",
+  "background": null,
+  "interests": [],
+  "past_interactions": [
+    {
+      "body": "Met at conference"
+    }
+  ],
+  "communication_style": "balanced",
+  "decision_maker": false,
+  "ghl_contact_id": "123",
+  "ghl_tags": [
+    "vip"
+  ],
+  "researched_at": "2026-01-22T20:53:11.966433+00:00",
+  "confidence": 0.5
+}

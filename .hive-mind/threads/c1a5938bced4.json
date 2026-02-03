@@ -1,0 +1,21 @@
+{
+  "thread_id": "c1a5938bced4",
+  "saved_at": "2026-01-23T20:09:19.063718",
+  "message_count": 1,
+  "messages": [
+    {
+      "message_id": "<0913a151-0962-4794-bf28-0e06ac7c3459@caio-swarm.local>",
+      "subject": "Great news!",
+      "from_email": "john@example.com",
+      "from_name": "",
+      "to_emails": [],
+      "cc_emails": [],
+      "date": "",
+      "body_text": "Thanks so much! This is exactly what we need. \n        I'm really excited to learn more about this.",
+      "body_html": null,
+      "in_reply_to": null,
+      "references": [],
+      "headers": {}
+    }
+  ]
+}

@@ -1,0 +1,107 @@
+{
+  "id": "campaign_007",
+  "name": "Competitor Displacement - Jan 2026",
+  "segment": "tier3_standard",
+  "status": "pending",
+  "created_at": "2026-01-15T02:01:07.939380",
+  "lead_count": 20,
+  "leads": [
+    {
+      "id": "lead_0008",
+      "name": "Nicole Rodriguez",
+      "first_name": "Nicole",
+      "last_name": "Rodriguez",
+      "email": "nicole.rodriguez@cloudscalesolutions.com",
+      "title": "Director of Sales",
+      "company": "CloudScale Solutions",
+      "company_size": 280,
+      "industry": "Technology",
+      "linkedin_url": "https://linkedin.com/in/nicolerodriguez",
+      "icp_score": 86,
+      "icp_tier": "tier1_vip",
+      "source": "event_attendee",
+      "scraped_at": "2026-01-15T02:01:07.921846",
+      "enriched": true
+    },
+    {
+      "id": "lead_0097",
+      "name": "Daniel Smith",
+      "first_name": "Daniel",
+      "last_name": "Smith",
+      "email": "daniel.smith@leadgenmasters.com",
+      "title": "Chief Revenue Officer",
+      "company": "LeadGen Masters",
+      "company_size": 75,
+      "industry": "Marketing",
+      "linkedin_url": "https://linkedin.com/in/danielsmith",
+      "icp_score": 85,
+      "icp_tier": "tier1_vip",
+      "source": "post_engager",
+      "scraped_at": "2026-01-10T02:01:07.922258",
+      "enriched": true
+    },
+    {
+      "id": "lead_0044",
+      "name": "Sarah Thompson",
+      "first_name": "Sarah",
+      "last_name": "Thompson",
+      "email": "sarah.thompson@techforwardinc.com",
+      "title": "CRO",
+      "company": "TechForward Inc",
+      "company_size": 150,
+      "industry": "SaaS",
+      "linkedin_url": "https://linkedin.com/in/sarahthompson",
+      "icp_score": 93,
+      "icp_tier": "tier1_vip",
+      "source": "group_member",
+      "scraped_at": "2026-01-12T02:01:07.922023",
+      "enriched": true
+    },
+    {
+      "id": "lead_0000",
+      "name": "Sarah Davis",
+      "first_name": "Sarah",
+      "last_name": "Davis",
+      "email": "sarah.davis@funnelforce.com",
+      "title": "Chief Revenue Officer",
+      "company": "FunnelForce",
+      "company_size": 190,
+      "industry": "Marketing Tech",
+      "linkedin_url": "https://linkedin.com/in/sarahdavis",
+      "icp_score": 77,
+      "icp_tier": "tier2_high",
+      "source": "event_attendee",
+      "scraped_at": "2026-01-11T02:01:07.921768",
+      "enriched": true
+    },
+    {
+      "id": "lead_0050",
+      "name": "Nicole Johnson",
+      "first_name": "Nicole",
+      "last_name": "Johnson",
+      "email": "nicole.johnson@salesboostai.com",
+      "title": "CRO",
+      "company": "SalesBoost AI",
+      "company_size": 200,
+      "industry": "SaaS",
+      "linkedin_url": "https://linkedin.com/in/nicolejohnson",
+      "icp_score": 88,
+      "icp_tier": "tier1_vip",
+      "source": "event_attendee",
+      "scraped_at": "2026-01-12T02:01:07.922053",
+      "enriched": true
+    }
+  ],
+  "emails": [
+    {
+      "step": 1,
+      "subject": "{{first_name}}, curious about your sales stack",
+      "body": "Hi {{first_name}},\n\nI noticed you're leading competitor displacement efforts at {{company}}.\n\nQuick question - are you seeing the same challenges we hear from other Technology leaders around pipeline visibility?\n\nWorth a 15-minute chat?\n\nBest,\nChris\nChief AI Officer"
+    },
+    {
+      "step": 2,
+      "subject": "Re: {{first_name}}, curious about your sales stack",
+      "body": "{{first_name}},\n\nFollowing up on my previous note. \n\nHappy to share how similar companies are solving this.\n\nOpen to a quick call this week?\n\nChris"
+    }
+  ]
+}

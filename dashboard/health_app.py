@@ -483,6 +483,25 @@ async def get_correlation_id(request: Request) -> Dict[str, Any]:
         "timestamp": datetime.now(timezone.utc).isoformat()
     }
 
+@app.get("/api/debug/filesystem")
+async def debug_filesystem(path: str = ".hive-mind/shadow_mode_emails"):
+    """
+    Debug: List files in a directory relative to project root.
+    """
+    target_dir = PROJECT_ROOT / path
+    if not target_dir.exists():
+        return {"exists": False, "path": str(target_dir), "files": []}
+    
+    files = []
+    for f in target_dir.iterdir():
+        stats = f.stat()
+        files.append({
+            "name": f.name,
+            "size": stats.st_size,
+            "modified": datetime.fromtimestamp(stats.st_mtime).isoformat()
+        })
+    return {"exists": True, "path": str(target_dir), "file_count": len(files), "files": files}
+
 
 @app.post("/api/actions/record")
 async def record_action(

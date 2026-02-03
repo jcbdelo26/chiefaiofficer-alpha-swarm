@@ -1,0 +1,59 @@
+{
+  "visitor_id": "sample_revops_003",
+  "email": "alex.smith@growthco.com",
+  "first_name": "Alex",
+  "last_name": "Smith",
+  "linkedin_url": null,
+  "company_name": "GrowthCo",
+  "company_domain": "gong.io",
+  "job_title": "RevOps Director",
+  "pages_viewed": [
+    "/blog/ai-efficiency-roi-metrics"
+  ],
+  "blog_triggers_matched": [
+    {
+      "url_pattern": "/blog.*roi|/blog.*cost.*reduction|/blog.*efficiency",
+      "category": "roi_metrics"
+    },
+    {
+      "url_pattern": "/blog.*(ai|automation|efficiency|transform|strategy)",
+      "category": "general"
+    }
+  ],
+  "warm_connections": [
+    {
+      "connection_type": "same_previous_company",
+      "shared_entity": "Gong",
+      "our_team_member": "Dani Apgar",
+      "team_member_title": "Head of Partnerships & Revenue",
+      "confidence": 0.9,
+      "details": {
+        "team_member_years": "2020-2023",
+        "team_member_email": "dani@chiefaiofficer.com"
+      }
+    },
+    {
+      "connection_type": "former_colleague",
+      "shared_entity": "Gong",
+      "our_team_member": "Dani Apgar",
+      "team_member_title": "Head of Partnerships & Revenue",
+      "confidence": 0.85,
+      "details": {
+        "visitor_years": "unknown",
+        "team_member_years": "2020-2023",
+        "team_member_email": "dani@chiefaiofficer.com"
+      }
+    }
+  ],
+  "intent_score": 100,
+  "icp_tier": "tier_1",
+  "recommended_action": "immediate_warm_outreach",
+  "generated_email": {
+    "subject": "Alex - quick question about your ROI tracking at GrowthCo",
+    "body": "Hi Alex,\n\nI noticed you were exploring our ROI content around AI efficiency metrics. As a RevOps Director, I imagine you're constantly balancing the pressure to reduce operational costs while proving measurable outcomes from new initiatives.\n\nMy colleague Dani Apgar spent time at Gong and often mentions how RevOps teams there struggled with quantifying efficiency gains beyond just time savings. Are you finding similar challenges at GrowthCo when it comes to measuring the real impact of process improvements?\n\nI'd be happy to share our 10-min AI efficiency framework that helps RevOps leaders track both hard cost reductions and productivity multipliers. It's been particularly useful for teams trying to build compelling business cases for automation investments.\n\nWould you have time for a brief call later today or tomorrow?\n\nBest,\nDani Apgar\nHead of Partnerships & Revenue, Chief AI Officer Inc.\ndani@chiefaiofficer.com | chiefaiofficer.com\nBook a 15-min intro: https://caio.cx/meet",
+    "template_used": "roi_focused",
+    "generated_by": "gemini_crafter"
+  },
+  "queued_for_approval": true,
+  "created_at": "2026-01-30T16:34:41.030057+00:00"
+}

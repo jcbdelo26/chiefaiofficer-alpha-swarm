@@ -1,0 +1,54 @@
+{
+  "test_id": "unsub_20260126_231239",
+  "tests": [
+    {
+      "test": "content_validation",
+      "name": "Valid email with unsubscribe",
+      "passed": true,
+      "issues": []
+    },
+    {
+      "test": "content_validation",
+      "name": "Invalid email - missing unsubscribe",
+      "passed": false,
+      "issues": [
+        "Missing unsubscribe/opt-out mechanism (CAN-SPAM violation)"
+      ]
+    },
+    {
+      "test": "content_validation",
+      "name": "Valid email with opt-out link",
+      "passed": true,
+      "issues": []
+    },
+    {
+      "test": "suppression_check",
+      "email": "test@example.com",
+      "is_suppressed": false,
+      "reason": "Suppression list not found (OK to send)"
+    },
+    {
+      "test": "ghl_suppression",
+      "email": "chris@chiefaiofficer.com",
+      "is_suppressed": false,
+      "info": {
+        "error": "Contact not found"
+      }
+    },
+    {
+      "test": "unsubscribe_simulation",
+      "dry_run": true,
+      "result": {
+        "email": "chris@chiefaiofficer.com",
+        "dry_run": true,
+        "steps": [
+          {
+            "step": "find_contact",
+            "status": "not_found"
+          }
+        ]
+      }
+    }
+  ],
+  "overall_pass": true
+}

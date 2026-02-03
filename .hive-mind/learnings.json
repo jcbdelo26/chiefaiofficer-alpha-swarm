@@ -1,0 +1,500 @@
+{
+  "learnings": [
+    {
+      "learning_id": "L_e4f07bef5d7e",
+      "source_workflow": "campaign_tier1_001",
+      "learning_type": "success_pattern",
+      "description": "Successful campaign with excellent outcome",
+      "recommendation": "Continue using: tier_1, thought_leadership, campaign",
+      "confidence": 0.9,
+      "impact_score": 1.0,
+      "applied": false,
+      "applied_at": null,
+      "created_at": "2026-01-20T20:42:57.595403"
+    },
+    {
+      "learning_id": "L_day10_integration_001",
+      "source_workflow": "day10_integration_testing",
+      "learning_type": "testing_pattern",
+      "description": "All 41 integration tests passed for unified queen orchestrator - validates routing accuracy, Q-learning, Byzantine consensus, and workflow simulations",
+      "recommendation": "Continue daily test runs, add edge case tests for production scenarios",
+      "confidence": 0.95,
+      "impact_score": 0.9,
+      "applied": true,
+      "applied_at": "2026-01-22T00:00:00.000000",
+      "created_at": "2026-01-22T00:00:00.000000"
+    },
+    {
+      "learning_id": "L_day10_workflow_validation",
+      "source_workflow": "day10_workflow_testing",
+      "learning_type": "architecture_validation",
+      "description": "All 4 unified workflows (lead-to-meeting, pipeline-scan, meeting-prep, approval-flow) have complete agent handoff chains defined and testable",
+      "recommendation": "Verify with real API integrations in staging before production",
+      "confidence": 0.85,
+      "impact_score": 0.85,
+      "applied": true,
+      "applied_at": "2026-01-22T00:00:00.000000",
+      "created_at": "2026-01-22T00:00:00.000000"
+    },
+    {
+      "learning_id": "L_day11_scheduler_agent",
+      "source_workflow": "day11_scheduler_core",
+      "learning_type": "agent_implementation",
+      "description": "Scheduler Agent implemented with 25 passing tests. Features: time proposal generation with learned patterns, exchange tracking with max 5 escalation, timezone resolution (48+ aliases), calendar booking with Zoom links, self-annealing pattern learning",
+      "recommendation": "Day 12: Add GHL integration, reminders, and booking pattern learning",
+      "confidence": 0.9,
+      "impact_score": 0.85,
+      "applied": true,
+      "applied_at": "2026-01-22T00:30:00.000000",
+      "created_at": "2026-01-22T00:30:00.000000"
+    },
+    {
+      "learning_id": "L_day11_pattern_learning",
+      "source_workflow": "day11_scheduler_patterns",
+      "learning_type": "ml_pattern",
+      "description": "Scheduler pattern learning stores: preferred_hours by timezone, avoid_hours (lunch), success_by_day, avg_exchanges_to_book, proposal_acceptance_rate by position. Updates after each successful booking.",
+      "recommendation": "Gather production data to refine patterns beyond defaults",
+      "confidence": 0.8,
+      "impact_score": 0.75,
+      "applied": true,
+      "applied_at": "2026-01-22T00:30:00.000000",
+      "created_at": "2026-01-22T00:30:00.000000"
+    },
+    {
+      "learning_id": "L_day12_scheduler_integrations",
+      "source_workflow": "day12_scheduler_calendar_ops",
+      "learning_type": "agent_enhancement",
+      "description": "Scheduler Agent enhanced with: GHL integration (contact update, tagging), RESEARCHER trigger via task queue, reminder scheduling (24h, 1h), book_meeting_with_integrations() for full production workflow",
+      "recommendation": "Test full flow with real GHL API credentials",
+      "confidence": 0.85,
+      "impact_score": 0.9,
+      "applied": true,
+      "applied_at": "2026-01-22T01:45:00.000000",
+      "created_at": "2026-01-22T01:45:00.000000"
+    },
+    {
+      "learning_id": "L_day13_researcher_agent",
+      "source_workflow": "day13_researcher_core",
+      "learning_type": "agent_implementation",
+      "description": "Researcher Agent implemented (1,100+ lines). Features: company research (website, industry, tech stack, news, pain points), attendee research (title inference, GHL history, decision maker detection), objection prediction with responses, talking point generation, complete meeting brief with quality scoring",
+      "recommendation": "Integrate with Exa.ai API for real web search, add LinkedIn scraping",
+      "confidence": 0.9,
+      "impact_score": 0.9,
+      "applied": true,
+      "applied_at": "2026-01-22T01:45:00.000000",
+      "created_at": "2026-01-22T01:45:00.000000"
+    },
+    {
+      "learning_id": "L_day14_brief_gen",
+      "source_workflow": "day13_researcher_core",
+      "learning_type": "feature_consolidation",
+      "description": "Day 14 features (objection prediction, talking points, brief quality scoring) included in Day 13 implementation. Briefs saved to .hive-mind/researcher/briefs/ with JSON structure including company intel, attendee profiles, talking points, predicted objections, and quality score",
+      "recommendation": "Add markdown export for email to AE",
+      "confidence": 0.85,
+      "impact_score": 0.8,
+      "applied": true,
+      "applied_at": "2026-01-22T01:45:00.000000",
+      "created_at": "2026-01-22T01:45:00.000000"
+    },
+    {
+      "learning_id": "L_day15_communicator_agent",
+      "source_workflow": "day15_communicator_enhanced_crafter",
+      "learning_type": "agent_implementation",
+      "description": "Communicator Agent (Enhanced Crafter) implemented with 1,050+ lines. Features: ToneAnalyzer with 6-dimension analysis, tone matching >85% similarity, email-threading-mcp integration, scheduling intent detection with SCHEDULER routing, 8-stage SalesGPT sales awareness model, FollowUpManager with 2-day cadence, ProspectStateManager for state tracking",
+      "recommendation": "Add LLM integration for more sophisticated tone adaptation, connect to real email sending via Instantly/GHL",
+      "confidence": 0.92,
+      "impact_score": 0.95,
+      "applied": true,
+      "applied_at": "2026-01-22T02:30:00.000000",
+      "created_at": "2026-01-22T02:30:00.000000"
+    },
+    {
+      "learning_id": "L_day15_tone_matching",
+      "source_workflow": "day15_tone_analysis",
+      "learning_type": "feature_pattern",
+      "description": "Tone matching uses 6 dimensions: formality, warmth, urgency, complexity, assertiveness, sentiment. Similarity calculated via normalized Euclidean distance. Pattern-based detection with regex for formal/informal/urgent indicators. Adaptation modifies greeting, closing, and urgency markers.",
+      "recommendation": "Consider adding ML-based tone classifier for improved accuracy beyond pattern matching",
+      "confidence": 0.85,
+      "impact_score": 0.8,
+      "applied": true,
+      "applied_at": "2026-01-22T02:30:00.000000",
+      "created_at": "2026-01-22T02:30:00.000000"
+    },
+    {
+      "learning_id": "L_day15_sales_stages",
+      "source_workflow": "day15_salesgpt_stages",
+      "learning_type": "workflow_pattern",
+      "description": "8-stage SalesGPT model: INTRODUCTION \u00e2\u2020\u2019 QUALIFICATION \u00e2\u2020\u2019 VALUE_PROP \u00e2\u2020\u2019 NEEDS_ANALYSIS \u00e2\u2020\u2019 SOLUTION_PRESENT \u00e2\u2020\u2019 OBJECTION_HANDLE \u00e2\u2020\u2019 CLOSE \u00e2\u2020\u2019 FOLLOW_UP. Each stage has: objective, tactics, success_signals, next_stage_triggers, max_touches, tone_keywords, urgency_level. Stage advancement based on detected intent triggers.",
+      "recommendation": "Track stage conversion rates to optimize tactics and identify bottlenecks",
+      "confidence": 0.88,
+      "impact_score": 0.9,
+      "applied": true,
+      "applied_at": "2026-01-22T02:30:00.000000",
+      "created_at": "2026-01-22T02:30:00.000000"
+    },
+    {
+      "learning_id": "L_day16_multi_layer_failsafe",
+      "source_workflow": "day16_failsafe_layers_1_2",
+      "learning_type": "architecture_pattern",
+      "description": "Multi-Layer Failsafe System implemented with 1,400+ lines. Layer 1: Input validation (type checking, sanitization, length limits, injection detection). Layer 2: Per-agent circuit breakers (3-failure trip, exponential backoff 1-60s, auto-reset 5min). Integrates with existing circuit_breaker.py via get_base_registry().",
+      "recommendation": "Day 17: Add Layer 3 (Fallback Chain) and Layer 4 (Byzantine Consensus) to complete the 4-layer failsafe",
+      "confidence": 0.92,
+      "impact_score": 0.95,
+      "applied": true,
+      "applied_at": "2026-01-22T04:30:00.000000",
+      "created_at": "2026-01-22T04:30:00.000000"
+    },
+    {
+      "learning_id": "L_day16_input_validation",
+      "source_workflow": "day16_layer1_validation",
+      "learning_type": "security_pattern",
+      "description": "Input validation via FieldSchema: type checking with coercion, min/max length, regex patterns, allowed values, custom validators. InjectionDetector checks for SQL injection (SELECT, UNION, OR 1=1), XSS (<script>, javascript:, event handlers), and command injection (|, ;, $()). Sanitization happens before length validation when sanitize=True.",
+      "recommendation": "Consider adding context-aware sanitization that preserves intent while removing threats",
+      "confidence": 0.88,
+      "impact_score": 0.85,
+      "applied": true,
+      "applied_at": "2026-01-22T04:30:00.000000",
+      "created_at": "2026-01-22T04:30:00.000000"
+    },
+    {
+      "learning_id": "L_day16_per_agent_circuit",
+      "source_workflow": "day16_layer2_circuit_breaker",
+      "learning_type": "reliability_pattern",
+      "description": "Per-agent circuit breakers configured for all 13 agents. AgentCircuitConfig stores failure_threshold (3 default), recovery_timeout (300s/5min default), half_open_max_calls, and BackoffConfig. Exponential backoff: delay = initial * multiplier^(attempt-1), capped at max_delay, with jitter to prevent thundering herd. Global registry issue: base registry state persists across tests.",
+      "recommendation": "For testing, use unique agent names or reset global registry state between tests",
+      "confidence": 0.85,
+      "impact_score": 0.9,
+      "applied": true,
+      "applied_at": "2026-01-22T04:30:00.000000",
+      "created_at": "2026-01-22T04:30:00.000000"
+    },
+    {
+      "learning_id": "L_day17_fallback_chain",
+      "source_workflow": "day17_layer3_fallback",
+      "learning_type": "reliability_pattern",
+      "description": "Layer 3 FallbackChain implements primary \u00e2\u2020\u2019 secondary \u00e2\u2020\u2019 tertiary \u00e2\u2020\u2019 human escalation pattern. FallbackHandler has level, timeout, success/failure counts. Execute with execute_with_fallback() which tries handlers in order. Activation logging tracks all fallback uses. Key: order handlers by FallbackLevel enum order.",
+      "recommendation": "Register human_escalation for critical operations to ensure manual review when all fallbacks fail",
+      "confidence": 0.9,
+      "impact_score": 0.88,
+      "applied": true,
+      "applied_at": "2026-01-22T05:00:00.000000",
+      "created_at": "2026-01-22T05:00:00.000000"
+    },
+    {
+      "learning_id": "L_day17_byzantine_consensus",
+      "source_workflow": "day17_layer4_consensus",
+      "learning_type": "decision_pattern",
+      "description": "Layer 4 ByzantineConsensus implements fault-tolerant voting. UNIFIED_QUEEN gets 3x weight (3.0), all other agents get 1.0. Default 67% (2/3) agreement required. Max 3 rounds before escalation. ConsensusSession tracks rounds, votes, and final result. Use quick_vote() for single-round decisions.",
+      "recommendation": "For critical decisions, require consensus with at least 4 voters including Queen to ensure meaningful voting",
+      "confidence": 0.88,
+      "impact_score": 0.92,
+      "applied": true,
+      "applied_at": "2026-01-22T05:00:00.000000",
+      "created_at": "2026-01-22T05:00:00.000000"
+    },
+    {
+      "learning_id": "L_day17_json_serialization",
+      "source_workflow": "day17_enum_serialization",
+      "learning_type": "bug_fix",
+      "description": "Dataclass enum fields are not JSON serializable when using asdict(). The FallbackActivation.to_dict() failed with 'is not JSON serializable' error. Fixed by manually converting enum to enum.value in to_dict() method instead of using asdict().",
+      "recommendation": "Always define custom to_dict() for dataclasses with enum fields to ensure JSON serialization works",
+      "confidence": 0.95,
+      "impact_score": 0.75,
+      "applied": true,
+      "applied_at": "2026-01-22T05:00:00.000000",
+      "created_at": "2026-01-22T05:00:00.000000"
+    },
+    {
+      "type": "campaign_rejection",
+      "campaign_type": "email_sequence",
+      "segment": "enterprise",
+      "reason": "Content needs revision",
+      "timestamp": "2026-01-21T21:27:12.619713"
+    },
+    {
+      "type": "campaign_rejection",
+      "campaign_type": "email_sequence",
+      "segment": "enterprise",
+      "reason": "Content needs revision",
+      "timestamp": "2026-01-21T21:27:25.826837"
+    },
+    {
+      "type": "campaign_rejection",
+      "campaign_type": "email_sequence",
+      "segment": "enterprise",
+      "reason": "Content needs revision",
+      "timestamp": "2026-01-21T21:27:53.923599"
+    },
+    {
+      "type": "campaign_rejection",
+      "campaign_type": "email_sequence",
+      "segment": "enterprise",
+      "reason": "Content needs revision",
+      "timestamp": "2026-01-21T21:28:37.418972+00:00"
+    },
+    {
+      "type": "campaign_rejection",
+      "campaign_type": "email_sequence",
+      "segment": "enterprise",
+      "reason": "Content needs revision",
+      "timestamp": "2026-01-21T21:28:53.724795+00:00"
+    },
+    {
+      "learning_id": "L_day18_pii_redaction",
+      "source_workflow": "day18_audit_trail",
+      "learning_type": "security_pattern",
+      "description": "PIIRedactor uses regex patterns for email, phone, SSN, credit card, IP, API keys. Sensitive field names (password, secret, token, etc.) are fully redacted. Nested dicts and lists are handled recursively. Key insight: field names containing 'credential' trigger full redaction of the entire value, not just nested content.",
+      "recommendation": "Use redact_pii=True by default for all audit logging. Only disable for internal debugging.",
+      "confidence": 0.92,
+      "impact_score": 0.95,
+      "applied": true,
+      "applied_at": "2026-01-22T05:16:00.000000",
+      "created_at": "2026-01-22T05:16:00.000000"
+    },
+    {
+      "learning_id": "L_day18_schema_migration",
+      "source_workflow": "day18_audit_trail",
+      "learning_type": "database_pattern",
+      "description": "SQLite ALTER TABLE wrapped in try/except allows seamless schema migration for new columns. Existing databases with old schema continue to work while new columns are added automatically.",
+      "recommendation": "Always wrap ALTER TABLE in try/except for backwards compatibility with existing databases",
+      "confidence": 0.9,
+      "impact_score": 0.8,
+      "applied": true,
+      "applied_at": "2026-01-22T05:16:00.000000",
+      "created_at": "2026-01-22T05:16:00.000000"
+    },
+    {
+      "type": "campaign_rejection",
+      "campaign_type": "email_sequence",
+      "segment": "enterprise",
+      "reason": "Content needs revision",
+      "timestamp": "2026-01-21T21:49:42.831172+00:00"
+    },
+    {
+      "type": "campaign_rejection",
+      "campaign_type": "email_sequence",
+      "segment": "enterprise",
+      "reason": "Content needs revision",
+      "timestamp": "2026-01-21T21:52:01.970397+00:00"
+    },
+    {
+      "type": "campaign_rejection",
+      "campaign_type": "email_sequence",
+      "segment": "enterprise",
+      "reason": "Content needs revision",
+      "timestamp": "2026-01-21T22:41:03.697867+00:00"
+    },
+    {
+      "type": "campaign_rejection",
+      "campaign_type": "email_sequence",
+      "segment": "enterprise",
+      "reason": "Content needs revision",
+      "timestamp": "2026-01-21T22:43:49.398049+00:00"
+    },
+    {
+      "learning_id": "L_day19_queue_depth_tracker",
+      "source_workflow": "day19_health_monitor",
+      "learning_type": "architecture_pattern",
+      "description": "QueueDepthTracker provides visibility into processing bottlenecks. Key insight: different queues need different thresholds (escalation queue at 50 max vs lead processing at 1000). Tracking dropped items helps identify when system is overloaded.",
+      "recommendation": "Set warning thresholds at 80% of max capacity and critical at 95% for early detection of queue buildup",
+      "confidence": 0.9,
+      "impact_score": 0.85,
+      "applied": true,
+      "applied_at": "2026-01-22T06:30:00.000000",
+      "created_at": "2026-01-22T06:30:00.000000"
+    },
+    {
+      "learning_id": "L_day19_streamlit_dashboard",
+      "source_workflow": "day19_health_monitor",
+      "learning_type": "tooling_pattern",
+      "description": "Streamlit dashboard provides simple real-time monitoring without complex frontend. Key features: auto-refresh, status badges via HTML, progress bars for queue/rate limits, tabs for organized views. Works with existing HealthMonitor singleton.",
+      "recommendation": "Use st.rerun() with time.sleep() for auto-refresh; st.markdown with unsafe_allow_html=True for custom styling",
+      "confidence": 0.88,
+      "impact_score": 0.75,
+      "applied": true,
+      "applied_at": "2026-01-22T06:30:00.000000",
+      "created_at": "2026-01-22T06:30:00.000000"
+    },
+    {
+      "type": "campaign_rejection",
+      "campaign_type": "email_sequence",
+      "segment": "enterprise",
+      "reason": "Content needs revision",
+      "timestamp": "2026-01-22T10:40:17.036975+00:00"
+    },
+    {
+      "type": "campaign_rejection",
+      "campaign_type": "email_sequence",
+      "segment": "enterprise",
+      "reason": "Content needs revision",
+      "timestamp": "2026-01-22T10:58:07.020678+00:00"
+    },
+    {
+      "type": "campaign_rejection",
+      "campaign_type": "email_sequence",
+      "segment": "enterprise",
+      "reason": "Content needs revision",
+      "timestamp": "2026-01-22T11:01:16.935962+00:00"
+    },
+    {
+      "learning_id": "L_day20_integration_testing",
+      "source_workflow": "day20_week4_integration_test",
+      "learning_type": "testing_pattern",
+      "description": "Integration tests should verify cross-system interactions, not just individual components. Key pattern: test the handoff points between systems (failsafe triggers audit log, failsafe updates health monitor). Stress tests catch concurrency issues early.",
+      "recommendation": "Structure integration tests by: 1) individual system tests, 2) cross-system handoff tests, 3) full scenario tests (failure\u00e2\u2020\u2019recovery), 4) stress tests",
+      "confidence": 0.92,
+      "impact_score": 0.8,
+      "applied": true,
+      "applied_at": "2026-01-22T10:38:00.000000",
+      "created_at": "2026-01-22T10:38:00.000000"
+    },
+    {
+      "type": "campaign_rejection",
+      "campaign_type": "email_sequence",
+      "segment": "enterprise",
+      "reason": "Content needs revision",
+      "timestamp": "2026-01-22T11:09:35.752678+00:00"
+    },
+    {
+      "type": "campaign_rejection",
+      "campaign_type": "email_sequence",
+      "segment": "enterprise",
+      "reason": "Content needs revision",
+      "timestamp": "2026-01-22T11:13:47.443965+00:00"
+    },
+    {
+      "type": "campaign_rejection",
+      "campaign_type": "email_sequence",
+      "segment": "enterprise",
+      "reason": "Content needs revision",
+      "timestamp": "2026-01-22T11:16:23.974545+00:00"
+    },
+    {
+      "type": "campaign_rejection",
+      "campaign_type": "email_sequence",
+      "segment": "enterprise",
+      "reason": "Content needs revision",
+      "timestamp": "2026-01-22T11:17:42.663597+00:00"
+    },
+    {
+      "type": "campaign_rejection",
+      "campaign_type": "email_sequence",
+      "segment": "enterprise",
+      "reason": "Content needs revision",
+      "timestamp": "2026-01-22T11:20:36.848575+00:00"
+    },
+    {
+      "type": "campaign_rejection",
+      "campaign_type": "email_sequence",
+      "segment": "enterprise",
+      "reason": "Content needs revision",
+      "timestamp": "2026-01-22T12:04:08.584417+00:00"
+    },
+    {
+      "type": "campaign_rejection",
+      "campaign_type": "email_sequence",
+      "segment": "enterprise",
+      "reason": "Content needs revision",
+      "timestamp": "2026-01-22T18:14:18.603267+00:00"
+    },
+    {
+      "type": "campaign_rejection",
+      "campaign_type": "email_sequence",
+      "segment": "enterprise",
+      "reason": "Content needs revision",
+      "timestamp": "2026-01-22T18:14:46.240280+00:00"
+    },
+    {
+      "type": "campaign_rejection",
+      "campaign_type": "email_sequence",
+      "segment": "enterprise",
+      "reason": "Content needs revision",
+      "timestamp": "2026-01-22T18:51:29.084177+00:00"
+    },
+    {
+      "type": "campaign_rejection",
+      "campaign_type": "email_sequence",
+      "segment": "enterprise",
+      "reason": "Content needs revision",
+      "timestamp": "2026-01-22T18:51:32.046924+00:00"
+    },
+    {
+      "type": "campaign_rejection",
+      "campaign_type": "email_sequence",
+      "segment": "enterprise",
+      "reason": "Content needs revision",
+      "timestamp": "2026-01-22T18:51:44.625283+00:00"
+    },
+    {
+      "type": "campaign_rejection",
+      "campaign_type": "email_sequence",
+      "segment": "enterprise",
+      "reason": "Content needs revision",
+      "timestamp": "2026-01-22T18:52:38.015828+00:00"
+    },
+    {
+      "type": "campaign_rejection",
+      "campaign_type": "email_sequence",
+      "segment": "enterprise",
+      "reason": "Content needs revision",
+      "timestamp": "2026-01-22T18:53:09.401953+00:00"
+    },
+    {
+      "type": "campaign_rejection",
+      "campaign_type": "email_sequence",
+      "segment": "enterprise",
+      "reason": "Content needs revision",
+      "timestamp": "2026-01-22T18:53:47.158934+00:00"
+    },
+    {
+      "type": "campaign_rejection",
+      "campaign_type": "email_sequence",
+      "segment": "enterprise",
+      "reason": "Content needs revision",
+      "timestamp": "2026-01-22T18:54:14.865878+00:00"
+    },
+    {
+      "type": "campaign_rejection",
+      "campaign_type": "email_sequence",
+      "segment": "enterprise",
+      "reason": "Content needs revision",
+      "timestamp": "2026-01-22T18:55:57.779707+00:00"
+    },
+    {
+      "type": "campaign_rejection",
+      "campaign_type": "email_sequence",
+      "segment": "enterprise",
+      "reason": "Content needs revision",
+      "timestamp": "2026-01-22T19:14:07.998768+00:00"
+    },
+    {
+      "type": "campaign_rejection",
+      "campaign_type": "email_sequence",
+      "segment": "enterprise",
+      "reason": "Content needs revision",
+      "timestamp": "2026-01-22T20:50:48.610562+00:00"
+    },
+    {
+      "type": "campaign_rejection",
+      "campaign_type": "email_sequence",
+      "segment": "enterprise",
+      "reason": "Content needs revision",
+      "timestamp": "2026-01-22T21:00:11.184776+00:00"
+    },
+    {
+      "type": "campaign_rejection",
+      "campaign_type": "email_sequence",
+      "segment": "enterprise",
+      "reason": "Content needs revision",
+      "timestamp": "2026-01-22T21:00:24.025425+00:00"
+    },
+    {
+      "type": "campaign_rejection",
+      "campaign_type": "email_sequence",
+      "segment": "enterprise",
+      "reason": "Content needs revision",
+      "timestamp": "2026-01-23T12:09:22.320878+00:00"
+    }
+  ],
+  "saved_at": "2026-01-22T10:38:00.000000"
+}

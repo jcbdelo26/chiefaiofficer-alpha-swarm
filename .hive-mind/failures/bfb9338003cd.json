@@ -1,0 +1,18 @@
+{
+  "failure_id": "bfb9338003cd",
+  "agent_name": "SEGMENTOR",
+  "task_id": "test_missing_email",
+  "category": "validation_error",
+  "error_message": "Validation Failed: Missing required field 'email'",
+  "error_type": "ValueError",
+  "context": {
+    "lead": {
+      "first_name": "John",
+      "company": "NoEmail Corp"
+    }
+  },
+  "stack_trace": null,
+  "timestamp": "2026-01-23T17:57:24.044246+00:00",
+  "resolved": false,
+  "resolution_notes": null
+}

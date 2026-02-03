@@ -1,0 +1,89 @@
+{
+    "warmup_plan": {
+        "description": "Domain warm-up plan for new sending domains",
+        "enabled": false,
+        "note": "Enable this if using a new sending domain to protect deliverability",
+        
+        "phases": [
+            {
+                "phase": 1,
+                "name": "Initial Warming",
+                "days": "1-3",
+                "daily_limit": 10,
+                "hourly_limit": 2,
+                "guidance": "Send only to most engaged contacts (existing customers, recent replies)",
+                "target_open_rate": 50
+            },
+            {
+                "phase": 2,
+                "name": "Early Ramp",
+                "days": "4-7",
+                "daily_limit": 25,
+                "hourly_limit": 5,
+                "guidance": "Expand to Tier 1 prospects only",
+                "target_open_rate": 40
+            },
+            {
+                "phase": 3,
+                "name": "Steady Growth",
+                "days": "8-14",
+                "daily_limit": 50,
+                "hourly_limit": 10,
+                "guidance": "Include Tier 2 prospects if Phase 2 metrics are healthy",
+                "target_open_rate": 30
+            },
+            {
+                "phase": 4,
+                "name": "Standard Operations",
+                "days": "15-21",
+                "daily_limit": 100,
+                "hourly_limit": 15,
+                "guidance": "Normal operations with monitoring",
+                "target_open_rate": 25
+            },
+            {
+                "phase": 5,
+                "name": "Full Capacity",
+                "days": "22+",
+                "daily_limit": 150,
+                "hourly_limit": 20,
+                "guidance": "Full send capacity achieved",
+                "target_open_rate": 20
+            }
+        ],
+        
+        "health_thresholds": {
+            "pause_if_bounce_rate_above": 3.0,
+            "pause_if_complaint_rate_above": 0.1,
+            "pause_if_open_rate_below": 15.0,
+            "cooling_off_hours": 24
+        },
+        
+        "best_practices": [
+            "Start with internal test emails to verify deliverability",
+            "Send to most engaged contacts first (recent opens/replies)",
+            "Maintain consistent sending patterns (same time each day)",
+            "Monitor inbox placement (use seed list)",
+            "Check blacklist status weekly",
+            "Avoid sending on weekends initially",
+            "Keep subject lines personalized and conversational",
+            "Ensure unsubscribe mechanism works"
+        ],
+        
+        "danger_signs": [
+            "Bounce rate > 3%",
+            "Spam complaint rate > 0.1%",
+            "Open rate drop > 50% from previous phase",
+            "Delivery rate < 95%",
+            "Multiple hard bounces from same domain"
+        ]
+    },
+    
+    "current_status": {
+        "warmup_active": false,
+        "current_phase": 0,
+        "warmup_start_date": null,
+        "days_in_warmup": 0,
+        "last_updated": null
+    }
+}

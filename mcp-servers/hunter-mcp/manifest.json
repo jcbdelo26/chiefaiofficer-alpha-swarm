@@ -1,0 +1,19 @@
+{
+    "name": "hunter-mcp",
+    "version": "1.0.0",
+    "description": "LinkedIn scraping MCP server for Alpha Swarm",
+    "author": "Chiefaiofficer.com",
+    "tools": [
+        "hunter_scrape_followers",
+        "hunter_scrape_event",
+        "hunter_scrape_group",
+        "hunter_scrape_post",
+        "hunter_status"
+    ],
+    "dependencies": {
+        "mcp": ">=0.1.0",
+        "linkedin-api": ">=2.0.0",
+        "selenium": ">=4.15.0"
+    },
+    "entrypoint": "server.py"
+}

@@ -1,0 +1,281 @@
+{% extends "base.html" %}
+
+{% block title %}Campaign: {{ campaign.name }}{% endblock %}
+{% block page_title %}Campaign Review{% endblock %}
+
+{% block header_actions %}
+<a href="{{ url_for('campaigns_list') }}" class="btn btn-secondary">← Back to List</a>
+{% endblock %}
+
+{% block content %}
+<div class="campaign-detail">
+    <!-- Campaign Header -->
+    <div class="card campaign-header">
+        <div class="campaign-info">
+            <h2>{{ campaign.name or campaign.id }}</h2>
+            <div class="campaign-meta">
+                <span class="segment-badge {{ campaign.segment }}">
+                    {{ campaign.segment.replace('_', ' ').title() }}
+                </span>
+                <span class="meta-item">
+                    <strong>{{ campaign.lead_count or campaign.leads|length }}</strong> leads
+                </span>
+                <span class="meta-item">
+                    Created: {{ campaign.created_at[:10] if campaign.created_at else 'N/A' }}
+                </span>
+                <span class="status-badge {{ campaign.status }}">
+                    {{ campaign.status.title() }}
+                </span>
+            </div>
+        </div>
+
+        {% if campaign.status == 'pending' %}
+        <div class="campaign-actions">
+            <button class="btn btn-success btn-lg" onclick="approveCampaign()">
+                ✓ Approve Campaign
+            </button>
+            <button class="btn btn-danger btn-lg" onclick="showRejectModal()">
+                ✗ Reject Campaign
+            </button>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Email Preview -->
+    <div class="card">
+        <h3>📧 Email Sequence Preview</h3>
+        <div class="email-sequence">
+            {% for email in campaign.emails or [] %}
+            <div class="email-step">
+                <div class="step-header">
+                    <span class="step-number">Step {{ email.step or loop.index }}</span>
+                    {% if campaign.status == 'pending' %}
+                    <button class="btn btn-sm btn-secondary" onclick="editEmail({{ loop.index0 }})">
+                        ✏️ Edit
+                    </button>
+                    {% endif %}
+                </div>
+                <div class="email-subject">
+                    <strong>Subject:</strong> {{ email.subject }}
+                </div>
+                <div class="email-body">
+                    <pre>{{ email.body }}</pre>
+                </div>
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <p>No email sequence data available.</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Lead List -->
+    <div class="card">
+        <h3>👥 Leads in Campaign ({{ campaign.leads|length if campaign.leads else 0 }})</h3>
+        {% if campaign.leads %}
+        <table class="leads-table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Title</th>
+                    <th>Company</th>
+                    <th>ICP Score</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for lead in campaign.leads[:20] %}
+                <tr>
+                    <td>{{ lead.name }}</td>
+                    <td>{{ lead.title }}</td>
+                    <td>{{ lead.company }}</td>
+                    <td>
+                        <span
+                            class="score-badge {% if lead.icp_score >= 85 %}high{% elif lead.icp_score >= 70 %}medium{% else %}low{% endif %}">
+                            {{ lead.icp_score }}
+                        </span>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% if campaign.leads|length > 20 %}
+        <p class="text-muted">Showing 20 of {{ campaign.leads|length }} leads</p>
+        {% endif %}
+        {% else %}
+        <div class="empty-state">
+            <p>No lead data available.</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Review History -->
+    {% if campaign.reviewed_at %}
+    <div class="card">
+        <h3>📋 Review History</h3>
+        <div class="review-history">
+            <div class="review-item">
+                <span class="review-action {{ campaign.status }}">
+                    {{ campaign.status.title() }}
+                </span>
+                by {{ campaign.reviewed_by or 'Unknown' }}
+                on {{ campaign.reviewed_at[:19] }}
+                {% if campaign.review_notes %}
+                <div class="review-notes">
+                    <strong>Notes:</strong> {{ campaign.review_notes }}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Reject Modal -->
+<div id="rejectModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Reject Campaign</h3>
+            <button class="modal-close" onclick="closeRejectModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <label for="rejectReason">Rejection Reason (required for learning)</label>
+            <select id="rejectReasonSelect" onchange="updateRejectReason()">
+                <option value="">-- Select Reason --</option>
+                <option value="Poor ICP Fit">Poor ICP Fit</option>
+                <option value="Wrong Tone">Wrong Tone</option>
+                <option value="Bad Personalization">Bad Personalization</option>
+                <option value="Compliance Issue">Compliance Issue</option>
+                <option value="Company Too Small">Company Too Small</option>
+                <option value="Wrong Industry">Wrong Industry</option>
+                <option value="Other">Other (specify)</option>
+            </select>
+            <textarea id="rejectReason" placeholder="Provide details for improvement..."></textarea>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeRejectModal()">Cancel</button>
+            <button class="btn btn-danger" onclick="confirmReject()">Reject Campaign</button>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Modal -->
+<div id="editModal" class="modal" style="display: none;">
+    <div class="modal-content modal-lg">
+        <div class="modal-header">
+            <h3>Edit Email</h3>
+            <button class="modal-close" onclick="closeEditModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" id="editEmailIndex">
+            <div class="form-group">
+                <label for="editSubject">Subject Line</label>
+                <input type="text" id="editSubject" class="form-control">
+            </div>
+            <div class="form-group">
+                <label for="editBody">Email Body</label>
+                <textarea id="editBody" class="form-control" rows="10"></textarea>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeEditModal()">Cancel</button>
+            <button class="btn btn-primary" onclick="saveEmailEdit()">Save Changes</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const campaignId = '{{ campaign.id }}';
+    const emails = {{ campaign.emails | tojson | safe if campaign.emails else '[]' }};
+
+    function approveCampaign() {
+        if (!confirm('Approve this campaign and send to Instantly?')) return;
+
+        fetch(`/api/campaign/${campaignId}/approve`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ reviewer: 'AE' })
+        })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    location.href = '{{ url_for("campaigns_list") }}';
+                } else {
+                    alert('Failed: ' + data.message);
+                }
+            });
+    }
+
+    function showRejectModal() {
+        document.getElementById('rejectModal').style.display = 'flex';
+    }
+
+    function closeRejectModal() {
+        document.getElementById('rejectModal').style.display = 'none';
+        document.getElementById('rejectReason').value = '';
+        document.getElementById('rejectReasonSelect').value = '';
+    }
+
+    function updateRejectReason() {
+        const select = document.getElementById('rejectReasonSelect');
+        const textarea = document.getElementById('rejectReason');
+        if (select.value && select.value !== 'Other') {
+            textarea.value = select.value;
+        }
+    }
+
+    function confirmReject() {
+        const reason = document.getElementById('rejectReason').value.trim();
+
+        if (!reason) {
+            alert('Please provide a rejection reason');
+            return;
+        }
+
+        fetch(`/api/campaign/${campaignId}/reject`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ reviewer: 'AE', notes: reason })
+        })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    location.href = '{{ url_for("campaigns_list") }}';
+                } else {
+                    alert('Failed: ' + data.message);
+                }
+            });
+    }
+
+    function editEmail(index) {
+        document.getElementById('editEmailIndex').value = index;
+        document.getElementById('editSubject').value = emails[index].subject || '';
+        document.getElementById('editBody').value = emails[index].body || '';
+        document.getElementById('editModal').style.display = 'flex';
+    }
+
+    function closeEditModal() {
+        document.getElementById('editModal').style.display = 'none';
+    }
+
+    function saveEmailEdit() {
+        const index = parseInt(document.getElementById('editEmailIndex').value);
+        emails[index].subject = document.getElementById('editSubject').value;
+        emails[index].body = document.getElementById('editBody').value;
+
+        fetch(`/api/campaign/${campaignId}/edit`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ emails: emails, editor: 'AE' })
+        })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert('Failed to save: ' + data.message);
+                }
+            });
+    }
+</script>
+{% endblock %}

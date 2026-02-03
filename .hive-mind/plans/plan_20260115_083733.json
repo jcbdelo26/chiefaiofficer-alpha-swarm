@@ -1,0 +1,113 @@
+{
+  "plan_id": "83730421-65f0-47f1-8fa4-4452e82c4ea9",
+  "created_at": "2026-01-15T08:37:33.008923+00:00",
+  "research_id": "6b5afc0d-396e-4973-bdd5-f611eddcc038",
+  "research_file": "D:\\Agent Swarm Orchestration\\chiefaiofficer-alpha-swarm\\.hive-mind\\segmented\\segmented_test_20260115_083732.json",
+  "total_leads": 5,
+  "campaign_strategy": "TIER 1 (2 leads): High-touch personalized sequences with AE involvement. Each email should reference specific company/role context. | TIER 2 (2 leads): Value-proposition focused sequences with case studies. Moderate personalization with source-based hooks. | TIER 3 (1 leads): Educational nurture sequences. Template-based with minimal personalization, focus on volume.",
+  "primary_angle": "thought_leadership",
+  "tier_plans": {
+    "tier1": {
+      "tier": "tier1",
+      "lead_count": 2,
+      "template_selection": "competitor_displacement",
+      "template_rationale": "Default template - no specific source match",
+      "personalization_depth": "deep",
+      "personalization_hooks": [
+        "company_size_messaging",
+        "industry_specific_content",
+        "leadership_value_props",
+        "executive_level_messaging"
+      ],
+      "sequence_length": 4,
+      "sequence_timing": [
+        0,
+        4,
+        7,
+        14
+      ],
+      "ab_test_hypothesis": "Subject A (pain point) vs Subject B (transformation) - expect A higher open rate",
+      "expected_open_rate": 0.54,
+      "expected_reply_rate": 0.06,
+      "requires_ae_review": true,
+      "special_instructions": [
+        "Use enterprise-level language and case studies",
+        "Each email should feel unique"
+      ]
+    },
+    "tier2": {
+      "tier": "tier2",
+      "lead_count": 2,
+      "template_selection": "competitor_displacement",
+      "template_rationale": "Default template - no specific source match",
+      "personalization_depth": "medium",
+      "personalization_hooks": [
+        "company_size_messaging",
+        "industry_specific_content",
+        "operational_efficiency_focus"
+      ],
+      "sequence_length": 4,
+      "sequence_timing": [
+        0,
+        3,
+        7,
+        14
+      ],
+      "ab_test_hypothesis": "Subject A (pain point) vs Subject B (transformation) - expect A higher open rate",
+      "expected_open_rate": 0.45,
+      "expected_reply_rate": 0.05,
+      "requires_ae_review": true,
+      "special_instructions": []
+    },
+    "tier3": {
+      "tier": "tier3",
+      "lead_count": 1,
+      "template_selection": "competitor_displacement",
+      "template_rationale": "Default template - no specific source match",
+      "personalization_depth": "light",
+      "personalization_hooks": [
+        "company_size_messaging",
+        "industry_specific_content"
+      ],
+      "sequence_length": 3,
+      "sequence_timing": [
+        0,
+        3,
+        10
+      ],
+      "ab_test_hypothesis": "Subject A (pain point) vs Subject B (transformation) - expect A higher open rate",
+      "expected_open_rate": 0.41,
+      "expected_reply_rate": 0.05,
+      "requires_ae_review": false,
+      "special_instructions": []
+    }
+  },
+  "compliance_checks": [
+    "CAN-SPAM: Physical address included",
+    "CAN-SPAM: Unsubscribe mechanism verified",
+    "CAN-SPAM: Non-deceptive subject lines",
+    "GDPR: Legitimate interest documented",
+    "Brand Safety: No competitor disparagement"
+  ],
+  "compliance_flags": [
+    "\u26a0\ufe0f 2 enterprise accounts - senior AE review needed",
+    "\u26a0\ufe0f 1 tier(s) require deep personalization"
+  ],
+  "ab_test_strategy": "Multi-variant testing: Tier 1 (messaging), Tier 2 (depth), Tier 3 (length)",
+  "recommended_send_window": "Tuesday-Thursday, 8:00-10:00 AM recipient local time",
+  "sequence_overview": "Total tiers: 3, Tier 1: 1, Tier 2: 1",
+  "requires_human_review": true,
+  "review_priority": "critical",
+  "review_focus_areas": [
+    "Template selection matches lead source",
+    "Personalization hooks are accurate",
+    "Sequence timing aligns with tier",
+    "A/B test hypotheses are valid",
+    "No compliance concerns"
+  ],
+  "predicted_metrics": {
+    "avg_open_rate": 0.48,
+    "avg_reply_rate": 0.05,
+    "total_expected_replies": 0
+  }
+}

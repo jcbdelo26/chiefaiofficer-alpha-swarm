@@ -1,0 +1,294 @@
+# SDR Automation Rules Configuration
+# Based on sdr_specifications.md
+
+# Section 5.4 - Objection Escalation Matrix
+objection_matrix:
+  not_interested:
+    action: soft_breakup
+    escalation: none
+    automation: full
+    
+  bad_timing:
+    action: schedule_future
+    escalation: none
+    automation: full
+    
+  already_have_solution:
+    action: displacement_nurture
+    escalation: if_enterprise
+    automation: partial
+    
+  need_more_info:
+    action: send_resources
+    escalation: none
+    automation: full
+    
+  pricing_objection:
+    action: value_framework
+    escalation: always
+    automation: none
+    
+  technical_question:
+    action: route_to_se
+    escalation: always
+    automation: none
+    
+  positive_interest:
+    action: book_meeting
+    escalation: if_tier_1
+    automation: partial
+
+# Sections 5.1-5.3 - Escalation Triggers
+escalation_triggers:
+  immediate:  # Within 5 minutes
+    - trigger: enterprise_account
+      condition: employee_count > 1000
+      destination: enterprise_ae
+      priority: critical
+    - trigger: c_level_engagement
+      condition: title_matches_c_level
+      destination: senior_ae
+      priority: critical
+    - trigger: existing_customer
+      condition: is_existing_customer
+      destination: csm
+      priority: critical
+    - trigger: competitor_employee
+      condition: is_competitor
+      destination: skip
+      priority: block
+    - trigger: negative_reply
+      condition: sentiment == negative
+      destination: ae_review
+      priority: high
+    - trigger: pricing_mentioned
+      condition: contains_pricing_keywords
+      destination: ae
+      priority: high
+    - trigger: security_question
+      condition: contains_security_keywords
+      destination: se
+      priority: high
+
+  standard:  # Within 1 hour
+    - trigger: buying_signals
+      destination: ae
+      priority: medium
+    - trigger: meeting_request_manual
+      destination: ae_calendar
+      priority: medium
+    - trigger: technical_deepdive
+      destination: se
+      priority: medium
+    - trigger: integration_requirements
+      destination: se
+      priority: medium
+    - trigger: demo_request
+      destination: ae_and_se
+      priority: medium
+
+  deferred:  # Daily review
+    - trigger: icp_score_95_plus
+      condition: icp_score >= 95
+      destination: vip_campaign
+      priority: low
+    - trigger: multiple_touchpoints
+      destination: nurture_upgrade
+      priority: low
+    - trigger: engagement_pattern_change
+      destination: outreach_adjustment
+      priority: low
+    - trigger: persona_mismatch
+      destination: re_qualification
+      priority: low
+
+# Section 3 - Compliance Rules
+compliance:
+  can_spam:
+    required_elements:
+      - accurate_from_header
+      - non_deceptive_subject
+      - physical_mailing_address
+      - working_unsubscribe
+      - honor_unsubscribe_within_10_days
+    prohibited:
+      - harvested_emails
+      - purchased_lists
+      - misleading_headers
+      - false_urgency_claims
+
+  linkedin_tos:
+    rate_limits:
+      profiles_per_hour: 100
+      profiles_per_day: 500
+      connections_per_week: 100
+      messages_per_day: 50
+    session_management:
+      rotation_interval_hours: 24
+      user_agent_rotation: true
+      proxy_rotation: per_session
+    prohibited:
+      - automated_connection_requests
+      - scraping_without_sales_navigator
+      - bypassing_access_controls
+      - storing_scraped_data_over_90_days
+
+  gdpr:
+    right_to_access:
+      response_time_days: 30
+      format: structured_json
+    right_to_deletion:
+      response_time_hours: 24
+      scope: all_personal_data
+      verification_required: true
+    right_to_rectification:
+      response_time_hours: 72
+      audit_trail_required: true
+    consent:
+      basis: legitimate_interest
+      documentation: per_lead_tracking
+      withdrawal: immediate
+    data_retention:
+      active_leads_months: 24
+      inactive_leads_months: 12
+      deleted_requests_days: 90
+
+  brand_safety:
+    content_rules:
+      - no_competitor_disparagement
+      - factual_claims_only
+      - professional_tone_always
+      - no_false_urgency
+      - no_misleading_statistics
+    review_requirements:
+      tier_1_campaigns: ae_approval_required
+      tier_2_campaigns: ae_approval_recommended
+      tier_3_campaigns: batch_sampling_10_percent
+    prohibited_terms:
+      - guarantee_without_qualification
+      - best_without_evidence
+      - only_without_evidence
+      - competitor_names_in_subject
+      - fake_personalization
+
+# Section 6 - SLA Targets
+sla_targets:
+  response_time:
+    positive_reply:
+      target_minutes: 15
+      maximum_minutes: 60
+    meeting_request:
+      target_minutes: 30
+      maximum_minutes: 120
+    technical_question:
+      target_hours: 2
+      maximum_hours: 4
+    general_inquiry:
+      target_hours: 4
+      maximum_hours: 24
+    negative_reply:
+      target_hours: 24
+      maximum_hours: 48
+
+  process:
+    lead_enrichment:
+      target_minutes: 10
+      maximum_minutes: 60
+    campaign_generation:
+      target_minutes: 5
+      maximum_minutes: 30
+    ae_review_queue:
+      target_hours: 4
+      maximum_hours: 24
+    campaign_launch:
+      target_hours: 1
+      maximum_hours: 4
+    unsubscribe_processing:
+      target_hours: 1
+      maximum_days: 10
+
+# Section 7 - Exception Policies
+exception_policies:
+  system_failures:
+    enrichment_failure:
+      action: queue_for_retry
+      max_retries: 3
+      fallback: proceed_with_partial_data
+      notification_threshold_percent: 10
+    scraping_blocked:
+      action: pause_immediately
+      notification: critical_alert
+      recovery: manual_intervention
+    campaign_delivery_failure:
+      action: retry_with_backoff
+      max_retries: 5
+      fallback: notify_ae
+    api_rate_limit:
+      action: exponential_backoff
+      max_wait_minutes: 60
+      fallback: queue_for_later
+
+  data_quality:
+    duplicate_detected:
+      action: merge_latest
+      preference: higher_icp_score
+      notification: none
+    email_bounced:
+      action: remove_from_sequence
+      flag: invalid_email
+      re_enrich_after_days: 30
+    company_mismatch:
+      action: flag_for_review
+      hold_outreach: true
+      notification: weekly_digest
+
+# Lead qualification thresholds
+lead_qualification:
+  metrics:
+    tier_1_accuracy:
+      target: 0.90
+      minimum: 0.85
+      critical_alert: 0.80
+    tier_2_accuracy:
+      target: 0.85
+      minimum: 0.80
+      critical_alert: 0.75
+    false_positive_rate:
+      target: 0.15
+      minimum: 0.20
+      critical_alert: 0.25
+    enrichment_success:
+      target: 0.90
+      minimum: 0.85
+      critical_alert: 0.80
+    data_freshness_days:
+      target: 14
+      minimum: 30
+      critical_alert: 45
+
+# Outreach performance thresholds
+outreach_performance:
+  email_deliverability:
+    target: 0.95
+    minimum: 0.92
+    critical_alert: 0.90
+  open_rate:
+    target: 0.50
+    minimum: 0.40
+    critical_alert: 0.35
+  reply_rate:
+    target: 0.08
+    minimum: 0.05
+    critical_alert: 0.04
+  positive_reply_ratio:
+    target: 0.50
+    minimum: 0.40
+    critical_alert: 0.30
+  unsubscribe_rate:
+    target: 0.005
+    minimum: 0.01
+    critical_alert: 0.02
+  spam_report_rate:
+    target: 0.0001
+    minimum: 0.0005
+    critical_alert: 0.001

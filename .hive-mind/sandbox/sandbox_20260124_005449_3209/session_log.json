@@ -1,0 +1,14 @@
+{
+  "session_id": "sandbox_20260124_005449_3209",
+  "mode": "mock",
+  "start_time": "2026-01-24T00:54:49.948953",
+  "end_time": "2026-01-24T00:54:50.179720",
+  "duration_seconds": 0.23077,
+  "operations_count": 0,
+  "api_calls": {},
+  "token_usage": {
+    "input": 0,
+    "output": 0
+  },
+  "operations": []
+}

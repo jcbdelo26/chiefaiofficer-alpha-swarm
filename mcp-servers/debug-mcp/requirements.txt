@@ -1,0 +1,17 @@
+# Debug MCP Server Dependencies
+# ==============================
+
+# MCP SDK
+mcp>=0.1.0
+
+# Async SQLite for audit trail queries
+aiosqlite>=0.19.0
+
+# Playwright for UI capture and browser automation
+playwright>=1.40.0
+
+# Environment variable loading
+python-dotenv>=1.0.0
+
+# Note: After installing, run: playwright install chromium
+# This downloads the Chromium browser binary required for UI capture

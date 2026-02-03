@@ -222,13 +222,13 @@ def normalize_rb2b_payload(payload: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
-async def process_visitor_intent(visitor_data: Dict[str, Any]):
+async def process_visitor_intent(visitor_data: Dict[str, Any], force_update: bool = False):
     """Background task to process visitor through Website Intent Monitor."""
     try:
         if website_monitor:
-            result = await website_monitor.process_visitor(visitor_data)
+            result = await website_monitor.process_visitor(visitor_data, force_update=force_update)
             if result:
-                print(f"✓ Intent processed: visitor={result.visitor_id}, score={result.intent_score}, queued={result.queued_for_approval}")
+                print(f"✓ Intent processed (update={force_update}): visitor={result.visitor_id}, score={result.intent_score}, queued={result.queued_for_approval}")
             else:
                 print(f"Intent processing: No triggers matched for visitor {visitor_data.get('visitor_id')}")
     except Exception as e:
@@ -325,18 +325,44 @@ async def health_check():
 # =============================================================================
 
 @router.post("/webhooks/clay")
-async def handle_clay_callback(request: Request):
+async def handle_clay_callback(
+    request: Request,
+    background_tasks: BackgroundTasks
+):
     """
     Handle incoming Clay enrichment callback.
     Receives JSON with enriched data and syncing to GHL.
+    Also re-triggers Website Intent Monitor to use new signals (Hiring, Tech Stack).
     """
     try:
         payload = await request.json()
         print(f"Received Clay callback: {json.dumps(payload)[:100]}...")
         
         if clay_enricher:
-            # Async processing
+            # Async processing (sync ghl, cache)
             await clay_enricher.receive_clay_callback(payload)
+            
+            # Re-trigger Website Intent Monitor with enriched data
+            if website_monitor:
+                # Map Clay payload to Visitor Data format
+                visitor_data = {
+                    "visitor_id": payload.get("visitor_id") or payload.get("id"),
+                    "email": payload.get("work_email") or payload.get("email"),
+                    "first_name": payload.get("first_name"),
+                    "last_name": payload.get("last_name"),
+                    "company_name": payload.get("company_name"),
+                    "company_domain": payload.get("company_domain"),
+                    "job_title": payload.get("job_title"),
+                    "linkedin_url": payload.get("linkedin_url"),
+                    # Critical Signals from Clay
+                    "hiring": payload.get("hiring") or payload.get("open_roles"),
+                    "technologies": payload.get("technologies") or payload.get("tech_stack"),
+                    "pages_viewed": payload.get("pages_viewed", []) # Carry over if passed back, else empty
+                }
+                
+                print(f"Re-processing intent for enriched visitor: {visitor_data.get('email')}")
+                background_tasks.add_task(process_visitor_intent, visitor_data, force_update=True)
+            
             return {"status": "processed"}
         else:
              print("Warning: Clay enricher not initialized")

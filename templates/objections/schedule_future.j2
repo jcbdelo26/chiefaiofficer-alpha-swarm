@@ -1,0 +1,12 @@
+Subject: Re: {{ original_subject }}
+
+Hi {{ name }},
+
+Completely understand - timing is everything.
+
+Would it make sense for me to reach back out in Q{{ ((timestamp[:7] | replace('-', '') | int) // 100 % 4) + 1 }} {{ timestamp[:4] }}? Happy to set a reminder and reconnect when it's more relevant for {{ company }}.
+
+Just let me know what works, and I'll follow up then.
+
+Best,
+{{'{{'}} sender_name {{'}}'}}

@@ -1,0 +1,871 @@
+{
+  "epsilon": 0.10460353203000003,
+  "metrics": {
+    "total_outcomes": 31,
+    "success_count": 31,
+    "failure_count": 0,
+    "patterns_detected": 2,
+    "refinements_generated": 115,
+    "annealing_steps": 115,
+    "last_annealing": "2026-01-19T05:31:09.585811"
+  },
+  "outcomes": [
+    {
+      "workflow_id": "segment_unknown",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_3"
+      },
+      "timestamp": "2026-01-15T20:19:48.533775",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_unknown",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_3"
+      },
+      "timestamp": "2026-01-15T20:19:48.533801",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_unknown",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_2"
+      },
+      "timestamp": "2026-01-15T20:19:48.533810",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_unknown",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_2"
+      },
+      "timestamp": "2026-01-15T20:19:48.533816",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_unknown",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_2"
+      },
+      "timestamp": "2026-01-15T20:19:48.533821",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_unknown",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_2"
+      },
+      "timestamp": "2026-01-15T20:19:48.533826",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_unknown",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_2"
+      },
+      "timestamp": "2026-01-15T20:19:48.533830",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_unknown",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_3"
+      },
+      "timestamp": "2026-01-15T20:19:48.533834",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_unknown",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_2"
+      },
+      "timestamp": "2026-01-15T20:19:48.533838",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_unknown",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_2"
+      },
+      "timestamp": "2026-01-15T20:19:48.533842",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segmentation_",
+      "workflow_type": "segmentation",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "action": "segment",
+        "state": {
+          "icp_tier": "tier_4",
+          "source_type": "",
+          "icp_score": 25
+        },
+        "campaign": "nurture_sequence",
+        "score_breakdown": {
+          "company_size": 10,
+          "title_seniority": 0,
+          "industry_fit": 0,
+          "tech_stack": 15,
+          "tech_signals": [
+            "sales_tech",
+            "marketing_tech",
+            "crm_user"
+          ],
+          "intent_signals": 0
+        }
+      },
+      "timestamp": "2026-01-19T09:26:13.706552",
+      "state": {
+        "icp_tier": "tier_4",
+        "source_type": "",
+        "icp_score": 25
+      },
+      "action": "segment"
+    },
+    {
+      "workflow_id": "segmentation_",
+      "workflow_type": "segmentation",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "action": "segment",
+        "state": {
+          "icp_tier": "tier_3",
+          "source_type": "",
+          "icp_score": 45
+        },
+        "campaign": "nurture_sequence",
+        "score_breakdown": {
+          "company_size": 15,
+          "title_seniority": 0,
+          "industry_fit": 15,
+          "tech_stack": 15,
+          "tech_signals": [
+            "sales_tech",
+            "marketing_tech",
+            "crm_user"
+          ],
+          "intent_signals": 0
+        }
+      },
+      "timestamp": "2026-01-19T09:26:13.706945",
+      "state": {
+        "icp_tier": "tier_3",
+        "source_type": "",
+        "icp_score": 45
+      },
+      "action": "segment"
+    },
+    {
+      "workflow_id": "segmentation_",
+      "workflow_type": "segmentation",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "action": "segment",
+        "state": {
+          "icp_tier": "tier_3",
+          "source_type": "",
+          "icp_score": 50
+        },
+        "campaign": "nurture_sequence",
+        "score_breakdown": {
+          "company_size": 15,
+          "title_seniority": 0,
+          "industry_fit": 20,
+          "tech_stack": 15,
+          "tech_signals": [
+            "sales_tech",
+            "marketing_tech",
+            "crm_user"
+          ],
+          "intent_signals": 0
+        }
+      },
+      "timestamp": "2026-01-19T09:26:13.707269",
+      "state": {
+        "icp_tier": "tier_3",
+        "source_type": "",
+        "icp_score": 50
+      },
+      "action": "segment"
+    },
+    {
+      "workflow_id": "segmentation_",
+      "workflow_type": "segmentation",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "action": "segment",
+        "state": {
+          "icp_tier": "tier_4",
+          "source_type": "",
+          "icp_score": 33
+        },
+        "campaign": "nurture_sequence",
+        "score_breakdown": {
+          "company_size": 10,
+          "title_seniority": 0,
+          "industry_fit": 15,
+          "tech_stack": 8,
+          "tech_signals": [
+            "crm_user"
+          ],
+          "intent_signals": 0
+        }
+      },
+      "timestamp": "2026-01-19T09:26:13.707567",
+      "state": {
+        "icp_tier": "tier_4",
+        "source_type": "",
+        "icp_score": 33
+      },
+      "action": "segment"
+    },
+    {
+      "workflow_id": "segmentation_",
+      "workflow_type": "segmentation",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "action": "segment",
+        "state": {
+          "icp_tier": "tier_4",
+          "source_type": "",
+          "icp_score": 20
+        },
+        "campaign": "nurture_sequence",
+        "score_breakdown": {
+          "company_size": 12,
+          "title_seniority": 0,
+          "industry_fit": 0,
+          "tech_stack": 8,
+          "tech_signals": [
+            "crm_user"
+          ],
+          "intent_signals": 0
+        }
+      },
+      "timestamp": "2026-01-19T09:26:13.707859",
+      "state": {
+        "icp_tier": "tier_4",
+        "source_type": "",
+        "icp_score": 20
+      },
+      "action": "segment"
+    },
+    {
+      "workflow_id": "segmentation_test-lead-001",
+      "workflow_type": "segmentation",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "action": "segment",
+        "state": {
+          "icp_tier": "tier_3",
+          "source_type": "",
+          "icp_score": 41
+        },
+        "campaign": "nurture_sequence",
+        "score_breakdown": {
+          "company_size": 10,
+          "title_seniority": 0,
+          "industry_fit": 20,
+          "tech_stack": 11,
+          "tech_signals": [
+            "marketing_tech",
+            "crm_user"
+          ],
+          "intent_signals": 0
+        }
+      },
+      "timestamp": "2026-01-19T09:32:44.203638",
+      "state": {
+        "icp_tier": "tier_3",
+        "source_type": "",
+        "icp_score": 41
+      },
+      "action": "segment"
+    },
+    {
+      "workflow_id": "segmentation_test-lead-002",
+      "workflow_type": "segmentation",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "action": "segment",
+        "state": {
+          "icp_tier": "tier_3",
+          "source_type": "",
+          "icp_score": 45
+        },
+        "campaign": "nurture_sequence",
+        "score_breakdown": {
+          "company_size": 10,
+          "title_seniority": 0,
+          "industry_fit": 20,
+          "tech_stack": 15,
+          "tech_signals": [
+            "marketing_tech",
+            "crm_user",
+            "sales_tech"
+          ],
+          "intent_signals": 0
+        }
+      },
+      "timestamp": "2026-01-19T09:32:44.203981",
+      "state": {
+        "icp_tier": "tier_3",
+        "source_type": "",
+        "icp_score": 45
+      },
+      "action": "segment"
+    },
+    {
+      "workflow_id": "segmentation_test-lead-003",
+      "workflow_type": "segmentation",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "action": "segment",
+        "state": {
+          "icp_tier": "tier_3",
+          "source_type": "",
+          "icp_score": 55
+        },
+        "campaign": "nurture_sequence",
+        "score_breakdown": {
+          "company_size": 20,
+          "title_seniority": 0,
+          "industry_fit": 20,
+          "tech_stack": 15,
+          "tech_signals": [
+            "crm_user"
+          ],
+          "intent_signals": 0
+        }
+      },
+      "timestamp": "2026-01-19T09:32:44.204318",
+      "state": {
+        "icp_tier": "tier_3",
+        "source_type": "",
+        "icp_score": 55
+      },
+      "action": "segment"
+    },
+    {
+      "workflow_id": "segmentation_test-lead-004",
+      "workflow_type": "segmentation",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "action": "segment",
+        "state": {
+          "icp_tier": "tier_4",
+          "source_type": "",
+          "icp_score": 36
+        },
+        "campaign": "nurture_sequence",
+        "score_breakdown": {
+          "company_size": 10,
+          "title_seniority": 0,
+          "industry_fit": 15,
+          "tech_stack": 11,
+          "tech_signals": [
+            "marketing_tech",
+            "crm_user"
+          ],
+          "intent_signals": 0
+        }
+      },
+      "timestamp": "2026-01-19T09:32:44.204609",
+      "state": {
+        "icp_tier": "tier_4",
+        "source_type": "",
+        "icp_score": 36
+      },
+      "action": "segment"
+    },
+    {
+      "workflow_id": "segmentation_test-lead-001",
+      "workflow_type": "segmentation",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "action": "segment",
+        "state": {
+          "icp_tier": "tier_4",
+          "source_type": "",
+          "icp_score": 31
+        },
+        "campaign": "nurture_sequence",
+        "score_breakdown": {
+          "company_size": 20,
+          "title_seniority": 0,
+          "industry_fit": 0,
+          "tech_stack": 11,
+          "tech_signals": [
+            "crm_user",
+            "marketing_tech"
+          ],
+          "intent_signals": 0
+        }
+      },
+      "timestamp": "2026-01-19T09:33:40.756584",
+      "state": {
+        "icp_tier": "tier_4",
+        "source_type": "",
+        "icp_score": 31
+      },
+      "action": "segment"
+    },
+    {
+      "workflow_id": "segmentation_test-lead-002",
+      "workflow_type": "segmentation",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "action": "segment",
+        "state": {
+          "icp_tier": "tier_3",
+          "source_type": "",
+          "icp_score": 42
+        },
+        "campaign": "nurture_sequence",
+        "score_breakdown": {
+          "company_size": 12,
+          "title_seniority": 0,
+          "industry_fit": 15,
+          "tech_stack": 15,
+          "tech_signals": [
+            "crm_user",
+            "sales_tech",
+            "marketing_tech"
+          ],
+          "intent_signals": 0
+        }
+      },
+      "timestamp": "2026-01-19T09:33:40.759379",
+      "state": {
+        "icp_tier": "tier_3",
+        "source_type": "",
+        "icp_score": 42
+      },
+      "action": "segment"
+    },
+    {
+      "workflow_id": "segmentation_test-lead-003",
+      "workflow_type": "segmentation",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "action": "segment",
+        "state": {
+          "icp_tier": "tier_3",
+          "source_type": "",
+          "icp_score": 50
+        },
+        "campaign": "nurture_sequence",
+        "score_breakdown": {
+          "company_size": 20,
+          "title_seniority": 0,
+          "industry_fit": 15,
+          "tech_stack": 15,
+          "tech_signals": [
+            "crm_user"
+          ],
+          "intent_signals": 0
+        }
+      },
+      "timestamp": "2026-01-19T09:33:40.759690",
+      "state": {
+        "icp_tier": "tier_3",
+        "source_type": "",
+        "icp_score": 50
+      },
+      "action": "segment"
+    },
+    {
+      "workflow_id": "segmentation_test-lead-004",
+      "workflow_type": "segmentation",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "action": "segment",
+        "state": {
+          "icp_tier": "tier_4",
+          "source_type": "",
+          "icp_score": 35
+        },
+        "campaign": "nurture_sequence",
+        "score_breakdown": {
+          "company_size": 20,
+          "title_seniority": 0,
+          "industry_fit": 0,
+          "tech_stack": 15,
+          "tech_signals": [
+            "crm_user",
+            "sales_tech",
+            "marketing_tech"
+          ],
+          "intent_signals": 0
+        }
+      },
+      "timestamp": "2026-01-19T09:33:40.759984",
+      "state": {
+        "icp_tier": "tier_4",
+        "source_type": "",
+        "icp_score": 35
+      },
+      "action": "segment"
+    },
+    {
+      "workflow_id": "segmentation_test-lead-001",
+      "workflow_type": "segmentation",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "action": "segment",
+        "state": {
+          "icp_tier": "tier_4",
+          "source_type": "",
+          "icp_score": 16
+        },
+        "campaign": "nurture_sequence",
+        "score_breakdown": {
+          "company_size": 5,
+          "title_seniority": 0,
+          "industry_fit": 0,
+          "tech_stack": 11,
+          "tech_signals": [
+            "crm_user",
+            "marketing_tech"
+          ],
+          "intent_signals": 0
+        }
+      },
+      "timestamp": "2026-01-19T09:36:36.540986",
+      "state": {
+        "icp_tier": "tier_4",
+        "source_type": "",
+        "icp_score": 16
+      },
+      "action": "segment"
+    },
+    {
+      "workflow_id": "segmentation_test-lead-002",
+      "workflow_type": "segmentation",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "action": "segment",
+        "state": {
+          "icp_tier": "tier_3",
+          "source_type": "",
+          "icp_score": 40
+        },
+        "campaign": "nurture_sequence",
+        "score_breakdown": {
+          "company_size": 10,
+          "title_seniority": 0,
+          "industry_fit": 15,
+          "tech_stack": 15,
+          "tech_signals": [
+            "sales_tech",
+            "crm_user",
+            "marketing_tech"
+          ],
+          "intent_signals": 0
+        }
+      },
+      "timestamp": "2026-01-19T09:36:36.541378",
+      "state": {
+        "icp_tier": "tier_3",
+        "source_type": "",
+        "icp_score": 40
+      },
+      "action": "segment"
+    },
+    {
+      "workflow_id": "segmentation_test-lead-003",
+      "workflow_type": "segmentation",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "action": "segment",
+        "state": {
+          "icp_tier": "tier_3",
+          "source_type": "",
+          "icp_score": 46
+        },
+        "campaign": "nurture_sequence",
+        "score_breakdown": {
+          "company_size": 20,
+          "title_seniority": 0,
+          "industry_fit": 15,
+          "tech_stack": 11,
+          "tech_signals": [
+            "crm_user",
+            "marketing_tech"
+          ],
+          "intent_signals": 0
+        }
+      },
+      "timestamp": "2026-01-19T09:36:36.541696",
+      "state": {
+        "icp_tier": "tier_3",
+        "source_type": "",
+        "icp_score": 46
+      },
+      "action": "segment"
+    },
+    {
+      "workflow_id": "segmentation_test-lead-004",
+      "workflow_type": "segmentation",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "action": "segment",
+        "state": {
+          "icp_tier": "tier_3",
+          "source_type": "",
+          "icp_score": 40
+        },
+        "campaign": "nurture_sequence",
+        "score_breakdown": {
+          "company_size": 10,
+          "title_seniority": 0,
+          "industry_fit": 15,
+          "tech_stack": 15,
+          "tech_signals": [
+            "sales_tech",
+            "crm_user",
+            "marketing_tech"
+          ],
+          "intent_signals": 0
+        }
+      },
+      "timestamp": "2026-01-19T09:36:36.542097",
+      "state": {
+        "icp_tier": "tier_3",
+        "source_type": "",
+        "icp_score": 40
+      },
+      "action": "segment"
+    },
+    {
+      "workflow_id": "segmentation_test-lead-001",
+      "workflow_type": "segmentation",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "action": "segment",
+        "state": {
+          "icp_tier": "tier_4",
+          "source_type": "",
+          "icp_score": 23
+        },
+        "campaign": "nurture_sequence",
+        "score_breakdown": {
+          "company_size": 15,
+          "title_seniority": 0,
+          "industry_fit": 0,
+          "tech_stack": 8,
+          "tech_signals": [
+            "crm_user"
+          ],
+          "intent_signals": 0
+        }
+      },
+      "timestamp": "2026-01-19T15:20:46.816492",
+      "state": {
+        "icp_tier": "tier_4",
+        "source_type": "",
+        "icp_score": 23
+      },
+      "action": "segment"
+    },
+    {
+      "workflow_id": "segmentation_test-lead-002",
+      "workflow_type": "segmentation",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "action": "segment",
+        "state": {
+          "icp_tier": "tier_3",
+          "source_type": "",
+          "icp_score": 41
+        },
+        "campaign": "nurture_sequence",
+        "score_breakdown": {
+          "company_size": 15,
+          "title_seniority": 0,
+          "industry_fit": 15,
+          "tech_stack": 11,
+          "tech_signals": [
+            "marketing_tech",
+            "crm_user"
+          ],
+          "intent_signals": 0
+        }
+      },
+      "timestamp": "2026-01-19T15:20:46.816906",
+      "state": {
+        "icp_tier": "tier_3",
+        "source_type": "",
+        "icp_score": 41
+      },
+      "action": "segment"
+    },
+    {
+      "workflow_id": "segmentation_test-lead-003",
+      "workflow_type": "segmentation",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "action": "segment",
+        "state": {
+          "icp_tier": "tier_3",
+          "source_type": "",
+          "icp_score": 40
+        },
+        "campaign": "nurture_sequence",
+        "score_breakdown": {
+          "company_size": 10,
+          "title_seniority": 0,
+          "industry_fit": 15,
+          "tech_stack": 15,
+          "tech_signals": [
+            "marketing_tech",
+            "crm_user",
+            "sales_tech"
+          ],
+          "intent_signals": 0
+        }
+      },
+      "timestamp": "2026-01-19T15:20:46.817241",
+      "state": {
+        "icp_tier": "tier_3",
+        "source_type": "",
+        "icp_score": 40
+      },
+      "action": "segment"
+    },
+    {
+      "workflow_id": "segmentation_test-lead-004",
+      "workflow_type": "segmentation",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "action": "segment",
+        "state": {
+          "icp_tier": "tier_3",
+          "source_type": "",
+          "icp_score": 45
+        },
+        "campaign": "nurture_sequence",
+        "score_breakdown": {
+          "company_size": 10,
+          "title_seniority": 0,
+          "industry_fit": 20,
+          "tech_stack": 15,
+          "tech_signals": [
+            "crm_user"
+          ],
+          "intent_signals": 0
+        }
+      },
+      "timestamp": "2026-01-19T15:20:46.820817",
+      "state": {
+        "icp_tier": "tier_3",
+        "source_type": "",
+        "icp_score": 45
+      },
+      "action": "segment"
+    }
+  ],
+  "patterns": {
+    "segment_no_response": {
+      "pattern_id": "segment_no_response",
+      "pattern_type": "success",
+      "frequency": 10,
+      "last_seen": "2026-01-15T20:19:48.533842",
+      "context": {
+        "workflow_type": "segment",
+        "outcome_type": "no_response"
+      },
+      "confidence": 0.5
+    },
+    "segmentation_no_response": {
+      "pattern_id": "segmentation_no_response",
+      "pattern_type": "success",
+      "frequency": 21,
+      "last_seen": "2026-01-19T15:20:46.820817",
+      "context": {
+        "workflow_type": "segmentation",
+        "outcome_type": "no_response"
+      },
+      "confidence": 0.0
+    }
+  },
+  "refinements": [],
+  "q_table": {
+    "segment|no_response": {
+      "default": -1.3026431198000001
+    }
+  },
+  "saved_at": "2026-01-19T15:20:46.821689"
+}

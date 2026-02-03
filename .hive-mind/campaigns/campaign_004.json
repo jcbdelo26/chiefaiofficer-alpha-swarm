@@ -1,0 +1,107 @@
+{
+  "id": "campaign_004",
+  "name": "Competitor Displacement - Jan 2026",
+  "segment": "tier3_standard",
+  "status": "pending",
+  "created_at": "2026-01-15T02:01:07.937219",
+  "lead_count": 12,
+  "leads": [
+    {
+      "id": "lead_0080",
+      "name": "Amanda Anderson",
+      "first_name": "Amanda",
+      "last_name": "Anderson",
+      "email": "amanda.anderson@prospectpro.com",
+      "title": "VP of Business Development",
+      "company": "Prospect Pro",
+      "company_size": 110,
+      "industry": "Lead Gen",
+      "linkedin_url": "https://linkedin.com/in/amandaanderson",
+      "icp_score": 83,
+      "icp_tier": "tier2_high",
+      "source": "group_member",
+      "scraped_at": "2026-01-15T02:01:07.922185",
+      "enriched": true
+    },
+    {
+      "id": "lead_0086",
+      "name": "Nicole Thomas",
+      "first_name": "Nicole",
+      "last_name": "Thomas",
+      "email": "nicole.thomas@growthpath.com",
+      "title": "Sales Operations Manager",
+      "company": "GrowthPath",
+      "company_size": 120,
+      "industry": "Marketing Tech",
+      "linkedin_url": "https://linkedin.com/in/nicolethomas",
+      "icp_score": 62,
+      "icp_tier": "tier3_standard",
+      "source": "event_attendee",
+      "scraped_at": "2026-01-13T02:01:07.922210",
+      "enriched": true
+    },
+    {
+      "id": "lead_0022",
+      "name": "Michael Davis",
+      "first_name": "Michael",
+      "last_name": "Davis",
+      "email": "michael.davis@techforwardinc.com",
+      "title": "CRO",
+      "company": "TechForward Inc",
+      "company_size": 150,
+      "industry": "SaaS",
+      "linkedin_url": "https://linkedin.com/in/michaeldavis",
+      "icp_score": 85,
+      "icp_tier": "tier1_vip",
+      "source": "post_engager",
+      "scraped_at": "2026-01-10T02:01:07.921912",
+      "enriched": true
+    },
+    {
+      "id": "lead_0007",
+      "name": "Ashley Johnson",
+      "first_name": "Ashley",
+      "last_name": "Johnson",
+      "email": "ashley.johnson@winrateanalytics.com",
+      "title": "Chief Revenue Officer",
+      "company": "WinRate Analytics",
+      "company_size": 85,
+      "industry": "Analytics",
+      "linkedin_url": "https://linkedin.com/in/ashleyjohnson",
+      "icp_score": 75,
+      "icp_tier": "tier2_high",
+      "source": "group_member",
+      "scraped_at": "2026-01-09T02:01:07.921840",
+      "enriched": true
+    },
+    {
+      "id": "lead_0038",
+      "name": "Jessica Martin",
+      "first_name": "Jessica",
+      "last_name": "Martin",
+      "email": "jessica.martin@closerai.com",
+      "title": "VP of Sales",
+      "company": "CloserAI",
+      "company_size": 220,
+      "industry": "SaaS",
+      "linkedin_url": "https://linkedin.com/in/jessicamartin",
+      "icp_score": 99,
+      "icp_tier": "tier1_vip",
+      "source": "competitor_follower",
+      "scraped_at": "2026-01-13T02:01:07.921985",
+      "enriched": true
+    }
+  ],
+  "emails": [
+    {
+      "step": 1,
+      "subject": "Quick question about your SalesLoft setup, {{first_name}}",
+      "body": "Hi {{first_name}},\n\nI noticed you're leading competitor displacement efforts at {{company}}.\n\nQuick question - are you seeing the same challenges we hear from other Lead Gen leaders around pipeline visibility?\n\nWorth a 15-minute chat?\n\nBest,\nChris\nChief AI Officer"
+    },
+    {
+      "step": 2,
+      "subject": "Re: Quick question about your SalesLoft setup, {{first_name}}",
+      "body": "{{first_name}},\n\nFollowing up on my previous note. \n\nHappy to share how similar companies are solving this.\n\nOpen to a quick call this week?\n\nChris"
+    }
+  ]
+}

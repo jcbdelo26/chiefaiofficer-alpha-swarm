@@ -1,0 +1,86 @@
+{
+  "test_id": "canary_20260126_231221",
+  "started_at": "2026-01-26T15:12:21.273902+00:00",
+  "completed_at": "2026-01-26T15:12:24.062058+00:00",
+  "overall_success": false,
+  "steps": [
+    {
+      "step_name": "Verify Configuration",
+      "success": true,
+      "duration_ms": 0.23102760314941406,
+      "details": {
+        "rollout_phase": "shadow",
+        "shadow_mode": true,
+        "actually_send": false,
+        "emergency_stop": false,
+        "checks_failed": []
+      },
+      "error": null,
+      "timestamp": "2026-01-26T15:12:21.274305+00:00"
+    },
+    {
+      "step_name": "Create Test Lead",
+      "success": false,
+      "duration_ms": 2269.37198638916,
+      "details": {
+        "status_code": 400
+      },
+      "error": "GHL API returned 400: {\"statusCode\":400,\"message\":\"This location does not allow duplicated contacts.\",\"meta\":{\"contactName\":\"Canary TestLead\",\"contactId\":\"FXyamJqrEP8r1eyr4JN4\",\"matchingField\":\"phone\"},\"traceId\":\"af4f0357-",
+      "timestamp": "2026-01-26T15:12:23.742333+00:00"
+    },
+    {
+      "step_name": "Process Through Pipeline",
+      "success": true,
+      "duration_ms": 243.18599700927734,
+      "details": {
+        "icp_score": 0.75,
+        "tier": "tier_1",
+        "note": "Simulated (segmentor not available)"
+      },
+      "error": null,
+      "timestamp": "2026-01-26T15:12:23.985892+00:00"
+    },
+    {
+      "step_name": "Generate Email",
+      "success": true,
+      "duration_ms": 0.02288818359375,
+      "details": {
+        "subject": "[CANARY TEST] Pipeline Validation - 2026-01-26 23:12",
+        "to": "chris@chiefaiofficer.com",
+        "body_length": 359
+      },
+      "error": null,
+      "timestamp": "2026-01-26T15:12:23.986118+00:00"
+    },
+    {
+      "step_name": "Validate Guardrails",
+      "success": true,
+      "duration_ms": 74.7075080871582,
+      "details": {
+        "would_allow_send": false,
+        "reason": "Agent OPERATOR not permitted to perform send_email",
+        "agent_tested": "OPERATOR"
+      },
+      "error": null,
+      "timestamp": "2026-01-26T15:12:24.060952+00:00"
+    },
+    {
+      "step_name": "Send Test Email",
+      "success": true,
+      "duration_ms": 0.7557868957519531,
+      "details": {
+        "mode": "shadow",
+        "would_send_to": "chris@chiefaiofficer.com",
+        "shadow_log": "D:\\Agent Swarm Orchestration\\chiefaiofficer-alpha-swarm\\.hive-mind\\shadow_mode_emails\\canary_canary_20260126_231221.json"
+      },
+      "error": null,
+      "timestamp": "2026-01-26T15:12:24.061934+00:00"
+    }
+  ],
+  "test_lead_id": null,
+  "test_email_sent": false,
+  "errors": [
+    "Create Test Lead: GHL API returned 400: {\"statusCode\":400,\"message\":\"This location does not allow duplicated contacts.\",\"meta\":{\"contactName\":\"Canary TestLead\",\"contactId\":\"FXyamJqrEP8r1eyr4JN4\",\"matchingField\":\"phone\"},\"traceId\":\"af4f0357-"
+  ],
+  "warnings": []
+}

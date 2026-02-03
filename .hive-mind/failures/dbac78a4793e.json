@@ -1,0 +1,15 @@
+{
+  "failure_id": "dbac78a4793e",
+  "agent_name": "GATEKEEPER",
+  "task_id": "test_queue_saturation",
+  "category": "resource_error",
+  "error_message": "Gatekeeper Queue Full: 105/100",
+  "error_type": "BufferError",
+  "context": {
+    "queue_size": 105
+  },
+  "stack_trace": null,
+  "timestamp": "2026-01-23T17:57:24.503174+00:00",
+  "resolved": false,
+  "resolution_notes": null
+}

@@ -1,0 +1,183 @@
+{
+  "_comment": "GHL Configuration - Unified Email Outreach System",
+  "_version": "2.0",
+  "_updated": "2024-01-17",
+  
+  "email_limits": {
+    "monthly_limit": 3000,
+    "daily_limit": 150,
+    "hourly_limit": 20,
+    "per_domain_hourly_limit": 5,
+    "min_delay_seconds": 30,
+    "working_hours": {
+      "start": 8,
+      "end": 18,
+      "timezone": "America/Los_Angeles"
+    },
+    "working_days": ["monday", "tuesday", "wednesday", "thursday", "friday"]
+  },
+  
+  "warmup_settings": {
+    "enabled": false,
+    "daily_limit": 20,
+    "duration_days": 14,
+    "ramp_schedule": {
+      "day_1_3": 10,
+      "day_4_7": 20,
+      "day_8_10": 50,
+      "day_11_14": 100
+    }
+  },
+  
+  "domain_health": {
+    "healthy_threshold": 50,
+    "warning_threshold": 70,
+    "bounce_rate_alert": 0.02,
+    "bounce_rate_critical": 0.05,
+    "complaint_rate_alert": 0.0005,
+    "complaint_rate_critical": 0.001,
+    "cooling_off_hours": {
+      "bounce_spike": 24,
+      "complaint": 48,
+      "low_health": 72
+    }
+  },
+  
+  "content_validation": {
+    "subject_min_length": 10,
+    "subject_max_length": 60,
+    "body_min_words": 20,
+    "body_max_words": 500,
+    "caps_ratio_max": 0.3,
+    "require_unsubscribe": true,
+    "spam_words": [
+      "free", "guarantee", "no obligation", "act now", "limited time",
+      "click here", "buy now", "urgent", "winner", "congratulations",
+      "make money", "cash", "earn extra", "double your", "risk free",
+      "no credit check", "special promotion", "exclusive deal",
+      "million dollars", "once in a lifetime", "100% free"
+    ]
+  },
+  
+  "sequences": {
+    "cold_outbound": {
+      "touches": 5,
+      "duration_days": 14,
+      "schedule": [0, 2, 5, 9, 14],
+      "workflow_id": "cold_outbound_workflow",
+      "requires_approval": true
+    },
+    "warm_nurture": {
+      "touches": 3,
+      "duration_days": 7,
+      "schedule": [0, 3, 7],
+      "workflow_id": "warm_nurture_workflow",
+      "requires_approval": false
+    },
+    "ghost_recovery": {
+      "touches": 3,
+      "duration_days": 10,
+      "schedule": [0, 4, 10],
+      "workflow_id": "ghost_recovery_workflow",
+      "requires_approval": true
+    },
+    "meeting_reminder": {
+      "touches": 2,
+      "duration_days": 1,
+      "schedule": [-1, 0],
+      "workflow_id": "meeting_reminder_workflow",
+      "requires_approval": false
+    }
+  },
+  
+  "action_risk_levels": {
+    "read_contact": "low",
+    "read_contacts": "low",
+    "create_contact": "medium",
+    "update_contact": "medium",
+    "add_tag": "low",
+    "add_note": "low",
+    "send_email": "high",
+    "send_sms": "high",
+    "trigger_workflow": "high",
+    "bulk_email": "critical",
+    "bulk_sms": "critical",
+    "delete_contact": "critical",
+    "bulk_delete": "critical"
+  },
+  
+  "approval_requirements": {
+    "low_risk": "auto_approve",
+    "medium_risk": "log_and_approve",
+    "high_risk": "validate_and_approve",
+    "critical_risk": "human_approval_required"
+  },
+  
+  "grounding_requirements": {
+    "send_email": {
+      "required": true,
+      "valid_sources": ["supabase", "ghl", "manual_verified"],
+      "require_data_id": true
+    },
+    "bulk_email": {
+      "required": true,
+      "valid_sources": ["supabase"],
+      "require_data_id": true,
+      "require_segment_verification": true
+    },
+    "delete_contact": {
+      "required": true,
+      "valid_sources": ["manual_verified"],
+      "require_human_reason": true
+    }
+  },
+  
+  "rate_limits": {
+    "api_calls_per_minute": 60,
+    "contacts_per_request": 100,
+    "bulk_batch_size": 50,
+    "workflow_triggers_per_hour": 100
+  },
+  
+  "kpi_targets": {
+    "open_rate": {
+      "target": 50,
+      "warning": 40,
+      "critical": 30
+    },
+    "reply_rate": {
+      "target": 8,
+      "warning": 5,
+      "critical": 3
+    },
+    "bounce_rate": {
+      "target": 1,
+      "warning": 2,
+      "critical": 5
+    },
+    "complaint_rate": {
+      "target": 0,
+      "warning": 0.05,
+      "critical": 0.1
+    },
+    "meeting_rate": {
+      "target": 2,
+      "warning": 1,
+      "critical": 0.5
+    },
+    "domain_health": {
+      "target": 80,
+      "warning": 60,
+      "critical": 50
+    }
+  },
+  
+  "audit_settings": {
+    "log_all_actions": true,
+    "retain_full_log_days": 90,
+    "retain_aggregated_days": 365,
+    "retain_compliance_forever": true,
+    "alert_on_failures": true,
+    "slack_alerts_enabled": true
+  }
+}

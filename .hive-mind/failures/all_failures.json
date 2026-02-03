@@ -1,0 +1,129 @@
+{
+  "3285e30cc3c9": {
+    "failure_id": "3285e30cc3c9",
+    "agent_name": "HUNTER",
+    "task_id": "test_task_0",
+    "category": "api_error",
+    "error_message": "API rate limit exceeded: 429 Too Many Requests",
+    "error_type": "ConnectionError",
+    "context": {
+      "attempt": 0,
+      "url": "linkedin.com/api"
+    },
+    "stack_trace": null,
+    "timestamp": "2026-01-23T10:32:42.796282+00:00",
+    "resolved": false,
+    "resolution_notes": null
+  },
+  "bfb9338003cd": {
+    "failure_id": "bfb9338003cd",
+    "agent_name": "SEGMENTOR",
+    "task_id": "test_missing_email",
+    "category": "validation_error",
+    "error_message": "Validation Failed: Missing required field 'email'",
+    "error_type": "ValueError",
+    "context": {
+      "lead": {
+        "first_name": "John",
+        "company": "NoEmail Corp"
+      }
+    },
+    "stack_trace": null,
+    "timestamp": "2026-01-23T17:57:24.044246+00:00",
+    "resolved": false,
+    "resolution_notes": null
+  },
+  "b956cf9a4b99": {
+    "failure_id": "b956cf9a4b99",
+    "agent_name": "HUNTER",
+    "task_id": "test_invalid_email",
+    "category": "validation_error",
+    "error_message": "Invalid email format: john.smthexample.com",
+    "error_type": "ValueError",
+    "context": {
+      "email": "john.smthexample.com"
+    },
+    "stack_trace": null,
+    "timestamp": "2026-01-23T17:57:24.065390+00:00",
+    "resolved": false,
+    "resolution_notes": null
+  },
+  "862d0ef0106d": {
+    "failure_id": "862d0ef0106d",
+    "agent_name": "QUEEN",
+    "task_id": "test_context_overflow",
+    "category": "resource_error",
+    "error_message": "Context Limit Exceeded: 100k tokens > 50k limit",
+    "error_type": "MemoryError",
+    "context": {
+      "steps": 500
+    },
+    "stack_trace": null,
+    "timestamp": "2026-01-23T17:57:24.243552+00:00",
+    "resolved": false,
+    "resolution_notes": null
+  },
+  "dc046fc7096c": {
+    "failure_id": "dc046fc7096c",
+    "agent_name": "GATEKEEPER",
+    "task_id": "test_logic_conflict",
+    "category": "logic_error",
+    "error_message": "Logic Error: Qualified lead is on blacklist",
+    "error_type": "AssertionError",
+    "context": {
+      "lead": {
+        "domain": "competitor.com",
+        "revenue": "$100M"
+      }
+    },
+    "stack_trace": null,
+    "timestamp": "2026-01-23T17:57:24.262404+00:00",
+    "resolved": false,
+    "resolution_notes": null
+  },
+  "e60f82553851": {
+    "failure_id": "e60f82553851",
+    "agent_name": "SYSTEM_MONITOR",
+    "task_id": "test_memory_spike",
+    "category": "resource_error",
+    "error_message": "Memory Usage > 90%: 1.2GB / 1.0GB limit",
+    "error_type": "MemoryError",
+    "context": {
+      "memory_usage": "1.2GB"
+    },
+    "stack_trace": null,
+    "timestamp": "2026-01-23T17:57:24.478429+00:00",
+    "resolved": false,
+    "resolution_notes": null
+  },
+  "dbac78a4793e": {
+    "failure_id": "dbac78a4793e",
+    "agent_name": "GATEKEEPER",
+    "task_id": "test_queue_saturation",
+    "category": "resource_error",
+    "error_message": "Gatekeeper Queue Full: 105/100",
+    "error_type": "BufferError",
+    "context": {
+      "queue_size": 105
+    },
+    "stack_trace": null,
+    "timestamp": "2026-01-23T17:57:24.503174+00:00",
+    "resolved": false,
+    "resolution_notes": null
+  },
+  "8f7739fc437c": {
+    "failure_id": "8f7739fc437c",
+    "agent_name": "ORCHESTRATOR",
+    "task_id": "test_thread_starvation",
+    "category": "unknown",
+    "error_message": "Thread Pool Exhausted: No workers available",
+    "error_type": "TimeoutError",
+    "context": {
+      "active_threads": 50
+    },
+    "stack_trace": null,
+    "timestamp": "2026-01-23T17:57:24.520798+00:00",
+    "resolved": false,
+    "resolution_notes": null
+  }
+}

@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CAIO Swarm Health Dashboard</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <div class="dashboard">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-left">
+                <h1>🐝 CAIO Swarm Health</h1>
+                <span class="subtitle">Unified Agent Monitoring</span>
+            </div>
+            <div class="header-right">
+                <div id="connection-status" class="connection-status disconnected">
+                    <span class="dot"></span>
+                    <span class="text">Disconnected</span>
+                </div>
+                <div id="last-update" class="last-update">--</div>
+            </div>
+        </header>
+
+        <!-- Overall Status Banner -->
+        <div id="overall-status" class="overall-status healthy">
+            <span class="status-icon">🟢</span>
+            <span class="status-text">System Healthy</span>
+        </div>
+
+        <!-- Main Grid -->
+        <div class="main-grid">
+            <!-- Agents Section -->
+            <section class="section agents-section">
+                <h2>👥 Agents (12)</h2>
+                <div id="agents-grid" class="agents-grid">
+                    <!-- Agent cards will be inserted here -->
+                </div>
+            </section>
+
+            <!-- Right Panel -->
+            <aside class="side-panel">
+                <!-- Integrations -->
+                <section class="section">
+                    <h2>🔗 Integrations</h2>
+                    <div id="integrations-list" class="status-list">
+                        <!-- Integration items will be inserted here -->
+                    </div>
+                </section>
+
+                <!-- MCP Servers -->
+                <section class="section">
+                    <h2>🖥️ MCP Servers</h2>
+                    <div id="mcp-servers-list" class="status-list">
+                        <!-- MCP server items will be inserted here -->
+                    </div>
+                </section>
+
+                <!-- Guardrails -->
+                <section class="section">
+                    <h2>🛡️ Guardrails</h2>
+                    <div id="guardrails-panel" class="guardrails-panel">
+                        <!-- Guardrails status will be inserted here -->
+                    </div>
+                </section>
+            </aside>
+        </div>
+
+        <!-- Bottom Grid -->
+        <div class="bottom-grid">
+            <!-- Rate Limits -->
+            <section class="section">
+                <h2>⚡ Rate Limits</h2>
+                <div id="rate-limits" class="rate-limits">
+                    <!-- Rate limit bars will be inserted here -->
+                </div>
+            </section>
+
+            <!-- Email Limits -->
+            <section class="section">
+                <h2>📧 Email Limits</h2>
+                <div id="email-limits" class="email-limits">
+                    <!-- Email limit bars will be inserted here -->
+                </div>
+            </section>
+
+            <!-- Recent Actions -->
+            <section class="section actions-section">
+                <h2>📋 Recent Actions</h2>
+                <div id="recent-actions" class="actions-timeline">
+                    <!-- Action items will be inserted here -->
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <script>
+        // WebSocket connection
+        let ws = null;
+        let reconnectAttempts = 0;
+        const maxReconnectAttempts = 10;
+        const reconnectDelay = 3000;
+
+        // Status colors
+        const STATUS_COLORS = {
+            healthy: { icon: '🟢', class: 'healthy', text: 'Healthy' },
+            degraded: { icon: '🟡', class: 'degraded', text: 'Degraded' },
+            unhealthy: { icon: '🔴', class: 'unhealthy', text: 'Unhealthy' }
+        };
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            connectWebSocket();
+            fetchInitialData();
+        });
+
+        // WebSocket connection
+        function connectWebSocket() {
+            const wsUrl = `ws://${window.location.host}/ws`;
+            
+            try {
+                ws = new WebSocket(wsUrl);
+                
+                ws.onopen = () => {
+                    console.log('WebSocket connected');
+                    reconnectAttempts = 0;
+                    updateConnectionStatus(true);
+                };
+                
+                ws.onmessage = (event) => {
+                    const message = JSON.parse(event.data);
+                    handleMessage(message);
+                };
+                
+                ws.onclose = () => {
+                    console.log('WebSocket disconnected');
+                    updateConnectionStatus(false);
+                    scheduleReconnect();
+                };
+                
+                ws.onerror = (error) => {
+                    console.error('WebSocket error:', error);
+                };
+            } catch (error) {
+                console.error('Failed to connect WebSocket:', error);
+                scheduleReconnect();
+            }
+        }
+
+        function scheduleReconnect() {
+            if (reconnectAttempts < maxReconnectAttempts) {
+                reconnectAttempts++;
+                console.log(`Reconnecting in ${reconnectDelay}ms (attempt ${reconnectAttempts})`);
+                setTimeout(connectWebSocket, reconnectDelay);
+            }
+        }
+
+        function updateConnectionStatus(connected) {
+            const el = document.getElementById('connection-status');
+            if (connected) {
+                el.classList.remove('disconnected');
+                el.classList.add('connected');
+                el.querySelector('.text').textContent = 'Connected';
+            } else {
+                el.classList.remove('connected');
+                el.classList.add('disconnected');
+                el.querySelector('.text').textContent = 'Disconnected';
+            }
+        }
+
+        function handleMessage(message) {
+            if (message.type === 'health_update') {
+                updateDashboard(message.data);
+            } else if (message.type === 'heartbeat') {
+                // Respond to heartbeat
+                if (ws && ws.readyState === WebSocket.OPEN) {
+                    ws.send(JSON.stringify({ type: 'pong' }));
+                }
+            }
+        }
+
+        // Fetch initial data via REST API
+        async function fetchInitialData() {
+            try {
+                const response = await fetch('/api/health');
+                const data = await response.json();
+                updateDashboard(data);
+            } catch (error) {
+                console.error('Failed to fetch initial data:', error);
+            }
+        }
+
+        // Update dashboard with health data
+        function updateDashboard(data) {
+            updateOverallStatus(data.status);
+            updateAgents(data.agents || {});
+            updateIntegrations(data.integrations || {});
+            updateMcpServers(data.mcp_servers || {});
+            updateGuardrails(data.guardrails || {});
+            updateRateLimits(data.rate_limits || {});
+            updateEmailLimits(data.email_limits || {});
+            updateRecentActions(data.recent_actions || []);
+            updateLastUpdate(data.timestamp);
+        }
+
+        function updateOverallStatus(status) {
+            const el = document.getElementById('overall-status');
+            const config = STATUS_COLORS[status] || STATUS_COLORS.healthy;
+            
+            el.className = `overall-status ${config.class}`;
+            el.querySelector('.status-icon').textContent = config.icon;
+            el.querySelector('.status-text').textContent = `System ${config.text}`;
+        }
+
+        function updateAgents(agents) {
+            const container = document.getElementById('agents-grid');
+            container.innerHTML = '';
+            
+            const agentOrder = [
+                'UNIFIED_QUEEN', 'HUNTER', 'ENRICHER', 'SEGMENTOR', 'CRAFTER',
+                'GATEKEEPER', 'SCOUT', 'OPERATOR', 'COACH', 'PIPER',
+                'SCHEDULER', 'RESEARCHER'
+            ];
+            
+            for (const name of agentOrder) {
+                const agent = agents[name];
+                if (!agent) continue;
+                
+                const config = STATUS_COLORS[agent.status] || STATUS_COLORS.healthy;
+                
+                const card = document.createElement('div');
+                card.className = `agent-card ${config.class}`;
+                card.innerHTML = `
+                    <div class="agent-header">
+                        <span class="agent-icon">${config.icon}</span>
+                        <span class="agent-name">${name}</span>
+                    </div>
+                    <div class="agent-metrics">
+                        <div class="metric">
+                            <span class="label">Success Rate</span>
+                            <span class="value">${(100 - agent.error_rate).toFixed(1)}%</span>
+                        </div>
+                        <div class="metric">
+                            <span class="label">Latency</span>
+                            <span class="value">${agent.avg_latency_ms.toFixed(0)}ms</span>
+                        </div>
+                        <div class="metric">
+                            <span class="label">Requests</span>
+                            <span class="value">${agent.total_requests}</span>
+                        </div>
+                    </div>
+                    ${agent.circuit_state ? `<div class="circuit-state">Circuit: ${agent.circuit_state}</div>` : ''}
+                `;
+                
+                container.appendChild(card);
+            }
+        }
+
+        function updateIntegrations(integrations) {
+            const container = document.getElementById('integrations-list');
+            container.innerHTML = '';
+            
+            for (const [name, data] of Object.entries(integrations)) {
+                const config = STATUS_COLORS[data.status] || STATUS_COLORS.healthy;
+                
+                const item = document.createElement('div');
+                item.className = `status-item ${config.class}`;
+                item.innerHTML = `
+                    <span class="status-icon">${config.icon}</span>
+                    <span class="status-name">${name}</span>
+                    <span class="status-detail">${data.circuit_state || data.status}</span>
+                `;
+                
+                container.appendChild(item);
+            }
+        }
+
+        function updateMcpServers(servers) {
+            const container = document.getElementById('mcp-servers-list');
+            container.innerHTML = '';
+            
+            for (const [name, data] of Object.entries(servers)) {
+                const config = STATUS_COLORS[data.status] || STATUS_COLORS.healthy;
+                
+                const item = document.createElement('div');
+                item.className = `status-item ${config.class}`;
+                item.innerHTML = `
+                    <span class="status-icon">${config.icon}</span>
+                    <span class="status-name">${name}</span>
+                    <span class="status-detail">${data.status}</span>
+                `;
+                
+                container.appendChild(item);
+            }
+        }
+
+        function updateGuardrails(guardrails) {
+            const container = document.getElementById('guardrails-panel');
+            container.innerHTML = '';
+            
+            for (const [name, data] of Object.entries(guardrails)) {
+                const config = STATUS_COLORS[data.status] || STATUS_COLORS.healthy;
+                
+                const item = document.createElement('div');
+                item.className = `guardrail-item ${config.class}`;
+                
+                let extraInfo = '';
+                if (name === 'circuit_breakers' && data.metadata?.open_count !== undefined) {
+                    extraInfo = `<span class="extra">${data.metadata.open_count} open</span>`;
+                }
+                
+                item.innerHTML = `
+                    <span class="status-icon">${config.icon}</span>
+                    <span class="guardrail-name">${name.replace(/_/g, ' ')}</span>
+                    ${extraInfo}
+                `;
+                
+                container.appendChild(item);
+            }
+        }
+
+        function updateRateLimits(limits) {
+            const container = document.getElementById('rate-limits');
+            container.innerHTML = '';
+            
+            for (const [key, data] of Object.entries(limits)) {
+                const percent = data.usage_percent || 0;
+                const colorClass = percent > 80 ? 'critical' : percent > 50 ? 'warning' : 'normal';
+                
+                const item = document.createElement('div');
+                item.className = 'rate-limit-item';
+                item.innerHTML = `
+                    <div class="limit-header">
+                        <span class="limit-name">${data.name}</span>
+                        <span class="limit-value">${data.current}/${data.limit} per ${data.period}</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill ${colorClass}" style="width: ${Math.min(percent, 100)}%"></div>
+                    </div>
+                `;
+                
+                container.appendChild(item);
+            }
+        }
+
+        function updateEmailLimits(limits) {
+            const container = document.getElementById('email-limits');
+            container.innerHTML = '';
+            
+            const periods = ['hourly', 'daily', 'monthly'];
+            
+            for (const period of periods) {
+                const data = limits[period];
+                if (!data) continue;
+                
+                const percent = data.percent || 0;
+                const colorClass = percent > 80 ? 'critical' : percent > 50 ? 'warning' : 'normal';
+                
+                const item = document.createElement('div');
+                item.className = 'email-limit-item';
+                item.innerHTML = `
+                    <div class="limit-header">
+                        <span class="limit-name">${period.charAt(0).toUpperCase() + period.slice(1)}</span>
+                        <span class="limit-value">${data.sent}/${data.limit}</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill ${colorClass}" style="width: ${Math.min(percent, 100)}%"></div>
+                    </div>
+                `;
+                
+                container.appendChild(item);
+            }
+        }
+
+        function updateRecentActions(actions) {
+            const container = document.getElementById('recent-actions');
+            container.innerHTML = '';
+            
+            if (actions.length === 0) {
+                container.innerHTML = '<div class="no-actions">No recent actions</div>';
+                return;
+            }
+            
+            for (const action of actions.slice(0, 10)) {
+                const statusIcon = action.status === 'success' ? '✅' : '❌';
+                const time = new Date(action.timestamp).toLocaleTimeString();
+                
+                const item = document.createElement('div');
+                item.className = `action-item ${action.status}`;
+                item.innerHTML = `
+                    <span class="action-time">${time}</span>
+                    <span class="action-icon">${statusIcon}</span>
+                    <span class="action-agent">${action.agent}</span>
+                    <span class="action-name">${action.action}</span>
+                    ${action.details ? `<span class="action-error">${action.details}</span>` : ''}
+                `;
+                
+                container.appendChild(item);
+            }
+        }
+
+        function updateLastUpdate(timestamp) {
+            const el = document.getElementById('last-update');
+            if (timestamp) {
+                const time = new Date(timestamp).toLocaleTimeString();
+                el.textContent = `Updated: ${time}`;
+            }
+        }
+
+        // Periodic refresh as backup
+        setInterval(() => {
+            if (!ws || ws.readyState !== WebSocket.OPEN) {
+                fetchInitialData();
+            }
+        }, 30000);
+    </script>
+</body>
+</html>

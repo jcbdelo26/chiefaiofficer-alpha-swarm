@@ -1,0 +1,194 @@
+{
+  "ingested_at": "2026-01-23T00:00:00Z",
+  "source": "Head of Sales - ChiefAIOfficer RevOps Documents",
+  
+  "linkedin_benchmarks": {
+    "connection_acceptance_rate": 0.323,
+    "reply_rate": 0.116,
+    "message_to_meeting_conversion": 0.051,
+    "best_segment": "Mid-Market COOs",
+    "worst_segment": "Fortune 500 VPs",
+    "personalized_video_multiplier": 3.0,
+    "question_hook_vs_direct_value": 1.75
+  },
+  
+  "email_benchmarks": {
+    "deliverability_target": 0.98,
+    "open_rate_target": 0.70,
+    "positive_reply_rate_target": 0.035,
+    "lead_to_meeting_ratio": 0.12,
+    "pipeline_velocity_days": 14
+  },
+  
+  "icp_criteria": {
+    "industries": [
+      "Construction",
+      "Professional Services", 
+      "Manufacturing",
+      "Healthcare Equipment",
+      "Real Estate Development",
+      "Utility Infrastructure"
+    ],
+    "employee_range": {
+      "min": 50,
+      "max": 500
+    },
+    "revenue_range": {
+      "min": 10000000,
+      "max": 100000000
+    },
+    "target_titles": [
+      "CEO", "Chief Executive Officer",
+      "President",
+      "COO", "Chief Operating Officer",
+      "Founder", "Co-Founder",
+      "Owner"
+    ],
+    "priority_states": ["CA", "TX", "IL", "LA"],
+    "ownership_preferences": ["Family-owned", "MBE", "WBE"]
+  },
+  
+  "disqualifiers": {
+    "min_employees": 20,
+    "max_employees": 1000,
+    "excluded_types": ["Agency", "Existing Customer"],
+    "require_executive_contact": true
+  },
+  
+  "tier_classification": {
+    "tier_1": {
+      "industries": ["Construction", "Infrastructure", "Real Estate Development"],
+      "employee_range": [100, 500],
+      "titles": ["CEO", "COO", "President", "Founder"],
+      "approach": "White-glove, principal-led"
+    },
+    "tier_2": {
+      "industries": ["Professional Services", "Healthcare", "Finance"],
+      "employee_range": [50, 100],
+      "titles": ["VP", "Director", "Managing Director"],
+      "approach": "Standard outreach, value-first"
+    },
+    "tier_3": {
+      "industries": ["Manufacturing", "Retail", "Technology"],
+      "employee_range": [50, 100],
+      "titles": ["Manager", "Partner"],
+      "approach": "Nurture sequence, education-first"
+    }
+  },
+  
+  "active_clients": [
+    {
+      "name": "CREDE Construction",
+      "industry": "Real Estate Development",
+      "size": "51-200",
+      "location": "Irvine, CA",
+      "certifications": ["MBE"],
+      "notes": "Multi-state developer, 27 states, 2500+ projects"
+    },
+    {
+      "name": "Frazer",
+      "industry": "EMS Vehicle Manufacturing",
+      "size": "51-200",
+      "location": "Houston, TX",
+      "revenue": 15900000,
+      "notes": "Mobile healthcare vehicles, already AI client, saved 1000s of hours"
+    },
+    {
+      "name": "Exit Momentum",
+      "industry": "Business Coaching",
+      "size": "2-10",
+      "location": "Baton Rouge, LA",
+      "notes": "Inc 5000, $1B coached revenue, Scaling Up Certified"
+    },
+    {
+      "name": "John Burns Construction Co.",
+      "industry": "Utility Infrastructure",
+      "size": "51-200",
+      "location": "Westmont, IL",
+      "revenue": 31500000,
+      "certifications": ["MBE"],
+      "notes": "Founded 1906, Bristol Bay Native Corporation subsidiary"
+    },
+    {
+      "name": "US Compliance",
+      "industry": "EHS Consulting",
+      "size": "51-200",
+      "location": "Excelsior, MN",
+      "notes": "OSHA/EPA compliance, PE-backed by Susquehanna",
+      "status": "Signed, not onboarded"
+    },
+    {
+      "name": "Outback Contractors Inc.",
+      "industry": "Utility Construction",
+      "size": "201-500",
+      "location": "Red Bluff, CA",
+      "certifications": ["WBE"],
+      "notes": "Woman-owned, PG&E contractor, 400 employees",
+      "status": "Signed, not onboarded"
+    },
+    {
+      "name": "DEB Construction",
+      "industry": "Commercial Construction",
+      "size": "51-200",
+      "location": "Anaheim, CA",
+      "revenue": 52800000,
+      "certifications": ["MBE"],
+      "notes": "50 years, LEED APs, Great Place to Work certified"
+    }
+  ],
+  
+  "clay_leads_summary": {
+    "total_leads": 1391,
+    "high_icp_count": 514,
+    "high_icp_percentage": 0.37,
+    "top_industries": {
+      "Information Technology": 70,
+      "Professional and Business Services": 54,
+      "Finance and Banking": 31,
+      "Marketing & Advertising": 27,
+      "Construction": 18,
+      "Manufacturing": 18
+    },
+    "top_titles": {
+      "Owner": 42,
+      "Founder": 18,
+      "President": 17,
+      "Partner": 13,
+      "CEO": 9,
+      "Chief Operating Officer": 6
+    }
+  },
+  
+  "messaging_rules": {
+    "never_do": [
+      "Links before permission",
+      "Explain curriculum in DMs",
+      "Pricing talk in DMs",
+      "Use 'course/program/cohort' language",
+      "Multiple questions per message"
+    ],
+    "always_do": [
+      "One question per message",
+      "Let silence work",
+      "Keep messages short and calm",
+      "Lead with identity, not features"
+    ],
+    "subject_line_preference": "question-based",
+    "personalization_minimum_variables": 2
+  },
+  
+  "precision_scorecard_targets": {
+    "lead_velocity_rate": 0.15,
+    "icp_match_rate": 0.37,
+    "enrichment_rate": 0.85,
+    "email_open_rate": 0.70,
+    "reply_rate": 0.05,
+    "positive_reply_rate": 0.035,
+    "meeting_book_rate": 0.05,
+    "ae_approval_rate": 0.85,
+    "pipeline_close_rate": 0.20,
+    "agent_success_rate": 0.95,
+    "swarm_uptime": 0.999,
+    "queue_health": 0.90
+  }
+}

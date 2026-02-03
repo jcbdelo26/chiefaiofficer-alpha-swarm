@@ -1,0 +1,17 @@
+{
+  "violations": {
+    "hunter_agent": [
+      {
+        "timestamp": "2026-01-17T20:59:08.062263",
+        "permission": "SEND_EMAIL",
+        "message": "Attempted unauthorized action: SEND_EMAIL"
+      },
+      {
+        "timestamp": "2026-01-17T21:07:10.450606",
+        "permission": "SEND_EMAIL",
+        "message": "Attempted unauthorized action: SEND_EMAIL"
+      }
+    ]
+  },
+  "last_updated": "2026-01-17T21:07:10.450618"
+}

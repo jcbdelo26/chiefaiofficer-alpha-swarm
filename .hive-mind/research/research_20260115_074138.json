@@ -1,0 +1,138 @@
+{
+  "research_id": "fac9004f-c392-4dc6-a4a8-0d25d1b49553",
+  "created_at": "2026-01-15T07:41:38.825816+00:00",
+  "input_file": ".hive-mind\\segmented\\segmented_2026-01-15.json",
+  "segments_analyzed": 3,
+  "findings": {
+    "tier1_vip": {
+      "lead_count": 33,
+      "common_titles": [
+        "Chief Revenue Officer",
+        "CRO",
+        "VP of Sales",
+        "VP of Business Development",
+        "Director of Sales"
+      ],
+      "industries": {
+        "SaaS": 14,
+        "Technology": 10,
+        "Analytics": 3,
+        "CRM": 3,
+        "Sales Tech": 1,
+        "Marketing Tech": 1,
+        "Marketing": 1
+      },
+      "top_sources": [
+        "post_engager",
+        "event_attendee",
+        "group_member"
+      ],
+      "personalization_opportunities": [
+        "company_size_messaging",
+        "industry_specific_content",
+        "competitor_displacement",
+        "event_reference",
+        "content_engagement_reference",
+        "community_connection"
+      ],
+      "recommended_angles": [
+        "thought_leadership_followup",
+        "mid_market_focus",
+        "high_touch_personalized",
+        "executive_briefing",
+        "competitor_displacement"
+      ],
+      "key_insight": "High concentration of Chief Revenue Officer roles primarily from post_engager source in SaaS industry. Strong displacement opportunity exists.",
+      "avg_icp_score": 89.1,
+      "company_size_range": "75-350 employees"
+    },
+    "tier2_high": {
+      "lead_count": 44,
+      "common_titles": [
+        "VP of Sales",
+        "Director of Sales",
+        "Head of RevOps",
+        "VP of Revenue Operations",
+        "Sales Operations Manager"
+      ],
+      "industries": {
+        "Analytics": 11,
+        "Marketing Tech": 10,
+        "SaaS": 8,
+        "Marketing": 5,
+        "Lead Gen": 5,
+        "Technology": 3,
+        "Sales Tech": 2
+      },
+      "top_sources": [
+        "event_attendee",
+        "post_engager",
+        "group_member"
+      ],
+      "personalization_opportunities": [
+        "company_size_messaging",
+        "industry_specific_content",
+        "competitor_displacement",
+        "event_reference",
+        "content_engagement_reference",
+        "community_connection"
+      ],
+      "recommended_angles": [
+        "thought_leadership_followup",
+        "case_study_led",
+        "mid_market_focus",
+        "value_proposition_focus",
+        "competitor_displacement"
+      ],
+      "key_insight": "High concentration of VP of Sales roles primarily from event_attendee source in Analytics industry. Strong displacement opportunity exists.",
+      "avg_icp_score": 75.5,
+      "company_size_range": "75-350 employees"
+    },
+    "tier3_standard": {
+      "lead_count": 23,
+      "common_titles": [
+        "Sales Operations Manager",
+        "Director of Revenue",
+        "Sales Enablement Director",
+        "VP of Business Development",
+        "VP of Revenue Operations"
+      ],
+      "industries": {
+        "Professional Services": 9,
+        "Analytics": 5,
+        "Sales Tech": 2,
+        "Marketing Tech": 2,
+        "Technology": 1,
+        "Sales Enablement": 1,
+        "CRM": 1,
+        "Marketing": 1,
+        "SaaS": 1
+      },
+      "top_sources": [
+        "post_engager",
+        "event_attendee",
+        "competitor_follower"
+      ],
+      "personalization_opportunities": [
+        "company_size_messaging",
+        "industry_specific_content",
+        "competitor_displacement",
+        "event_reference",
+        "content_engagement_reference",
+        "community_connection"
+      ],
+      "recommended_angles": [
+        "thought_leadership_followup",
+        "educational_content",
+        "growth_stage_messaging",
+        "automated_nurture",
+        "competitor_displacement"
+      ],
+      "key_insight": "High concentration of Sales Operations Manager roles primarily from post_engager source in Professional Services industry. Strong displacement opportunity exists.",
+      "avg_icp_score": 61.4,
+      "company_size_range": "45-350 employees"
+    }
+  },
+  "cross_segment_insights": "VIP/Tier 1 leads represent 33.0% of the batch - prioritize for AE review. 'post_engager' is the dominant lead source across tiers. Top industries across segments: SaaS, Analytics, Technology. Competitor displacement is viable across multiple tiers.",
+  "recommended_campaign_strategy": "TIER 1 (33 leads): High-touch personalized sequences with AE involvement. Each email should reference specific company/role context. | TIER 2 (44 leads): Value-proposition focused sequences with case studies. Moderate personalization with source-based hooks. | TIER 3 (23 leads): Educational nurture sequences. Template-based with minimal personalization, focus on volume. | ANGLE: Create displacement-focused variant for competitor followers. | TIMING: Prioritize event attendees for immediate outreach while context is fresh."
+}

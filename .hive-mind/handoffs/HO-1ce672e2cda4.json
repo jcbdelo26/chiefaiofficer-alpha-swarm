@@ -1,0 +1,66 @@
+{
+  "id": "HO-1ce672e2cda4",
+  "source_agent": "ENRICHER",
+  "target_agent": "SEGMENTOR",
+  "handoff_type": "sequential",
+  "timestamp": "2026-01-17T21:07:24.368505",
+  "status": "received",
+  "received_at": "2026-01-17T21:07:24.370158",
+  "completed_at": null,
+  "payload": {
+    "lead_id": "lead_12345",
+    "email": "john.doe@acmecorp.com",
+    "company": "Acme Corp",
+    "employee_count": 250,
+    "industry": "B2B SaaS",
+    "technologies": [
+      "Salesforce",
+      "HubSpot"
+    ],
+    "enriched_at": "2026-01-17T21:07:24.368429"
+  },
+  "summary": "Enriched: john.doe@acmecorp.com, Acme Corp (250 emp, B2B SaaS)",
+  "critical_facts": [
+    {
+      "key": "lead_id",
+      "value": "lead_12345",
+      "source": "linkedin",
+      "importance": "critical",
+      "expires_at": null
+    },
+    {
+      "key": "email",
+      "value": "john.doe@acmecorp.com",
+      "source": "clay",
+      "importance": "critical",
+      "expires_at": null
+    },
+    {
+      "key": "employee_count",
+      "value": 250,
+      "source": "clay",
+      "importance": "high",
+      "expires_at": null
+    }
+  ],
+  "decisions_made": [
+    {
+      "agent": "ENRICHER",
+      "decision_type": "enrichment_source",
+      "choice": "clay",
+      "reasoning": "Best match confidence",
+      "timestamp": "2026-01-17T21:07:24.368436",
+      "reversible": true
+    }
+  ],
+  "pending_actions": [],
+  "grounding_evidence": {
+    "source": "clay",
+    "data_id": "clay_enrich_789",
+    "verified": true
+  },
+  "errors_encountered": [],
+  "context_budget_used": 0.0212890625,
+  "parent_handoff_id": "HO-65208db7bc3a",
+  "child_handoff_ids": []
+}

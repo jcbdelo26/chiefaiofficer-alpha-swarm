@@ -1,0 +1,72 @@
+{
+  "instructions": "Score each email 1-5 (1=poor, 5=excellent). Return average.",
+  "criteria": [
+    "Personalization quality",
+    "Subject line effectiveness",
+    "Value proposition clarity",
+    "CTA appropriateness",
+    "Professional tone"
+  ],
+  "emails": [
+    {
+      "file": "1jPSOzD5Dmmy2QTGYrzm_20260124_041040.json",
+      "to": "[REDACTED]",
+      "subject": "Resource for None",
+      "preview": ""
+    },
+    {
+      "file": "7Y271ptktYpQg6pwjTHJ_20260124_040956.json",
+      "to": "[REDACTED]",
+      "subject": "Resource for None",
+      "preview": ""
+    },
+    {
+      "file": "9lBhxGDXH8NfTfwC2gQu_20260124_040956.json",
+      "to": "[REDACTED]",
+      "subject": "Resource for None",
+      "preview": ""
+    },
+    {
+      "file": "canary_canary_20260126_191734.json",
+      "to": null,
+      "subject": "[CANARY TEST] Pipeline Validation",
+      "preview": ""
+    },
+    {
+      "file": "canary_canary_20260126_231221.json",
+      "to": null,
+      "subject": "[CANARY TEST] Pipeline Validation",
+      "preview": ""
+    },
+    {
+      "file": "cpBjwul20byvE3iVGXVE_20260124_040956.json",
+      "to": "[REDACTED]",
+      "subject": "Resource for None",
+      "preview": ""
+    },
+    {
+      "file": "hj1zrYNr3K4SAy2DQLjD_20260124_040956.json",
+      "to": "[REDACTED]",
+      "subject": "Resource for None",
+      "preview": ""
+    },
+    {
+      "file": "kgtdThtdexpLBEy8yJCJ_20260124_041040.json",
+      "to": "[REDACTED]",
+      "subject": "nitesh, AI is transforming RevOps at companies like None",
+      "preview": ""
+    },
+    {
+      "file": "MESBie8efsYQqL0Kn8Zt_20260124_041040.json",
+      "to": "[REDACTED]",
+      "subject": "donald, AI is transforming RevOps at companies like None",
+      "preview": ""
+    },
+    {
+      "file": "MwkHWxRput3h5GN1V5xc_20260124_041040.json",
+      "to": "[REDACTED]",
+      "subject": "hina, AI is transforming RevOps at companies like None",
+      "preview": ""
+    }
+  ]
+}

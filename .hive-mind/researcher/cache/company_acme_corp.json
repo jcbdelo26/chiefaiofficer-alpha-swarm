@@ -1,0 +1,20 @@
+{
+  "company_name": "Acme Corp",
+  "website": "acme.com",
+  "industry": "Tech",
+  "company_size": "Big",
+  "headquarters": null,
+  "description": "Acme Corp is great.",
+  "tech_stack": [
+    "Python"
+  ],
+  "recent_news": [],
+  "competitors": [],
+  "pain_points": [],
+  "linkedin_url": null,
+  "funding": null,
+  "employee_count": 1000,
+  "revenue_estimate": null,
+  "researched_at": "2026-01-22T20:53:11.952111+00:00",
+  "confidence": 0.65
+}

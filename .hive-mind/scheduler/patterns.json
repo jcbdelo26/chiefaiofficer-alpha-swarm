@@ -1,0 +1,50 @@
+{
+  "preferred_hours": {
+    "America/New_York": [
+      10,
+      11,
+      14,
+      15
+    ],
+    "America/Los_Angeles": [
+      10,
+      11,
+      14,
+      15
+    ],
+    "Europe/London": [
+      10,
+      11,
+      14,
+      15
+    ],
+    "Asia/Manila": [
+      10,
+      11,
+      14,
+      15
+    ]
+  },
+  "avoid_hours": [
+    12,
+    13
+  ],
+  "success_by_day": {
+    "0": 0.85,
+    "1": 0.9,
+    "2": 0.93,
+    "3": 0.88,
+    "4": 0.75,
+    "5": 0.2,
+    "6": 0.1
+  },
+  "avg_exchanges_to_book": 2.0,
+  "proposal_acceptance_rate": [
+    0.4,
+    0.25,
+    0.2,
+    0.1,
+    0.05
+  ],
+  "updated_at": "2026-01-21T20:45:52.157357+00:00"
+}

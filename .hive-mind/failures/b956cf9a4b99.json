@@ -1,0 +1,15 @@
+{
+  "failure_id": "b956cf9a4b99",
+  "agent_name": "HUNTER",
+  "task_id": "test_invalid_email",
+  "category": "validation_error",
+  "error_message": "Invalid email format: john.smthexample.com",
+  "error_type": "ValueError",
+  "context": {
+    "email": "john.smthexample.com"
+  },
+  "stack_trace": null,
+  "timestamp": "2026-01-23T17:57:24.065390+00:00",
+  "resolved": false,
+  "resolution_notes": null
+}

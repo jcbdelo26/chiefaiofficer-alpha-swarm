@@ -1,0 +1,120 @@
+{
+  "session_id": "219e2b70",
+  "created_at": 1768643016.8012896,
+  "saved_at": 1768643019.9352694,
+  "budget": {
+    "max_tokens": 1000,
+    "current_tokens": 98,
+    "warning_threshold": 0.4,
+    "critical_threshold": 0.6,
+    "utilization": 0.098,
+    "status": "healthy"
+  },
+  "items": {
+    "system_dd1b2034": {
+      "id": "system_dd1b2034",
+      "content": "System configuration and critical settings for agent behavior.",
+      "priority": 100,
+      "timestamp": 1768643019.9338665,
+      "token_count": 9,
+      "source": "system",
+      "ttl_seconds": null,
+      "metadata": {}
+    },
+    "user_16a62745": {
+      "id": "user_16a62745",
+      "content": "User preferences and personalization data.",
+      "priority": 75,
+      "timestamp": 1768643019.9340527,
+      "token_count": 7,
+      "source": "user",
+      "ttl_seconds": null,
+      "metadata": {}
+    },
+    "conversation_645f642d": {
+      "id": "conversation_645f642d",
+      "content": "Recent conversation history for context.",
+      "priority": 50,
+      "timestamp": 1768643019.9341295,
+      "token_count": 6,
+      "source": "conversation",
+      "ttl_seconds": null,
+      "metadata": {}
+    },
+    "temp_f4cdb47e": {
+      "id": "temp_f4cdb47e",
+      "content": "Temporary calculation results.",
+      "priority": 25,
+      "timestamp": 1768643019.934193,
+      "token_count": 4,
+      "source": "temp",
+      "ttl_seconds": 60,
+      "metadata": {}
+    },
+    "debug_3e7e93a0": {
+      "id": "debug_3e7e93a0",
+      "content": "Debug trace information for this request.",
+      "priority": 10,
+      "timestamp": 1768643019.9342535,
+      "token_count": 7,
+      "source": "debug",
+      "ttl_seconds": null,
+      "metadata": {}
+    },
+    "bulk_8bf5fc8b": {
+      "id": "bulk_8bf5fc8b",
+      "content": "Additional context chunk #1 with medium-length content to fill budget.",
+      "priority": 25,
+      "timestamp": 1768643019.934428,
+      "token_count": 13,
+      "source": "bulk",
+      "ttl_seconds": null,
+      "metadata": {}
+    },
+    "bulk_f5b6a397": {
+      "id": "bulk_f5b6a397",
+      "content": "Additional context chunk #2 with medium-length content to fill budget.",
+      "priority": 25,
+      "timestamp": 1768643019.934513,
+      "token_count": 13,
+      "source": "bulk",
+      "ttl_seconds": null,
+      "metadata": {}
+    },
+    "bulk_87284084": {
+      "id": "bulk_87284084",
+      "content": "Additional context chunk #3 with medium-length content to fill budget.",
+      "priority": 25,
+      "timestamp": 1768643019.934578,
+      "token_count": 13,
+      "source": "bulk",
+      "ttl_seconds": null,
+      "metadata": {}
+    },
+    "bulk_40379a2f": {
+      "id": "bulk_40379a2f",
+      "content": "Additional context chunk #4 with medium-length content to fill budget.",
+      "priority": 25,
+      "timestamp": 1768643019.9346375,
+      "token_count": 13,
+      "source": "bulk",
+      "ttl_seconds": null,
+      "metadata": {}
+    },
+    "bulk_29d8a264": {
+      "id": "bulk_29d8a264",
+      "content": "Additional context chunk #5 with medium-length content to fill budget.",
+      "priority": 25,
+      "timestamp": 1768643019.9346967,
+      "token_count": 13,
+      "source": "bulk",
+      "ttl_seconds": null,
+      "metadata": {}
+    }
+  },
+  "stats": {
+    "compaction_count": 1,
+    "items_added": 10,
+    "items_removed": 0
+  }
+}

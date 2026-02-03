@@ -1,0 +1,107 @@
+{
+  "id": "campaign_002",
+  "name": "Event Followup - Jan 2026",
+  "segment": "tier2_high",
+  "status": "pending",
+  "created_at": "2026-01-15T02:01:07.935843",
+  "lead_count": 18,
+  "leads": [
+    {
+      "id": "lead_0008",
+      "name": "Nicole Rodriguez",
+      "first_name": "Nicole",
+      "last_name": "Rodriguez",
+      "email": "nicole.rodriguez@cloudscalesolutions.com",
+      "title": "Director of Sales",
+      "company": "CloudScale Solutions",
+      "company_size": 280,
+      "industry": "Technology",
+      "linkedin_url": "https://linkedin.com/in/nicolerodriguez",
+      "icp_score": 86,
+      "icp_tier": "tier1_vip",
+      "source": "event_attendee",
+      "scraped_at": "2026-01-15T02:01:07.921846",
+      "enriched": true
+    },
+    {
+      "id": "lead_0024",
+      "name": "James Williams",
+      "first_name": "James",
+      "last_name": "Williams",
+      "email": "james.williams@dealflowsystems.com",
+      "title": "VP of Sales",
+      "company": "DealFlow Systems",
+      "company_size": 90,
+      "industry": "CRM",
+      "linkedin_url": "https://linkedin.com/in/jameswilliams",
+      "icp_score": 86,
+      "icp_tier": "tier1_vip",
+      "source": "competitor_follower",
+      "scraped_at": "2026-01-15T02:01:07.921921",
+      "enriched": true
+    },
+    {
+      "id": "lead_0072",
+      "name": "Anthony Johnson",
+      "first_name": "Anthony",
+      "last_name": "Johnson",
+      "email": "anthony.johnson@revenuestack.com",
+      "title": "VP of Business Development",
+      "company": "RevenueStack",
+      "company_size": 350,
+      "industry": "Technology",
+      "linkedin_url": "https://linkedin.com/in/anthonyjohnson",
+      "icp_score": 85,
+      "icp_tier": "tier1_vip",
+      "source": "competitor_follower",
+      "scraped_at": "2026-01-13T02:01:07.922150",
+      "enriched": true
+    },
+    {
+      "id": "lead_0094",
+      "name": "Emily Wilson",
+      "first_name": "Emily",
+      "last_name": "Wilson",
+      "email": "emily.wilson@growthpath.com",
+      "title": "VP of Business Development",
+      "company": "GrowthPath",
+      "company_size": 120,
+      "industry": "Marketing Tech",
+      "linkedin_url": "https://linkedin.com/in/emilywilson",
+      "icp_score": 73,
+      "icp_tier": "tier2_high",
+      "source": "competitor_follower",
+      "scraped_at": "2026-01-09T02:01:07.922246",
+      "enriched": true
+    },
+    {
+      "id": "lead_0009",
+      "name": "Emily Martinez",
+      "first_name": "Emily",
+      "last_name": "Martinez",
+      "email": "emily.martinez@techforwardinc.com",
+      "title": "Director of Revenue",
+      "company": "TechForward Inc",
+      "company_size": 150,
+      "industry": "SaaS",
+      "linkedin_url": "https://linkedin.com/in/emilymartinez",
+      "icp_score": 81,
+      "icp_tier": "tier2_high",
+      "source": "competitor_follower",
+      "scraped_at": "2026-01-08T02:01:07.921851",
+      "enriched": true
+    }
+  ],
+  "emails": [
+    {
+      "step": 1,
+      "subject": "Great connecting at SaaStr",
+      "body": "Hi {{first_name}},\n\nI noticed you're leading event followup efforts at {{company}}.\n\nQuick question - are you seeing the same challenges we hear from other Technology leaders around pipeline visibility?\n\nWorth a 15-minute chat?\n\nBest,\nChris\nChief AI Officer"
+    },
+    {
+      "step": 2,
+      "subject": "Re: Great connecting at SaaStr",
+      "body": "{{first_name}},\n\nFollowing up on my previous note. \n\nHappy to share how similar companies are solving this.\n\nOpen to a quick call this week?\n\nChris"
+    }
+  ]
+}

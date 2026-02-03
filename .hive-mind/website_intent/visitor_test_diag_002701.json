@@ -1,0 +1,59 @@
+{
+  "visitor_id": "test_diag_002701",
+  "email": "test.diagnostic@example.com",
+  "first_name": "Test",
+  "last_name": "Diagnostic",
+  "linkedin_url": "https://linkedin.com/in/testdiagnostic",
+  "company_name": "Diagnostic Corp",
+  "company_domain": "gong.io",
+  "job_title": "VP of Sales",
+  "pages_viewed": [
+    "/blog/how-pg-cut-product-development-time-22-percent-using-ai"
+  ],
+  "blog_triggers_matched": [
+    {
+      "url_pattern": "/blog.*(p&g|pg|procter.*gamble).*(product|development|ai|22)",
+      "category": "ai_case_study"
+    },
+    {
+      "url_pattern": "/blog.*(ai|automation|efficiency|transform|strategy)",
+      "category": "general"
+    }
+  ],
+  "warm_connections": [
+    {
+      "connection_type": "same_previous_company",
+      "shared_entity": "Gong",
+      "our_team_member": "Dani Apgar",
+      "team_member_title": "Head of Partnerships & Revenue",
+      "confidence": 0.9,
+      "details": {
+        "team_member_years": "2020-2023",
+        "team_member_email": "dani@chiefaiofficer.com"
+      }
+    },
+    {
+      "connection_type": "former_colleague",
+      "shared_entity": "Gong",
+      "our_team_member": "Dani Apgar",
+      "team_member_title": "Head of Partnerships & Revenue",
+      "confidence": 0.85,
+      "details": {
+        "visitor_years": "2021-2024",
+        "team_member_years": "2020-2023",
+        "team_member_email": "dani@chiefaiofficer.com"
+      }
+    }
+  ],
+  "intent_score": 100,
+  "icp_tier": "tier_1",
+  "recommended_action": "immediate_warm_outreach",
+  "generated_email": {
+    "subject": "Quick question about your product development cycles at Diagnostic Corp",
+    "body": "Hi Test,\n\nI saw you were reading our piece on how P&G cut product development time by 22% using AI.\n\nMy colleague Dani Apgar spent time at Gong and often mentions how critical it was to have real-time visibility into what was actually moving deals forward vs. creating friction.\n\nAs a VP of Sales, I'm curious - what's the biggest source of drag between your sales and product teams when it comes to getting customer feedback into the development cycle?\n\nI've been showing sales leaders a simple 10-minute AI framework that helps them:\n\u2022 Get product updates to reps 3x faster\n\u2022 Surface which features actually drive deals\n\u2022 Cut the back-and-forth between teams by 40%+\n\nAll without adding headcount or new processes.\n\nWorth a quick conversation later today or tomorrow?\n\n--\nDani Apgar\nHead of Partnerships & Revenue, Chief AI Officer Inc.\ndani@chiefaiofficer.com | chiefaiofficer.com\nBook a 15-min intro: https://caio.cx/meet",
+    "template_used": "case_study_pg",
+    "generated_by": "gemini_crafter"
+  },
+  "queued_for_approval": true,
+  "created_at": "2026-01-30T16:27:01.872615+00:00"
+}

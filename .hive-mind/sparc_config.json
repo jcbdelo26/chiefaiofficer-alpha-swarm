@@ -1,0 +1,28 @@
+{
+  "initialized": true,
+  "current_phase": "completion",
+  "agents_connected": {
+    "HUNTER": true,
+    "ENRICHER": true,
+    "SEGMENTOR": true,
+    "CRAFTER": true,
+    "GATEKEEPER": true,
+    "RL_ENGINE": true,
+    "DRIFT_DETECTOR": true
+  },
+  "ab_testing_enabled": true,
+  "rl_engine_active": true,
+  "monitoring_active": false,
+  "autonomous_mode": false,
+  "last_self_anneal": null,
+  "metrics": {
+    "leads_processed": 0,
+    "icp_match_rate": 0.65,
+    "email_deliverability": 0.96,
+    "open_rate": 0.52,
+    "reply_rate": 0.08,
+    "meeting_book_rate": 0.12,
+    "ae_approval_rate": 0.87
+  },
+  "updated_at": "2026-01-13T06:36:40.611265"
+}

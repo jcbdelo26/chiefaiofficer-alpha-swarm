@@ -1,0 +1,95 @@
+{
+    "approvers": [
+        {
+            "id": "dani_apgar",
+            "name": "Dani Apgar",
+            "email": "dani@chiefaiofficer.com",
+            "slack_handle": "@dani",
+            "phone": "+15057995035",
+            "timezone": "America/Los_Angeles",
+            "coverage_hours": "9:00-18:00",
+            "can_approve": [
+                "tier1_emails",
+                "tier2_emails",
+                "tier3_emails",
+                "bulk_campaigns",
+                "hot_leads",
+                "template_changes",
+                "emergency_stops"
+            ],
+            "is_primary": true,
+            "notification_preferences": {
+                "hot_leads": [
+                    "slack",
+                    "email"
+                ],
+                "tier1_campaigns": [
+                    "slack"
+                ],
+                "tier2_campaigns": [
+                    "email"
+                ],
+                "emergency": [
+                    "slack",
+                    "sms",
+                    "email"
+                ]
+            }
+        }
+    ],
+    "escalation_chain": [
+        {
+            "level": 1,
+            "approver_id": "dani_apgar",
+            "sla_minutes": 30,
+            "method": "slack",
+            "description": "First notification via Slack"
+        },
+        {
+            "level": 2,
+            "approver_id": "dani_apgar",
+            "sla_minutes": 60,
+            "method": "email",
+            "description": "Escalation to email if no Slack response"
+        },
+        {
+            "level": 3,
+            "approver_id": "dani_apgar",
+            "sla_minutes": 120,
+            "method": "sms",
+            "description": "Final escalation via SMS"
+        }
+    ],
+    "approval_slas": {
+        "hot_lead_minutes": 5,
+        "tier1_campaign_minutes": 30,
+        "tier2_campaign_minutes": 60,
+        "tier3_campaign_minutes": 120,
+        "bulk_campaign_hours": 4,
+        "emergency_stop_minutes": 1
+    },
+    "auto_approval_rules": {
+        "enabled": false,
+        "conditions": [
+            {
+                "rule": "If lead score > 85 AND tier = 1 AND approver inactive > 2 hours",
+                "action": "auto_approve",
+                "note": "Only for hot leads during off-hours"
+            }
+        ],
+        "note": "Auto-approval disabled until parallel mode shows >75% AI-human agreement"
+    },
+    "business_hours": {
+        "timezone": "America/Los_Angeles",
+        "monday": "9:00-18:00",
+        "tuesday": "9:00-18:00",
+        "wednesday": "9:00-18:00",
+        "thursday": "9:00-18:00",
+        "friday": "9:00-18:00",
+        "saturday": "closed",
+        "sunday": "closed"
+    },
+    "notes": "Update phone number and Slack handle before production launch. Consider adding backup approver for coverage.",
+    "last_updated": "2026-01-26",
+    "updated_by": "chris@chiefaiofficer.com"
+}

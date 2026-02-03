@@ -1,0 +1,396 @@
+# Document Extraction Schemas for Revenue Operations
+# =================================================
+# 
+# These schemas define what fields to extract from different document types.
+# The document parser uses these to structure agentic extraction.
+#
+# Schema Structure:
+#   field_name:
+#     type: string | number | date | list | object
+#     required: true | false
+#     aliases: [alternative_names_to_search]
+#     description: human_readable_description
+
+# ============================================================================
+# Lead Enrichment Schema
+# Used for: Company one-pagers, annual reports, pitch decks, LinkedIn profiles
+# ============================================================================
+lead_enrichment:
+  company_name:
+    type: string
+    required: true
+    description: "Primary company/organization name"
+    
+  employee_count:
+    type: number
+    aliases:
+      - headcount
+      - team size
+      - employees
+      - staff
+      - workforce
+    description: "Number of employees"
+    
+  annual_revenue:
+    type: string
+    aliases:
+      - revenue
+      - ARR
+      - MRR
+      - annual sales
+      - turnover
+    description: "Annual revenue or ARR/MRR figure"
+    
+  industry:
+    type: string
+    aliases:
+      - sector
+      - vertical
+      - market
+    description: "Primary industry classification"
+    
+  tech_stack:
+    type: list
+    aliases:
+      - technologies
+      - tools
+      - platforms
+      - software
+      - infrastructure
+    description: "Technologies and tools used by the company"
+    
+  funding_stage:
+    type: string
+    aliases:
+      - series
+      - funding
+      - investment
+      - round
+    description: "Current funding stage (Seed, Series A, etc.)"
+    
+  funding_amount:
+    type: string
+    aliases:
+      - raised
+      - investment amount
+      - capital
+    description: "Total funding raised"
+    
+  pain_points:
+    type: list
+    aliases:
+      - challenges
+      - problems
+      - issues
+      - struggles
+      - bottlenecks
+    description: "Business challenges or pain points mentioned"
+    
+  key_contacts:
+    type: list
+    aliases:
+      - executives
+      - leadership
+      - team
+      - founders
+      - c-suite
+    description: "Key decision makers mentioned"
+    
+  competitive_info:
+    type: list
+    aliases:
+      - competitors
+      - alternatives
+      - compared to
+    description: "Competitor mentions or comparisons"
+
+# ============================================================================
+# Competitive Intelligence Schema
+# Used for: Competitor collateral, product sheets, pricing pages
+# ============================================================================
+competitive_intel:
+  company_name:
+    type: string
+    required: true
+    description: "Competitor company name"
+    
+  product_name:
+    type: string
+    aliases:
+      - product
+      - solution
+      - platform
+      - service
+    description: "Main product or service name"
+    
+  pricing:
+    type: string
+    aliases:
+      - cost
+      - price
+      - plans
+      - subscription
+      - fee
+    description: "Pricing information"
+    
+  pricing_model:
+    type: string
+    aliases:
+      - billing
+      - payment
+    description: "Pricing model (per seat, usage-based, etc.)"
+    
+  features:
+    type: list
+    aliases:
+      - capabilities
+      - offerings
+      - functionality
+      - benefits
+    description: "Product features and capabilities"
+    
+  differentiators:
+    type: list
+    aliases:
+      - unique
+      - advantage
+      - stand out
+    description: "Claimed differentiators"
+    
+  weaknesses:
+    type: list
+    aliases:
+      - limitations
+      - drawbacks
+      - lacks
+      - doesn't include
+    description: "Limitations or missing features"
+    
+  target_market:
+    type: string
+    aliases:
+      - customers
+      - segments
+      - ideal customer
+      - ICP
+    description: "Target customer segments"
+    
+  integrations:
+    type: list
+    aliases:
+      - connects
+      - works with
+      - compatible
+    description: "Third-party integrations"
+
+# ============================================================================
+# Event Materials Schema
+# Used for: Conference brochures, event signage photos, speaker lists
+# ============================================================================
+event_materials:
+  event_name:
+    type: string
+    required: true
+    aliases:
+      - conference
+      - summit
+      - workshop
+    description: "Event or conference name"
+    
+  event_date:
+    type: date
+    aliases:
+      - date
+      - when
+    description: "Event date(s)"
+    
+  event_location:
+    type: string
+    aliases:
+      - venue
+      - location
+      - where
+    description: "Event location"
+    
+  speakers:
+    type: list
+    aliases:
+      - presenters
+      - panelists
+      - keynote
+    description: "Speaker names and titles"
+    
+  topics:
+    type: list
+    aliases:
+      - sessions
+      - tracks
+      - talks
+      - agenda
+    description: "Session topics and tracks"
+    
+  sponsors:
+    type: list
+    aliases:
+      - partners
+      - exhibitors
+    description: "Event sponsors and exhibitors"
+    
+  attendee_info:
+    type: string
+    aliases:
+      - audience
+      - who attends
+    description: "Information about expected attendees"
+    
+  registration_url:
+    type: string
+    aliases:
+      - register
+      - sign up
+      - link
+    description: "Registration URL"
+
+# ============================================================================
+# Financial Document Schema
+# Used for: Annual reports, financial statements, investor decks
+# ============================================================================
+financial_documents:
+  company_name:
+    type: string
+    required: true
+    
+  fiscal_year:
+    type: string
+    aliases:
+      - year
+      - period
+      - FY
+    description: "Fiscal year of the report"
+    
+  revenue:
+    type: string
+    aliases:
+      - sales
+      - income
+      - total revenue
+    description: "Total revenue figure"
+    
+  revenue_growth:
+    type: string
+    aliases:
+      - growth
+      - YoY
+      - increase
+    description: "Revenue growth percentage"
+    
+  net_income:
+    type: string
+    aliases:
+      - profit
+      - earnings
+      - net profit
+    description: "Net income/profit"
+    
+  gross_margin:
+    type: string
+    aliases:
+      - margin
+      - gross profit
+    description: "Gross margin percentage"
+    
+  customer_count:
+    type: number
+    aliases:
+      - customers
+      - clients
+      - accounts
+    description: "Total customer count"
+    
+  key_metrics:
+    type: list
+    aliases:
+      - KPIs
+      - metrics
+      - performance
+    description: "Key business metrics highlighted"
+    
+  strategic_priorities:
+    type: list
+    aliases:
+      - priorities
+      - focus
+      - initiatives
+    description: "Strategic priorities mentioned"
+
+# ============================================================================
+# LinkedIn Profile Schema
+# Used for: LinkedIn profile screenshots, bio images
+# ============================================================================
+linkedin_profile:
+  name:
+    type: string
+    required: true
+    description: "Full name"
+    
+  title:
+    type: string
+    aliases:
+      - role
+      - position
+      - headline
+    description: "Current job title"
+    
+  company:
+    type: string
+    aliases:
+      - employer
+      - organization
+    description: "Current company"
+    
+  location:
+    type: string
+    aliases:
+      - based in
+      - area
+    description: "Geographic location"
+    
+  experience:
+    type: list
+    aliases:
+      - work history
+      - previous roles
+    description: "Work experience entries"
+    
+  education:
+    type: list
+    aliases:
+      - school
+      - university
+      - degree
+    description: "Education entries"
+    
+  skills:
+    type: list
+    aliases:
+      - expertise
+      - competencies
+    description: "Listed skills"
+    
+  about:
+    type: string
+    aliases:
+      - bio
+      - summary
+    description: "About/summary section"
+
+# ============================================================================
+# Processing Defaults
+# ============================================================================
+processing:
+  max_pages: 20
+  chunk_size: 500
+  min_confidence: 0.6
+  ocr_language: en
+  table_extraction: true
+  image_extraction: true

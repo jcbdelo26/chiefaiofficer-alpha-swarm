@@ -1,0 +1,35 @@
+{
+  "campaign_id": "test-test-campaign-20260130-202113",
+  "mode": "test",
+  "total_leads": 1,
+  "campaigns_generated": 1,
+  "started_at": "2026-01-30T20:21:13.904264",
+  "sample_campaigns": [
+    {
+      "lead_id": "lead-1",
+      "email": "cto@target-tech.com",
+      "tier": 1,
+      "signals": [
+        "hiring"
+      ],
+      "template_used": "tier1_angle_c",
+      "subject": "Re: Target Tech's AI hiring",
+      "body": "\n<p>Hi Alex,</p>\n<p>Noticed you're hiring for <strong>key AI roles</strong> at Target Tech. Great move.</p>\n<p>But here's what we usually see: it takes 4-6 months to get that person productive\u2014finding the right hire, onboarding, learning your systems.</p>\n<p>We provide the fractional AI leadership to set the strategy <em>now</em> so your new hire hits the ground running on Day 1.</p>\n<p><strong>What we do in 90 days:</strong></p>\n<ul>\n<li>Define your AI roadmap before the hire starts</li>\n<li>Train your current team on AI fundamentals</li>\n<li>Build your first automated workflows</li>\n<li>Hand off a documented playbook to your new AI lead</li>\n</ul>\n<p>Open to a \"bridge strategy\" call? Just 15 minutes.</p>\n<p>Best,<br>\n<strong>Dani Apgar</strong><br>\nChief AI Officer</p>\n",
+      "unresolved_variables": [],
+      "personalization_complete": true,
+      "generated_at": "2026-01-30T20:21:13.904866"
+    }
+  ],
+  "completed_at": "2026-01-30T20:21:13.904954",
+  "metrics": {
+    "total_fields": 3,
+    "resolved_fields": 3,
+    "personalization_rate": 100.0,
+    "unresolved_variables": [],
+    "hallucination_check": {
+      "has_unresolved": false,
+      "count": 0
+    },
+    "meets_day3_criteria": true
+  }
+}

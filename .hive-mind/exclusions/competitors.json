@@ -1,0 +1,135 @@
+{
+    "competitors": {
+        "ai_consulting_competitors": [
+            {
+                "domain": "alphaapexgroup.com",
+                "company": "Alpha Apex Group",
+                "reason": "Direct competitor - Fractional Chief AI Officer consulting services"
+            },
+            {
+                "domain": "emediaai.com",
+                "company": "eMediaAI",
+                "reason": "Direct competitor - Fractional Chief AI Officer, AI Opportunity Blueprint, AI strategy consulting"
+            },
+            {
+                "domain": "airev.us",
+                "company": "AI REV",
+                "reason": "Direct competitor - Boutique AI consulting, AI implementation for mid-market"
+            },
+            {
+                "domain": "neurons-lab.com",
+                "company": "Neurons Lab",
+                "reason": "Direct competitor - Executive AI Alignment, AI Training & Education, 90-day implementations"
+            },
+            {
+                "domain": "compunnel.com",
+                "company": "Compunnel (CAIOaaS)",
+                "reason": "Direct competitor - Chief AI Officer as a Service, AI strategy consulting"
+            },
+            {
+                "domain": "sageitinc.com",
+                "company": "Sage IT",
+                "reason": "Direct competitor - AI consulting, 8-week pilot-to-production scaling"
+            },
+            {
+                "domain": "innovatingwithai.com",
+                "company": "InnovatingWithAI",
+                "reason": "Direct competitor - AI Consulting & Training"
+            },
+            {
+                "domain": "jasper.ai",
+                "company": "Jasper",
+                "reason": "AI content platform - handle in objection handling"
+            },
+            {
+                "domain": "copy.ai",
+                "company": "Copy.ai",
+                "reason": "AI content platform - handle in objection handling"
+            }
+        ],
+        "sales_tech_competitors": [
+            "lemlist.com",
+            "smartlead.ai",
+            "reply.io"
+        ],
+        "integration_partners": [
+            {
+                "domain": "instantly.ai",
+                "reason": "Future scaling partner - cold outreach volume"
+            },
+            {
+                "domain": "clay.com",
+                "reason": "Active partner - data enrichment"
+            },
+            {
+                "domain": "gohighlevel.com",
+                "reason": "Primary CRM and email platform"
+            }
+        ],
+        "integrable_revops_tech": {
+            "description": "Platforms commonly used by our ICP - NOT competitors. These represent integration opportunities when working with clients.",
+            "platforms": [
+                {
+                    "domain": "salesforce.com",
+                    "reason": "CRM - potential integration for ICP workflows"
+                },
+                {
+                    "domain": "hubspot.com",
+                    "reason": "CRM - potential integration for ICP workflows"
+                },
+                {
+                    "domain": "apollo.io",
+                    "reason": "Sales intelligence - potential data source integration"
+                },
+                {
+                    "domain": "zoominfo.com",
+                    "reason": "Sales intelligence - potential data source integration"
+                },
+                {
+                    "domain": "gong.io",
+                    "reason": "Revenue intelligence - potential coaching integration"
+                },
+                {
+                    "domain": "clari.com",
+                    "reason": "Revenue platform - potential pipeline integration"
+                },
+                {
+                    "domain": "outreach.io",
+                    "reason": "Sales engagement - potential sequence integration"
+                },
+                {
+                    "domain": "salesloft.com",
+                    "reason": "Sales engagement - potential sequence integration"
+                }
+            ]
+        }
+    },
+    "all_domains_flat": [
+        "alphaapexgroup.com",
+        "emediaai.com",
+        "airev.us",
+        "neurons-lab.com",
+        "compunnel.com",
+        "sageitinc.com",
+        "innovatingwithai.com",
+        "jasper.ai",
+        "copy.ai",
+        "lemlist.com",
+        "smartlead.ai",
+        "reply.io"
+    ],
+    "excluded_from_outreach_but_not_competitors": [
+        "instantly.ai",
+        "clay.com",
+        "gohighlevel.com"
+    ],
+    "instantly_note": "Planned addition for scaling cold outreach beyond GHL limits while protecting primary B2B domain health",
+    "notes": {
+        "ai_consulting_competitors": "Direct competitors - NEVER contact",
+        "sales_tech_competitors": "Competing cold email tools we DON'T use - NEVER contact",
+        "integration_partners": "Tools WE use - exclude from outreach but not competitors",
+        "integrable_revops_tech": "Client tech stacks - valuable for personalization"
+    },
+    "last_updated": "2026-01-28",
+    "updated_by": "dani@chiefaiofficer.com"
+}

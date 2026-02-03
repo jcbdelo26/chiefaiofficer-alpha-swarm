@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+
+{% block title %}Analytics{% endblock %}
+{% block page_title %}Review Analytics{% endblock %}
+
+{% block content %}
+<div class="analytics-grid">
+    <!-- Rejection Patterns -->
+    <div class="card">
+        <h3>🔍 Rejection Patterns (Self-Annealing Input)</h3>
+        <p class="text-muted">Total rejections analyzed: {{ patterns.total_rejections }}</p>
+
+        {% if patterns.patterns %}
+        <div class="pattern-list">
+            {% for pattern in patterns.patterns %}
+            <div class="pattern-item">
+                <div class="pattern-reason">{{ pattern.reason }}</div>
+                <div class="pattern-bar-container">
+                    <div class="pattern-bar"
+                        style="width: {{ (pattern.count / patterns.total_rejections * 100) | int }}%"></div>
+                </div>
+                <div class="pattern-count">{{ pattern.count }}</div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="recommendations">
+            <h4>💡 System Recommendations</h4>
+            <ul>
+                {% for pattern in patterns.patterns[:3] %}
+                <li>
+                    <strong>{{ pattern.reason }}:</strong>
+                    {% if 'ICP' in pattern.reason %}
+                    Review ICP scoring weights - consider adjusting company size or title thresholds
+                    {% elif 'Tone' in pattern.reason %}
+                    Update voice guide with more examples of acceptable tone
+                    {% elif 'Personalization' in pattern.reason %}
+                    Enhance template personalization depth for this segment
+                    {% elif 'Compliance' in pattern.reason %}
+                    Review compliance rules and add edge cases
+                    {% else %}
+                    Investigate pattern and update relevant directive
+                    {% endif %}
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <p>No rejection patterns yet. Start reviewing campaigns to build analytics.</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Approval Rate Trend -->
+    <div class="card">
+        <h3>📈 Today's Performance</h3>
+        <div class="stats-row">
+            <div class="stat-mini">
+                <div class="stat-value">{{ stats.approved_today }}</div>
+                <div class="stat-label">Approved</div>
+            </div>
+            <div class="stat-mini">
+                <div class="stat-value">{{ stats.rejected_today }}</div>
+                <div class="stat-label">Rejected</div>
+            </div>
+            <div class="stat-mini">
+                <div class="stat-value">
+                    {% if (stats.approved_today + stats.rejected_today) > 0 %}
+                    {{ ((stats.approved_today / (stats.approved_today + stats.rejected_today)) * 100) | int }}%
+                    {% else %}
+                    --
+                    {% endif %}
+                </div>
+                <div class="stat-label">Approval Rate</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pending by Segment -->
+    <div class="card">
+        <h3>📊 Pending by Segment</h3>
+        {% if stats.by_segment %}
+        <div class="segment-chart">
+            {% for segment, count in stats.by_segment.items() %}
+            <div class="segment-row">
+                <span class="segment-badge {{ segment }}">{{ segment.replace('_', ' ').title() }}</span>
+                <div class="segment-bar-fill" style="width: {{ (count / stats.pending * 100) | int }}%"></div>
+                <span class="segment-count">{{ count }}</span>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <p>No pending campaigns.</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Self-Annealing Status -->
+    <div class="card">
+        <h3>🔄 Self-Annealing Status</h3>
+        <div class="annealing-info">
+            <p>Rejection patterns are automatically fed into the learning system.</p>
+            <p>Top patterns trigger:</p>
+            <ul>
+                <li><strong>Template adjustments</strong> - CRAFTER updates templates</li>
+                <li><strong>Scoring calibration</strong> - SEGMENTOR adjusts weights</li>
+                <li><strong>Directive updates</strong> - SOPs are enhanced</li>
+            </ul>
+            <p class="text-muted">Run self-annealing: <code>python execution/sparc_coordinator.py --self-anneal</code>
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

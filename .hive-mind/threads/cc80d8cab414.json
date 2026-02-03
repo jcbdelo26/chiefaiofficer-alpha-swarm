@@ -1,0 +1,21 @@
+{
+  "thread_id": "cc80d8cab414",
+  "saved_at": "2026-01-21T03:21:23.287952",
+  "message_count": 1,
+  "messages": [
+    {
+      "message_id": "<f95135d0-df57-49a5-bbf9-a908622a4fb4@caio-swarm.local>",
+      "subject": "URGENT",
+      "from_email": "n@example.com",
+      "from_name": "joh",
+      "to_emails": [],
+      "cc_emails": [],
+      "date": "",
+      "body_text": "We need to discuss this ASAP! Please call me immediately.",
+      "body_html": null,
+      "in_reply_to": null,
+      "references": [],
+      "headers": {}
+    }
+  ]
+}

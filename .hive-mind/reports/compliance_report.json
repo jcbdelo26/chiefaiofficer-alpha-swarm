@@ -1,0 +1,36 @@
+{
+  "generated_at": "2026-01-21T21:53:00.579147+00:00",
+  "report_id": "CR-2026-01-22-609BB4",
+  "overall_score": 100.0,
+  "status": "compliant",
+  "section_scores": {
+    "security": 100.0,
+    "privacy": 100.0,
+    "email_compliance": 100.0,
+    "data_handling": 100.0
+  },
+  "vulnerabilities": [],
+  "passed_checks": [
+    "AIDefence Enabled",
+    "PII Detection Active",
+    "Rate Limiting Configured",
+    "Circuit Breakers Active",
+    "Approval Engine Configured",
+    "Audit Trail Enabled",
+    "GDPR Handlers Present",
+    "Unsubscribe Mechanism",
+    "Email Limits Configured",
+    "Grounding Validation",
+    "Multi-Layer Failsafe",
+    "Health Monitoring"
+  ],
+  "failed_checks": [],
+  "warnings": [],
+  "remediation_steps": [],
+  "test_summary": {
+    "tests_run": 997,
+    "tests_passed": 996,
+    "tests_failed": 1,
+    "coverage_percent": 0
+  }
+}

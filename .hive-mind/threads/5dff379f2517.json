@@ -1,0 +1,21 @@
+{
+  "thread_id": "5dff379f2517",
+  "saved_at": "2026-01-21T03:21:23.278419",
+  "message_count": 1,
+  "messages": [
+    {
+      "message_id": "<80f60e01-3edf-4b28-bb4b-d60b99500e3f@caio-swarm.local>",
+      "subject": "Test Subject",
+      "from_email": "t@example.com",
+      "from_name": "tes",
+      "to_emails": [],
+      "cc_emails": [],
+      "date": "2026-01-21",
+      "body_text": "Test body",
+      "body_html": null,
+      "in_reply_to": null,
+      "references": [],
+      "headers": {}
+    }
+  ]
+}

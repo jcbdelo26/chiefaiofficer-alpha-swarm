@@ -1,0 +1,21 @@
+{
+  "thread_id": "7e898155b397",
+  "saved_at": "2026-01-23T20:09:19.062222",
+  "message_count": 1,
+  "messages": [
+    {
+      "message_id": "<c91ee4fb-6150-4a0e-9c62-225c76870e36@caio-swarm.local>",
+      "subject": "Meeting",
+      "from_email": "john@example.com",
+      "from_name": "",
+      "to_emails": [],
+      "cc_emails": [],
+      "date": "",
+      "body_text": "How about 2:00 PM or 3:30 PM tomorrow afternoon?",
+      "body_html": null,
+      "in_reply_to": null,
+      "references": [],
+      "headers": {}
+    }
+  ]
+}

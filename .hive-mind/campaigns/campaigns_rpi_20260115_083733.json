@@ -1,0 +1,148 @@
+{
+  "created_at": "2026-01-15T08:37:33.065236+00:00",
+  "plan_id": "83730421-65f0-47f1-8fa4-4452e82c4ea9",
+  "campaign_count": 3,
+  "total_leads": 5,
+  "pending_review": 2,
+  "rpi_workflow": true,
+  "campaigns": [
+    {
+      "campaign_id": "48d0ec30-3dc2-403d-9c81-e813dfe5d457",
+      "tier": "tier1",
+      "template": "competitor_displacement",
+      "lead_count": 2,
+      "sequence": [
+        {
+          "step": 1,
+          "delay_days": 0,
+          "subject_a": "Sarah, what outreach_followers isn't showing you",
+          "subject_b": "Beyond outreach_followers for TechScale Inc",
+          "body": "Hi Sarah,\n\nI noticed you follow outreach_followers's updates on LinkedIn - smart move staying current on revenue intelligence.\n\nHere's what I've been hearing from VP of Revenue Operationss like yourself at companies your size:\n\n\"outreach_followers shows us what happened... but we still can't predict what's going to happen next quarter.\"\n\nAt Chiefaiofficer.com, we're building the layer ABOVE traditional tools.\n\nWorth a 15-min look?\n\nBest,\nChris",
+          "personalization_level": "deep"
+        },
+        {
+          "step": 2,
+          "delay_days": 4,
+          "subject_a": "Quick follow-up, Sarah",
+          "subject_b": "Quick follow-up, Sarah",
+          "body": "Hi Sarah,\n\nJust bumping this up.\n\nHere's a quick case study: [Case Study Link]\n\nStill open to that 15-min conversation?\n\nChris",
+          "personalization_level": "light"
+        },
+        {
+          "step": 3,
+          "delay_days": 7,
+          "subject_a": "TechScale Inc + Chiefaiofficer.com",
+          "subject_b": "TechScale Inc + Chiefaiofficer.com",
+          "body": "Hi Sarah,\n\nCompanies like TechScale Inc are seeing 40% improvement in forecast accuracy.\n\nLast ask: calendly.com/chiefaiofficer/intro\n\nChris",
+          "personalization_level": "light"
+        },
+        {
+          "step": 4,
+          "delay_days": 14,
+          "subject_a": "Should I close the loop?",
+          "subject_b": "Should I close the loop?",
+          "body": "Hi Sarah,\n\nI haven't heard back, so I'm guessing timing isn't right.\n\nFeel free to reach out anytime.\n\nChris",
+          "personalization_level": "light"
+        }
+      ],
+      "status": "pending_review",
+      "created_at": "2026-01-15T08:37:33.050107+00:00",
+      "plan_id": "83730421-65f0-47f1-8fa4-4452e82c4ea9",
+      "semantic_anchors": [
+        "TEMPLATE: competitor_displacement - Default template - no specific source match",
+        "PERSONALIZATION: deep depth using hooks: company_size_messaging, industry_specific_content, leadership_value_props",
+        "A/B TEST: Subject A (pain point) vs Subject B (transformation) - expect A higher open rate",
+        "REVIEW: AE approval required for 2 leads"
+      ]
+    },
+    {
+      "campaign_id": "9e0e2555-a104-4917-9dd1-c49f6a24add5",
+      "tier": "tier2",
+      "template": "competitor_displacement",
+      "lead_count": 2,
+      "sequence": [
+        {
+          "step": 1,
+          "delay_days": 0,
+          "subject_a": "Emily, what linkedin_post isn't showing you",
+          "subject_b": "Beyond linkedin_post for DataFlow Analytics",
+          "body": "Hi Emily,\n\nI noticed you follow linkedin_post's updates on LinkedIn - smart move staying current on revenue intelligence.\n\nHere's what I've been hearing from Sales Operations Managers like yourself at companies your size:\n\n\"linkedin_post shows us what happened... but we still can't predict what's going to happen next quarter.\"\n\nAt Chiefaiofficer.com, we're building the layer ABOVE traditional tools.\n\nWorth a 15-min look?\n\nBest,\nChris",
+          "personalization_level": "medium"
+        },
+        {
+          "step": 2,
+          "delay_days": 3,
+          "subject_a": "Quick follow-up, Emily",
+          "subject_b": "Quick follow-up, Emily",
+          "body": "Hi Emily,\n\nJust bumping this up.\n\nHere's a quick case study: [Case Study Link]\n\nStill open to that 15-min conversation?\n\nChris",
+          "personalization_level": "light"
+        },
+        {
+          "step": 3,
+          "delay_days": 7,
+          "subject_a": "DataFlow Analytics + Chiefaiofficer.com",
+          "subject_b": "DataFlow Analytics + Chiefaiofficer.com",
+          "body": "Hi Emily,\n\nCompanies like DataFlow Analytics are seeing 40% improvement in forecast accuracy.\n\nLast ask: calendly.com/chiefaiofficer/intro\n\nChris",
+          "personalization_level": "light"
+        },
+        {
+          "step": 4,
+          "delay_days": 14,
+          "subject_a": "Should I close the loop?",
+          "subject_b": "Should I close the loop?",
+          "body": "Hi Emily,\n\nI haven't heard back, so I'm guessing timing isn't right.\n\nFeel free to reach out anytime.\n\nChris",
+          "personalization_level": "light"
+        }
+      ],
+      "status": "pending_review",
+      "created_at": "2026-01-15T08:37:33.051707+00:00",
+      "plan_id": "83730421-65f0-47f1-8fa4-4452e82c4ea9",
+      "semantic_anchors": [
+        "TEMPLATE: competitor_displacement - Default template - no specific source match",
+        "PERSONALIZATION: medium depth using hooks: company_size_messaging, industry_specific_content, operational_efficiency_focus",
+        "A/B TEST: Subject A (pain point) vs Subject B (transformation) - expect A higher open rate",
+        "REVIEW: AE approval required for 2 leads"
+      ]
+    },
+    {
+      "campaign_id": "ca925324-60a4-4a21-8f74-ed0deadee2ad",
+      "tier": "tier3",
+      "template": "competitor_displacement",
+      "lead_count": 1,
+      "sequence": [
+        {
+          "step": 1,
+          "delay_days": 0,
+          "subject_a": "Lisa, what sales_navigator isn't showing you",
+          "subject_b": "Beyond sales_navigator for StartupCo",
+          "body": "Hi Lisa,\n\nI noticed you follow sales_navigator's updates on LinkedIn - smart move staying current on revenue intelligence.\n\nHere's what I've been hearing from Sales Development Representatives like yourself at companies your size:\n\n\"sales_navigator shows us what happened... but we still can't predict what's going to happen next quarter.\"\n\nAt Chiefaiofficer.com, we're building the layer ABOVE traditional tools.\n\nWorth a 15-min look?\n\nBest,\nChris",
+          "personalization_level": "light"
+        },
+        {
+          "step": 2,
+          "delay_days": 3,
+          "subject_a": "Quick follow-up, Lisa",
+          "subject_b": "Quick follow-up, Lisa",
+          "body": "Hi Lisa,\n\nJust bumping this up.\n\nHere's a quick case study: [Case Study Link]\n\nStill open to that 15-min conversation?\n\nChris",
+          "personalization_level": "light"
+        },
+        {
+          "step": 3,
+          "delay_days": 10,
+          "subject_a": "StartupCo + Chiefaiofficer.com",
+          "subject_b": "StartupCo + Chiefaiofficer.com",
+          "body": "Hi Lisa,\n\nCompanies like StartupCo are seeing 40% improvement in forecast accuracy.\n\nLast ask: calendly.com/chiefaiofficer/intro\n\nChris",
+          "personalization_level": "light"
+        }
+      ],
+      "status": "ready",
+      "created_at": "2026-01-15T08:37:33.052752+00:00",
+      "plan_id": "83730421-65f0-47f1-8fa4-4452e82c4ea9",
+      "semantic_anchors": [
+        "TEMPLATE: competitor_displacement - Default template - no specific source match",
+        "PERSONALIZATION: light depth using hooks: company_size_messaging, industry_specific_content",
+        "A/B TEST: Subject A (pain point) vs Subject B (transformation) - expect A higher open rate"
+      ]
+    }
+  ]
+}

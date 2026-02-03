@@ -1,0 +1,39 @@
+{
+  "id": "HO-65208db7bc3a",
+  "source_agent": "HUNTER",
+  "target_agent": "ENRICHER",
+  "handoff_type": "sequential",
+  "timestamp": "2026-01-17T21:07:24.364156",
+  "status": "received",
+  "received_at": "2026-01-17T21:07:24.367470",
+  "completed_at": null,
+  "payload": {
+    "lead_id": "lead_12345",
+    "linkedin_url": "https://linkedin.com/in/johndoe",
+    "name": "John Doe",
+    "title": "VP of Sales",
+    "company": "Acme Corp",
+    "scraped_at": "2026-01-17T21:07:24.363209"
+  },
+  "summary": "Scraped lead John Doe, VP Sales @ Acme Corp",
+  "critical_facts": [
+    {
+      "key": "lead_id",
+      "value": "lead_12345",
+      "source": "linkedin",
+      "importance": "critical",
+      "expires_at": null
+    }
+  ],
+  "decisions_made": [],
+  "pending_actions": [],
+  "grounding_evidence": {
+    "source": "linkedin",
+    "url": "https://linkedin.com/in/johndoe",
+    "scraped_at": "2026-01-17T21:07:24.363220"
+  },
+  "errors_encountered": [],
+  "context_budget_used": 0.018359375,
+  "parent_handoff_id": null,
+  "child_handoff_ids": []
+}

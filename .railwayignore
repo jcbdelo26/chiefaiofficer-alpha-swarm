@@ -1,0 +1,28 @@
+# Railway Ignore File - Optimized for Fast Upload
+
+# CRITICAL: Exclude 1.5GB Virtual Environment
+.venv/
+venv/
+env/
+
+# Standard Python/System
+.git/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.DS_Store
+Thumbs.db
+
+# Node
+node_modules/
+
+# Logs
+*.log
+
+# Hive Mind - Heavy Folders Ignored
+.hive-mind/scraped/
+.hive-mind/enriched/
+.hive-mind/knowledge/
+
+# NOTE: .hive-mind/shadow_mode_emails is implicitly ALLOWED because it is not listed.

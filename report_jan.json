@@ -1,0 +1,31 @@
+{
+  "month": "2026-01",
+  "generated_at": "2026-01-14T18:07:27.347995+00:00",
+  "roi_analysis": {
+    "status": "placeholder",
+    "note": "ROI analysis requires CRM revenue data integration",
+    "leads_generated": 0,
+    "estimated_pipeline_value": 0,
+    "cost_per_lead": 0,
+    "meetings_booked": 0,
+    "estimated_meeting_value": 0
+  },
+  "campaign_performance": {
+    "campaign_count": 0,
+    "campaigns": {}
+  },
+  "compliance_audit": {
+    "total_violations": 0,
+    "by_type": {},
+    "status": "clean"
+  },
+  "system_health": {
+    "status": "healthy",
+    "total_events": 15,
+    "retry_count": 0,
+    "error_count": 0,
+    "error_rate_percent": 0.0,
+    "sla_breaches": 0,
+    "error_breakdown": {}
+  }
+}

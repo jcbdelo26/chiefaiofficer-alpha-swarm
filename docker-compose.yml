@@ -1,0 +1,79 @@
+version: '3.8'
+
+services:
+  # Main Dashboard & API
+  dashboard:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - GHL_API_KEY=${GHL_API_KEY}
+      - GHL_LOCATION_ID=${GHL_LOCATION_ID}
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_KEY=${SUPABASE_KEY}
+      - CLAY_API_KEY=${CLAY_API_KEY}
+      - PROXYCURL_API_KEY=${PROXYCURL_API_KEY}
+      - GOOGLE_CREDENTIALS_PATH=/app/credentials/google_credentials.json
+    volumes:
+      - ./.hive-mind:/app/.hive-mind
+      - ./credentials:/app/credentials:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    command: uvicorn dashboard.health_app:app --host 0.0.0.0 --port 8080
+
+  # Queen Orchestrator (main agent)
+  queen:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - GHL_API_KEY=${GHL_API_KEY}
+      - GHL_LOCATION_ID=${GHL_LOCATION_ID}
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_KEY=${SUPABASE_KEY}
+      - CLAY_API_KEY=${CLAY_API_KEY}
+      - PROXYCURL_API_KEY=${PROXYCURL_API_KEY}
+    volumes:
+      - ./.hive-mind:/app/.hive-mind
+      - ./credentials:/app/credentials:ro
+    depends_on:
+      - redis
+    restart: unless-stopped
+    command: python execution/unified_queen_orchestrator.py
+
+  # Redis for task queue and caching
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+
+  # Health Monitor (WebSocket server)
+  health-monitor:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8765:8765"
+    environment:
+      - GHL_API_KEY=${GHL_API_KEY}
+    volumes:
+      - ./.hive-mind:/app/.hive-mind
+    restart: unless-stopped
+    command: python -c "from core.unified_health_monitor import HealthMonitor; import asyncio; m = HealthMonitor(); asyncio.run(m.start())"
+
+volumes:
+  redis_data:
+
+networks:
+  default:
+    name: caio-swarm-network

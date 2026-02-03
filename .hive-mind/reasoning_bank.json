@@ -1,0 +1,418 @@
+{
+  "entries": [
+    {
+      "entry_id": "product_ai_opportunity_audit",
+      "pattern_type": "insight",
+      "content": "Product: AI Opportunity Audit. Price: $10,000. Description: Perfect for teams needing a clear starting point and CFO-ready plan to kick start their AI efforts",
+      "embedding": null,
+      "context": {
+        "category": "product_offering",
+        "product_key": "ai_opportunity_audit",
+        "price": "$10,000",
+        "duration": "2-4 weeks"
+      },
+      "confidence": 1.0,
+      "frequency": 100,
+      "created_at": "2026-01-20T20:41:45.459846",
+      "last_accessed": "2026-01-20T20:42:57.595351"
+    },
+    {
+      "entry_id": "product_ai_executive_certification_workshop",
+      "pattern_type": "insight",
+      "content": "Product: AI Executive Certification Workshop. Price: $12,000. Description: Give your leadership team the clarity, skills, and tools to lead your AI transformation",
+      "embedding": null,
+      "context": {
+        "category": "product_offering",
+        "product_key": "ai_executive_certification_workshop",
+        "price": "$12,000",
+        "duration": "One Day"
+      },
+      "confidence": 1.0,
+      "frequency": 100,
+      "created_at": "2026-01-20T20:41:45.460825",
+      "last_accessed": "2026-01-20T20:42:57.595343"
+    },
+    {
+      "entry_id": "product_on_site_plan",
+      "pattern_type": "insight",
+      "content": "Product: On-Site Plan (Do It Yourself AI Deployment). Price: $14,500/mo or $145,000/year ($29k savings). Description: Run your AI transformation internally with confidence and accountability of a proven system",
+      "embedding": null,
+      "context": {
+        "category": "product_offering",
+        "product_key": "on_site_plan",
+        "price": "$14,500/mo or $145,000/year ($29k savings)",
+        "duration": ""
+      },
+      "confidence": 1.0,
+      "frequency": 100,
+      "created_at": "2026-01-20T20:41:45.460890",
+      "last_accessed": "2026-01-20T20:42:57.596417"
+    },
+    {
+      "entry_id": "product_enterprise_plan",
+      "pattern_type": "insight",
+      "content": "Product: Enterprise Plan (Done For You). Price: Contact for pricing. Description: Highest level of support for companies that want to move fast, reduce risk, and build AI capability across every function",
+      "embedding": null,
+      "context": {
+        "category": "product_offering",
+        "product_key": "enterprise_plan",
+        "price": "Contact for pricing",
+        "duration": ""
+      },
+      "confidence": 1.0,
+      "frequency": 100,
+      "created_at": "2026-01-20T20:41:45.460951",
+      "last_accessed": "2026-01-20T20:41:45.460954"
+    },
+    {
+      "entry_id": "product_ai_consulting",
+      "pattern_type": "insight",
+      "content": "Product: AI Consulting. Price: $800/hr. Description: ",
+      "embedding": null,
+      "context": {
+        "category": "product_offering",
+        "product_key": "ai_consulting",
+        "price": "$800/hr",
+        "duration": ""
+      },
+      "confidence": 1.0,
+      "frequency": 100,
+      "created_at": "2026-01-20T20:41:45.461012",
+      "last_accessed": "2026-01-20T20:42:57.595349"
+    },
+    {
+      "entry_id": "typical_results",
+      "pattern_type": "success",
+      "content": "Typical results: operational_cost_reduction: 20-30%, efficiency_improvement: 40%+, administrative_time_reduction: 62.5%, capacity_increase: 60%, staff_redeployment_to_revenue: 40%",
+      "embedding": null,
+      "context": {
+        "category": "roi_metrics",
+        "data": {
+          "operational_cost_reduction": "20-30%",
+          "efficiency_improvement": "40%+",
+          "administrative_time_reduction": "62.5%",
+          "capacity_increase": "60%",
+          "staff_redeployment_to_revenue": "40%"
+        }
+      },
+      "confidence": 1.0,
+      "frequency": 100,
+      "created_at": "2026-01-20T20:41:45.461047",
+      "last_accessed": "2026-01-20T20:41:45.461050"
+    },
+    {
+      "entry_id": "differentiator_0",
+      "pattern_type": "insight",
+      "content": "Value Prop: No Jargon, No Guesswork - Train, build, and measure together using plain language and practical tools",
+      "embedding": null,
+      "context": {
+        "category": "differentiator",
+        "index": 0
+      },
+      "confidence": 1.0,
+      "frequency": 80,
+      "created_at": "2026-01-20T20:41:45.461079",
+      "last_accessed": "2026-01-20T20:41:45.461082"
+    },
+    {
+      "entry_id": "differentiator_1",
+      "pattern_type": "insight",
+      "content": "Value Prop: Fixed-Fee Pricing - Total investment known up front with no surprise bills or scope creep",
+      "embedding": null,
+      "context": {
+        "category": "differentiator",
+        "index": 1
+      },
+      "confidence": 1.0,
+      "frequency": 80,
+      "created_at": "2026-01-20T20:41:45.461124",
+      "last_accessed": "2026-01-20T20:41:45.461126"
+    },
+    {
+      "entry_id": "differentiator_2",
+      "pattern_type": "insight",
+      "content": "Value Prop: Proof or Pause - Measurable ROI every cycle means you only continue when value is demonstrated",
+      "embedding": null,
+      "context": {
+        "category": "differentiator",
+        "index": 2
+      },
+      "confidence": 1.0,
+      "frequency": 80,
+      "created_at": "2026-01-20T20:41:45.461167",
+      "last_accessed": "2026-01-20T20:41:45.461170"
+    },
+    {
+      "entry_id": "differentiator_3",
+      "pattern_type": "insight",
+      "content": "Value Prop: Sustainable Change - Your people own the AI systems we build together - lasting capability, not dependency",
+      "embedding": null,
+      "context": {
+        "category": "differentiator",
+        "index": 3
+      },
+      "confidence": 1.0,
+      "frequency": 80,
+      "created_at": "2026-01-20T20:41:45.461209",
+      "last_accessed": "2026-01-20T20:41:45.461213"
+    },
+    {
+      "entry_id": "disqualifier_0",
+      "pattern_type": "failure",
+      "content": "Disqualification signal: No SME time available for pilots (need 1-2 hours/week)",
+      "embedding": null,
+      "context": {
+        "category": "disqualifier",
+        "index": 0
+      },
+      "confidence": 0.9,
+      "frequency": 50,
+      "created_at": "2026-01-20T20:41:45.461255",
+      "last_accessed": "2026-01-20T20:41:45.461259"
+    },
+    {
+      "entry_id": "disqualifier_1",
+      "pattern_type": "failure",
+      "content": "Disqualification signal: No executive sponsor or budget owner",
+      "embedding": null,
+      "context": {
+        "category": "disqualifier",
+        "index": 1
+      },
+      "confidence": 0.9,
+      "frequency": 50,
+      "created_at": "2026-01-20T20:41:45.461292",
+      "last_accessed": "2026-01-20T20:41:45.461295"
+    },
+    {
+      "entry_id": "disqualifier_2",
+      "pattern_type": "failure",
+      "content": "Disqualification signal: Expectation of 'AI magic' without process change",
+      "embedding": null,
+      "context": {
+        "category": "disqualifier",
+        "index": 2
+      },
+      "confidence": 0.9,
+      "frequency": 50,
+      "created_at": "2026-01-20T20:41:45.461323",
+      "last_accessed": "2026-01-20T20:42:57.595352"
+    },
+    {
+      "entry_id": "disqualifier_3",
+      "pattern_type": "failure",
+      "content": "Disqualification signal: Procurement cycles longer than 6 months for small pilots",
+      "embedding": null,
+      "context": {
+        "category": "disqualifier",
+        "index": 3
+      },
+      "confidence": 0.9,
+      "frequency": 50,
+      "created_at": "2026-01-20T20:41:45.461355",
+      "last_accessed": "2026-01-20T20:41:45.461358"
+    },
+    {
+      "entry_id": "disqualifier_4",
+      "pattern_type": "failure",
+      "content": "Disqualification signal: Disallowing modern SaaS or LLM use under any circumstance",
+      "embedding": null,
+      "context": {
+        "category": "disqualifier",
+        "index": 4
+      },
+      "confidence": 0.9,
+      "frequency": 50,
+      "created_at": "2026-01-20T20:41:45.461388",
+      "last_accessed": "2026-01-20T20:41:45.461391"
+    },
+    {
+      "entry_id": "disqualifier_5",
+      "pattern_type": "failure",
+      "content": "Disqualification signal: Desire for stealth or secrecy that blocks stakeholder alignment",
+      "embedding": null,
+      "context": {
+        "category": "disqualifier",
+        "index": 5
+      },
+      "confidence": 0.9,
+      "frequency": 50,
+      "created_at": "2026-01-20T20:41:45.461422",
+      "last_accessed": "2026-01-20T20:42:57.595874"
+    },
+    {
+      "entry_id": "disqualifier_6",
+      "pattern_type": "failure",
+      "content": "Disqualification signal: Pure research or foundation-model development projects",
+      "embedding": null,
+      "context": {
+        "category": "disqualifier",
+        "index": 6
+      },
+      "confidence": 0.9,
+      "frequency": 50,
+      "created_at": "2026-01-20T20:41:45.461455",
+      "last_accessed": "2026-01-20T20:41:45.461458"
+    },
+    {
+      "entry_id": "disqualifier_7",
+      "pattern_type": "failure",
+      "content": "Disqualification signal: RFPs designed to select the lowest hourly rate",
+      "embedding": null,
+      "context": {
+        "category": "disqualifier",
+        "index": 7
+      },
+      "confidence": 0.9,
+      "frequency": 50,
+      "created_at": "2026-01-20T20:41:45.461487",
+      "last_accessed": "2026-01-20T20:42:57.596418"
+    },
+    {
+      "entry_id": "disqualifier_8",
+      "pattern_type": "failure",
+      "content": "Disqualification signal: 'Just install a tool' without policy, governance, and training",
+      "embedding": null,
+      "context": {
+        "category": "disqualifier",
+        "index": 8
+      },
+      "confidence": 0.9,
+      "frequency": 50,
+      "created_at": "2026-01-20T20:41:45.461520",
+      "last_accessed": "2026-01-20T20:41:45.461524"
+    },
+    {
+      "entry_id": "disqualifier_9",
+      "pattern_type": "failure",
+      "content": "Disqualification signal: No willingness to publish and enforce an AI use policy",
+      "embedding": null,
+      "context": {
+        "category": "disqualifier",
+        "index": 9
+      },
+      "confidence": 0.9,
+      "frequency": 50,
+      "created_at": "2026-01-20T20:41:45.461553",
+      "last_accessed": "2026-01-20T20:41:45.461556"
+    },
+    {
+      "entry_id": "map_phase_pre-rollout",
+      "pattern_type": "insight",
+      "content": "M.A.P. Framework Phase: Pre-Rollout (Duration: Teams). Activities: AI Council Established, Pilot Projects Roadmap, Process Mining & Mapping",
+      "embedding": null,
+      "context": {
+        "category": "methodology",
+        "phase": "Pre-Rollout"
+      },
+      "confidence": 1.0,
+      "frequency": 70,
+      "created_at": "2026-01-20T20:41:45.461596",
+      "last_accessed": "2026-01-20T20:41:45.461599"
+    },
+    {
+      "entry_id": "map_phase_kickoff",
+      "pattern_type": "insight",
+      "content": "M.A.P. Framework Phase: Kickoff (Duration: Day 0). Activities: Council & Team Training, AI Governance Workshop, Pilot Projects Announced",
+      "embedding": null,
+      "context": {
+        "category": "methodology",
+        "phase": "Kickoff"
+      },
+      "confidence": 1.0,
+      "frequency": 70,
+      "created_at": "2026-01-20T20:41:45.461641",
+      "last_accessed": "2026-01-20T20:41:45.461644"
+    },
+    {
+      "entry_id": "map_phase_model",
+      "pattern_type": "insight",
+      "content": "M.A.P. Framework Phase: Model (Duration: Day 1-30). Activities: Pilot Buildout Begins, AI Council Meetings Start, Governance in Place",
+      "embedding": null,
+      "context": {
+        "category": "methodology",
+        "phase": "Model"
+      },
+      "confidence": 1.0,
+      "frequency": 70,
+      "created_at": "2026-01-20T20:41:45.461684",
+      "last_accessed": "2026-01-20T20:41:45.461686"
+    },
+    {
+      "entry_id": "map_phase_assess",
+      "pattern_type": "insight",
+      "content": "M.A.P. Framework Phase: Assess (Duration: Day 31-60). Activities: Pilots Tested in Production, Optimization of Pilots, KPI Measurement",
+      "embedding": null,
+      "context": {
+        "category": "methodology",
+        "phase": "Assess"
+      },
+      "confidence": 1.0,
+      "frequency": 70,
+      "created_at": "2026-01-20T20:41:45.461728",
+      "last_accessed": "2026-01-20T20:41:45.461731"
+    },
+    {
+      "entry_id": "map_phase_perform",
+      "pattern_type": "insight",
+      "content": "M.A.P. Framework Phase: Perform (Duration: Day 61-90). Activities: Pilot Performance Monitored, Pilots Live in Production, ROI Reporting",
+      "embedding": null,
+      "context": {
+        "category": "methodology",
+        "phase": "Perform"
+      },
+      "confidence": 1.0,
+      "frequency": 70,
+      "created_at": "2026-01-20T20:41:45.461767",
+      "last_accessed": "2026-01-20T20:41:45.461769"
+    },
+    {
+      "entry_id": "guarantees",
+      "pattern_type": "success",
+      "content": "Guarantees: transparent_tracking: 100% - Implementation Tracker auto-totals time saved, error reduction, and cost drops; monthly_scorecard: Enterprise clients receive CFO-ready monthly Scorecard with detailed ROI analysis; risk_guarantee: Measured ROI or you don't pay the next phase",
+      "embedding": null,
+      "context": {
+        "category": "guarantees",
+        "data": {
+          "transparent_tracking": "100% - Implementation Tracker auto-totals time saved, error reduction, and cost drops",
+          "monthly_scorecard": "Enterprise clients receive CFO-ready monthly Scorecard with detailed ROI analysis",
+          "risk_guarantee": "Measured ROI or you don't pay the next phase"
+        }
+      },
+      "confidence": 1.0,
+      "frequency": 90,
+      "created_at": "2026-01-20T20:41:45.461820",
+      "last_accessed": "2026-01-20T20:41:45.461823"
+    },
+    {
+      "entry_id": "product_knowledge_seed_v1",
+      "pattern_type": "insight",
+      "content": "Product knowledge seeded from ChiefAIOfficer.com pitchdeck",
+      "embedding": null,
+      "context": {
+        "category": "system",
+        "version": "v1"
+      },
+      "confidence": 1.0,
+      "frequency": 1,
+      "created_at": "2026-01-20T20:41:45.461883",
+      "last_accessed": "2026-01-20T20:41:45.461886"
+    },
+    {
+      "entry_id": "647422346a3f",
+      "pattern_type": "success",
+      "content": "SUCCESS: campaign tier=tier_1 template=thought_leadership",
+      "embedding": "[128-dim vector]",
+      "context": {
+        "icp_tier": "tier_1",
+        "template": "thought_leadership",
+        "workflow_type": "campaign"
+      },
+      "confidence": 0.9,
+      "frequency": 1,
+      "created_at": "2026-01-20T20:42:57.595915",
+      "last_accessed": "2026-01-20T20:42:57.596415"
+    }
+  ],
+  "saved_at": "2026-01-20T20:42:57.596623"
+}

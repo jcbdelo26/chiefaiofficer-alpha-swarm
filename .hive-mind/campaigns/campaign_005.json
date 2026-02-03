@@ -1,0 +1,107 @@
+{
+  "id": "campaign_005",
+  "name": "Competitor Displacement - Jan 2026",
+  "segment": "tier3_standard",
+  "status": "pending",
+  "created_at": "2026-01-15T02:01:07.937819",
+  "lead_count": 22,
+  "leads": [
+    {
+      "id": "lead_0002",
+      "name": "David Martin",
+      "first_name": "David",
+      "last_name": "Martin",
+      "email": "david.martin@cloudscalesolutions.com",
+      "title": "Sales Operations Manager",
+      "company": "CloudScale Solutions",
+      "company_size": 280,
+      "industry": "Technology",
+      "linkedin_url": "https://linkedin.com/in/davidmartin",
+      "icp_score": 80,
+      "icp_tier": "tier2_high",
+      "source": "event_attendee",
+      "scraped_at": "2026-01-08T02:01:07.921810",
+      "enriched": true
+    },
+    {
+      "id": "lead_0024",
+      "name": "James Williams",
+      "first_name": "James",
+      "last_name": "Williams",
+      "email": "james.williams@dealflowsystems.com",
+      "title": "VP of Sales",
+      "company": "DealFlow Systems",
+      "company_size": 90,
+      "industry": "CRM",
+      "linkedin_url": "https://linkedin.com/in/jameswilliams",
+      "icp_score": 86,
+      "icp_tier": "tier1_vip",
+      "source": "competitor_follower",
+      "scraped_at": "2026-01-15T02:01:07.921921",
+      "enriched": true
+    },
+    {
+      "id": "lead_0041",
+      "name": "Daniel Johnson",
+      "first_name": "Daniel",
+      "last_name": "Johnson",
+      "email": "daniel.johnson@cloudscalesolutions.com",
+      "title": "VP of Sales",
+      "company": "CloudScale Solutions",
+      "company_size": 280,
+      "industry": "Technology",
+      "linkedin_url": "https://linkedin.com/in/danieljohnson",
+      "icp_score": 90,
+      "icp_tier": "tier1_vip",
+      "source": "post_engager",
+      "scraped_at": "2026-01-11T02:01:07.922007",
+      "enriched": true
+    },
+    {
+      "id": "lead_0019",
+      "name": "William Moore",
+      "first_name": "William",
+      "last_name": "Moore",
+      "email": "william.moore@leadgenmasters.com",
+      "title": "Head of RevOps",
+      "company": "LeadGen Masters",
+      "company_size": 75,
+      "industry": "Marketing",
+      "linkedin_url": "https://linkedin.com/in/williammoore",
+      "icp_score": 80,
+      "icp_tier": "tier2_high",
+      "source": "post_engager",
+      "scraped_at": "2026-01-12T02:01:07.921899",
+      "enriched": true
+    },
+    {
+      "id": "lead_0022",
+      "name": "Michael Davis",
+      "first_name": "Michael",
+      "last_name": "Davis",
+      "email": "michael.davis@techforwardinc.com",
+      "title": "CRO",
+      "company": "TechForward Inc",
+      "company_size": 150,
+      "industry": "SaaS",
+      "linkedin_url": "https://linkedin.com/in/michaeldavis",
+      "icp_score": 85,
+      "icp_tier": "tier1_vip",
+      "source": "post_engager",
+      "scraped_at": "2026-01-10T02:01:07.921912",
+      "enriched": true
+    }
+  ],
+  "emails": [
+    {
+      "step": 1,
+      "subject": "Noticed you're using Outreach...",
+      "body": "Hi {{first_name}},\n\nI noticed you're leading competitor displacement efforts at {{company}}.\n\nQuick question - are you seeing the same challenges we hear from other Technology leaders around pipeline visibility?\n\nWorth a 15-minute chat?\n\nBest,\nChris\nChief AI Officer"
+    },
+    {
+      "step": 2,
+      "subject": "Re: Noticed you're using Outreach...",
+      "body": "{{first_name}},\n\nFollowing up on my previous note. \n\nHappy to share how similar companies are solving this.\n\nOpen to a quick call this week?\n\nChris"
+    }
+  ]
+}

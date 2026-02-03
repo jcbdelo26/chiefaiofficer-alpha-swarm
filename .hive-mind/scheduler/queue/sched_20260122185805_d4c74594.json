@@ -1,0 +1,10 @@
+{
+  "task_id": "sched_20260122185805_d4c74594",
+  "prospect_email": "john@example.com",
+  "email_content": "\n        Hi Chris,\n        \n        I'd love to set up a meeting. When are you available?\n        Can we schedule a call for next week?\n        \n        Best,\n        John\n        ",
+  "intent": "scheduling_request",
+  "confidence": 0.9,
+  "created_at": "2026-01-22T18:58:05.575818",
+  "status": "pending",
+  "source": "communicator_agent"
+}

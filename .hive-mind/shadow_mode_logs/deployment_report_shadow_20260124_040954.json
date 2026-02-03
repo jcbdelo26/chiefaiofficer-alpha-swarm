@@ -1,0 +1,162 @@
+{
+  "deployment_id": "shadow_20260124_040954",
+  "started_at": "2026-01-23T20:09:54.898156+00:00",
+  "completed_at": "2026-01-23T20:09:56.133395+00:00",
+  "config_valid": false,
+  "credentials_status": [
+    {
+      "name": "GHL Production API Key",
+      "env_var": "GHL_PROD_API_KEY",
+      "is_set": true,
+      "is_critical": true,
+      "value_length": 40,
+      "masked_value": "pit-...09e6"
+    },
+    {
+      "name": "GHL Location ID",
+      "env_var": "GHL_LOCATION_ID",
+      "is_set": true,
+      "is_critical": true,
+      "value_length": 20,
+      "masked_value": "FgaF...TkhR"
+    },
+    {
+      "name": "Supabase URL",
+      "env_var": "SUPABASE_URL",
+      "is_set": true,
+      "is_critical": true,
+      "value_length": 40,
+      "masked_value": "http...e.co"
+    },
+    {
+      "name": "Supabase Key",
+      "env_var": "SUPABASE_KEY",
+      "is_set": true,
+      "is_critical": true,
+      "value_length": 208,
+      "masked_value": "eyJh...sh8I"
+    },
+    {
+      "name": "RB2B API Key",
+      "env_var": "RB2B_API_KEY",
+      "is_set": false,
+      "is_critical": false,
+      "value_length": 0,
+      "masked_value": "NOT SET"
+    },
+    {
+      "name": "Clay API Key",
+      "env_var": "CLAY_API_KEY",
+      "is_set": true,
+      "is_critical": false,
+      "value_length": 20,
+      "masked_value": "ad8a...722a"
+    },
+    {
+      "name": "Slack Webhook URL",
+      "env_var": "SLACK_WEBHOOK_URL",
+      "is_set": true,
+      "is_critical": false,
+      "value_length": 44,
+      "masked_value": "http.../ZZZ"
+    },
+    {
+      "name": "Instantly API Key",
+      "env_var": "INSTANTLY_API_KEY",
+      "is_set": true,
+      "is_critical": false,
+      "value_length": 68,
+      "masked_value": "YmM5...Sw=="
+    }
+  ],
+  "missing_critical_credentials": [],
+  "contacts_fetched": 20,
+  "contacts_processed": 5,
+  "processing_results": [
+    {
+      "contact_id": "9lBhxGDXH8NfTfwC2gQu",
+      "contact_name": "None None",
+      "contact_email": null,
+      "processing_status": "shadow_complete",
+      "icp_score": 0.5,
+      "tier": "tier_3",
+      "would_send_email": true,
+      "email_subject": "Resource for None",
+      "email_body_preview": "Hi None,\n\nThought you might find value in our AI Readiness Assessment tool.\n\nhttps://ai-readiness-assessment-549851735707.us-west1.run.app/\n\nBest,\nChris\n\nReply STOP to unsubscribe....",
+      "errors": [],
+      "warnings": [
+        "Guardrails: Agent CRAFTER not permitted to perform send_email"
+      ],
+      "processed_at": "2026-01-23T20:09:56.131293+00:00"
+    },
+    {
+      "contact_id": "OOXVwjrLUBhRfQCwxM1B",
+      "contact_name": "mahesh s.",
+      "contact_email": "mahesh.sankaran@pearson.com",
+      "processing_status": "shadow_complete",
+      "icp_score": 0.55,
+      "tier": "tier_3",
+      "would_send_email": true,
+      "email_subject": "Resource for None",
+      "email_body_preview": "Hi mahesh,\n\nThought you might find value in our AI Readiness Assessment tool.\n\nhttps://ai-readiness-assessment-549851735707.us-west1.run.app/\n\nBest,\nChris\n\nReply STOP to unsubscribe....",
+      "errors": [],
+      "warnings": [
+        "Guardrails: Agent CRAFTER not permitted to perform send_email"
+      ],
+      "processed_at": "2026-01-23T20:09:56.131753+00:00"
+    },
+    {
+      "contact_id": "hj1zrYNr3K4SAy2DQLjD",
+      "contact_name": "cynthia None",
+      "contact_email": null,
+      "processing_status": "shadow_complete",
+      "icp_score": 0.5,
+      "tier": "tier_3",
+      "would_send_email": true,
+      "email_subject": "Resource for None",
+      "email_body_preview": "Hi cynthia,\n\nThought you might find value in our AI Readiness Assessment tool.\n\nhttps://ai-readiness-assessment-549851735707.us-west1.run.app/\n\nBest,\nChris\n\nReply STOP to unsubscribe....",
+      "errors": [],
+      "warnings": [
+        "Guardrails: Agent CRAFTER not permitted to perform send_email"
+      ],
+      "processed_at": "2026-01-23T20:09:56.132163+00:00"
+    },
+    {
+      "contact_id": "cpBjwul20byvE3iVGXVE",
+      "contact_name": "bahram None",
+      "contact_email": null,
+      "processing_status": "shadow_complete",
+      "icp_score": 0.5,
+      "tier": "tier_3",
+      "would_send_email": true,
+      "email_subject": "Resource for None",
+      "email_body_preview": "Hi bahram,\n\nThought you might find value in our AI Readiness Assessment tool.\n\nhttps://ai-readiness-assessment-549851735707.us-west1.run.app/\n\nBest,\nChris\n\nReply STOP to unsubscribe....",
+      "errors": [],
+      "warnings": [
+        "Guardrails: Agent CRAFTER not permitted to perform send_email"
+      ],
+      "processed_at": "2026-01-23T20:09:56.132749+00:00"
+    },
+    {
+      "contact_id": "7Y271ptktYpQg6pwjTHJ",
+      "contact_name": "None None",
+      "contact_email": null,
+      "processing_status": "shadow_complete",
+      "icp_score": 0.5,
+      "tier": "tier_3",
+      "would_send_email": true,
+      "email_subject": "Resource for None",
+      "email_body_preview": "Hi None,\n\nThought you might find value in our AI Readiness Assessment tool.\n\nhttps://ai-readiness-assessment-549851735707.us-west1.run.app/\n\nBest,\nChris\n\nReply STOP to unsubscribe....",
+      "errors": [],
+      "warnings": [
+        "Guardrails: Agent CRAFTER not permitted to perform send_email"
+      ],
+      "processed_at": "2026-01-23T20:09:56.133066+00:00"
+    }
+  ],
+  "errors": [],
+  "warnings": [
+    "Rollout Phase check failed: parallel"
+  ],
+  "status": "completed_with_warnings"
+}

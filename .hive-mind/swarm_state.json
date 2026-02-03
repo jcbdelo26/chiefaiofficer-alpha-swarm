@@ -1,0 +1,24 @@
+{
+  "saved_at": "2026-01-23T12:12:00.014931+00:00",
+  "heartbeats": {
+    "total_agents": 0,
+    "alive": 0,
+    "dead": 0,
+    "heartbeat_interval": 1,
+    "agents": {}
+  },
+  "workers": {
+    "total_workers": 0,
+    "queue_size": 0,
+    "statuses": {},
+    "stuck_workers": 0,
+    "total_processed": 0,
+    "total_errors": 0,
+    "workers": {}
+  },
+  "recovery": {
+    "restart_attempts": {},
+    "max_attempts": 3,
+    "auto_restart": true
+  }
+}

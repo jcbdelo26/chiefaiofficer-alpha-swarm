@@ -1,0 +1,56 @@
+{
+    "mode": "sandbox",
+    "description": "Sandbox configuration for safe testing without external API dependencies",
+    "external_apis_enabled": false,
+    "mock_services": {
+        "ghl": {
+            "enabled": true,
+            "url": "http://localhost:8001",
+            "failure_injection_rate": 0.0,
+            "latency_ms": 50
+        },
+        "rb2b": {
+            "enabled": true,
+            "url": "http://localhost:8002"
+        },
+        "instantly": {
+            "enabled": true,
+            "url": "http://localhost:8003"
+        },
+        "clay": {
+            "enabled": true,
+            "url": "http://localhost:8004"
+        }
+    },
+    "test_data": {
+        "synthetic_leads_path": "tests/fixtures/synthetic_leads.json",
+        "edge_cases_enabled": true,
+        "lead_count": 100,
+        "icp_match_ratio": 0.6
+    },
+    "email_behavior": {
+        "actually_send": false,
+        "log_to_file": true,
+        "log_path": ".tmp/sandbox_emails.json"
+    },
+    "failure_injection": {
+        "enabled": false,
+        "rate": 0.15,
+        "types": [
+            "rate_limit",
+            "server_error",
+            "timeout",
+            "validation_error"
+        ]
+    },
+    "guardrails": {
+        "require_approval_for_bulk": true,
+        "max_emails_per_campaign": 10,
+        "block_production_writes": true
+    },
+    "logging": {
+        "level": "DEBUG",
+        "capture_all_failures": true,
+        "failure_log_path": ".hive-mind/failures/"
+    }
+}

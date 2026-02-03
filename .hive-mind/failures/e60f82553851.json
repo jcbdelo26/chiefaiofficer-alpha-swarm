@@ -1,0 +1,15 @@
+{
+  "failure_id": "e60f82553851",
+  "agent_name": "SYSTEM_MONITOR",
+  "task_id": "test_memory_spike",
+  "category": "resource_error",
+  "error_message": "Memory Usage > 90%: 1.2GB / 1.0GB limit",
+  "error_type": "MemoryError",
+  "context": {
+    "memory_usage": "1.2GB"
+  },
+  "stack_trace": null,
+  "timestamp": "2026-01-23T17:57:24.478429+00:00",
+  "resolved": false,
+  "resolution_notes": null
+}

@@ -1,0 +1,107 @@
+{
+  "id": "campaign_001",
+  "name": "Event Followup - Jan 2026",
+  "segment": "tier1_vip",
+  "status": "pending",
+  "created_at": "2026-01-15T02:01:07.934929",
+  "lead_count": 21,
+  "leads": [
+    {
+      "id": "lead_0000",
+      "name": "Sarah Davis",
+      "first_name": "Sarah",
+      "last_name": "Davis",
+      "email": "sarah.davis@funnelforce.com",
+      "title": "Chief Revenue Officer",
+      "company": "FunnelForce",
+      "company_size": 190,
+      "industry": "Marketing Tech",
+      "linkedin_url": "https://linkedin.com/in/sarahdavis",
+      "icp_score": 77,
+      "icp_tier": "tier2_high",
+      "source": "event_attendee",
+      "scraped_at": "2026-01-11T02:01:07.921768",
+      "enriched": true
+    },
+    {
+      "id": "lead_0008",
+      "name": "Nicole Rodriguez",
+      "first_name": "Nicole",
+      "last_name": "Rodriguez",
+      "email": "nicole.rodriguez@cloudscalesolutions.com",
+      "title": "Director of Sales",
+      "company": "CloudScale Solutions",
+      "company_size": 280,
+      "industry": "Technology",
+      "linkedin_url": "https://linkedin.com/in/nicolerodriguez",
+      "icp_score": 86,
+      "icp_tier": "tier1_vip",
+      "source": "event_attendee",
+      "scraped_at": "2026-01-15T02:01:07.921846",
+      "enriched": true
+    },
+    {
+      "id": "lead_0099",
+      "name": "Emily Thompson",
+      "first_name": "Emily",
+      "last_name": "Thompson",
+      "email": "emily.thompson@funnelforce.com",
+      "title": "Director of Sales",
+      "company": "FunnelForce",
+      "company_size": 190,
+      "industry": "Marketing Tech",
+      "linkedin_url": "https://linkedin.com/in/emilythompson",
+      "icp_score": 71,
+      "icp_tier": "tier2_high",
+      "source": "post_engager",
+      "scraped_at": "2026-01-11T02:01:07.922266",
+      "enriched": true
+    },
+    {
+      "id": "lead_0090",
+      "name": "Nicole Williams",
+      "first_name": "Nicole",
+      "last_name": "Williams",
+      "email": "nicole.williams@salesboostai.com",
+      "title": "Director of Sales",
+      "company": "SalesBoost AI",
+      "company_size": 200,
+      "industry": "SaaS",
+      "linkedin_url": "https://linkedin.com/in/nicolewilliams",
+      "icp_score": 80,
+      "icp_tier": "tier2_high",
+      "source": "post_engager",
+      "scraped_at": "2026-01-13T02:01:07.922229",
+      "enriched": true
+    },
+    {
+      "id": "lead_0009",
+      "name": "Emily Martinez",
+      "first_name": "Emily",
+      "last_name": "Martinez",
+      "email": "emily.martinez@techforwardinc.com",
+      "title": "Director of Revenue",
+      "company": "TechForward Inc",
+      "company_size": 150,
+      "industry": "SaaS",
+      "linkedin_url": "https://linkedin.com/in/emilymartinez",
+      "icp_score": 81,
+      "icp_tier": "tier2_high",
+      "source": "competitor_follower",
+      "scraped_at": "2026-01-08T02:01:07.921851",
+      "enriched": true
+    }
+  ],
+  "emails": [
+    {
+      "step": 1,
+      "subject": "Following up from SaaStr",
+      "body": "Hi {{first_name}},\n\nI noticed you're leading event followup efforts at {{company}}.\n\nQuick question - are you seeing the same challenges we hear from other Marketing Tech leaders around pipeline visibility?\n\nWorth a 15-minute chat?\n\nBest,\nChris\nChief AI Officer"
+    },
+    {
+      "step": 2,
+      "subject": "Re: Following up from SaaStr",
+      "body": "{{first_name}},\n\nFollowing up on my previous note. \n\nHappy to share how similar companies are solving this.\n\nOpen to a quick call this week?\n\nChris"
+    }
+  ]
+}

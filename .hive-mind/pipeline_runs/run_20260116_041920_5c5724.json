@@ -1,0 +1,80 @@
+{
+  "run_id": "run_20260116_041920_5c5724",
+  "mode": "sandbox",
+  "started_at": "2026-01-15T20:19:20.986658",
+  "completed_at": "2026-01-15T20:19:21.032049",
+  "total_leads_processed": 0,
+  "total_campaigns_created": 0,
+  "total_errors": 1,
+  "stages": [
+    {
+      "stage": "scrape",
+      "success": true,
+      "duration_ms": 1.8019676208496094,
+      "input_count": 0,
+      "output_count": 10,
+      "errors": [],
+      "metrics": {
+        "source": "test_data"
+      }
+    },
+    {
+      "stage": "enrich",
+      "success": true,
+      "duration_ms": 0.1513957977294922,
+      "input_count": 10,
+      "output_count": 10,
+      "errors": [],
+      "metrics": {
+        "enriched_count": 10,
+        "failed_count": 0
+      }
+    },
+    {
+      "stage": "segment",
+      "success": false,
+      "duration_ms": 0,
+      "input_count": 0,
+      "output_count": 0,
+      "errors": [
+        "'LeadSegmentor' object has no attribute 'segment_leads'"
+      ],
+      "metrics": {}
+    },
+    {
+      "stage": "craft",
+      "success": false,
+      "duration_ms": 0.001430511474609375,
+      "input_count": 0,
+      "output_count": 0,
+      "errors": [],
+      "metrics": {
+        "campaigns_by_type": {}
+      }
+    },
+    {
+      "stage": "approve",
+      "success": true,
+      "duration_ms": 0.0011920928955078125,
+      "input_count": 0,
+      "output_count": 0,
+      "errors": [],
+      "metrics": {
+        "pending_review": 0,
+        "auto_approved": 0
+      }
+    },
+    {
+      "stage": "send",
+      "success": true,
+      "duration_ms": 0.001430511474609375,
+      "input_count": 0,
+      "output_count": 0,
+      "errors": [],
+      "metrics": {
+        "leads_queued": 0,
+        "campaigns_pushed": 0
+      }
+    }
+  ]
+}

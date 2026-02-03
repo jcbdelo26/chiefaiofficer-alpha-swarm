@@ -1,0 +1,158 @@
+[
+  {
+    "timestamp": "2026-01-17T20:59:07.999332",
+    "agent": "hunter_agent",
+    "permission": "READ_LEADS",
+    "granted": true
+  },
+  {
+    "timestamp": "2026-01-17T20:59:07.999855",
+    "agent": "hunter_agent",
+    "permission": "SEND_EMAIL",
+    "granted": false
+  },
+  {
+    "timestamp": "2026-01-17T20:59:08.009241",
+    "agent": "crafter_agent",
+    "permission": "WRITE_LEADS",
+    "granted": true
+  },
+  {
+    "timestamp": "2026-01-17T20:59:08.016614",
+    "agent": "crafter_agent",
+    "permission": "SEND_EMAIL",
+    "granted": false
+  },
+  {
+    "timestamp": "2026-01-17T20:59:08.024715",
+    "agent": "ghl_master_agent",
+    "permission": "SEND_EMAIL",
+    "granted": true
+  },
+  {
+    "timestamp": "2026-01-17T20:59:08.031667",
+    "agent": "gatekeeper_agent",
+    "permission": "APPROVE_CAMPAIGN",
+    "granted": true
+  },
+  {
+    "timestamp": "2026-01-17T20:59:08.039362",
+    "agent": "queen_agent",
+    "permission": "ADMIN_ACCESS",
+    "granted": true
+  },
+  {
+    "timestamp": "2026-01-17T20:59:08.046494",
+    "agent": "ghl_master_agent",
+    "permission": "SEND_EMAIL",
+    "granted": true
+  },
+  {
+    "timestamp": "2026-01-17T20:59:08.053922",
+    "agent": "hunter_agent",
+    "permission": "SEND_EMAIL",
+    "granted": false
+  },
+  {
+    "timestamp": "2026-01-17T20:59:08.062636",
+    "agent": "gatekeeper_agent",
+    "permission": "APPROVE_CAMPAIGN",
+    "granted": true
+  },
+  {
+    "timestamp": "2026-01-17T21:07:10.358684",
+    "agent": "hunter_agent",
+    "permission": "READ_LEADS",
+    "granted": true
+  },
+  {
+    "timestamp": "2026-01-17T21:07:10.366736",
+    "agent": "hunter_agent",
+    "permission": "SEND_EMAIL",
+    "granted": false
+  },
+  {
+    "timestamp": "2026-01-17T21:07:10.375236",
+    "agent": "crafter_agent",
+    "permission": "WRITE_LEADS",
+    "granted": true
+  },
+  {
+    "timestamp": "2026-01-17T21:07:10.383712",
+    "agent": "crafter_agent",
+    "permission": "SEND_EMAIL",
+    "granted": false
+  },
+  {
+    "timestamp": "2026-01-17T21:07:10.395238",
+    "agent": "ghl_master_agent",
+    "permission": "SEND_EMAIL",
+    "granted": true
+  },
+  {
+    "timestamp": "2026-01-17T21:07:10.407679",
+    "agent": "gatekeeper_agent",
+    "permission": "APPROVE_CAMPAIGN",
+    "granted": true
+  },
+  {
+    "timestamp": "2026-01-17T21:07:10.418313",
+    "agent": "queen_agent",
+    "permission": "ADMIN_ACCESS",
+    "granted": true
+  },
+  {
+    "timestamp": "2026-01-17T21:07:10.429226",
+    "agent": "ghl_master_agent",
+    "permission": "SEND_EMAIL",
+    "granted": true
+  },
+  {
+    "timestamp": "2026-01-17T21:07:10.441727",
+    "agent": "hunter_agent",
+    "permission": "SEND_EMAIL",
+    "granted": false
+  },
+  {
+    "timestamp": "2026-01-17T21:07:10.450873",
+    "agent": "gatekeeper_agent",
+    "permission": "APPROVE_CAMPAIGN",
+    "granted": true
+  },
+  {
+    "timestamp": "2026-01-17T21:29:27.840574",
+    "agent": "hunter_test",
+    "permission": "SEND_EMAIL",
+    "granted": false
+  },
+  {
+    "timestamp": "2026-01-17T21:29:27.853270",
+    "agent": "ghl_master_test",
+    "permission": "SEND_EMAIL",
+    "granted": true
+  },
+  {
+    "timestamp": "2026-01-17T21:29:27.871947",
+    "agent": "ghl_master_test",
+    "permission": "SEND_EMAIL",
+    "granted": true
+  },
+  {
+    "timestamp": "2026-01-17T21:29:27.894725",
+    "agent": "ghl_master_test",
+    "permission": "DELETE_CONTACTS",
+    "granted": false
+  },
+  {
+    "timestamp": "2026-01-19T17:12:11.785853",
+    "agent": "test_hunter",
+    "permission": "SEND_EMAIL",
+    "granted": false
+  },
+  {
+    "timestamp": "2026-01-19T17:12:11.794711",
+    "agent": "test_ghl_master",
+    "permission": "SEND_EMAIL",
+    "granted": true
+  }
+]

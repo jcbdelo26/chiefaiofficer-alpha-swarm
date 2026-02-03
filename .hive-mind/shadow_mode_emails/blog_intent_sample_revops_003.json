@@ -1,0 +1,44 @@
+{
+  "email_id": "blog_intent_sample_revops_003",
+  "status": "pending",
+  "to": "alex.smith@growthco.com",
+  "subject": "AI Roadmap for GrowthCo",
+  "body": "\n<p>Hi Alex,</p>\n\n<p>Seeing a lot of your industry firms stuck in \"AI research mode\" without moving to implementation.</p>\n\n<p>Usually, it's because the CTO is buried in legacy tech and there's no dedicated AI lead to drive the strategy forward.</p>\n\n<p>We act as your Fractional Chief AI Officer to move GrowthCo from curiosity to ROI\u2014typically in 90 days.</p>\n\n<p><strong>What that looks like:</strong></p>\n<ul>\n<li>Day 1: One-day M.A.P. Bootcamp (your team leaves with an AI-ready action plan)</li>\n<li>Days 2-90: We embed with your team, build the workflows, and measure results</li>\n<li>Guarantee: Measurable ROI, or you don't pay the next phase</li>\n</ul>\n\n<p>Worth a brief chat on how we're doing this for similar your industry companies?</p>\n\n<p>Best,<br>\n<strong>Dani Apgar</strong><br>\nChief AI Officer<br>\n<a href=\"https://api.leadconnectorhq.com/widget/bookings/dani-apgar-meeting-calendar-30mzmehwb\">Book a 30 min. briefing</a></p>\n\n<p style=\"font-size: 11px; color: #666; margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; text-align: center;\">\n    We only reach out to professionals we believe can lead AI strategy inside their organizations.\n    If this isn't you, or now's not the right time, just <a href=\"mailto:support@chiefaiofficer.com?subject=Unsubscribe\">click here</a> and I'll take care of it personally.<br><br>\n    <strong>Chief AI Officer Inc.</strong><br>\n    5700 Harper Dr, Suite 210, Albuquerque, NM 87109<br>\n    <a href=\"mailto:support@chiefaiofficer.com\">support@chiefaiofficer.com</a><br>\n    Copyright \u00a9 2026 Chief AI Officer. All rights reserved.\n</p>\n",
+  "source": "website_intent_monitor",
+  "timestamp": "2026-01-30T16:34:50.430621+00:00",
+  "created_at": "2026-01-30T16:34:50.430621+00:00",
+  "recipient_data": {
+    "name": "Alex Smith",
+    "company": "GrowthCo",
+    "title": "RevOps Director",
+    "linkedin_url": null
+  },
+  "context": {
+    "intent_score": 100,
+    "icp_tier": "tier_1",
+    "triggers": [
+      "roi_metrics",
+      "general"
+    ],
+    "warm_connections": [
+      {
+        "type": "same_previous_company",
+        "shared": "Gong",
+        "team_member": "Dani Apgar"
+      },
+      {
+        "type": "former_colleague",
+        "shared": "Gong",
+        "team_member": "Dani Apgar"
+      }
+    ],
+    "pages_viewed": [
+      "/blog/ai-efficiency-roi-metrics"
+    ]
+  },
+  "priority": "high",
+  "synthetic": false,
+  "contact_id": null,
+  "template_id": "tier1_angle_a",
+  "regenerated_at": "2026-02-02T13:46:29.126648+00:00"
+}

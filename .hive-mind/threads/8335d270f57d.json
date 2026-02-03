@@ -1,0 +1,21 @@
+{
+  "thread_id": "8335d270f57d",
+  "saved_at": "2026-01-23T20:09:19.071517",
+  "message_count": 1,
+  "messages": [
+    {
+      "message_id": "<da6a2737-b4d8-4c95-948e-f437b88fb88b@caio-swarm.local>",
+      "subject": "Product Demo",
+      "from_email": "john@example.com",
+      "from_name": "",
+      "to_emails": [],
+      "cc_emails": [],
+      "date": "",
+      "body_text": "Hi, I'd like to schedule a demo of your product.\n        We're looking to improve our sales process.\n        \n        ---\n        From: sales@company.com\n        Subject: Re: Product Demo\n        \n        Great! Here are some available times...",
+      "body_html": null,
+      "in_reply_to": null,
+      "references": [],
+      "headers": {}
+    }
+  ]
+}

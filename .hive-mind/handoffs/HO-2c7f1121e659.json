@@ -1,0 +1,90 @@
+{
+  "id": "HO-2c7f1121e659",
+  "source_agent": "SEGMENTOR",
+  "target_agent": "CRAFTER",
+  "handoff_type": "sequential",
+  "timestamp": "2026-01-17T21:07:24.371675",
+  "status": "pending",
+  "received_at": null,
+  "completed_at": null,
+  "payload": {
+    "lead_id": "lead_12345",
+    "email": "john.doe@acmecorp.com",
+    "company": "Acme Corp",
+    "icp_score": 85,
+    "segment": "tier_1",
+    "routing": "gohighlevel_cold",
+    "recommended_sequence": "cold_outbound"
+  },
+  "summary": "Tier 1 lead (ICP: 85) - route to GHL cold_outbound",
+  "critical_facts": [
+    {
+      "key": "lead_id",
+      "value": "lead_12345",
+      "source": "linkedin",
+      "importance": "critical",
+      "expires_at": null
+    },
+    {
+      "key": "email",
+      "value": "john.doe@acmecorp.com",
+      "source": "clay",
+      "importance": "critical",
+      "expires_at": null
+    },
+    {
+      "key": "icp_score",
+      "value": 85,
+      "source": "segmentor",
+      "importance": "critical",
+      "expires_at": null
+    },
+    {
+      "key": "segment",
+      "value": "tier_1",
+      "source": "segmentor",
+      "importance": "high",
+      "expires_at": null
+    }
+  ],
+  "decisions_made": [
+    {
+      "agent": "ENRICHER",
+      "decision_type": "enrichment_source",
+      "choice": "clay",
+      "reasoning": "Best match",
+      "timestamp": "2026-01-17T21:07:24.371150",
+      "reversible": true
+    },
+    {
+      "agent": "SEGMENTOR",
+      "decision_type": "segment_assignment",
+      "choice": "tier_1",
+      "reasoning": "ICP score 85 > 80 threshold",
+      "timestamp": "2026-01-17T21:07:24.371154",
+      "reversible": true
+    }
+  ],
+  "pending_actions": [
+    {
+      "action_type": "send_campaign",
+      "target": "john.doe@acmecorp.com",
+      "parameters": {
+        "sequence": "cold_outbound",
+        "template": "cold_initial"
+      },
+      "priority": 8,
+      "deadline": null,
+      "assigned_to": "GHL_MASTER"
+    }
+  ],
+  "grounding_evidence": {
+    "source": "supabase",
+    "data_id": "lead_12345",
+    "icp_verified": true
+  },
+  "errors_encountered": [],
+  "context_budget_used": 0.01884765625,
+  "parent_handoff_id": "HO-1ce672e2cda4",
+  "child_handoff_ids": []
+}

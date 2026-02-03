@@ -1,0 +1,62 @@
+[
+  {
+    "id": "8063b28c6d353ef9",
+    "action_type": "send_email",
+    "source_agent": "CRAFTER",
+    "timestamp": "2026-01-17T20:03:59.429824",
+    "status": "rate_limited",
+    "risk_level": "high",
+    "denial_reason": "EMAIL_LIMITS: Outside working hours (8:00-18:00)",
+    "approved_by": null
+  },
+  {
+    "id": "7fa89e4326eef84d",
+    "action_type": "send_email",
+    "source_agent": "CRAFTER",
+    "timestamp": "2026-01-17T20:03:59.431588",
+    "status": "rate_limited",
+    "risk_level": "high",
+    "denial_reason": "EMAIL_LIMITS: Outside working hours (8:00-18:00); EMAIL_CONTENT: Contains spam trigger words: free, guarantee, act now, limited time, click here; EMAIL_CONTENT: Missing unsubscribe link/text (CAN-SPAM requirement)",
+    "approved_by": null
+  },
+  {
+    "id": "a93c60134d7cd848",
+    "action_type": "bulk_email",
+    "source_agent": "CRAFTER",
+    "timestamp": "2026-01-17T20:03:59.443499",
+    "status": "grounding_failed",
+    "risk_level": "critical",
+    "denial_reason": "GROUNDING: No evidence provided for high-risk action; EMAIL_LIMITS: Outside working hours (8:00-18:00)",
+    "approved_by": null
+  },
+  {
+    "id": "041477ba979428ff",
+    "action_type": "delete_contact",
+    "source_agent": "ADMIN",
+    "timestamp": "2026-01-17T20:03:59.452877",
+    "status": "pending_approval",
+    "risk_level": "critical",
+    "denial_reason": "DESTRUCTIVE: Delete operations require manual approval",
+    "approved_by": null
+  },
+  {
+    "id": "ca5e1be13ff6e13f",
+    "action_type": "send_email",
+    "source_agent": "ghl_master_test",
+    "timestamp": "2026-01-17T21:29:27.861888",
+    "status": "rate_limited",
+    "risk_level": "high",
+    "denial_reason": "EMAIL_LIMITS: Outside working hours (8:00-18:00); EMAIL_CONTENT: Contains spam trigger words: free, guarantee, act now",
+    "approved_by": null
+  },
+  {
+    "id": "97f9b4ab2bde89ca",
+    "action_type": "send_email",
+    "source_agent": "ghl_master_test",
+    "timestamp": "2026-01-17T21:29:27.879436",
+    "status": "rate_limited",
+    "risk_level": "high",
+    "denial_reason": "EMAIL_LIMITS: Outside working hours (8:00-18:00)",
+    "approved_by": null
+  }
+]

@@ -1,0 +1,37 @@
+{
+  "name": "debug-mcp",
+  "version": "1.0.0",
+  "description": "Full-stack debugging and error correlation MCP server for CAIO dashboard",
+  "author": "CAIO RevOps Team",
+  "tools": [
+    "debug_get_correlated_errors",
+    "debug_get_recent_errors",
+    "debug_get_error_context",
+    "debug_trace_request",
+    "debug_get_circuit_breaker_status",
+    "debug_search_logs",
+    "debug_capture_ui_state",
+    "debug_get_console_errors",
+    "debug_get_error_timeline"
+  ],
+  "dependencies": {
+    "mcp": ">=0.1.0",
+    "aiosqlite": ">=0.19.0",
+    "playwright": ">=1.40.0"
+  },
+  "entrypoint": "server.py",
+  "capabilities": {
+    "error_correlation": "Correlates frontend browser errors with backend service failures",
+    "log_aggregation": "Aggregates logs from audit trail, retry queue, and Python logs",
+    "ui_capture": "Captures screenshots, DOM snapshots, and console errors via Playwright",
+    "request_tracing": "Traces requests through the stack using correlation IDs",
+    "circuit_breaker_monitoring": "Monitors circuit breaker states and failure counts"
+  },
+  "data_sources": {
+    "audit_db": ".hive-mind/audit.db",
+    "retry_queue": ".hive-mind/retry_queue.jsonl",
+    "frontend_errors": ".hive-mind/frontend_errors.jsonl",
+    "logs_dir": ".hive-mind/logs",
+    "screenshots_dir": ".hive-mind/screenshots"
+  }
+}

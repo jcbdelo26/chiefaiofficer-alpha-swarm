@@ -1,0 +1,30 @@
+{
+  "email": "flow@example.com",
+  "name": "flow",
+  "company": "example.com",
+  "current_stage": "objection_handle",
+  "thread_id": "62fdf8cd661e",
+  "last_contact": "2026-01-23T20:09:17.906635",
+  "total_exchanges": 23,
+  "tone_profile": {
+    "formality": 0.22,
+    "warmth": 0.5,
+    "urgency": 0.0,
+    "complexity": 0.58,
+    "assertiveness": 0.5,
+    "sentiment": 0.0,
+    "avg_sentence_length": 4.0,
+    "vocabulary_richness": 1.0,
+    "keywords": [
+      "product",
+      "looks",
+      "interesting",
+      "tell",
+      "more"
+    ]
+  },
+  "tags": [
+    "has_objection"
+  ],
+  "metadata": {}
+}

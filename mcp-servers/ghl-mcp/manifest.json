@@ -1,0 +1,19 @@
+{
+    "name": "ghl-mcp",
+    "version": "1.0.0",
+    "description": "GoHighLevel CRM MCP server for Alpha Swarm",
+    "author": "Chiefaiofficer.com",
+    "tools": [
+        "ghl_create_contact",
+        "ghl_update_contact",
+        "ghl_get_contact",
+        "ghl_add_tag",
+        "ghl_create_opportunity",
+        "ghl_trigger_workflow"
+    ],
+    "dependencies": {
+        "mcp": ">=0.1.0",
+        "requests": ">=2.31.0"
+    },
+    "entrypoint": "server.py"
+}

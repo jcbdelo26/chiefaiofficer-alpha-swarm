@@ -1,0 +1,16 @@
+{
+  "failure_id": "3285e30cc3c9",
+  "agent_name": "HUNTER",
+  "task_id": "test_task_0",
+  "category": "api_error",
+  "error_message": "API rate limit exceeded: 429 Too Many Requests",
+  "error_type": "ConnectionError",
+  "context": {
+    "attempt": 0,
+    "url": "linkedin.com/api"
+  },
+  "stack_trace": null,
+  "timestamp": "2026-01-23T10:32:42.796282+00:00",
+  "resolved": false,
+  "resolution_notes": null
+}

@@ -1,0 +1,446 @@
+{
+  "sarah@company.com": [
+    {
+      "prospect_email": "sarah@company.com",
+      "thread_id": "bf433a799c79",
+      "scheduled_at": "2026-01-24T02:27:35.149938",
+      "followup_number": 1,
+      "stage": "qualification",
+      "template": "standard_followup",
+      "status": "pending",
+      "created_at": "2026-01-22T02:27:35.149950"
+    }
+  ],
+  "newprospect@example.com": [
+    {
+      "prospect_email": "newprospect@example.com",
+      "thread_id": "7f5323a17b6f",
+      "scheduled_at": "2026-01-24T04:16:53.619695",
+      "followup_number": 1,
+      "stage": "qualification",
+      "template": "standard_followup",
+      "status": "pending",
+      "created_at": "2026-01-22T04:16:53.619700"
+    },
+    {
+      "prospect_email": "newprospect@example.com",
+      "thread_id": "7f5323a17b6f",
+      "scheduled_at": "2026-01-24T04:37:47.539187",
+      "followup_number": 2,
+      "stage": "qualification",
+      "template": "standard_followup",
+      "status": "pending",
+      "created_at": "2026-01-22T04:37:47.539193"
+    },
+    {
+      "prospect_email": "newprospect@example.com",
+      "thread_id": "7f5323a17b6f",
+      "scheduled_at": "2026-01-24T04:57:39.864029",
+      "followup_number": 3,
+      "stage": "qualification",
+      "template": "standard_followup",
+      "status": "pending",
+      "created_at": "2026-01-22T04:57:39.864033"
+    },
+    {
+      "prospect_email": "newprospect@example.com",
+      "thread_id": "7f5323a17b6f",
+      "scheduled_at": "2026-01-24T05:01:59.198955",
+      "followup_number": 4,
+      "stage": "qualification",
+      "template": "standard_followup",
+      "status": "pending",
+      "created_at": "2026-01-22T05:01:59.198960"
+    }
+  ],
+  "unsub@example.com": [
+    {
+      "prospect_email": "unsub@example.com",
+      "thread_id": "thread1",
+      "scheduled_at": "2026-01-24T04:16:53.635224",
+      "followup_number": 1,
+      "stage": "introduction",
+      "template": "standard_followup",
+      "status": "cancelled: unsubscribe",
+      "created_at": "2026-01-22T04:16:53.635231"
+    },
+    {
+      "prospect_email": "unsub@example.com",
+      "thread_id": "thread1",
+      "scheduled_at": "2026-01-24T04:37:47.551719",
+      "followup_number": 2,
+      "stage": "introduction",
+      "template": "standard_followup",
+      "status": "cancelled: unsubscribe",
+      "created_at": "2026-01-22T04:37:47.551726"
+    },
+    {
+      "prospect_email": "unsub@example.com",
+      "thread_id": "thread1",
+      "scheduled_at": "2026-01-24T04:57:39.913523",
+      "followup_number": 3,
+      "stage": "introduction",
+      "template": "standard_followup",
+      "status": "cancelled: unsubscribe",
+      "created_at": "2026-01-22T04:57:39.913530"
+    },
+    {
+      "prospect_email": "unsub@example.com",
+      "thread_id": "thread1",
+      "scheduled_at": "2026-01-24T05:01:59.212581",
+      "followup_number": 4,
+      "stage": "introduction",
+      "template": "standard_followup",
+      "status": "cancelled: unsubscribe",
+      "created_at": "2026-01-22T05:01:59.212587"
+    },
+    {
+      "prospect_email": "unsub@example.com",
+      "thread_id": "thread1",
+      "scheduled_at": "2026-01-24T05:04:19.558310",
+      "followup_number": 5,
+      "stage": "introduction",
+      "template": "standard_followup",
+      "status": "cancelled: unsubscribe",
+      "created_at": "2026-01-22T05:04:19.558318"
+    },
+    {
+      "prospect_email": "unsub@example.com",
+      "thread_id": "thread1",
+      "scheduled_at": "2026-01-24T05:16:15.668354",
+      "followup_number": 6,
+      "stage": "introduction",
+      "template": "standard_followup",
+      "status": "cancelled: unsubscribe",
+      "created_at": "2026-01-22T05:16:15.668361"
+    },
+    {
+      "prospect_email": "unsub@example.com",
+      "thread_id": "thread1",
+      "scheduled_at": "2026-01-24T05:49:38.392408",
+      "followup_number": 7,
+      "stage": "introduction",
+      "template": "standard_followup",
+      "status": "cancelled: unsubscribe",
+      "created_at": "2026-01-22T05:49:38.392423"
+    },
+    {
+      "prospect_email": "unsub@example.com",
+      "thread_id": "thread1",
+      "scheduled_at": "2026-01-24T05:51:58.071253",
+      "followup_number": 8,
+      "stage": "introduction",
+      "template": "standard_followup",
+      "status": "cancelled: unsubscribe",
+      "created_at": "2026-01-22T05:51:58.071267"
+    },
+    {
+      "prospect_email": "unsub@example.com",
+      "thread_id": "thread1",
+      "scheduled_at": "2026-01-24T06:41:02.230305",
+      "followup_number": 9,
+      "stage": "introduction",
+      "template": "standard_followup",
+      "status": "cancelled: unsubscribe",
+      "created_at": "2026-01-22T06:41:02.230310"
+    },
+    {
+      "prospect_email": "unsub@example.com",
+      "thread_id": "thread1",
+      "scheduled_at": "2026-01-24T18:39:55.131621",
+      "followup_number": 10,
+      "stage": "introduction",
+      "template": "standard_followup",
+      "status": "cancelled: unsubscribe",
+      "created_at": "2026-01-22T18:39:55.131628"
+    },
+    {
+      "prospect_email": "unsub@example.com",
+      "thread_id": "thread1",
+      "scheduled_at": "2026-01-24T18:58:05.582971",
+      "followup_number": 11,
+      "stage": "introduction",
+      "template": "standard_followup",
+      "status": "cancelled: unsubscribe",
+      "created_at": "2026-01-22T18:58:05.582976"
+    },
+    {
+      "prospect_email": "unsub@example.com",
+      "thread_id": "thread1",
+      "scheduled_at": "2026-01-24T19:01:15.494819",
+      "followup_number": 12,
+      "stage": "introduction",
+      "template": "standard_followup",
+      "status": "cancelled: unsubscribe",
+      "created_at": "2026-01-22T19:01:15.494824"
+    },
+    {
+      "prospect_email": "unsub@example.com",
+      "thread_id": "thread1",
+      "scheduled_at": "2026-01-24T19:09:34.293279",
+      "followup_number": 13,
+      "stage": "introduction",
+      "template": "standard_followup",
+      "status": "cancelled: unsubscribe",
+      "created_at": "2026-01-22T19:09:34.293284"
+    },
+    {
+      "prospect_email": "unsub@example.com",
+      "thread_id": "thread1",
+      "scheduled_at": "2026-01-24T19:13:46.007650",
+      "followup_number": 14,
+      "stage": "introduction",
+      "template": "standard_followup",
+      "status": "cancelled: unsubscribe",
+      "created_at": "2026-01-22T19:13:46.007656"
+    },
+    {
+      "prospect_email": "unsub@example.com",
+      "thread_id": "thread1",
+      "scheduled_at": "2026-01-24T19:16:22.417729",
+      "followup_number": 15,
+      "stage": "introduction",
+      "template": "standard_followup",
+      "status": "cancelled: unsubscribe",
+      "created_at": "2026-01-22T19:16:22.417734"
+    },
+    {
+      "prospect_email": "unsub@example.com",
+      "thread_id": "thread1",
+      "scheduled_at": "2026-01-24T19:17:41.056210",
+      "followup_number": 16,
+      "stage": "introduction",
+      "template": "standard_followup",
+      "status": "cancelled: unsubscribe",
+      "created_at": "2026-01-22T19:17:41.056218"
+    },
+    {
+      "prospect_email": "unsub@example.com",
+      "thread_id": "thread1",
+      "scheduled_at": "2026-01-24T19:20:35.177939",
+      "followup_number": 17,
+      "stage": "introduction",
+      "template": "standard_followup",
+      "status": "cancelled: unsubscribe",
+      "created_at": "2026-01-22T19:20:35.177947"
+    },
+    {
+      "prospect_email": "unsub@example.com",
+      "thread_id": "thread1",
+      "scheduled_at": "2026-01-24T20:04:06.848576",
+      "followup_number": 18,
+      "stage": "introduction",
+      "template": "standard_followup",
+      "status": "cancelled: unsubscribe",
+      "created_at": "2026-01-22T20:04:06.848588"
+    },
+    {
+      "prospect_email": "unsub@example.com",
+      "thread_id": "thread1",
+      "scheduled_at": "2026-01-25T04:50:45.467727",
+      "followup_number": 19,
+      "stage": "introduction",
+      "template": "standard_followup",
+      "status": "cancelled: unsubscribe",
+      "created_at": "2026-01-23T04:50:45.467732"
+    },
+    {
+      "prospect_email": "unsub@example.com",
+      "thread_id": "thread1",
+      "scheduled_at": "2026-01-25T04:56:04.270349",
+      "followup_number": 20,
+      "stage": "introduction",
+      "template": "standard_followup",
+      "status": "cancelled: unsubscribe",
+      "created_at": "2026-01-23T04:56:04.270355"
+    },
+    {
+      "prospect_email": "unsub@example.com",
+      "thread_id": "thread1",
+      "scheduled_at": "2026-01-25T05:00:22.382487",
+      "followup_number": 21,
+      "stage": "introduction",
+      "template": "standard_followup",
+      "status": "cancelled: unsubscribe",
+      "created_at": "2026-01-23T05:00:22.382498"
+    },
+    {
+      "prospect_email": "unsub@example.com",
+      "thread_id": "thread1",
+      "scheduled_at": "2026-01-25T20:09:17.846515",
+      "followup_number": 22,
+      "stage": "introduction",
+      "template": "standard_followup",
+      "status": "cancelled: unsubscribe",
+      "created_at": "2026-01-23T20:09:17.846520"
+    }
+  ],
+  "flow@example.com": [
+    {
+      "prospect_email": "flow@example.com",
+      "thread_id": "62fdf8cd661e",
+      "scheduled_at": "2026-01-24T04:16:53.700494",
+      "followup_number": 1,
+      "stage": "qualification",
+      "template": "standard_followup",
+      "status": "pending",
+      "created_at": "2026-01-22T04:16:53.700499"
+    },
+    {
+      "prospect_email": "flow@example.com",
+      "thread_id": "a233b16558b2",
+      "scheduled_at": "2026-01-24T04:16:53.701739",
+      "followup_number": 2,
+      "stage": "objection_handle",
+      "template": "standard_followup",
+      "status": "pending",
+      "created_at": "2026-01-22T04:16:53.701743"
+    },
+    {
+      "prospect_email": "flow@example.com",
+      "thread_id": "62fdf8cd661e",
+      "scheduled_at": "2026-01-24T04:37:47.602487",
+      "followup_number": 3,
+      "stage": "objection_handle",
+      "template": "standard_followup",
+      "status": "pending",
+      "created_at": "2026-01-22T04:37:47.602493"
+    },
+    {
+      "prospect_email": "flow@example.com",
+      "thread_id": "a233b16558b2",
+      "scheduled_at": "2026-01-24T04:37:47.604330",
+      "followup_number": 4,
+      "stage": "objection_handle",
+      "template": "standard_followup",
+      "status": "pending",
+      "created_at": "2026-01-22T04:37:47.604336"
+    }
+  ],
+  "empty@example.com": [
+    {
+      "prospect_email": "empty@example.com",
+      "thread_id": "d41d8cd98f00",
+      "scheduled_at": "2026-01-24T04:16:53.729588",
+      "followup_number": 1,
+      "stage": "qualification",
+      "template": "standard_followup",
+      "status": "pending",
+      "created_at": "2026-01-22T04:16:53.729593"
+    },
+    {
+      "prospect_email": "empty@example.com",
+      "thread_id": "d41d8cd98f00",
+      "scheduled_at": "2026-01-24T04:37:47.633803",
+      "followup_number": 2,
+      "stage": "qualification",
+      "template": "standard_followup",
+      "status": "pending",
+      "created_at": "2026-01-22T04:37:47.633807"
+    },
+    {
+      "prospect_email": "empty@example.com",
+      "thread_id": "d41d8cd98f00",
+      "scheduled_at": "2026-01-24T04:57:39.982207",
+      "followup_number": 3,
+      "stage": "qualification",
+      "template": "standard_followup",
+      "status": "pending",
+      "created_at": "2026-01-22T04:57:39.982212"
+    },
+    {
+      "prospect_email": "empty@example.com",
+      "thread_id": "d41d8cd98f00",
+      "scheduled_at": "2026-01-24T05:01:59.332982",
+      "followup_number": 4,
+      "stage": "qualification",
+      "template": "standard_followup",
+      "status": "pending",
+      "created_at": "2026-01-22T05:01:59.332988"
+    }
+  ],
+  "long@example.com": [
+    {
+      "prospect_email": "long@example.com",
+      "thread_id": "b234258ca7cb",
+      "scheduled_at": "2026-01-24T04:16:53.764210",
+      "followup_number": 1,
+      "stage": "qualification",
+      "template": "standard_followup",
+      "status": "pending",
+      "created_at": "2026-01-22T04:16:53.764216"
+    },
+    {
+      "prospect_email": "long@example.com",
+      "thread_id": "b234258ca7cb",
+      "scheduled_at": "2026-01-24T04:37:47.669348",
+      "followup_number": 2,
+      "stage": "qualification",
+      "template": "standard_followup",
+      "status": "pending",
+      "created_at": "2026-01-22T04:37:47.669360"
+    },
+    {
+      "prospect_email": "long@example.com",
+      "thread_id": "b234258ca7cb",
+      "scheduled_at": "2026-01-24T04:57:40.010575",
+      "followup_number": 3,
+      "stage": "qualification",
+      "template": "standard_followup",
+      "status": "pending",
+      "created_at": "2026-01-22T04:57:40.010582"
+    },
+    {
+      "prospect_email": "long@example.com",
+      "thread_id": "b234258ca7cb",
+      "scheduled_at": "2026-01-24T05:01:59.363984",
+      "followup_number": 4,
+      "stage": "qualification",
+      "template": "standard_followup",
+      "status": "pending",
+      "created_at": "2026-01-22T05:01:59.363991"
+    }
+  ],
+  "special@example.com": [
+    {
+      "prospect_email": "special@example.com",
+      "thread_id": "24fd857ce113",
+      "scheduled_at": "2026-01-24T04:16:53.783543",
+      "followup_number": 1,
+      "stage": "qualification",
+      "template": "standard_followup",
+      "status": "pending",
+      "created_at": "2026-01-22T04:16:53.783548"
+    },
+    {
+      "prospect_email": "special@example.com",
+      "thread_id": "24fd857ce113",
+      "scheduled_at": "2026-01-24T04:37:47.686479",
+      "followup_number": 2,
+      "stage": "qualification",
+      "template": "standard_followup",
+      "status": "pending",
+      "created_at": "2026-01-22T04:37:47.686490"
+    },
+    {
+      "prospect_email": "special@example.com",
+      "thread_id": "24fd857ce113",
+      "scheduled_at": "2026-01-24T04:57:40.029620",
+      "followup_number": 3,
+      "stage": "qualification",
+      "template": "standard_followup",
+      "status": "pending",
+      "created_at": "2026-01-22T04:57:40.029626"
+    },
+    {
+      "prospect_email": "special@example.com",
+      "thread_id": "24fd857ce113",
+      "scheduled_at": "2026-01-24T05:01:59.378012",
+      "followup_number": 4,
+      "stage": "qualification",
+      "template": "standard_followup",
+      "status": "pending",
+      "created_at": "2026-01-22T05:01:59.378017"
+    }
+  ]
+}

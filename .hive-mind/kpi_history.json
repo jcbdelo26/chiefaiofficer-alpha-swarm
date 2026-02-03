@@ -1,0 +1,50 @@
+{
+  "icp_match_rate": [
+    {
+      "value": 0,
+      "timestamp": "2026-01-17T17:47:19.698163"
+    }
+  ],
+  "ae_approval_rate": [
+    {
+      "value": 0,
+      "timestamp": "2026-01-17T17:47:19.698183"
+    }
+  ],
+  "email_open_rate": [
+    {
+      "value": 0,
+      "timestamp": "2026-01-17T17:47:19.698191"
+    }
+  ],
+  "reply_rate": [
+    {
+      "value": 0,
+      "timestamp": "2026-01-17T17:47:19.698196"
+    }
+  ],
+  "positive_reply_rate": [
+    {
+      "value": 0,
+      "timestamp": "2026-01-17T17:47:19.698201"
+    }
+  ],
+  "meeting_book_rate": [
+    {
+      "value": 0,
+      "timestamp": "2026-01-17T17:47:19.698207"
+    }
+  ],
+  "ghost_recovery_rate": [
+    {
+      "value": 0,
+      "timestamp": "2026-01-17T17:47:19.698212"
+    }
+  ],
+  "agent_accuracy": [
+    {
+      "value": 0,
+      "timestamp": "2026-01-17T17:47:19.698217"
+    }
+  ]
+}

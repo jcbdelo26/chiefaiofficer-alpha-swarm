@@ -1,0 +1,19 @@
+{
+    "name": "enricher-mcp",
+    "version": "1.0.0",
+    "description": "Lead enrichment MCP server using Clay, RB2B, and Exa",
+    "author": "Chiefaiofficer.com",
+    "tools": [
+        "enricher_enrich_lead",
+        "enricher_rb2b_match",
+        "enricher_company_intel",
+        "enricher_detect_intent",
+        "enricher_batch_enrich"
+    ],
+    "dependencies": {
+        "mcp": ">=0.1.0",
+        "requests": ">=2.31.0",
+        "exa-py": ">=1.0.0"
+    },
+    "entrypoint": "server.py"
+}

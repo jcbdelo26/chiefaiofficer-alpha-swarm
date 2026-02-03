@@ -1,0 +1,26 @@
+{
+  "email": "unsub@example.com",
+  "name": "unsub",
+  "company": "example.com",
+  "current_stage": "qualification",
+  "thread_id": "678686dfed6b",
+  "last_contact": "2026-01-22T04:16:53.635971",
+  "total_exchanges": 1,
+  "tone_profile": {
+    "formality": 0.5,
+    "warmth": 0.5,
+    "urgency": 0.0,
+    "complexity": 0.62,
+    "assertiveness": 0.5,
+    "sentiment": 0.0,
+    "avg_sentence_length": 6.0,
+    "vocabulary_richness": 1.0,
+    "keywords": [
+      "please",
+      "unsubscribe",
+      "emails"
+    ]
+  },
+  "tags": [],
+  "metadata": {}
+}

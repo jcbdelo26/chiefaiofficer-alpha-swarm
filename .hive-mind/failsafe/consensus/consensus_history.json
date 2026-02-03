@@ -1,0 +1,1508 @@
+{
+  "sessions": [
+    {
+      "session_id": "9ddb3ff456ed",
+      "action_type": "send_campaign",
+      "required_agreement": 0.67,
+      "max_rounds": 3,
+      "rounds": 0,
+      "final_result": "approve",
+      "escalated": false,
+      "started_at": "2026-01-22T04:50:25.076862",
+      "completed_at": "2026-01-22T04:50:25.076904",
+      "action_data": {
+        "agent": "GATEKEEPER",
+        "input_data": null
+      }
+    },
+    {
+      "session_id": "a56fecd691e0",
+      "action_type": "risky_op",
+      "required_agreement": 0.67,
+      "max_rounds": 3,
+      "rounds": 0,
+      "final_result": "reject",
+      "escalated": false,
+      "started_at": "2026-01-22T04:50:25.082937",
+      "completed_at": "2026-01-22T04:50:25.082985",
+      "action_data": {
+        "agent": "CRAFTER",
+        "input_data": null
+      }
+    },
+    {
+      "session_id": "1d4e44c4af36",
+      "action_type": "book_meeting",
+      "required_agreement": 0.67,
+      "max_rounds": 3,
+      "rounds": 0,
+      "final_result": "approve",
+      "escalated": false,
+      "started_at": "2026-01-22T04:50:25.086137",
+      "completed_at": "2026-01-22T04:50:25.086160",
+      "action_data": {
+        "agent": "SCHEDULER",
+        "input_data": {
+          "email": "test@example.com",
+          "date": "2025-01-22"
+        }
+      }
+    },
+    {
+      "session_id": "16a7fb912064",
+      "action_type": "send_campaign",
+      "required_agreement": 0.67,
+      "max_rounds": 3,
+      "rounds": 0,
+      "final_result": "approve",
+      "escalated": false,
+      "started_at": "2026-01-22T04:56:57.611423",
+      "completed_at": "2026-01-22T04:56:57.611452",
+      "action_data": {
+        "agent": "GATEKEEPER",
+        "input_data": null
+      }
+    },
+    {
+      "session_id": "67ae9f50bcb6",
+      "action_type": "risky_op",
+      "required_agreement": 0.67,
+      "max_rounds": 3,
+      "rounds": 0,
+      "final_result": "reject",
+      "escalated": false,
+      "started_at": "2026-01-22T04:56:57.615377",
+      "completed_at": "2026-01-22T04:56:57.615408",
+      "action_data": {
+        "agent": "CRAFTER",
+        "input_data": null
+      }
+    },
+    {
+      "session_id": "99bd31b9408c",
+      "action_type": "book_meeting",
+      "required_agreement": 0.67,
+      "max_rounds": 3,
+      "rounds": 0,
+      "final_result": "approve",
+      "escalated": false,
+      "started_at": "2026-01-22T04:56:57.618377",
+      "completed_at": "2026-01-22T04:56:57.618396",
+      "action_data": {
+        "agent": "SCHEDULER",
+        "input_data": {
+          "email": "test@example.com",
+          "date": "2025-01-22"
+        }
+      }
+    },
+    {
+      "session_id": "6c17bcd2fbba",
+      "action_type": "send_campaign",
+      "required_agreement": 0.67,
+      "max_rounds": 3,
+      "rounds": 0,
+      "final_result": "approve",
+      "escalated": false,
+      "started_at": "2026-01-22T04:57:44.627093",
+      "completed_at": "2026-01-22T04:57:44.627134",
+      "action_data": {
+        "agent": "GATEKEEPER",
+        "input_data": null
+      }
+    },
+    {
+      "session_id": "a2060c19d7b7",
+      "action_type": "risky_op",
+      "required_agreement": 0.67,
+      "max_rounds": 3,
+      "rounds": 0,
+      "final_result": "reject",
+      "escalated": false,
+      "started_at": "2026-01-22T04:57:44.633549",
+      "completed_at": "2026-01-22T04:57:44.633597",
+      "action_data": {
+        "agent": "CRAFTER",
+        "input_data": null
+      }
+    },
+    {
+      "session_id": "f453d4d092ee",
+      "action_type": "book_meeting",
+      "required_agreement": 0.67,
+      "max_rounds": 3,
+      "rounds": 0,
+      "final_result": "approve",
+      "escalated": false,
+      "started_at": "2026-01-22T04:57:44.638536",
+      "completed_at": "2026-01-22T04:57:44.638567",
+      "action_data": {
+        "agent": "SCHEDULER",
+        "input_data": {
+          "email": "test@example.com",
+          "date": "2025-01-22"
+        }
+      }
+    },
+    {
+      "session_id": "7a0a12c8965c",
+      "action_type": "send_campaign",
+      "required_agreement": 0.67,
+      "max_rounds": 3,
+      "rounds": 0,
+      "final_result": "approve",
+      "escalated": false,
+      "started_at": "2026-01-22T05:01:06.092864",
+      "completed_at": "2026-01-22T05:01:06.092909",
+      "action_data": {
+        "agent": "GATEKEEPER",
+        "input_data": null
+      }
+    },
+    {
+      "session_id": "388b6a9dc95c",
+      "action_type": "risky_op",
+      "required_agreement": 0.67,
+      "max_rounds": 3,
+      "rounds": 0,
+      "final_result": "reject",
+      "escalated": false,
+      "started_at": "2026-01-22T05:01:06.099528",
+      "completed_at": "2026-01-22T05:01:06.099577",
+      "action_data": {
+        "agent": "CRAFTER",
+        "input_data": null
+      }
+    },
+    {
+      "session_id": "2271c0a3e3d7",
+      "action_type": "book_meeting",
+      "required_agreement": 0.67,
+      "max_rounds": 3,
+      "rounds": 0,
+      "final_result": "approve",
+      "escalated": false,
+      "started_at": "2026-01-22T05:01:06.104587",
+      "completed_at": "2026-01-22T05:01:06.104619",
+      "action_data": {
+        "agent": "SCHEDULER",
+        "input_data": {
+          "email": "test@example.com",
+          "date": "2025-01-22"
+        }
+      }
+    },
+    {
+      "session_id": "4ec3612169aa",
+      "action_type": "send_campaign",
+      "required_agreement": 0.67,
+      "max_rounds": 3,
+      "rounds": 0,
+      "final_result": "approve",
+      "escalated": false,
+      "started_at": "2026-01-22T05:01:31.797321",
+      "completed_at": "2026-01-22T05:01:31.797365",
+      "action_data": {
+        "agent": "GATEKEEPER",
+        "input_data": null
+      }
+    },
+    {
+      "session_id": "d51a0609eb98",
+      "action_type": "risky_op",
+      "required_agreement": 0.67,
+      "max_rounds": 3,
+      "rounds": 0,
+      "final_result": "reject",
+      "escalated": false,
+      "started_at": "2026-01-22T05:01:31.803394",
+      "completed_at": "2026-01-22T05:01:31.803425",
+      "action_data": {
+        "agent": "CRAFTER",
+        "input_data": null
+      }
+    },
+    {
+      "session_id": "d465ec0a220c",
+      "action_type": "book_meeting",
+      "required_agreement": 0.67,
+      "max_rounds": 3,
+      "rounds": 0,
+      "final_result": "approve",
+      "escalated": false,
+      "started_at": "2026-01-22T05:01:31.806739",
+      "completed_at": "2026-01-22T05:01:31.806759",
+      "action_data": {
+        "agent": "SCHEDULER",
+        "input_data": {
+          "email": "test@example.com",
+          "date": "2025-01-22"
+        }
+      }
+    },
+    {
+      "session_id": "e4b19da711d1",
+      "action_type": "send_campaign",
+      "required_agreement": 0.67,
+      "max_rounds": 3,
+      "rounds": 0,
+      "final_result": "approve",
+      "escalated": false,
+      "started_at": "2026-01-22T05:02:03.793093",
+      "completed_at": "2026-01-22T05:02:03.793134",
+      "action_data": {
+        "agent": "GATEKEEPER",
+        "input_data": null
+      }
+    },
+    {
+      "session_id": "08a4dd672d47",
+      "action_type": "risky_op",
+      "required_agreement": 0.67,
+      "max_rounds": 3,
+      "rounds": 0,
+      "final_result": "reject",
+      "escalated": false,
+      "started_at": "2026-01-22T05:02:03.800797",
+      "completed_at": "2026-01-22T05:02:03.800861",
+      "action_data": {
+        "agent": "CRAFTER",
+        "input_data": null
+      }
+    },
+    {
+      "session_id": "20d756204e3a",
+      "action_type": "book_meeting",
+      "required_agreement": 0.67,
+      "max_rounds": 3,
+      "rounds": 0,
+      "final_result": "approve",
+      "escalated": false,
+      "started_at": "2026-01-22T05:02:03.806553",
+      "completed_at": "2026-01-22T05:02:03.806585",
+      "action_data": {
+        "agent": "SCHEDULER",
+        "input_data": {
+          "email": "test@example.com",
+          "date": "2025-01-22"
+        }
+      }
+    },
+    {
+      "session_id": "469db48af2cf",
+      "action_type": "send_campaign",
+      "required_agreement": 0.67,
+      "max_rounds": 3,
+      "rounds": 0,
+      "final_result": "approve",
+      "escalated": false,
+      "started_at": "2026-01-22T05:04:24.134320",
+      "completed_at": "2026-01-22T05:04:24.134362",
+      "action_data": {
+        "agent": "GATEKEEPER",
+        "input_data": null
+      }
+    },
+    {
+      "session_id": "d0e81dfd9378",
+      "action_type": "risky_op",
+      "required_agreement": 0.67,
+      "max_rounds": 3,
+      "rounds": 0,
+      "final_result": "reject",
+      "escalated": false,
+      "started_at": "2026-01-22T05:04:24.141176",
+      "completed_at": "2026-01-22T05:04:24.141223",
+      "action_data": {
+        "agent": "CRAFTER",
+        "input_data": null
+      }
+    },
+    {
+      "session_id": "85a0ed8c5c76",
+      "action_type": "book_meeting",
+      "required_agreement": 0.67,
+      "max_rounds": 3,
+      "rounds": 0,
+      "final_result": "approve",
+      "escalated": false,
+      "started_at": "2026-01-22T05:04:24.146678",
+      "completed_at": "2026-01-22T05:04:24.146711",
+      "action_data": {
+        "agent": "SCHEDULER",
+        "input_data": {
+          "email": "test@example.com",
+          "date": "2025-01-22"
+        }
+      }
+    },
+    {
+      "session_id": "a943b7cbcd9b",
+      "action_type": "campaign_approval",
+      "required_agreement": 0.67,
+      "max_rounds": 3,
+      "rounds": 0,
+      "final_result": "approve",
+      "escalated": false,
+      "started_at": "2026-01-22T05:05:48.005884",
+      "completed_at": "2026-01-22T05:05:48.006091",
+      "action_data": {
+        "campaign_id": "C001",
+        "type": "outbound"
+      }
+    },
+    {
+      "session_id": "64b450e7ad7e",
+      "action_type": "send_campaign",
+      "required_agreement": 0.67,
+      "max_rounds": 3,
+      "rounds": 0,
+      "final_result": "approve",
+      "escalated": false,
+      "started_at": "2026-01-22T05:08:36.399337",
+      "completed_at": "2026-01-22T05:08:36.399366",
+      "action_data": {
+        "agent": "GATEKEEPER",
+        "input_data": null
+      }
+    },
+    {
+      "session_id": "615148d26521",
+      "action_type": "risky_op",
+      "required_agreement": 0.67,
+      "max_rounds": 3,
+      "rounds": 0,
+      "final_result": "reject",
+      "escalated": false,
+      "started_at": "2026-01-22T05:08:36.403648",
+      "completed_at": "2026-01-22T05:08:36.403675",
+      "action_data": {
+        "agent": "CRAFTER",
+        "input_data": null
+      }
+    },
+    {
+      "session_id": "fd89048693a1",
+      "action_type": "book_meeting",
+      "required_agreement": 0.67,
+      "max_rounds": 3,
+      "rounds": 0,
+      "final_result": "approve",
+      "escalated": false,
+      "started_at": "2026-01-22T05:08:36.407068",
+      "completed_at": "2026-01-22T05:08:36.407086",
+      "action_data": {
+        "agent": "SCHEDULER",
+        "input_data": {
+          "email": "test@example.com",
+          "date": "2025-01-22"
+        }
+      }
+    },
+    {
+      "session_id": "818aa639528b",
+      "action_type": "send_campaign",
+      "required_agreement": 0.67,
+      "max_rounds": 3,
+      "rounds": 0,
+      "final_result": "approve",
+      "escalated": false,
+      "started_at": "2026-01-22T05:08:49.279018",
+      "completed_at": "2026-01-22T05:08:49.279059",
+      "action_data": {
+        "agent": "GATEKEEPER",
+        "input_data": null
+      }
+    },
+    {
+      "session_id": "b6a61f4260a6",
+      "action_type": "risky_op",
+      "required_agreement": 0.67,
+      "max_rounds": 3,
+      "rounds": 0,
+      "final_result": "reject",
+      "escalated": false,
+      "started_at": "2026-01-22T05:08:49.285995",
+      "completed_at": "2026-01-22T05:08:49.286039",
+      "action_data": {
+        "agent": "CRAFTER",
+        "input_data": null
+      }
+    },
+    {
+      "session_id": "e4e49090e614",
+      "action_type": "book_meeting",
+      "required_agreement": 0.67,
+      "max_rounds": 3,
+      "rounds": 0,
+      "final_result": "approve",
+      "escalated": false,
+      "started_at": "2026-01-22T05:08:49.291693",
+      "completed_at": "2026-01-22T05:08:49.291723",
+      "action_data": {
+        "agent": "SCHEDULER",
+        "input_data": {
+          "email": "test@example.com",
+          "date": "2025-01-22"
+        }
+      }
+    },
+    {
+      "session_id": "4271947159a7",
+      "action_type": "send_campaign",
+      "required_agreement": 0.67,
+      "max_rounds": 3,
+      "rounds": 0,
+      "final_result": "approve",
+      "escalated": false,
+      "started_at": "2026-01-22T05:10:04.812842",
+      "completed_at": "2026-01-22T05:10:04.812887",
+      "action_data": {
+        "agent": "GATEKEEPER",
+        "input_data": null
+      }
+    },
+    {
+      "session_id": "009db0676e74",
+      "action_type": "risky_op",
+      "required_agreement": 0.67,
+      "max_rounds": 3,
+      "rounds": 0,
+      "final_result": "reject",
+      "escalated": false,
+      "started_at": "2026-01-22T05:10:04.820929",
+      "completed_at": "2026-01-22T05:10:04.820976",
+      "action_data": {
+        "agent": "CRAFTER",
+        "input_data": null
+      }
+    },
+    {
+      "session_id": "40eb66e54d73",
+      "action_type": "book_meeting",
+      "required_agreement": 0.67,
+      "max_rounds": 3,
+      "rounds": 0,
+      "final_result": "approve",
+      "escalated": false,
+      "started_at": "2026-01-22T05:10:04.826903",
+      "completed_at": "2026-01-22T05:10:04.826937",
+      "action_data": {
+        "agent": "SCHEDULER",
+        "input_data": {
+          "email": "test@example.com",
+          "date": "2025-01-22"
+        }
+      }
+    },
+    {
+      "session_id": "796b45c2b990",
+      "action_type": "send_campaign",
+      "required_agreement": 0.67,
+      "max_rounds": 3,
+      "rounds": 0,
+      "final_result": "approve",
+      "escalated": false,
+      "started_at": "2026-01-22T05:14:17.989557",
+      "completed_at": "2026-01-22T05:14:17.989591",
+      "action_data": {
+        "agent": "GATEKEEPER",
+        "input_data": null
+      }
+    },
+    {
+      "session_id": "7539def2b103",
+      "action_type": "risky_op",
+      "required_agreement": 0.67,
+      "max_rounds": 3,
+      "rounds": 0,
+      "final_result": "reject",
+      "escalated": false,
+      "started_at": "2026-01-22T05:14:17.994813",
+      "completed_at": "2026-01-22T05:14:17.994846",
+      "action_data": {
+        "agent": "CRAFTER",
+        "input_data": null
+      }
+    },
+    {
+      "session_id": "28803810ed1e",
+      "action_type": "book_meeting",
+      "required_agreement": 0.67,
+      "max_rounds": 3,
+      "rounds": 0,
+      "final_result": "approve",
+      "escalated": false,
+      "started_at": "2026-01-22T05:14:17.998869",
+      "completed_at": "2026-01-22T05:14:17.998895",
+      "action_data": {
+        "agent": "SCHEDULER",
+        "input_data": {
+          "email": "test@example.com",
+          "date": "2025-01-22"
+        }
+      }
+    },
+    {
+      "session_id": "187686698586",
+      "action_type": "send_campaign",
+      "required_agreement": 0.67,
+      "max_rounds": 3,
+      "rounds": 0,
+      "final_result": "approve",
+      "escalated": false,
+      "started_at": "2026-01-22T05:16:21.157124",
+      "completed_at": "2026-01-22T05:16:21.157168",
+      "action_data": {
+        "agent": "GATEKEEPER",
+        "input_data": null
+      }
+    },
+    {
+      "session_id": "ae21597f4ed7",
+      "action_type": "risky_op",
+      "required_agreement": 0.67,
+      "max_rounds": 3,
+      "rounds": 0,
+      "final_result": "reject",
+      "escalated": false,
+      "started_at": "2026-01-22T05:16:21.164599",
+      "completed_at": "2026-01-22T05:16:21.164646",
+      "action_data": {
+        "agent": "CRAFTER",
+        "input_data": null
+      }
+    },
+    {
+      "session_id": "a9c18663526e",
+      "action_type": "book_meeting",
+      "required_agreement": 0.67,
+      "max_rounds": 3,
+      "rounds": 0,
+      "final_result": "approve",
+      "escalated": false,
+      "started_at": "2026-01-22T05:16:21.170586",
+      "completed_at": "2026-01-22T05:16:21.170619",
+      "action_data": {
+        "agent": "SCHEDULER",
+        "input_data": {
+          "email": "test@example.com",
+          "date": "2025-01-22"
+        }
+      }
+    },
+    {
+      "session_id": "98919a7ca298",
+      "action_type": "send_campaign",
+      "required_agreement": 0.67,
+      "max_rounds": 3,
+      "rounds": 0,
+      "final_result": "approve",
+      "escalated": false,
+      "started_at": "2026-01-22T05:16:59.013530",
+      "completed_at": "2026-01-22T05:16:59.013571",
+      "action_data": {
+        "agent": "GATEKEEPER",
+        "input_data": null
+      }
+    },
+    {
+      "session_id": "98c5a062160c",
+      "action_type": "risky_op",
+      "required_agreement": 0.67,
+      "max_rounds": 3,
+      "rounds": 0,
+      "final_result": "reject",
+      "escalated": false,
+      "started_at": "2026-01-22T05:16:59.021087",
+      "completed_at": "2026-01-22T05:16:59.021135",
+      "action_data": {
+        "agent": "CRAFTER",
+        "input_data": null
+      }
+    },
+    {
+      "session_id": "6aa94cd856f3",
+      "action_type": "book_meeting",
+      "required_agreement": 0.67,
+      "max_rounds": 3,
+      "rounds": 0,
+      "final_result": "approve",
+      "escalated": false,
+      "started_at": "2026-01-22T05:16:59.027275",
+      "completed_at": "2026-01-22T05:16:59.027311",
+      "action_data": {
+        "agent": "SCHEDULER",
+        "input_data": {
+          "email": "test@example.com",
+          "date": "2025-01-22"
+        }
+      }
+    },
+    {
+      "session_id": "ad69067a2b34",
+      "action_type": "send_campaign",
+      "required_agreement": 0.67,
+      "max_rounds": 3,
+      "rounds": 0,
+      "final_result": "approve",
+      "escalated": false,
+      "started_at": "2026-01-22T05:38:53.898588",
+      "completed_at": "2026-01-22T05:38:53.898627",
+      "action_data": {
+        "agent": "GATEKEEPER",
+        "input_data": null
+      }
+    },
+    {
+      "session_id": "03dfec803af0",
+      "action_type": "risky_op",
+      "required_agreement": 0.67,
+      "max_rounds": 3,
+      "rounds": 0,
+      "final_result": "reject",
+      "escalated": false,
+      "started_at": "2026-01-22T05:38:53.905904",
+      "completed_at": "2026-01-22T05:38:53.905953",
+      "action_data": {
+        "agent": "CRAFTER",
+        "input_data": null
+      }
+    },
+    {
+      "session_id": "65c2f8c549e6",
+      "action_type": "book_meeting",
+      "required_agreement": 0.67,
+      "max_rounds": 3,
+      "rounds": 0,
+      "final_result": "approve",
+      "escalated": false,
+      "started_at": "2026-01-22T05:38:53.911972",
+      "completed_at": "2026-01-22T05:38:53.912003",
+      "action_data": {
+        "agent": "SCHEDULER",
+        "input_data": {
+          "email": "test@example.com",
+          "date": "2025-01-22"
+        }
+      }
+    },
+    {
+      "session_id": "f2c07ac585f3",
+      "action_type": "send_campaign",
+      "required_agreement": 0.67,
+      "max_rounds": 3,
+      "rounds": 0,
+      "final_result": "approve",
+      "escalated": false,
+      "started_at": "2026-01-22T05:49:47.673414",
+      "completed_at": "2026-01-22T05:49:47.673461",
+      "action_data": {
+        "agent": "GATEKEEPER",
+        "input_data": null
+      }
+    },
+    {
+      "session_id": "887820cb1296",
+      "action_type": "risky_op",
+      "required_agreement": 0.67,
+      "max_rounds": 3,
+      "rounds": 0,
+      "final_result": "reject",
+      "escalated": false,
+      "started_at": "2026-01-22T05:49:47.686369",
+      "completed_at": "2026-01-22T05:49:47.686424",
+      "action_data": {
+        "agent": "CRAFTER",
+        "input_data": null
+      }
+    },
+    {
+      "session_id": "a42348a8266b",
+      "action_type": "book_meeting",
+      "required_agreement": 0.67,
+      "max_rounds": 3,
+      "rounds": 0,
+      "final_result": "approve",
+      "escalated": false,
+      "started_at": "2026-01-22T05:49:47.695869",
+      "completed_at": "2026-01-22T05:49:47.695914",
+      "action_data": {
+        "agent": "SCHEDULER",
+        "input_data": {
+          "email": "test@example.com",
+          "date": "2025-01-22"
+        }
+      }
+    },
+    {
+      "session_id": "41b58dc7cc8e",
+      "action_type": "send_campaign",
+      "required_agreement": 0.67,
+      "max_rounds": 3,
+      "rounds": 0,
+      "final_result": "approve",
+      "escalated": false,
+      "started_at": "2026-01-22T05:52:06.409999",
+      "completed_at": "2026-01-22T05:52:06.410040",
+      "action_data": {
+        "agent": "GATEKEEPER",
+        "input_data": null
+      }
+    },
+    {
+      "session_id": "0624b6a236c3",
+      "action_type": "risky_op",
+      "required_agreement": 0.67,
+      "max_rounds": 3,
+      "rounds": 0,
+      "final_result": "reject",
+      "escalated": false,
+      "started_at": "2026-01-22T05:52:06.415813",
+      "completed_at": "2026-01-22T05:52:06.415858",
+      "action_data": {
+        "agent": "CRAFTER",
+        "input_data": null
+      }
+    },
+    {
+      "session_id": "8fd536dcfd3e",
+      "action_type": "book_meeting",
+      "required_agreement": 0.67,
+      "max_rounds": 3,
+      "rounds": 0,
+      "final_result": "approve",
+      "escalated": false,
+      "started_at": "2026-01-22T05:52:06.420626",
+      "completed_at": "2026-01-22T05:52:06.420653",
+      "action_data": {
+        "agent": "SCHEDULER",
+        "input_data": {
+          "email": "test@example.com",
+          "date": "2025-01-22"
+        }
+      }
+    },
+    {
+      "session_id": "43224bd13957",
+      "action_type": "send_campaign",
+      "required_agreement": 0.67,
+      "max_rounds": 3,
+      "rounds": 0,
+      "final_result": "approve",
+      "escalated": false,
+      "started_at": "2026-01-22T06:41:07.743612",
+      "completed_at": "2026-01-22T06:41:07.743655",
+      "action_data": {
+        "agent": "GATEKEEPER",
+        "input_data": null
+      }
+    },
+    {
+      "session_id": "1af3a1946277",
+      "action_type": "risky_op",
+      "required_agreement": 0.67,
+      "max_rounds": 3,
+      "rounds": 0,
+      "final_result": "reject",
+      "escalated": false,
+      "started_at": "2026-01-22T06:41:07.749126",
+      "completed_at": "2026-01-22T06:41:07.749157",
+      "action_data": {
+        "agent": "CRAFTER",
+        "input_data": null
+      }
+    },
+    {
+      "session_id": "651fe7f439ef",
+      "action_type": "book_meeting",
+      "required_agreement": 0.67,
+      "max_rounds": 3,
+      "rounds": 0,
+      "final_result": "approve",
+      "escalated": false,
+      "started_at": "2026-01-22T06:41:07.753526",
+      "completed_at": "2026-01-22T06:41:07.753552",
+      "action_data": {
+        "agent": "SCHEDULER",
+        "input_data": {
+          "email": "test@example.com",
+          "date": "2025-01-22"
+        }
+      }
+    },
+    {
+      "session_id": "ef067ec04ba5",
+      "action_type": "send_campaign",
+      "required_agreement": 0.67,
+      "max_rounds": 3,
+      "rounds": 0,
+      "final_result": "approve",
+      "escalated": false,
+      "started_at": "2026-01-22T06:46:34.859746",
+      "completed_at": "2026-01-22T06:46:34.859788",
+      "action_data": {
+        "agent": "GATEKEEPER",
+        "input_data": null
+      }
+    },
+    {
+      "session_id": "e374670dc498",
+      "action_type": "risky_op",
+      "required_agreement": 0.67,
+      "max_rounds": 3,
+      "rounds": 0,
+      "final_result": "reject",
+      "escalated": false,
+      "started_at": "2026-01-22T06:46:34.867991",
+      "completed_at": "2026-01-22T06:46:34.868037",
+      "action_data": {
+        "agent": "CRAFTER",
+        "input_data": null
+      }
+    },
+    {
+      "session_id": "587c0752273f",
+      "action_type": "book_meeting",
+      "required_agreement": 0.67,
+      "max_rounds": 3,
+      "rounds": 0,
+      "final_result": "approve",
+      "escalated": false,
+      "started_at": "2026-01-22T06:46:34.874369",
+      "completed_at": "2026-01-22T06:46:34.874394",
+      "action_data": {
+        "agent": "SCHEDULER",
+        "input_data": {
+          "email": "test@example.com",
+          "date": "2025-01-22"
+        }
+      }
+    },
+    {
+      "session_id": "06016b39a630",
+      "action_type": "send_campaign",
+      "required_agreement": 0.67,
+      "max_rounds": 3,
+      "rounds": 0,
+      "final_result": "approve",
+      "escalated": false,
+      "started_at": "2026-01-22T18:40:21.317225",
+      "completed_at": "2026-01-22T18:40:21.317282",
+      "action_data": {
+        "agent": "GATEKEEPER",
+        "input_data": null
+      }
+    },
+    {
+      "session_id": "37fedc5c23d2",
+      "action_type": "risky_op",
+      "required_agreement": 0.67,
+      "max_rounds": 3,
+      "rounds": 0,
+      "final_result": "reject",
+      "escalated": false,
+      "started_at": "2026-01-22T18:40:21.326247",
+      "completed_at": "2026-01-22T18:40:21.326314",
+      "action_data": {
+        "agent": "CRAFTER",
+        "input_data": null
+      }
+    },
+    {
+      "session_id": "ed31640c1946",
+      "action_type": "book_meeting",
+      "required_agreement": 0.67,
+      "max_rounds": 3,
+      "rounds": 0,
+      "final_result": "approve",
+      "escalated": false,
+      "started_at": "2026-01-22T18:40:21.335895",
+      "completed_at": "2026-01-22T18:40:21.335926",
+      "action_data": {
+        "agent": "SCHEDULER",
+        "input_data": {
+          "email": "test@example.com",
+          "date": "2025-01-22"
+        }
+      }
+    },
+    {
+      "session_id": "68f94d4bb778",
+      "action_type": "send_campaign",
+      "required_agreement": 0.67,
+      "max_rounds": 3,
+      "rounds": 0,
+      "final_result": "approve",
+      "escalated": false,
+      "started_at": "2026-01-22T18:58:11.282748",
+      "completed_at": "2026-01-22T18:58:11.282814",
+      "action_data": {
+        "agent": "GATEKEEPER",
+        "input_data": null
+      }
+    },
+    {
+      "session_id": "9873bd41d7fc",
+      "action_type": "risky_op",
+      "required_agreement": 0.67,
+      "max_rounds": 3,
+      "rounds": 0,
+      "final_result": "reject",
+      "escalated": false,
+      "started_at": "2026-01-22T18:58:11.293792",
+      "completed_at": "2026-01-22T18:58:11.293861",
+      "action_data": {
+        "agent": "CRAFTER",
+        "input_data": null
+      }
+    },
+    {
+      "session_id": "35191d2b55b1",
+      "action_type": "book_meeting",
+      "required_agreement": 0.67,
+      "max_rounds": 3,
+      "rounds": 0,
+      "final_result": "approve",
+      "escalated": false,
+      "started_at": "2026-01-22T18:58:11.301380",
+      "completed_at": "2026-01-22T18:58:11.301408",
+      "action_data": {
+        "agent": "SCHEDULER",
+        "input_data": {
+          "email": "test@example.com",
+          "date": "2025-01-22"
+        }
+      }
+    },
+    {
+      "session_id": "e3ec14189bc2",
+      "action_type": "send_campaign",
+      "required_agreement": 0.67,
+      "max_rounds": 3,
+      "rounds": 0,
+      "final_result": "approve",
+      "escalated": false,
+      "started_at": "2026-01-22T19:01:20.958823",
+      "completed_at": "2026-01-22T19:01:20.958877",
+      "action_data": {
+        "agent": "GATEKEEPER",
+        "input_data": null
+      }
+    },
+    {
+      "session_id": "b62bbbdb567d",
+      "action_type": "risky_op",
+      "required_agreement": 0.67,
+      "max_rounds": 3,
+      "rounds": 0,
+      "final_result": "reject",
+      "escalated": false,
+      "started_at": "2026-01-22T19:01:20.969024",
+      "completed_at": "2026-01-22T19:01:20.969091",
+      "action_data": {
+        "agent": "CRAFTER",
+        "input_data": null
+      }
+    },
+    {
+      "session_id": "fd91cbb0029d",
+      "action_type": "book_meeting",
+      "required_agreement": 0.67,
+      "max_rounds": 3,
+      "rounds": 0,
+      "final_result": "approve",
+      "escalated": false,
+      "started_at": "2026-01-22T19:01:20.976600",
+      "completed_at": "2026-01-22T19:01:20.976639",
+      "action_data": {
+        "agent": "SCHEDULER",
+        "input_data": {
+          "email": "test@example.com",
+          "date": "2025-01-22"
+        }
+      }
+    },
+    {
+      "session_id": "13b1fd61f936",
+      "action_type": "send_campaign",
+      "required_agreement": 0.67,
+      "max_rounds": 3,
+      "rounds": 0,
+      "final_result": "approve",
+      "escalated": false,
+      "started_at": "2026-01-22T19:09:39.809706",
+      "completed_at": "2026-01-22T19:09:39.809773",
+      "action_data": {
+        "agent": "GATEKEEPER",
+        "input_data": null
+      }
+    },
+    {
+      "session_id": "ce6c940daa3a",
+      "action_type": "risky_op",
+      "required_agreement": 0.67,
+      "max_rounds": 3,
+      "rounds": 0,
+      "final_result": "reject",
+      "escalated": false,
+      "started_at": "2026-01-22T19:09:39.819852",
+      "completed_at": "2026-01-22T19:09:39.819903",
+      "action_data": {
+        "agent": "CRAFTER",
+        "input_data": null
+      }
+    },
+    {
+      "session_id": "d2d287e68ae0",
+      "action_type": "book_meeting",
+      "required_agreement": 0.67,
+      "max_rounds": 3,
+      "rounds": 0,
+      "final_result": "approve",
+      "escalated": false,
+      "started_at": "2026-01-22T19:09:39.825081",
+      "completed_at": "2026-01-22T19:09:39.825103",
+      "action_data": {
+        "agent": "SCHEDULER",
+        "input_data": {
+          "email": "test@example.com",
+          "date": "2025-01-22"
+        }
+      }
+    },
+    {
+      "session_id": "5f8c7f3c4d75",
+      "action_type": "send_campaign",
+      "required_agreement": 0.67,
+      "max_rounds": 3,
+      "rounds": 0,
+      "final_result": "approve",
+      "escalated": false,
+      "started_at": "2026-01-22T19:13:51.809169",
+      "completed_at": "2026-01-22T19:13:51.809211",
+      "action_data": {
+        "agent": "GATEKEEPER",
+        "input_data": null
+      }
+    },
+    {
+      "session_id": "f7ad3925fb79",
+      "action_type": "risky_op",
+      "required_agreement": 0.67,
+      "max_rounds": 3,
+      "rounds": 0,
+      "final_result": "reject",
+      "escalated": false,
+      "started_at": "2026-01-22T19:13:51.818177",
+      "completed_at": "2026-01-22T19:13:51.818224",
+      "action_data": {
+        "agent": "CRAFTER",
+        "input_data": null
+      }
+    },
+    {
+      "session_id": "61846ec96253",
+      "action_type": "book_meeting",
+      "required_agreement": 0.67,
+      "max_rounds": 3,
+      "rounds": 0,
+      "final_result": "approve",
+      "escalated": false,
+      "started_at": "2026-01-22T19:13:51.823872",
+      "completed_at": "2026-01-22T19:13:51.823892",
+      "action_data": {
+        "agent": "SCHEDULER",
+        "input_data": {
+          "email": "test@example.com",
+          "date": "2025-01-22"
+        }
+      }
+    },
+    {
+      "session_id": "a2a5e0b8d36b",
+      "action_type": "send_campaign",
+      "required_agreement": 0.67,
+      "max_rounds": 3,
+      "rounds": 0,
+      "final_result": "approve",
+      "escalated": false,
+      "started_at": "2026-01-22T19:16:28.305293",
+      "completed_at": "2026-01-22T19:16:28.305339",
+      "action_data": {
+        "agent": "GATEKEEPER",
+        "input_data": null
+      }
+    },
+    {
+      "session_id": "eb205513726c",
+      "action_type": "risky_op",
+      "required_agreement": 0.67,
+      "max_rounds": 3,
+      "rounds": 0,
+      "final_result": "reject",
+      "escalated": false,
+      "started_at": "2026-01-22T19:16:28.314868",
+      "completed_at": "2026-01-22T19:16:28.314916",
+      "action_data": {
+        "agent": "CRAFTER",
+        "input_data": null
+      }
+    },
+    {
+      "session_id": "efa9481f5ed0",
+      "action_type": "book_meeting",
+      "required_agreement": 0.67,
+      "max_rounds": 3,
+      "rounds": 0,
+      "final_result": "approve",
+      "escalated": false,
+      "started_at": "2026-01-22T19:16:28.322337",
+      "completed_at": "2026-01-22T19:16:28.322362",
+      "action_data": {
+        "agent": "SCHEDULER",
+        "input_data": {
+          "email": "test@example.com",
+          "date": "2025-01-22"
+        }
+      }
+    },
+    {
+      "session_id": "cc7414b5c86c",
+      "action_type": "send_campaign",
+      "required_agreement": 0.67,
+      "max_rounds": 3,
+      "rounds": 0,
+      "final_result": "approve",
+      "escalated": false,
+      "started_at": "2026-01-22T19:17:46.977930",
+      "completed_at": "2026-01-22T19:17:46.977971",
+      "action_data": {
+        "agent": "GATEKEEPER",
+        "input_data": null
+      }
+    },
+    {
+      "session_id": "a91619f9bfc7",
+      "action_type": "risky_op",
+      "required_agreement": 0.67,
+      "max_rounds": 3,
+      "rounds": 0,
+      "final_result": "reject",
+      "escalated": false,
+      "started_at": "2026-01-22T19:17:46.987061",
+      "completed_at": "2026-01-22T19:17:46.987105",
+      "action_data": {
+        "agent": "CRAFTER",
+        "input_data": null
+      }
+    },
+    {
+      "session_id": "bfbff37126dc",
+      "action_type": "book_meeting",
+      "required_agreement": 0.67,
+      "max_rounds": 3,
+      "rounds": 0,
+      "final_result": "approve",
+      "escalated": false,
+      "started_at": "2026-01-22T19:17:46.994826",
+      "completed_at": "2026-01-22T19:17:46.994859",
+      "action_data": {
+        "agent": "SCHEDULER",
+        "input_data": {
+          "email": "test@example.com",
+          "date": "2025-01-22"
+        }
+      }
+    },
+    {
+      "session_id": "b14e11f5ccac",
+      "action_type": "send_campaign",
+      "required_agreement": 0.67,
+      "max_rounds": 3,
+      "rounds": 0,
+      "final_result": "approve",
+      "escalated": false,
+      "started_at": "2026-01-22T19:20:41.360589",
+      "completed_at": "2026-01-22T19:20:41.360644",
+      "action_data": {
+        "agent": "GATEKEEPER",
+        "input_data": null
+      }
+    },
+    {
+      "session_id": "3a4ceb4397d0",
+      "action_type": "risky_op",
+      "required_agreement": 0.67,
+      "max_rounds": 3,
+      "rounds": 0,
+      "final_result": "reject",
+      "escalated": false,
+      "started_at": "2026-01-22T19:20:41.373668",
+      "completed_at": "2026-01-22T19:20:41.373736",
+      "action_data": {
+        "agent": "CRAFTER",
+        "input_data": null
+      }
+    },
+    {
+      "session_id": "3466b45f2be9",
+      "action_type": "book_meeting",
+      "required_agreement": 0.67,
+      "max_rounds": 3,
+      "rounds": 0,
+      "final_result": "approve",
+      "escalated": false,
+      "started_at": "2026-01-22T19:20:41.382655",
+      "completed_at": "2026-01-22T19:20:41.382686",
+      "action_data": {
+        "agent": "SCHEDULER",
+        "input_data": {
+          "email": "test@example.com",
+          "date": "2025-01-22"
+        }
+      }
+    },
+    {
+      "session_id": "460a8573b944",
+      "action_type": "send_campaign",
+      "required_agreement": 0.67,
+      "max_rounds": 3,
+      "rounds": 0,
+      "final_result": "approve",
+      "escalated": false,
+      "started_at": "2026-01-22T20:04:12.978595",
+      "completed_at": "2026-01-22T20:04:12.978651",
+      "action_data": {
+        "agent": "GATEKEEPER",
+        "input_data": null
+      }
+    },
+    {
+      "session_id": "07cbddf12573",
+      "action_type": "risky_op",
+      "required_agreement": 0.67,
+      "max_rounds": 3,
+      "rounds": 0,
+      "final_result": "reject",
+      "escalated": false,
+      "started_at": "2026-01-22T20:04:12.993149",
+      "completed_at": "2026-01-22T20:04:12.993213",
+      "action_data": {
+        "agent": "CRAFTER",
+        "input_data": null
+      }
+    },
+    {
+      "session_id": "21e2e8c66c49",
+      "action_type": "book_meeting",
+      "required_agreement": 0.67,
+      "max_rounds": 3,
+      "rounds": 0,
+      "final_result": "approve",
+      "escalated": false,
+      "started_at": "2026-01-22T20:04:13.003747",
+      "completed_at": "2026-01-22T20:04:13.003778",
+      "action_data": {
+        "agent": "SCHEDULER",
+        "input_data": {
+          "email": "test@example.com",
+          "date": "2025-01-22"
+        }
+      }
+    },
+    {
+      "session_id": "8aa1cb5c9bb0",
+      "action_type": "send_campaign",
+      "required_agreement": 0.67,
+      "max_rounds": 3,
+      "rounds": 0,
+      "final_result": "approve",
+      "escalated": false,
+      "started_at": "2026-01-23T04:50:53.205694",
+      "completed_at": "2026-01-23T04:50:53.205737",
+      "action_data": {
+        "agent": "GATEKEEPER",
+        "input_data": null
+      }
+    },
+    {
+      "session_id": "1e35ba2cbce8",
+      "action_type": "risky_op",
+      "required_agreement": 0.67,
+      "max_rounds": 3,
+      "rounds": 0,
+      "final_result": "reject",
+      "escalated": false,
+      "started_at": "2026-01-23T04:50:53.214672",
+      "completed_at": "2026-01-23T04:50:53.214723",
+      "action_data": {
+        "agent": "CRAFTER",
+        "input_data": null
+      }
+    },
+    {
+      "session_id": "27148ea36b64",
+      "action_type": "book_meeting",
+      "required_agreement": 0.67,
+      "max_rounds": 3,
+      "rounds": 0,
+      "final_result": "approve",
+      "escalated": false,
+      "started_at": "2026-01-23T04:50:53.222826",
+      "completed_at": "2026-01-23T04:50:53.222855",
+      "action_data": {
+        "agent": "SCHEDULER",
+        "input_data": {
+          "email": "test@example.com",
+          "date": "2025-01-22"
+        }
+      }
+    },
+    {
+      "session_id": "583a8b66a2c9",
+      "action_type": "send_campaign",
+      "required_agreement": 0.67,
+      "max_rounds": 3,
+      "rounds": 0,
+      "final_result": "approve",
+      "escalated": false,
+      "started_at": "2026-01-23T04:56:10.123351",
+      "completed_at": "2026-01-23T04:56:10.123383",
+      "action_data": {
+        "agent": "GATEKEEPER",
+        "input_data": null
+      }
+    },
+    {
+      "session_id": "55a0df60f39e",
+      "action_type": "risky_op",
+      "required_agreement": 0.67,
+      "max_rounds": 3,
+      "rounds": 0,
+      "final_result": "reject",
+      "escalated": false,
+      "started_at": "2026-01-23T04:56:10.129627",
+      "completed_at": "2026-01-23T04:56:10.129659",
+      "action_data": {
+        "agent": "CRAFTER",
+        "input_data": null
+      }
+    },
+    {
+      "session_id": "a351a272affa",
+      "action_type": "book_meeting",
+      "required_agreement": 0.67,
+      "max_rounds": 3,
+      "rounds": 0,
+      "final_result": "approve",
+      "escalated": false,
+      "started_at": "2026-01-23T04:56:10.136063",
+      "completed_at": "2026-01-23T04:56:10.136086",
+      "action_data": {
+        "agent": "SCHEDULER",
+        "input_data": {
+          "email": "test@example.com",
+          "date": "2025-01-22"
+        }
+      }
+    },
+    {
+      "session_id": "3298e81d5a02",
+      "action_type": "send_campaign",
+      "required_agreement": 0.67,
+      "max_rounds": 3,
+      "rounds": 0,
+      "final_result": "approve",
+      "escalated": false,
+      "started_at": "2026-01-23T05:00:28.240448",
+      "completed_at": "2026-01-23T05:00:28.240490",
+      "action_data": {
+        "agent": "GATEKEEPER",
+        "input_data": null
+      }
+    },
+    {
+      "session_id": "ce1826099d83",
+      "action_type": "risky_op",
+      "required_agreement": 0.67,
+      "max_rounds": 3,
+      "rounds": 0,
+      "final_result": "reject",
+      "escalated": false,
+      "started_at": "2026-01-23T05:00:28.247508",
+      "completed_at": "2026-01-23T05:00:28.247542",
+      "action_data": {
+        "agent": "CRAFTER",
+        "input_data": null
+      }
+    },
+    {
+      "session_id": "36a9e96597b3",
+      "action_type": "book_meeting",
+      "required_agreement": 0.67,
+      "max_rounds": 3,
+      "rounds": 0,
+      "final_result": "approve",
+      "escalated": false,
+      "started_at": "2026-01-23T05:00:28.253092",
+      "completed_at": "2026-01-23T05:00:28.253115",
+      "action_data": {
+        "agent": "SCHEDULER",
+        "input_data": {
+          "email": "test@example.com",
+          "date": "2025-01-22"
+        }
+      }
+    },
+    {
+      "session_id": "5f6f32ce8f1a",
+      "action_type": "send_campaign",
+      "required_agreement": 0.67,
+      "max_rounds": 3,
+      "rounds": 1,
+      "final_result": "approve",
+      "escalated": false,
+      "started_at": "2026-01-23T20:09:36.733430",
+      "completed_at": "2026-01-23T20:09:36.733484",
+      "action_data": {
+        "agent": "GATEKEEPER",
+        "input_data": null
+      }
+    },
+    {
+      "session_id": "7218e6d4fd5e",
+      "action_type": "risky_op",
+      "required_agreement": 0.67,
+      "max_rounds": 3,
+      "rounds": 1,
+      "final_result": "reject",
+      "escalated": false,
+      "started_at": "2026-01-23T20:09:36.742743",
+      "completed_at": "2026-01-23T20:09:36.742783",
+      "action_data": {
+        "agent": "CRAFTER",
+        "input_data": null
+      }
+    },
+    {
+      "session_id": "b2fc645baa05",
+      "action_type": "book_meeting",
+      "required_agreement": 0.67,
+      "max_rounds": 3,
+      "rounds": 1,
+      "final_result": "approve",
+      "escalated": false,
+      "started_at": "2026-01-23T20:09:36.748408",
+      "completed_at": "2026-01-23T20:09:36.748426",
+      "action_data": {
+        "agent": "SCHEDULER",
+        "input_data": {
+          "email": "test@example.com",
+          "date": "2025-01-22"
+        }
+      }
+    }
+  ],
+  "updated_at": "2026-01-23T20:09:36.748628"
+}

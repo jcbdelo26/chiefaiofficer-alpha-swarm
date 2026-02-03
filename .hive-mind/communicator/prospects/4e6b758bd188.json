@@ -1,0 +1,22 @@
+{
+  "email": "empty@example.com",
+  "name": "empty",
+  "company": "example.com",
+  "current_stage": "qualification",
+  "thread_id": "d41d8cd98f00",
+  "last_contact": "2026-01-22T04:16:53.729024",
+  "total_exchanges": 1,
+  "tone_profile": {
+    "formality": 0.5,
+    "warmth": 0.5,
+    "urgency": 0.2,
+    "complexity": 0.3,
+    "assertiveness": 0.5,
+    "sentiment": 0.0,
+    "avg_sentence_length": 10.0,
+    "vocabulary_richness": 0.5,
+    "keywords": []
+  },
+  "tags": [],
+  "metadata": {}
+}

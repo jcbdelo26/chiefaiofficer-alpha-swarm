@@ -1,0 +1,55 @@
+{
+  "visitor_id": "sample_vp_sales_001",
+  "email": "mike.johnson@acmesaas.com",
+  "first_name": "Mike",
+  "last_name": "Johnson",
+  "linkedin_url": null,
+  "company_name": "Acme SaaS",
+  "company_domain": "gong.io",
+  "job_title": "VP of Sales",
+  "pages_viewed": [
+    "/blog/how-pg-cut-product-development-time-22-percent"
+  ],
+  "blog_triggers_matched": [
+    {
+      "url_pattern": "/blog.*(p&g|pg|procter.*gamble).*(product|development|ai|22)",
+      "category": "ai_case_study"
+    }
+  ],
+  "warm_connections": [
+    {
+      "connection_type": "same_previous_company",
+      "shared_entity": "Gong",
+      "our_team_member": "Dani Apgar",
+      "team_member_title": "Head of Partnerships & Revenue",
+      "confidence": 0.9,
+      "details": {
+        "team_member_years": "2020-2023",
+        "team_member_email": "dani@chiefaiofficer.com"
+      }
+    },
+    {
+      "connection_type": "former_colleague",
+      "shared_entity": "Outreach",
+      "our_team_member": "Dani Apgar",
+      "team_member_title": "Head of Partnerships & Revenue",
+      "confidence": 0.85,
+      "details": {
+        "visitor_years": "unknown",
+        "team_member_years": "2018-2020",
+        "team_member_email": "dani@chiefaiofficer.com"
+      }
+    }
+  ],
+  "intent_score": 100,
+  "icp_tier": "tier_1",
+  "recommended_action": "immediate_warm_outreach",
+  "generated_email": {
+    "subject": "Mike - quick Q about sales cycle friction at Acme",
+    "body": "Hi Mike,\n\nI saw you were reading our piece on how P&G cut product development time by 22% using AI.\n\nMy colleague Dani Apgar spent time at Gong and mentioned how critical it was for sales leaders to have faster visibility into what's actually moving deals forward vs. creating drag.\n\nAs VP of Sales at Acme, I'm curious - what's the biggest friction point between your sales team getting customer insights and product actually shipping features that close deals?\n\nIf you're exploring ways to shorten those cycles without adding headcount or complexity, I can walk you through our 10-min AI framework that's helping teams like yours make faster, better decisions.\n\nWould you have time for a quick call later today or tomorrow?\n\nBest,\nDani Apgar\nHead of Partnerships & Revenue, Chief AI Officer Inc.\ndani@chiefaiofficer.com | chiefaiofficer.com\nBook a 15-min intro: https://caio.cx/meet",
+    "template_used": "case_study_pg",
+    "generated_by": "gemini_crafter"
+  },
+  "queued_for_approval": true,
+  "created_at": "2026-01-30T16:34:19.492222+00:00"
+}

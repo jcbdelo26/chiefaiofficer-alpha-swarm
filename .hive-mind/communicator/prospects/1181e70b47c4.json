@@ -1,0 +1,28 @@
+{
+  "email": "sarah@company.com",
+  "name": "sarah",
+  "company": "company.com",
+  "current_stage": "qualification",
+  "thread_id": "bf433a799c79",
+  "last_contact": "2026-01-22T02:27:35.149364",
+  "total_exchanges": 1,
+  "tone_profile": {
+    "formality": 0.29,
+    "warmth": 0.5,
+    "urgency": 0.0,
+    "complexity": 0.63,
+    "assertiveness": 0.41,
+    "sentiment": 1.0,
+    "avg_sentence_length": 8.6,
+    "vocabulary_richness": 0.91,
+    "keywords": [
+      "thanks",
+      "quarter",
+      "chris",
+      "info",
+      "concerned"
+    ]
+  },
+  "tags": [],
+  "metadata": {}
+}

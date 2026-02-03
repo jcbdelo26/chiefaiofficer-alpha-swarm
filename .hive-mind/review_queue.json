@@ -1,0 +1,95 @@
+{
+  "pending": [
+    {
+      "review_id": "442dd0ae-9edf-46cf-8faf-86bd72cf3e8d",
+      "campaign_id": "48d0ec30-3dc2-403d-9c81-e813dfe5d457",
+      "campaign_name": "tier1_competitor_displacement",
+      "campaign_type": "competitor_displacement",
+      "lead_count": 2,
+      "avg_icp_score": 0,
+      "segment": "tier1",
+      "email_preview": {
+        "subject_a": "Sarah, what outreach_followers isn't showing you",
+        "subject_b": "Beyond outreach_followers for TechScale Inc",
+        "body": "Hi Sarah,\n\nI noticed you follow outreach_followers's updates on LinkedIn - smart move staying current on revenue intelligence.\n\nHere's what I've been hearing from VP of Revenue Operationss like yourself at companies your size:\n\n\"outreach_followers shows us what happened... but we still can't predict what's going to happen next quarter.\"\n\nAt Chiefaiofficer.com, we're building the layer ABOVE traditional tools.\n\nWorth a 15-min look?\n\nBest,\nChris..."
+      },
+      "status": "pending",
+      "queued_at": "2026-01-15T08:39:26.615693",
+      "reviewed_at": null,
+      "reviewed_by": null,
+      "rejection_reason": null,
+      "edits": null,
+      "expires_at": null,
+      "semantic_anchors": [
+        "TEMPLATE: competitor_displacement - Default template - no specific source match",
+        "PERSONALIZATION: deep depth using hooks: company_size_messaging, industry_specific_content, leadership_value_props",
+        "A/B TEST: Subject A (pain point) vs Subject B (transformation) - expect A higher open rate",
+        "REVIEW: AE approval required for 2 leads"
+      ],
+      "tier": "tier1",
+      "rpi_workflow": true
+    },
+    {
+      "review_id": "f37743ef-a7f0-47b4-b985-f47f6e2389c2",
+      "campaign_id": "9e0e2555-a104-4917-9dd1-c49f6a24add5",
+      "campaign_name": "tier2_competitor_displacement",
+      "campaign_type": "competitor_displacement",
+      "lead_count": 2,
+      "avg_icp_score": 0,
+      "segment": "tier2",
+      "email_preview": {
+        "subject_a": "Emily, what linkedin_post isn't showing you",
+        "subject_b": "Beyond linkedin_post for DataFlow Analytics",
+        "body": "Hi Emily,\n\nI noticed you follow linkedin_post's updates on LinkedIn - smart move staying current on revenue intelligence.\n\nHere's what I've been hearing from Sales Operations Managers like yourself at companies your size:\n\n\"linkedin_post shows us what happened... but we still can't predict what's going to happen next quarter.\"\n\nAt Chiefaiofficer.com, we're building the layer ABOVE traditional tools.\n\nWorth a 15-min look?\n\nBest,\nChris..."
+      },
+      "status": "pending",
+      "queued_at": "2026-01-15T08:39:26.616922",
+      "reviewed_at": null,
+      "reviewed_by": null,
+      "rejection_reason": null,
+      "edits": null,
+      "expires_at": null,
+      "semantic_anchors": [
+        "TEMPLATE: competitor_displacement - Default template - no specific source match",
+        "PERSONALIZATION: medium depth using hooks: company_size_messaging, industry_specific_content, operational_efficiency_focus",
+        "A/B TEST: Subject A (pain point) vs Subject B (transformation) - expect A higher open rate",
+        "REVIEW: AE approval required for 2 leads"
+      ],
+      "tier": "tier2",
+      "rpi_workflow": true
+    },
+    {
+      "review_id": "d01ce391-c636-4f93-99a6-3055459ead74",
+      "campaign_id": "ca925324-60a4-4a21-8f74-ed0deadee2ad",
+      "campaign_name": "tier3_competitor_displacement",
+      "campaign_type": "competitor_displacement",
+      "lead_count": 1,
+      "avg_icp_score": 0,
+      "segment": "tier3",
+      "email_preview": {
+        "subject_a": "Lisa, what sales_navigator isn't showing you",
+        "subject_b": "Beyond sales_navigator for StartupCo",
+        "body": "Hi Lisa,\n\nI noticed you follow sales_navigator's updates on LinkedIn - smart move staying current on revenue intelligence.\n\nHere's what I've been hearing from Sales Development Representatives like yourself at companies your size:\n\n\"sales_navigator shows us what happened... but we still can't predict what's going to happen next quarter.\"\n\nAt Chiefaiofficer.com, we're building the layer ABOVE traditional tools.\n\nWorth a 15-min look?\n\nBest,\nChris..."
+      },
+      "status": "pending",
+      "queued_at": "2026-01-15T08:39:26.617617",
+      "reviewed_at": null,
+      "reviewed_by": null,
+      "rejection_reason": null,
+      "edits": null,
+      "expires_at": null,
+      "semantic_anchors": [
+        "TEMPLATE: competitor_displacement - Default template - no specific source match",
+        "PERSONALIZATION: light depth using hooks: company_size_messaging, industry_specific_content",
+        "A/B TEST: Subject A (pain point) vs Subject B (transformation) - expect A higher open rate"
+      ],
+      "tier": "tier3",
+      "rpi_workflow": true
+    }
+  ],
+  "approved": [],
+  "rejected": [],
+  "total_queued": 3,
+  "avg_review_time_hours": 0.0,
+  "updated_at": "2026-01-15T08:39:26.617647"
+}

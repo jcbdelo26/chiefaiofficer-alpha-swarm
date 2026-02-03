@@ -1,0 +1,29 @@
+{
+  "usage": {
+    "Claude Sonnet (Primary)": {
+      "requests": 1,
+      "input_tokens": 24,
+      "output_tokens": 9,
+      "total_cost": 0.000207,
+      "errors": 0,
+      "fallbacks_triggered": 0
+    },
+    "GPT-4o (Secondary)": {
+      "requests": 0,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "total_cost": 0.0,
+      "errors": 0,
+      "fallbacks_triggered": 0
+    },
+    "GPT-4o-mini (Tertiary)": {
+      "requests": 0,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "total_cost": 0.0,
+      "errors": 0,
+      "fallbacks_triggered": 0
+    }
+  },
+  "last_updated": "2026-01-23T20:05:25.730525+00:00"
+}

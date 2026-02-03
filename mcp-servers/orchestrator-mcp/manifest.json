@@ -1,0 +1,17 @@
+{
+    "name": "orchestrator-mcp",
+    "version": "1.0.0",
+    "description": "Alpha Queen master orchestrator for the swarm",
+    "author": "Chiefaiofficer.com",
+    "tools": [
+        "orchestrator_run_workflow",
+        "orchestrator_swarm_status",
+        "orchestrator_dispatch_task",
+        "orchestrator_query_hivemind",
+        "orchestrator_get_metrics"
+    ],
+    "dependencies": {
+        "mcp": ">=0.1.0"
+    },
+    "entrypoint": "server.py"
+}

@@ -1,0 +1,32 @@
+{
+  "23a838ce62a1": {
+    "id": "23a838ce62a1",
+    "lead_id": "test_lead_001",
+    "rep_id": "test_rep",
+    "call_type": "discovery",
+    "outcome": "qualified",
+    "scheduled_at": "2026-01-21T21:15:58.782199+00:00",
+    "started_at": null,
+    "ended_at": "2026-01-21T21:15:58.782205+00:00",
+    "duration_minutes": 25,
+    "notes": "Good discovery call. Uncovered pain points around manual processes.",
+    "key_points": [],
+    "objections_raised": [],
+    "next_steps": "Demo scheduled for next week",
+    "score": {
+      "call_id": "23a838ce62a1",
+      "overall_score": 74.0,
+      "category_scores": {
+        "discovery_depth": 60,
+        "objection_handling": 60,
+        "next_steps": 80,
+        "talk_listen_ratio": 60,
+        "value_proposition": 60,
+        "rapport_building": 60
+      },
+      "strengths": [],
+      "improvements": [],
+      "coaching_points": []
+    }
+  }
+}

@@ -1,0 +1,107 @@
+{
+  "id": "campaign_008",
+  "name": "Community Outreach - Jan 2026",
+  "segment": "tier2_high",
+  "status": "pending",
+  "created_at": "2026-01-15T02:01:07.940084",
+  "lead_count": 10,
+  "leads": [
+    {
+      "id": "lead_0052",
+      "name": "Emily Rodriguez",
+      "first_name": "Emily",
+      "last_name": "Rodriguez",
+      "email": "emily.rodriguez@datadrivencorp.com",
+      "title": "Director of Revenue",
+      "company": "DataDriven Corp",
+      "company_size": 95,
+      "industry": "Analytics",
+      "linkedin_url": "https://linkedin.com/in/emilyrodriguez",
+      "icp_score": 69,
+      "icp_tier": "tier3_standard",
+      "source": "group_member",
+      "scraped_at": "2026-01-14T02:01:07.922061",
+      "enriched": true
+    },
+    {
+      "id": "lead_0018",
+      "name": "Matthew Thompson",
+      "first_name": "Matthew",
+      "last_name": "Thompson",
+      "email": "matthew.thompson@funnelforce.com",
+      "title": "VP of Business Development",
+      "company": "FunnelForce",
+      "company_size": 190,
+      "industry": "Marketing Tech",
+      "linkedin_url": "https://linkedin.com/in/matthewthompson",
+      "icp_score": 70,
+      "icp_tier": "tier2_high",
+      "source": "event_attendee",
+      "scraped_at": "2026-01-10T02:01:07.921895",
+      "enriched": true
+    },
+    {
+      "id": "lead_0007",
+      "name": "Ashley Johnson",
+      "first_name": "Ashley",
+      "last_name": "Johnson",
+      "email": "ashley.johnson@winrateanalytics.com",
+      "title": "Chief Revenue Officer",
+      "company": "WinRate Analytics",
+      "company_size": 85,
+      "industry": "Analytics",
+      "linkedin_url": "https://linkedin.com/in/ashleyjohnson",
+      "icp_score": 75,
+      "icp_tier": "tier2_high",
+      "source": "group_member",
+      "scraped_at": "2026-01-09T02:01:07.921840",
+      "enriched": true
+    },
+    {
+      "id": "lead_0096",
+      "name": "Stephanie Miller",
+      "first_name": "Stephanie",
+      "last_name": "Miller",
+      "email": "stephanie.miller@winrateanalytics.com",
+      "title": "VP of Sales",
+      "company": "WinRate Analytics",
+      "company_size": 85,
+      "industry": "Analytics",
+      "linkedin_url": "https://linkedin.com/in/stephaniemiller",
+      "icp_score": 71,
+      "icp_tier": "tier2_high",
+      "source": "group_member",
+      "scraped_at": "2026-01-10T02:01:07.922255",
+      "enriched": true
+    },
+    {
+      "id": "lead_0095",
+      "name": "William Jones",
+      "first_name": "William",
+      "last_name": "Jones",
+      "email": "william.jones@dealflowsystems.com",
+      "title": "VP of Business Development",
+      "company": "DealFlow Systems",
+      "company_size": 90,
+      "industry": "CRM",
+      "linkedin_url": "https://linkedin.com/in/williamjones",
+      "icp_score": 87,
+      "icp_tier": "tier1_vip",
+      "source": "group_member",
+      "scraped_at": "2026-01-13T02:01:07.922250",
+      "enriched": true
+    }
+  ],
+  "emails": [
+    {
+      "step": 1,
+      "subject": "Love what you shared in Modern Sales Pros",
+      "body": "Hi {{first_name}},\n\nI noticed you're leading community outreach efforts at {{company}}.\n\nQuick question - are you seeing the same challenges we hear from other Analytics leaders around pipeline visibility?\n\nWorth a 15-minute chat?\n\nBest,\nChris\nChief AI Officer"
+    },
+    {
+      "step": 2,
+      "subject": "Re: Love what you shared in Modern Sales Pros",
+      "body": "{{first_name}},\n\nFollowing up on my previous note. \n\nHappy to share how similar companies are solving this.\n\nOpen to a quick call this week?\n\nChris"
+    }
+  ]
+}

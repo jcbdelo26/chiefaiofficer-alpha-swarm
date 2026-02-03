@@ -1,0 +1,756 @@
+{
+  "last_updated": "2026-01-23T20:09:19.017964",
+  "entry_count": 50,
+  "entries": [
+    {
+      "id": "885293ff-a116-4e17-a079-1121c7af8d4e",
+      "output_id": "5c212dbc-68fa-4095-a628-98bb596e4a42",
+      "action": "output_created",
+      "claim_id": null,
+      "timestamp": "2026-01-19T23:34:07.155688",
+      "details": {
+        "agent": "CRAFTER",
+        "type": "email_campaign",
+        "claim_count": 1,
+        "confidence": 0.7,
+        "status": "pending"
+      },
+      "actor": "CRAFTER"
+    },
+    {
+      "id": "e512aab1-31f0-44ea-b78a-e396fa507583",
+      "output_id": "9490ba96-ffa9-48db-a28e-44e85cfaec23",
+      "action": "output_created",
+      "claim_id": null,
+      "timestamp": "2026-01-19T23:34:07.183260",
+      "details": {
+        "agent": "CRAFTER",
+        "type": "email_campaign",
+        "claim_count": 2,
+        "confidence": 0.7,
+        "status": "pending"
+      },
+      "actor": "CRAFTER"
+    },
+    {
+      "id": "ff682ac7-8858-4cb7-b59b-dd996096e0f6",
+      "output_id": "2d3a3cfb-f201-4b84-81b8-a3e71d025d47",
+      "action": "output_created",
+      "claim_id": null,
+      "timestamp": "2026-01-19T23:34:37.329145",
+      "details": {
+        "agent": "CRAFTER",
+        "type": "email_campaign",
+        "claim_count": 1,
+        "confidence": 0.7,
+        "status": "pending"
+      },
+      "actor": "CRAFTER"
+    },
+    {
+      "id": "aad6bfb3-3071-41b6-bf68-f6cb51c1bae5",
+      "output_id": "379153db-f2da-40bb-b184-8304ed809744",
+      "action": "output_created",
+      "claim_id": null,
+      "timestamp": "2026-01-19T23:34:37.363353",
+      "details": {
+        "agent": "CRAFTER",
+        "type": "email_campaign",
+        "claim_count": 2,
+        "confidence": 0.7,
+        "status": "pending"
+      },
+      "actor": "CRAFTER"
+    },
+    {
+      "id": "c96f2ca6-45b6-43a5-94eb-7a794a54b241",
+      "output_id": "61d1e678-6d02-4fa0-9deb-482ed01a33e0",
+      "action": "output_created",
+      "claim_id": null,
+      "timestamp": "2026-01-19T23:34:58.048827",
+      "details": {
+        "agent": "CRAFTER",
+        "type": "email_campaign",
+        "claim_count": 1,
+        "confidence": 0.7,
+        "status": "pending"
+      },
+      "actor": "CRAFTER"
+    },
+    {
+      "id": "511d2474-c7ec-4dd9-ac84-9581b01dbb14",
+      "output_id": "b72191c8-0325-47ad-b6d1-150f2dd70b42",
+      "action": "output_created",
+      "claim_id": null,
+      "timestamp": "2026-01-19T23:34:58.074422",
+      "details": {
+        "agent": "CRAFTER",
+        "type": "email_campaign",
+        "claim_count": 2,
+        "confidence": 0.7,
+        "status": "pending"
+      },
+      "actor": "CRAFTER"
+    },
+    {
+      "id": "a84ee385-94d3-4003-bd73-e83c9788926f",
+      "output_id": "69ff1c61-7bff-4e7c-83d9-e6fb904e45d7",
+      "action": "output_created",
+      "claim_id": null,
+      "timestamp": "2026-01-21T01:33:03.468793",
+      "details": {
+        "agent": "CRAFTER",
+        "type": "email_campaign",
+        "claim_count": 1,
+        "confidence": 0.7,
+        "status": "pending"
+      },
+      "actor": "CRAFTER"
+    },
+    {
+      "id": "ff39c00a-13e2-4c51-808e-ba25b7ead4f3",
+      "output_id": "fc8b14e7-9a30-4349-9dfe-62692adb0c5a",
+      "action": "output_created",
+      "claim_id": null,
+      "timestamp": "2026-01-21T01:33:03.503866",
+      "details": {
+        "agent": "CRAFTER",
+        "type": "email_campaign",
+        "claim_count": 2,
+        "confidence": 0.7,
+        "status": "pending"
+      },
+      "actor": "CRAFTER"
+    },
+    {
+      "id": "07ce2815-71eb-41f0-b07a-bad544226c0d",
+      "output_id": "03718203-ed4c-477f-98c9-081902747e7c",
+      "action": "output_created",
+      "claim_id": null,
+      "timestamp": "2026-01-22T04:37:48.163337",
+      "details": {
+        "agent": "CRAFTER",
+        "type": "email_campaign",
+        "claim_count": 1,
+        "confidence": 0.7,
+        "status": "pending"
+      },
+      "actor": "CRAFTER"
+    },
+    {
+      "id": "9569ee3f-5df6-4ab7-a10f-e820d8767417",
+      "output_id": "98997689-a104-45ba-887d-48c92138d99d",
+      "action": "output_created",
+      "claim_id": null,
+      "timestamp": "2026-01-22T04:37:48.198931",
+      "details": {
+        "agent": "CRAFTER",
+        "type": "email_campaign",
+        "claim_count": 2,
+        "confidence": 0.7,
+        "status": "pending"
+      },
+      "actor": "CRAFTER"
+    },
+    {
+      "id": "71439a01-8795-40fc-849a-f1b77feae864",
+      "output_id": "3e397639-abcd-47f5-aa5b-bdd06a393a48",
+      "action": "output_created",
+      "claim_id": null,
+      "timestamp": "2026-01-22T04:57:41.242382",
+      "details": {
+        "agent": "CRAFTER",
+        "type": "email_campaign",
+        "claim_count": 1,
+        "confidence": 0.7,
+        "status": "pending"
+      },
+      "actor": "CRAFTER"
+    },
+    {
+      "id": "8bd387c7-7089-46ec-8ff5-43c1346fedb8",
+      "output_id": "72a7be97-cff3-48e6-a5de-a14c927e9b87",
+      "action": "output_created",
+      "claim_id": null,
+      "timestamp": "2026-01-22T04:57:41.280137",
+      "details": {
+        "agent": "CRAFTER",
+        "type": "email_campaign",
+        "claim_count": 2,
+        "confidence": 0.7,
+        "status": "pending"
+      },
+      "actor": "CRAFTER"
+    },
+    {
+      "id": "cca2ccb8-1a5a-4b10-9d45-a6dd3f9ae219",
+      "output_id": "777953d9-52f3-4ad6-b395-ac68d2c2f14a",
+      "action": "output_created",
+      "claim_id": null,
+      "timestamp": "2026-01-22T05:02:00.505827",
+      "details": {
+        "agent": "CRAFTER",
+        "type": "email_campaign",
+        "claim_count": 1,
+        "confidence": 0.7,
+        "status": "pending"
+      },
+      "actor": "CRAFTER"
+    },
+    {
+      "id": "fda27b1d-742a-404b-9615-2337ca6409e8",
+      "output_id": "eb78ef67-ca50-45af-8327-9b95ccd3a946",
+      "action": "output_created",
+      "claim_id": null,
+      "timestamp": "2026-01-22T05:02:00.549920",
+      "details": {
+        "agent": "CRAFTER",
+        "type": "email_campaign",
+        "claim_count": 2,
+        "confidence": 0.7,
+        "status": "pending"
+      },
+      "actor": "CRAFTER"
+    },
+    {
+      "id": "f30a08b3-3aef-4882-9c0d-31ad945286ca",
+      "output_id": "c287ec50-ef4b-4ae5-b5bb-9627fd4143f8",
+      "action": "output_created",
+      "claim_id": null,
+      "timestamp": "2026-01-22T05:04:20.810112",
+      "details": {
+        "agent": "CRAFTER",
+        "type": "email_campaign",
+        "claim_count": 1,
+        "confidence": 0.7,
+        "status": "pending"
+      },
+      "actor": "CRAFTER"
+    },
+    {
+      "id": "7676304d-dae0-4d4e-96bc-6b8b7eae0626",
+      "output_id": "27b7fffe-029e-462b-8b1b-7261b47226bb",
+      "action": "output_created",
+      "claim_id": null,
+      "timestamp": "2026-01-22T05:04:20.848589",
+      "details": {
+        "agent": "CRAFTER",
+        "type": "email_campaign",
+        "claim_count": 2,
+        "confidence": 0.7,
+        "status": "pending"
+      },
+      "actor": "CRAFTER"
+    },
+    {
+      "id": "ce903c26-e3e4-4afd-9173-79fc7834843e",
+      "output_id": "45779de5-23f2-48b8-a27f-69d9655e49d7",
+      "action": "output_created",
+      "claim_id": null,
+      "timestamp": "2026-01-22T05:16:17.020607",
+      "details": {
+        "agent": "CRAFTER",
+        "type": "email_campaign",
+        "claim_count": 1,
+        "confidence": 0.7,
+        "status": "pending"
+      },
+      "actor": "CRAFTER"
+    },
+    {
+      "id": "e5f95c60-796c-4684-b7bd-709adf8b566a",
+      "output_id": "1b599017-1953-4b3f-9111-98ebe2d29864",
+      "action": "output_created",
+      "claim_id": null,
+      "timestamp": "2026-01-22T05:16:17.067673",
+      "details": {
+        "agent": "CRAFTER",
+        "type": "email_campaign",
+        "claim_count": 2,
+        "confidence": 0.7,
+        "status": "pending"
+      },
+      "actor": "CRAFTER"
+    },
+    {
+      "id": "04c1bd76-d87d-4a2a-990a-2bb9e4e7ac37",
+      "output_id": "c124c090-1db0-4583-b8b9-8191f60b462f",
+      "action": "output_created",
+      "claim_id": null,
+      "timestamp": "2026-01-22T05:49:42.232817",
+      "details": {
+        "agent": "CRAFTER",
+        "type": "email_campaign",
+        "claim_count": 1,
+        "confidence": 0.7,
+        "status": "pending"
+      },
+      "actor": "CRAFTER"
+    },
+    {
+      "id": "19b35a9c-3f06-4664-8d0e-d25b1d3822bd",
+      "output_id": "46c3fd36-8731-4621-846c-30cd09bf4456",
+      "action": "output_created",
+      "claim_id": null,
+      "timestamp": "2026-01-22T05:49:42.398050",
+      "details": {
+        "agent": "CRAFTER",
+        "type": "email_campaign",
+        "claim_count": 2,
+        "confidence": 0.7,
+        "status": "pending"
+      },
+      "actor": "CRAFTER"
+    },
+    {
+      "id": "4cdf8b6e-1176-4707-8b1b-a9e63e27bbda",
+      "output_id": "de9b4428-201f-4db8-b821-13f12fecd799",
+      "action": "output_created",
+      "claim_id": null,
+      "timestamp": "2026-01-22T05:52:01.409724",
+      "details": {
+        "agent": "CRAFTER",
+        "type": "email_campaign",
+        "claim_count": 1,
+        "confidence": 0.7,
+        "status": "pending"
+      },
+      "actor": "CRAFTER"
+    },
+    {
+      "id": "86178065-818b-4393-a542-7abac7e204db",
+      "output_id": "225e04c1-299a-4e45-967d-16cf4d0c281b",
+      "action": "output_created",
+      "claim_id": null,
+      "timestamp": "2026-01-22T05:52:01.530631",
+      "details": {
+        "agent": "CRAFTER",
+        "type": "email_campaign",
+        "claim_count": 2,
+        "confidence": 0.7,
+        "status": "pending"
+      },
+      "actor": "CRAFTER"
+    },
+    {
+      "id": "a7f5fcdf-68c2-4414-83f8-77dc0717b214",
+      "output_id": "d5599683-4037-49c1-95cb-8dee1ff58985",
+      "action": "output_created",
+      "claim_id": null,
+      "timestamp": "2026-01-22T06:41:03.498983",
+      "details": {
+        "agent": "CRAFTER",
+        "type": "email_campaign",
+        "claim_count": 1,
+        "confidence": 0.7,
+        "status": "pending"
+      },
+      "actor": "CRAFTER"
+    },
+    {
+      "id": "d4dd8fd9-f6bf-4d19-a73b-6fea5b4dbb60",
+      "output_id": "7d677838-6368-451f-9f45-693e95df3087",
+      "action": "output_created",
+      "claim_id": null,
+      "timestamp": "2026-01-22T06:41:03.543746",
+      "details": {
+        "agent": "CRAFTER",
+        "type": "email_campaign",
+        "claim_count": 2,
+        "confidence": 0.7,
+        "status": "pending"
+      },
+      "actor": "CRAFTER"
+    },
+    {
+      "id": "65869de3-b682-4942-975d-25044c91925e",
+      "output_id": "e00bcdbb-d526-4c87-97d8-ac2f01f6f703",
+      "action": "output_created",
+      "claim_id": null,
+      "timestamp": "2026-01-22T18:39:56.584926",
+      "details": {
+        "agent": "CRAFTER",
+        "type": "email_campaign",
+        "claim_count": 1,
+        "confidence": 0.7,
+        "status": "pending"
+      },
+      "actor": "CRAFTER"
+    },
+    {
+      "id": "ad701802-2a45-4a13-8812-bb644e2dac68",
+      "output_id": "06ccbace-4fb7-4a7e-9fd8-7bc5e3780ac8",
+      "action": "output_created",
+      "claim_id": null,
+      "timestamp": "2026-01-22T18:39:56.658694",
+      "details": {
+        "agent": "CRAFTER",
+        "type": "email_campaign",
+        "claim_count": 2,
+        "confidence": 0.7,
+        "status": "pending"
+      },
+      "actor": "CRAFTER"
+    },
+    {
+      "id": "f8d2c576-5ff8-4f21-a216-ef637d0d9c64",
+      "output_id": "2d4fec9f-e837-49d2-851f-34161f3ba67d",
+      "action": "output_created",
+      "claim_id": null,
+      "timestamp": "2026-01-22T18:58:06.780639",
+      "details": {
+        "agent": "CRAFTER",
+        "type": "email_campaign",
+        "claim_count": 1,
+        "confidence": 0.7,
+        "status": "pending"
+      },
+      "actor": "CRAFTER"
+    },
+    {
+      "id": "20498c6e-b5ac-4b62-8f84-daa6570dbd93",
+      "output_id": "c2735c49-2094-464b-b55e-91a72cd47f26",
+      "action": "output_created",
+      "claim_id": null,
+      "timestamp": "2026-01-22T18:58:06.822184",
+      "details": {
+        "agent": "CRAFTER",
+        "type": "email_campaign",
+        "claim_count": 2,
+        "confidence": 0.7,
+        "status": "pending"
+      },
+      "actor": "CRAFTER"
+    },
+    {
+      "id": "0b18e033-d17b-47f9-9424-d84e53b79617",
+      "output_id": "94d83657-4ce7-4ce2-8bf6-ee00ba13617b",
+      "action": "output_created",
+      "claim_id": null,
+      "timestamp": "2026-01-22T19:01:16.642758",
+      "details": {
+        "agent": "CRAFTER",
+        "type": "email_campaign",
+        "claim_count": 1,
+        "confidence": 0.7,
+        "status": "pending"
+      },
+      "actor": "CRAFTER"
+    },
+    {
+      "id": "f12b0314-eda5-4e89-a979-b2d81172899c",
+      "output_id": "5836497c-4def-4e9f-be95-973d514b5780",
+      "action": "output_created",
+      "claim_id": null,
+      "timestamp": "2026-01-22T19:01:16.698734",
+      "details": {
+        "agent": "CRAFTER",
+        "type": "email_campaign",
+        "claim_count": 2,
+        "confidence": 0.7,
+        "status": "pending"
+      },
+      "actor": "CRAFTER"
+    },
+    {
+      "id": "6020198d-2d50-4c8c-9942-216d78438bc9",
+      "output_id": "20afb4cc-2598-4c4a-b715-0e4943efefb6",
+      "action": "output_created",
+      "claim_id": null,
+      "timestamp": "2026-01-22T19:09:35.491567",
+      "details": {
+        "agent": "CRAFTER",
+        "type": "email_campaign",
+        "claim_count": 1,
+        "confidence": 0.7,
+        "status": "pending"
+      },
+      "actor": "CRAFTER"
+    },
+    {
+      "id": "16bebfff-eecc-4cbf-8658-c135b9cd492b",
+      "output_id": "4edfcf4c-db0d-4a0e-b190-4c515f257fd5",
+      "action": "output_created",
+      "claim_id": null,
+      "timestamp": "2026-01-22T19:09:35.537895",
+      "details": {
+        "agent": "CRAFTER",
+        "type": "email_campaign",
+        "claim_count": 2,
+        "confidence": 0.7,
+        "status": "pending"
+      },
+      "actor": "CRAFTER"
+    },
+    {
+      "id": "739a43fb-6c81-4f3c-9e80-dc49d3abd813",
+      "output_id": "b3d471ba-c7a0-4d51-84a7-12f00c558d9e",
+      "action": "output_created",
+      "claim_id": null,
+      "timestamp": "2026-01-22T19:13:47.182448",
+      "details": {
+        "agent": "CRAFTER",
+        "type": "email_campaign",
+        "claim_count": 1,
+        "confidence": 0.7,
+        "status": "pending"
+      },
+      "actor": "CRAFTER"
+    },
+    {
+      "id": "9ac6519b-d069-4cdd-b25f-56fdf7315eda",
+      "output_id": "a003545f-6da3-408a-83e2-e5ad2920634d",
+      "action": "output_created",
+      "claim_id": null,
+      "timestamp": "2026-01-22T19:13:47.229997",
+      "details": {
+        "agent": "CRAFTER",
+        "type": "email_campaign",
+        "claim_count": 2,
+        "confidence": 0.7,
+        "status": "pending"
+      },
+      "actor": "CRAFTER"
+    },
+    {
+      "id": "9045bd3b-55bf-4eca-8176-689372927be0",
+      "output_id": "36a60caa-1c1e-43ee-9310-bb2e011a4a9e",
+      "action": "output_created",
+      "claim_id": null,
+      "timestamp": "2026-01-22T19:16:23.669532",
+      "details": {
+        "agent": "CRAFTER",
+        "type": "email_campaign",
+        "claim_count": 1,
+        "confidence": 0.7,
+        "status": "pending"
+      },
+      "actor": "CRAFTER"
+    },
+    {
+      "id": "c7a15b95-0c1c-4541-82a0-73fd8748604c",
+      "output_id": "85b29581-a482-48e2-a0e0-54cc58451c9c",
+      "action": "output_created",
+      "claim_id": null,
+      "timestamp": "2026-01-22T19:16:23.740654",
+      "details": {
+        "agent": "CRAFTER",
+        "type": "email_campaign",
+        "claim_count": 2,
+        "confidence": 0.7,
+        "status": "pending"
+      },
+      "actor": "CRAFTER"
+    },
+    {
+      "id": "c02b58e5-3b1b-4a3d-b71f-21c5a286a3bf",
+      "output_id": "79cb5d8a-fc65-4811-a9f9-509ea3899b1a",
+      "action": "output_created",
+      "claim_id": null,
+      "timestamp": "2026-01-22T19:17:42.303756",
+      "details": {
+        "agent": "CRAFTER",
+        "type": "email_campaign",
+        "claim_count": 1,
+        "confidence": 0.7,
+        "status": "pending"
+      },
+      "actor": "CRAFTER"
+    },
+    {
+      "id": "8ca1e8de-2aa4-4788-a55f-cb823295fb67",
+      "output_id": "846e472d-03a6-4fbc-8199-dcf5a835a503",
+      "action": "output_created",
+      "claim_id": null,
+      "timestamp": "2026-01-22T19:17:42.371385",
+      "details": {
+        "agent": "CRAFTER",
+        "type": "email_campaign",
+        "claim_count": 2,
+        "confidence": 0.7,
+        "status": "pending"
+      },
+      "actor": "CRAFTER"
+    },
+    {
+      "id": "f6048634-58dd-4d10-bb75-a9fea6c69710",
+      "output_id": "70a46d86-bebd-4022-8e47-dbf2acf157b2",
+      "action": "output_created",
+      "claim_id": null,
+      "timestamp": "2026-01-22T19:20:36.502664",
+      "details": {
+        "agent": "CRAFTER",
+        "type": "email_campaign",
+        "claim_count": 1,
+        "confidence": 0.7,
+        "status": "pending"
+      },
+      "actor": "CRAFTER"
+    },
+    {
+      "id": "9b2dd001-8364-4881-aa17-502893259f2d",
+      "output_id": "32a6f4d4-a74a-4ee6-9de1-3afc7fc5ae24",
+      "action": "output_created",
+      "claim_id": null,
+      "timestamp": "2026-01-22T19:20:36.559223",
+      "details": {
+        "agent": "CRAFTER",
+        "type": "email_campaign",
+        "claim_count": 2,
+        "confidence": 0.7,
+        "status": "pending"
+      },
+      "actor": "CRAFTER"
+    },
+    {
+      "id": "a478b250-e8ec-4c5c-9655-931d82e76ffe",
+      "output_id": "62b5b3be-f4db-4755-bf89-b07bdb2cc238",
+      "action": "output_created",
+      "claim_id": null,
+      "timestamp": "2026-01-22T20:04:08.184944",
+      "details": {
+        "agent": "CRAFTER",
+        "type": "email_campaign",
+        "claim_count": 1,
+        "confidence": 0.7,
+        "status": "pending"
+      },
+      "actor": "CRAFTER"
+    },
+    {
+      "id": "f63f446c-e283-476c-8f02-d0216ecb59f6",
+      "output_id": "ada152f1-3fc1-427c-80a7-0781c60c09e3",
+      "action": "output_created",
+      "claim_id": null,
+      "timestamp": "2026-01-22T20:04:08.254374",
+      "details": {
+        "agent": "CRAFTER",
+        "type": "email_campaign",
+        "claim_count": 2,
+        "confidence": 0.7,
+        "status": "pending"
+      },
+      "actor": "CRAFTER"
+    },
+    {
+      "id": "6cae7e2a-3778-4193-8ddf-8a33e11fffea",
+      "output_id": "f59e1cd0-4931-4d69-8753-ce6de0798767",
+      "action": "output_created",
+      "claim_id": null,
+      "timestamp": "2026-01-23T04:50:46.887622",
+      "details": {
+        "agent": "CRAFTER",
+        "type": "email_campaign",
+        "claim_count": 1,
+        "confidence": 0.7,
+        "status": "pending"
+      },
+      "actor": "CRAFTER"
+    },
+    {
+      "id": "9de8b6ff-0d35-4a17-bd5b-e60c62798c6f",
+      "output_id": "71f58bda-ddb3-41c6-ab0b-e424fba95d59",
+      "action": "output_created",
+      "claim_id": null,
+      "timestamp": "2026-01-23T04:50:46.944794",
+      "details": {
+        "agent": "CRAFTER",
+        "type": "email_campaign",
+        "claim_count": 2,
+        "confidence": 0.7,
+        "status": "pending"
+      },
+      "actor": "CRAFTER"
+    },
+    {
+      "id": "5e153953-1fc5-45f7-886c-a600c206b024",
+      "output_id": "3160639d-8ed1-4764-a6f6-d8d4dcd36d03",
+      "action": "output_created",
+      "claim_id": null,
+      "timestamp": "2026-01-23T04:56:05.537838",
+      "details": {
+        "agent": "CRAFTER",
+        "type": "email_campaign",
+        "claim_count": 1,
+        "confidence": 0.7,
+        "status": "pending"
+      },
+      "actor": "CRAFTER"
+    },
+    {
+      "id": "12e4e591-7e1e-4c4e-b832-bcad378eca49",
+      "output_id": "3946dfd7-a57e-4ed0-868d-0c9f47347133",
+      "action": "output_created",
+      "claim_id": null,
+      "timestamp": "2026-01-23T04:56:05.591119",
+      "details": {
+        "agent": "CRAFTER",
+        "type": "email_campaign",
+        "claim_count": 2,
+        "confidence": 0.7,
+        "status": "pending"
+      },
+      "actor": "CRAFTER"
+    },
+    {
+      "id": "bbf99b50-f0cc-4a90-89fe-7c5b9ed3e056",
+      "output_id": "aafc463b-46af-461c-8032-310ef3ed47c3",
+      "action": "output_created",
+      "claim_id": null,
+      "timestamp": "2026-01-23T05:00:23.667042",
+      "details": {
+        "agent": "CRAFTER",
+        "type": "email_campaign",
+        "claim_count": 1,
+        "confidence": 0.7,
+        "status": "pending"
+      },
+      "actor": "CRAFTER"
+    },
+    {
+      "id": "06108fa1-fe95-47a6-80e8-86388b72c49c",
+      "output_id": "b333205d-bea3-44ad-873e-ec99a0cbad7d",
+      "action": "output_created",
+      "claim_id": null,
+      "timestamp": "2026-01-23T05:00:23.723428",
+      "details": {
+        "agent": "CRAFTER",
+        "type": "email_campaign",
+        "claim_count": 2,
+        "confidence": 0.7,
+        "status": "pending"
+      },
+      "actor": "CRAFTER"
+    },
+    {
+      "id": "6a28c5ab-454f-49f5-9025-379ca66a476a",
+      "output_id": "0393e547-a6c2-44f2-8e39-fe30c5a40f0d",
+      "action": "output_created",
+      "claim_id": null,
+      "timestamp": "2026-01-23T20:09:18.953750",
+      "details": {
+        "agent": "CRAFTER",
+        "type": "email_campaign",
+        "claim_count": 1,
+        "confidence": 0.7,
+        "status": "pending"
+      },
+      "actor": "CRAFTER"
+    },
+    {
+      "id": "2c536520-af2c-4e40-80f9-6ff61b4b7274",
+      "output_id": "27022a00-a2a8-4c5c-a2a5-aa78837aab4a",
+      "action": "output_created",
+      "claim_id": null,
+      "timestamp": "2026-01-23T20:09:19.017961",
+      "details": {
+        "agent": "CRAFTER",
+        "type": "email_campaign",
+        "claim_count": 2,
+        "confidence": 0.7,
+        "status": "pending"
+      },
+      "actor": "CRAFTER"
+    }
+  ]
+}

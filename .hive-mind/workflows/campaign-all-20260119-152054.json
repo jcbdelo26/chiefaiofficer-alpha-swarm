@@ -1,0 +1,75 @@
+{
+  "workflow": "campaign-creation",
+  "mode": "test",
+  "started_at": "2026-01-19T15:20:54.590297+00:00",
+  "completed_at": "2026-01-19T15:20:54.794742+00:00",
+  "total_duration_seconds": 0.1993551254272461,
+  "success": true,
+  "steps": [
+    {
+      "step": "select_segment",
+      "success": true,
+      "duration_seconds": 0.011488199234008789,
+      "records_processed": 4,
+      "records_output": 4,
+      "error_message": null,
+      "output_file": null,
+      "cost_usd": 0.0,
+      "metadata": {
+        "tier_filter": "all",
+        "source": "D:\\Agent Swarm Orchestration\\chiefaiofficer-alpha-swarm\\.hive-mind\\testing\\segmentor_test_results.json"
+      }
+    },
+    {
+      "step": "generate",
+      "success": true,
+      "duration_seconds": 0.18735384941101074,
+      "records_processed": 4,
+      "records_output": 4,
+      "error_message": null,
+      "output_file": "D:\\Agent Swarm Orchestration\\chiefaiofficer-alpha-swarm\\.hive-mind\\testing\\sample_campaigns.json",
+      "cost_usd": 0.0,
+      "metadata": {
+        "personalization_rate": "100.0%",
+        "template_used": "pain_point_discovery"
+      }
+    },
+    {
+      "step": "review",
+      "success": true,
+      "duration_seconds": 0.000270843505859375,
+      "records_processed": 4,
+      "records_output": 4,
+      "error_message": null,
+      "output_file": null,
+      "cost_usd": 0.0,
+      "metadata": {
+        "test_mode": true,
+        "status": "queued_for_review"
+      }
+    },
+    {
+      "step": "send",
+      "success": true,
+      "duration_seconds": 0.0002422332763671875,
+      "records_processed": 4,
+      "records_output": 0,
+      "error_message": null,
+      "output_file": null,
+      "cost_usd": 0.0,
+      "metadata": {
+        "test_mode": true,
+        "status": "blocked_test_mode"
+      }
+    }
+  ],
+  "metrics": {
+    "leads_selected": 4,
+    "campaigns_generated": 4,
+    "campaigns_queued": 4,
+    "campaigns_sent": 0,
+    "personalization_rate": 100.0,
+    "time_per_campaign_seconds": 0.04983878135681152
+  },
+  "error_message": null
+}

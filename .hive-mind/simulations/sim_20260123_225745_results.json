@@ -1,0 +1,1936 @@
+[
+  {
+    "lead_id": "sim_lead_00000",
+    "name": "Michael Thomas",
+    "company": "DataDriven Inc",
+    "stages": {
+      "enrichment": {
+        "success": true,
+        "email_found": true
+      },
+      "segmentation": {
+        "icp_score": 38,
+        "tier": "tier_4",
+        "category": "MONITOR",
+        "confidence": 0.54,
+        "reason": "Score 38 is near tier boundary; No intent signals detected",
+        "next_action": "Monitor for intent signals",
+        "needs_replan": true,
+        "enrichment_gaps": [
+          "intent_signals"
+        ],
+        "breakdown": {
+          "company_size": 15,
+          "title_seniority": 3,
+          "industry_fit": 20,
+          "tech_stack": 0,
+          "intent_signals": 0
+        }
+      },
+      "crafting": {
+        "crafted": false,
+        "reason": "Lead not qualified for outreach"
+      },
+      "approval": {
+        "approval_needed": false,
+        "reason": "No email to approve"
+      }
+    },
+    "final_status": "completed"
+  },
+  {
+    "lead_id": "sim_lead_00001",
+    "name": "Sandra Walker",
+    "company": "OutreachMax",
+    "stages": {
+      "enrichment": {
+        "success": true,
+        "email_found": true
+      },
+      "segmentation": {
+        "icp_score": 63,
+        "tier": "tier_2",
+        "category": "WARM_LEAD",
+        "confidence": 0.61,
+        "reason": "Score 63 is near tier boundary; No intent signals detected",
+        "next_action": "Prioritized campaign inclusion",
+        "needs_replan": true,
+        "enrichment_gaps": [
+          "intent_signals"
+        ],
+        "breakdown": {
+          "company_size": 20,
+          "title_seniority": 25,
+          "industry_fit": 5,
+          "tech_stack": 13,
+          "intent_signals": 0
+        }
+      },
+      "crafting": {
+        "crafted": true,
+        "subject": "Sandra, 3 ways AI is changing Sales Engagement",
+        "template_id": "template_tier_2_post_commenter",
+        "personalization_hooks": [],
+        "estimated_send_time": "2026-01-24T20:57:45.114668+00:00"
+      },
+      "approval": {
+        "approval_needed": true,
+        "approval_id": "approval_1b319623",
+        "status": "pending",
+        "routed_to": "AE_QUEUE",
+        "priority": 2,
+        "deadline": "2026-01-24T14:57:45.114702+00:00"
+      }
+    },
+    "final_status": "completed"
+  },
+  {
+    "lead_id": "sim_lead_00002",
+    "name": "Susan Brown",
+    "company": "TechFlow",
+    "stages": {
+      "enrichment": {
+        "success": true,
+        "email_found": true
+      },
+      "segmentation": {
+        "icp_score": 57,
+        "tier": "tier_3",
+        "category": "NURTURE",
+        "confidence": 0.57,
+        "reason": "Score 57 is near tier boundary; No intent signals detected",
+        "next_action": "Add to nurture sequence",
+        "needs_replan": true,
+        "enrichment_gaps": [
+          "intent_signals"
+        ],
+        "breakdown": {
+          "company_size": 20,
+          "title_seniority": 22,
+          "industry_fit": 15,
+          "tech_stack": 0,
+          "intent_signals": 0
+        }
+      },
+      "crafting": {
+        "crafted": false,
+        "reason": "Lead not qualified for outreach"
+      },
+      "approval": {
+        "approval_needed": false,
+        "reason": "No email to approve"
+      }
+    },
+    "final_status": "completed"
+  },
+  {
+    "lead_id": "sim_lead_00003",
+    "name": "Michael Lewis",
+    "company": "DataDriven Inc",
+    "stages": {
+      "enrichment": {
+        "success": true,
+        "email_found": true
+      },
+      "segmentation": {
+        "icp_score": 48,
+        "tier": "tier_3",
+        "category": "NURTURE",
+        "confidence": 0.66,
+        "reason": "No intent signals detected",
+        "next_action": "Add to nurture sequence",
+        "needs_replan": true,
+        "enrichment_gaps": [
+          "intent_signals"
+        ],
+        "breakdown": {
+          "company_size": 20,
+          "title_seniority": 8,
+          "industry_fit": 20,
+          "tech_stack": 0,
+          "intent_signals": 0
+        }
+      },
+      "crafting": {
+        "crafted": false,
+        "reason": "Lead not qualified for outreach"
+      },
+      "approval": {
+        "approval_needed": false,
+        "reason": "No email to approve"
+      }
+    },
+    "final_status": "completed"
+  },
+  {
+    "lead_id": "sim_lead_00004",
+    "name": "Mary Anderson",
+    "company": "WinRate",
+    "stages": {
+      "enrichment": {
+        "success": false,
+        "email_found": false
+      }
+    },
+    "final_status": "enrichment_failed"
+  },
+  {
+    "lead_id": "sim_lead_00005",
+    "name": "Linda Martinez",
+    "company": "RevOps Hub",
+    "stages": {
+      "enrichment": {
+        "success": true,
+        "email_found": true
+      },
+      "segmentation": {
+        "icp_score": 72,
+        "tier": "tier_2",
+        "category": "WARM_LEAD",
+        "confidence": 0.9,
+        "reason": "High-quality lead data with clear tier assignment (ICP: 72)",
+        "next_action": "Prioritized campaign inclusion",
+        "needs_replan": false,
+        "enrichment_gaps": [],
+        "breakdown": {
+          "company_size": 20,
+          "title_seniority": 22,
+          "industry_fit": 5,
+          "tech_stack": 15,
+          "intent_signals": 10
+        }
+      },
+      "crafting": {
+        "crafted": true,
+        "subject": "Saw you at [Event] - thoughts on AI for RevOps?",
+        "template_id": "template_tier_2_website_visitor",
+        "personalization_hooks": [],
+        "estimated_send_time": "2026-01-24T04:57:45.114796+00:00"
+      },
+      "approval": {
+        "approval_needed": true,
+        "approval_id": "approval_118b6914",
+        "status": "pending",
+        "routed_to": "AE_QUEUE",
+        "priority": 2,
+        "deadline": "2026-01-24T14:57:45.114809+00:00"
+      }
+    },
+    "final_status": "completed"
+  },
+  {
+    "lead_id": "sim_lead_00006",
+    "name": "Linda Ramirez",
+    "company": "DealFlow",
+    "stages": {
+      "enrichment": {
+        "success": true,
+        "email_found": true
+      },
+      "segmentation": {
+        "icp_score": 65,
+        "tier": "tier_2",
+        "category": "WARM_LEAD",
+        "confidence": 0.85,
+        "reason": "High-quality lead data with clear tier assignment (ICP: 65)",
+        "next_action": "Prioritized campaign inclusion",
+        "needs_replan": false,
+        "enrichment_gaps": [],
+        "breakdown": {
+          "company_size": 20,
+          "title_seniority": 15,
+          "industry_fit": 5,
+          "tech_stack": 15,
+          "intent_signals": 10
+        }
+      },
+      "crafting": {
+        "crafted": true,
+        "subject": "Quick question about DealFlow's AI strategy",
+        "template_id": "template_tier_2_content_downloader",
+        "personalization_hooks": [],
+        "estimated_send_time": "2026-01-23T20:57:45.114886+00:00"
+      },
+      "approval": {
+        "approval_needed": true,
+        "approval_id": "approval_8e6502d5",
+        "status": "pending",
+        "routed_to": "AE_QUEUE",
+        "priority": 2,
+        "deadline": "2026-01-24T14:57:45.114903+00:00"
+      }
+    },
+    "final_status": "completed"
+  },
+  {
+    "lead_id": "sim_lead_00007",
+    "name": "Christopher Rodriguez",
+    "company": "TechFlow",
+    "stages": {
+      "enrichment": {
+        "success": true,
+        "email_found": true
+      },
+      "segmentation": {
+        "icp_score": 56,
+        "tier": "tier_3",
+        "category": "NURTURE",
+        "confidence": 0.62,
+        "reason": "Score 56 is near tier boundary; No intent signals detected",
+        "next_action": "Add to nurture sequence",
+        "needs_replan": true,
+        "enrichment_gaps": [
+          "intent_signals"
+        ],
+        "breakdown": {
+          "company_size": 20,
+          "title_seniority": 8,
+          "industry_fit": 15,
+          "tech_stack": 13,
+          "intent_signals": 0
+        }
+      },
+      "crafting": {
+        "crafted": false,
+        "reason": "Lead not qualified for outreach"
+      },
+      "approval": {
+        "approval_needed": false,
+        "reason": "No email to approve"
+      }
+    },
+    "final_status": "completed"
+  },
+  {
+    "lead_id": "sim_lead_00008",
+    "name": "Karen Martin",
+    "company": "GrowthEngine",
+    "stages": {
+      "enrichment": {
+        "success": true,
+        "email_found": true
+      },
+      "segmentation": {
+        "icp_score": 67,
+        "tier": "tier_2",
+        "category": "WARM_LEAD",
+        "confidence": 0.89,
+        "reason": "High-quality lead data with clear tier assignment (ICP: 67)",
+        "next_action": "Prioritized campaign inclusion",
+        "needs_replan": false,
+        "enrichment_gaps": [],
+        "breakdown": {
+          "company_size": 20,
+          "title_seniority": 22,
+          "industry_fit": 5,
+          "tech_stack": 0,
+          "intent_signals": 20
+        }
+      },
+      "crafting": {
+        "crafted": true,
+        "subject": "Karen, 3 ways AI is changing Growth Platform",
+        "template_id": "template_tier_2_demo_requester",
+        "personalization_hooks": [],
+        "estimated_send_time": "2026-01-24T21:57:45.114975+00:00"
+      },
+      "approval": {
+        "approval_needed": true,
+        "approval_id": "approval_5efbaaa2",
+        "status": "pending",
+        "routed_to": "AE_QUEUE",
+        "priority": 2,
+        "deadline": "2026-01-24T14:57:45.114985+00:00"
+      }
+    },
+    "final_status": "completed"
+  },
+  {
+    "lead_id": "sim_lead_00009",
+    "name": "Susan Robinson",
+    "company": "MarketMind",
+    "stages": {
+      "enrichment": {
+        "success": true,
+        "email_found": true
+      },
+      "segmentation": {
+        "icp_score": 70,
+        "tier": "tier_2",
+        "category": "WARM_LEAD",
+        "confidence": 0.73,
+        "reason": "No intent signals detected",
+        "next_action": "Prioritized campaign inclusion",
+        "needs_replan": true,
+        "enrichment_gaps": [
+          "intent_signals"
+        ],
+        "breakdown": {
+          "company_size": 20,
+          "title_seniority": 22,
+          "industry_fit": 15,
+          "tech_stack": 13,
+          "intent_signals": 0
+        }
+      },
+      "crafting": {
+        "crafted": true,
+        "subject": "Saw you at [Event] - thoughts on AI for RevOps?",
+        "template_id": "template_tier_2_webinar_registrant",
+        "personalization_hooks": [],
+        "estimated_send_time": "2026-01-24T10:57:45.115018+00:00"
+      },
+      "approval": {
+        "approval_needed": true,
+        "approval_id": "approval_0927e714",
+        "status": "pending",
+        "routed_to": "AE_QUEUE",
+        "priority": 2,
+        "deadline": "2026-01-24T14:57:45.115027+00:00"
+      }
+    },
+    "final_status": "completed"
+  },
+  {
+    "lead_id": "sim_lead_00010",
+    "name": "William White",
+    "company": "BookedMeetings",
+    "stages": {
+      "enrichment": {
+        "success": true,
+        "email_found": true
+      },
+      "segmentation": {
+        "icp_score": 50,
+        "tier": "tier_3",
+        "category": "NURTURE",
+        "confidence": 0.7,
+        "reason": "No intent signals detected",
+        "next_action": "Add to nurture sequence",
+        "needs_replan": true,
+        "enrichment_gaps": [
+          "intent_signals"
+        ],
+        "breakdown": {
+          "company_size": 20,
+          "title_seniority": 25,
+          "industry_fit": 5,
+          "tech_stack": 0,
+          "intent_signals": 0
+        }
+      },
+      "crafting": {
+        "crafted": false,
+        "reason": "Lead not qualified for outreach"
+      },
+      "approval": {
+        "approval_needed": false,
+        "reason": "No email to approve"
+      }
+    },
+    "final_status": "completed"
+  },
+  {
+    "lead_id": "sim_lead_00011",
+    "name": "Joseph Jackson",
+    "company": "BookedMeetings",
+    "stages": {
+      "enrichment": {
+        "success": true,
+        "email_found": true
+      },
+      "segmentation": {
+        "icp_score": 69,
+        "tier": "tier_2",
+        "category": "WARM_LEAD",
+        "confidence": 0.86,
+        "reason": "High-quality lead data with clear tier assignment (ICP: 69)",
+        "next_action": "Prioritized campaign inclusion",
+        "needs_replan": false,
+        "enrichment_gaps": [],
+        "breakdown": {
+          "company_size": 20,
+          "title_seniority": 25,
+          "industry_fit": 5,
+          "tech_stack": 15,
+          "intent_signals": 4
+        }
+      },
+      "crafting": {
+        "crafted": true,
+        "subject": "Saw you at [Event] - thoughts on AI for RevOps?",
+        "template_id": "template_tier_2_website_visitor",
+        "personalization_hooks": [],
+        "estimated_send_time": "2026-01-24T02:57:45.115463+00:00"
+      },
+      "approval": {
+        "approval_needed": true,
+        "approval_id": "approval_d33d313f",
+        "status": "pending",
+        "routed_to": "AE_QUEUE",
+        "priority": 2,
+        "deadline": "2026-01-24T14:57:45.115479+00:00"
+      }
+    },
+    "final_status": "completed"
+  },
+  {
+    "lead_id": "sim_lead_00012",
+    "name": "Betty Hernandez",
+    "company": "MarketMind",
+    "stages": {
+      "enrichment": {
+        "success": true,
+        "email_found": true
+      },
+      "segmentation": {
+        "icp_score": 28,
+        "tier": "tier_4",
+        "category": "MONITOR",
+        "confidence": 0.71,
+        "reason": "No intent signals detected",
+        "next_action": "Monitor for intent signals",
+        "needs_replan": true,
+        "enrichment_gaps": [
+          "intent_signals"
+        ],
+        "breakdown": {
+          "company_size": 5,
+          "title_seniority": 8,
+          "industry_fit": 15,
+          "tech_stack": 0,
+          "intent_signals": 0
+        }
+      },
+      "crafting": {
+        "crafted": false,
+        "reason": "Lead not qualified for outreach"
+      },
+      "approval": {
+        "approval_needed": false,
+        "reason": "No email to approve"
+      }
+    },
+    "final_status": "completed"
+  },
+  {
+    "lead_id": "sim_lead_00013",
+    "name": "Steven Williams",
+    "company": "QuotaHit",
+    "stages": {
+      "enrichment": {
+        "success": true,
+        "email_found": true
+      },
+      "segmentation": {
+        "icp_score": 33,
+        "tier": "tier_4",
+        "category": "MONITOR",
+        "confidence": 0.64,
+        "reason": "No intent signals detected",
+        "next_action": "Monitor for intent signals",
+        "needs_replan": true,
+        "enrichment_gaps": [
+          "intent_signals"
+        ],
+        "breakdown": {
+          "company_size": 20,
+          "title_seniority": 8,
+          "industry_fit": 5,
+          "tech_stack": 0,
+          "intent_signals": 0
+        }
+      },
+      "crafting": {
+        "crafted": false,
+        "reason": "Lead not qualified for outreach"
+      },
+      "approval": {
+        "approval_needed": false,
+        "reason": "No email to approve"
+      }
+    },
+    "final_status": "completed"
+  },
+  {
+    "lead_id": "sim_lead_00014",
+    "name": "Barbara Miller",
+    "company": "CloserIQ",
+    "stages": {
+      "enrichment": {
+        "success": true,
+        "email_found": true
+      },
+      "segmentation": {
+        "icp_score": 47,
+        "tier": "tier_3",
+        "category": "NURTURE",
+        "confidence": 0.65,
+        "reason": "No intent signals detected",
+        "next_action": "Add to nurture sequence",
+        "needs_replan": true,
+        "enrichment_gaps": [
+          "intent_signals"
+        ],
+        "breakdown": {
+          "company_size": 20,
+          "title_seniority": 22,
+          "industry_fit": 5,
+          "tech_stack": 0,
+          "intent_signals": 0
+        }
+      },
+      "crafting": {
+        "crafted": false,
+        "reason": "Lead not qualified for outreach"
+      },
+      "approval": {
+        "approval_needed": false,
+        "reason": "No email to approve"
+      }
+    },
+    "final_status": "completed"
+  },
+  {
+    "lead_id": "sim_lead_00015",
+    "name": "Karen Miller",
+    "company": "ConvertLabs",
+    "stages": {
+      "enrichment": {
+        "success": true,
+        "email_found": true
+      },
+      "segmentation": {
+        "icp_score": 50,
+        "tier": "tier_3",
+        "category": "NURTURE",
+        "confidence": 0.7,
+        "reason": "No intent signals detected",
+        "next_action": "Add to nurture sequence",
+        "needs_replan": true,
+        "enrichment_gaps": [
+          "intent_signals"
+        ],
+        "breakdown": {
+          "company_size": 20,
+          "title_seniority": 25,
+          "industry_fit": 5,
+          "tech_stack": 0,
+          "intent_signals": 0
+        }
+      },
+      "crafting": {
+        "crafted": false,
+        "reason": "Lead not qualified for outreach"
+      },
+      "approval": {
+        "approval_needed": false,
+        "reason": "No email to approve"
+      }
+    },
+    "final_status": "completed"
+  },
+  {
+    "lead_id": "sim_lead_00016",
+    "name": "Richard Robinson",
+    "company": "CloserIQ",
+    "stages": {
+      "enrichment": {
+        "success": true,
+        "email_found": true
+      },
+      "segmentation": {
+        "icp_score": 60,
+        "tier": "tier_2",
+        "category": "WARM_LEAD",
+        "confidence": 0.56,
+        "reason": "Score 60 is near tier boundary; No intent signals detected",
+        "next_action": "Prioritized campaign inclusion",
+        "needs_replan": true,
+        "enrichment_gaps": [
+          "intent_signals"
+        ],
+        "breakdown": {
+          "company_size": 20,
+          "title_seniority": 25,
+          "industry_fit": 5,
+          "tech_stack": 10,
+          "intent_signals": 0
+        }
+      },
+      "crafting": {
+        "crafted": true,
+        "subject": "Quick question about CloserIQ's AI strategy",
+        "template_id": "template_tier_2_event_attendee",
+        "personalization_hooks": [],
+        "estimated_send_time": "2026-01-23T18:57:45.115585+00:00"
+      },
+      "approval": {
+        "approval_needed": true,
+        "approval_id": "approval_97111d08",
+        "status": "pending",
+        "routed_to": "AE_QUEUE",
+        "priority": 2,
+        "deadline": "2026-01-24T14:57:45.115595+00:00"
+      }
+    },
+    "final_status": "completed"
+  },
+  {
+    "lead_id": "sim_lead_00017",
+    "name": "Patricia Clark",
+    "company": "RevenueCloud",
+    "stages": {
+      "enrichment": {
+        "success": true,
+        "email_found": true
+      },
+      "segmentation": {
+        "icp_score": 50,
+        "tier": "tier_3",
+        "category": "NURTURE",
+        "confidence": 0.71,
+        "reason": "No intent signals detected",
+        "next_action": "Add to nurture sequence",
+        "needs_replan": true,
+        "enrichment_gaps": [
+          "intent_signals"
+        ],
+        "breakdown": {
+          "company_size": 20,
+          "title_seniority": 25,
+          "industry_fit": 5,
+          "tech_stack": 0,
+          "intent_signals": 0
+        }
+      },
+      "crafting": {
+        "crafted": false,
+        "reason": "Lead not qualified for outreach"
+      },
+      "approval": {
+        "approval_needed": false,
+        "reason": "No email to approve"
+      }
+    },
+    "final_status": "completed"
+  },
+  {
+    "lead_id": "sim_lead_00018",
+    "name": "Matthew Smith",
+    "company": "OutreachMax",
+    "stages": {
+      "enrichment": {
+        "success": true,
+        "email_found": true
+      },
+      "segmentation": {
+        "icp_score": 64,
+        "tier": "tier_2",
+        "category": "WARM_LEAD",
+        "confidence": 0.78,
+        "reason": "Score 64 is near tier boundary",
+        "next_action": "Prioritized campaign inclusion",
+        "needs_replan": true,
+        "enrichment_gaps": [],
+        "breakdown": {
+          "company_size": 20,
+          "title_seniority": 25,
+          "industry_fit": 5,
+          "tech_stack": 0,
+          "intent_signals": 14
+        }
+      },
+      "crafting": {
+        "crafted": true,
+        "subject": "Matthew, 3 ways AI is changing Sales Engagement",
+        "template_id": "template_tier_2_content_downloader",
+        "personalization_hooks": [],
+        "estimated_send_time": "2026-01-25T01:57:45.115645+00:00"
+      },
+      "approval": {
+        "approval_needed": true,
+        "approval_id": "approval_c5f9bf30",
+        "status": "pending",
+        "routed_to": "AE_QUEUE",
+        "priority": 2,
+        "deadline": "2026-01-24T14:57:45.115654+00:00"
+      }
+    },
+    "final_status": "completed"
+  },
+  {
+    "lead_id": "sim_lead_00019",
+    "name": "Mark Brown",
+    "company": "RevenueCloud",
+    "stages": {
+      "enrichment": {
+        "success": false,
+        "email_found": false
+      }
+    },
+    "final_status": "enrichment_failed"
+  },
+  {
+    "lead_id": "sim_lead_00020",
+    "name": "Joseph Smith",
+    "company": "RevenueCloud",
+    "stages": {
+      "enrichment": {
+        "success": true,
+        "email_found": true
+      },
+      "segmentation": {
+        "icp_score": 50,
+        "tier": "tier_3",
+        "category": "NURTURE",
+        "confidence": 0.71,
+        "reason": "No intent signals detected",
+        "next_action": "Add to nurture sequence",
+        "needs_replan": true,
+        "enrichment_gaps": [
+          "intent_signals"
+        ],
+        "breakdown": {
+          "company_size": 20,
+          "title_seniority": 25,
+          "industry_fit": 5,
+          "tech_stack": 0,
+          "intent_signals": 0
+        }
+      },
+      "crafting": {
+        "crafted": false,
+        "reason": "Lead not qualified for outreach"
+      },
+      "approval": {
+        "approval_needed": false,
+        "reason": "No email to approve"
+      }
+    },
+    "final_status": "completed"
+  },
+  {
+    "lead_id": "sim_lead_00021",
+    "name": "Steven Garcia",
+    "company": "RevOps Hub",
+    "stages": {
+      "enrichment": {
+        "success": true,
+        "email_found": true
+      },
+      "segmentation": {
+        "icp_score": 62,
+        "tier": "tier_2",
+        "category": "WARM_LEAD",
+        "confidence": 0.58,
+        "reason": "Score 62 is near tier boundary; No intent signals detected",
+        "next_action": "Prioritized campaign inclusion",
+        "needs_replan": true,
+        "enrichment_gaps": [
+          "intent_signals"
+        ],
+        "breakdown": {
+          "company_size": 20,
+          "title_seniority": 22,
+          "industry_fit": 5,
+          "tech_stack": 15,
+          "intent_signals": 0
+        }
+      },
+      "crafting": {
+        "crafted": true,
+        "subject": "Steven, 3 ways AI is changing Revenue Operations",
+        "template_id": "template_tier_2_group_member",
+        "personalization_hooks": [],
+        "estimated_send_time": "2026-01-23T22:57:45.116074+00:00"
+      },
+      "approval": {
+        "approval_needed": true,
+        "approval_id": "approval_53f6c370",
+        "status": "pending",
+        "routed_to": "AE_QUEUE",
+        "priority": 2,
+        "deadline": "2026-01-24T14:57:45.116089+00:00"
+      }
+    },
+    "final_status": "completed"
+  },
+  {
+    "lead_id": "sim_lead_00022",
+    "name": "Sandra Williams",
+    "company": "RevOps Hub",
+    "stages": {
+      "enrichment": {
+        "success": false,
+        "email_found": false
+      }
+    },
+    "final_status": "enrichment_failed"
+  },
+  {
+    "lead_id": "sim_lead_00023",
+    "name": "David Sanchez",
+    "company": "TechFlow",
+    "stages": {
+      "enrichment": {
+        "success": true,
+        "email_found": true
+      },
+      "segmentation": {
+        "icp_score": 60,
+        "tier": "tier_2",
+        "category": "WARM_LEAD",
+        "confidence": 0.48,
+        "reason": "Score 60 is near tier boundary; No intent signals detected",
+        "next_action": "Prioritized campaign inclusion",
+        "needs_replan": true,
+        "enrichment_gaps": [
+          "intent_signals"
+        ],
+        "breakdown": {
+          "company_size": 20,
+          "title_seniority": 25,
+          "industry_fit": 15,
+          "tech_stack": 0,
+          "intent_signals": 0
+        }
+      },
+      "crafting": {
+        "crafted": true,
+        "subject": "David, 3 ways AI is changing Technology",
+        "template_id": "template_tier_2_webinar_registrant",
+        "personalization_hooks": [],
+        "estimated_send_time": "2026-01-24T21:57:45.116121+00:00"
+      },
+      "approval": {
+        "approval_needed": true,
+        "approval_id": "approval_04c20e00",
+        "status": "pending",
+        "routed_to": "AE_QUEUE",
+        "priority": 2,
+        "deadline": "2026-01-24T14:57:45.116130+00:00"
+      }
+    },
+    "final_status": "completed"
+  },
+  {
+    "lead_id": "sim_lead_00024",
+    "name": "Margaret Brown",
+    "company": "Acme Corp",
+    "stages": {
+      "enrichment": {
+        "success": true,
+        "email_found": true
+      },
+      "segmentation": {
+        "icp_score": 62,
+        "tier": "tier_2",
+        "category": "WARM_LEAD",
+        "confidence": 0.55,
+        "reason": "Score 62 is near tier boundary; No intent signals detected",
+        "next_action": "Prioritized campaign inclusion",
+        "needs_replan": true,
+        "enrichment_gaps": [
+          "intent_signals"
+        ],
+        "breakdown": {
+          "company_size": 20,
+          "title_seniority": 22,
+          "industry_fit": 20,
+          "tech_stack": 0,
+          "intent_signals": 0
+        }
+      },
+      "crafting": {
+        "crafted": true,
+        "subject": "Quick question about Acme Corp's AI strategy",
+        "template_id": "template_tier_2_event_attendee",
+        "personalization_hooks": [],
+        "estimated_send_time": "2026-01-25T05:57:45.116158+00:00"
+      },
+      "approval": {
+        "approval_needed": true,
+        "approval_id": "approval_dd9ead86",
+        "status": "pending",
+        "routed_to": "AE_QUEUE",
+        "priority": 2,
+        "deadline": "2026-01-24T14:57:45.116166+00:00"
+      }
+    },
+    "final_status": "completed"
+  },
+  {
+    "lead_id": "sim_lead_00025",
+    "name": "Sandra Perez",
+    "company": "SalesStack",
+    "stages": {
+      "enrichment": {
+        "success": true,
+        "email_found": true
+      },
+      "segmentation": {
+        "icp_score": 44,
+        "tier": "tier_3",
+        "category": "NURTURE",
+        "confidence": 0.63,
+        "reason": "Score 44 is near tier boundary; No intent signals detected",
+        "next_action": "Add to nurture sequence",
+        "needs_replan": true,
+        "enrichment_gaps": [
+          "intent_signals"
+        ],
+        "breakdown": {
+          "company_size": 12,
+          "title_seniority": 22,
+          "industry_fit": 5,
+          "tech_stack": 5,
+          "intent_signals": 0
+        }
+      },
+      "crafting": {
+        "crafted": false,
+        "reason": "Lead not qualified for outreach"
+      },
+      "approval": {
+        "approval_needed": false,
+        "reason": "No email to approve"
+      }
+    },
+    "final_status": "completed"
+  },
+  {
+    "lead_id": "sim_lead_00026",
+    "name": "Barbara Jackson",
+    "company": "OutreachMax",
+    "stages": {
+      "enrichment": {
+        "success": true,
+        "email_found": true
+      },
+      "segmentation": {
+        "icp_score": 70,
+        "tier": "tier_2",
+        "category": "WARM_LEAD",
+        "confidence": 0.95,
+        "reason": "High-quality lead data with clear tier assignment (ICP: 70)",
+        "next_action": "Prioritized campaign inclusion",
+        "needs_replan": false,
+        "enrichment_gaps": [],
+        "breakdown": {
+          "company_size": 20,
+          "title_seniority": 22,
+          "industry_fit": 5,
+          "tech_stack": 13,
+          "intent_signals": 10
+        }
+      },
+      "crafting": {
+        "crafted": true,
+        "subject": "Saw you at [Event] - thoughts on AI for RevOps?",
+        "template_id": "template_tier_2_content_downloader",
+        "personalization_hooks": [],
+        "estimated_send_time": "2026-01-25T13:57:45.116225+00:00"
+      },
+      "approval": {
+        "approval_needed": true,
+        "approval_id": "approval_91bc829a",
+        "status": "pending",
+        "routed_to": "AE_QUEUE",
+        "priority": 2,
+        "deadline": "2026-01-24T14:57:45.116233+00:00"
+      }
+    },
+    "final_status": "completed"
+  },
+  {
+    "lead_id": "sim_lead_00027",
+    "name": "Michael Harris",
+    "company": "BookedMeetings",
+    "stages": {
+      "enrichment": {
+        "success": true,
+        "email_found": true
+      },
+      "segmentation": {
+        "icp_score": 54,
+        "tier": "tier_3",
+        "category": "NURTURE",
+        "confidence": 0.92,
+        "reason": "High-quality lead data with clear tier assignment (ICP: 54)",
+        "next_action": "Add to nurture sequence",
+        "needs_replan": false,
+        "enrichment_gaps": [],
+        "breakdown": {
+          "company_size": 12,
+          "title_seniority": 8,
+          "industry_fit": 5,
+          "tech_stack": 15,
+          "intent_signals": 14
+        }
+      },
+      "crafting": {
+        "crafted": false,
+        "reason": "Lead not qualified for outreach"
+      },
+      "approval": {
+        "approval_needed": false,
+        "reason": "No email to approve"
+      }
+    },
+    "final_status": "completed"
+  },
+  {
+    "lead_id": "sim_lead_00028",
+    "name": "Nancy Rodriguez",
+    "company": "OutreachMax",
+    "stages": {
+      "enrichment": {
+        "success": true,
+        "email_found": false
+      },
+      "segmentation": {
+        "icp_score": 40,
+        "tier": "tier_3",
+        "category": "NURTURE",
+        "confidence": 0.43,
+        "reason": "Score 40 is near tier boundary; No intent signals detected",
+        "next_action": "Add to nurture sequence",
+        "needs_replan": true,
+        "enrichment_gaps": [
+          "email",
+          "intent_signals"
+        ],
+        "breakdown": {
+          "company_size": 20,
+          "title_seniority": 15,
+          "industry_fit": 5,
+          "tech_stack": 0,
+          "intent_signals": 0
+        }
+      },
+      "crafting": {
+        "crafted": false,
+        "reason": "Lead not qualified for outreach"
+      },
+      "approval": {
+        "approval_needed": false,
+        "reason": "No email to approve"
+      }
+    },
+    "final_status": "completed"
+  },
+  {
+    "lead_id": "sim_lead_00029",
+    "name": "Jessica Lopez",
+    "company": "CloserIQ",
+    "stages": {
+      "enrichment": {
+        "success": true,
+        "email_found": true
+      },
+      "segmentation": {
+        "icp_score": 70,
+        "tier": "tier_2",
+        "category": "WARM_LEAD",
+        "confidence": 0.92,
+        "reason": "High-quality lead data with clear tier assignment (ICP: 70)",
+        "next_action": "Prioritized campaign inclusion",
+        "needs_replan": false,
+        "enrichment_gaps": [],
+        "breakdown": {
+          "company_size": 20,
+          "title_seniority": 22,
+          "industry_fit": 5,
+          "tech_stack": 15,
+          "intent_signals": 8
+        }
+      },
+      "crafting": {
+        "crafted": true,
+        "subject": "Saw you at [Event] - thoughts on AI for RevOps?",
+        "template_id": "template_tier_2_content_downloader",
+        "personalization_hooks": [],
+        "estimated_send_time": "2026-01-23T21:57:45.116308+00:00"
+      },
+      "approval": {
+        "approval_needed": true,
+        "approval_id": "approval_ba9bca68",
+        "status": "pending",
+        "routed_to": "AE_QUEUE",
+        "priority": 2,
+        "deadline": "2026-01-24T14:57:45.116316+00:00"
+      }
+    },
+    "final_status": "completed"
+  },
+  {
+    "lead_id": "sim_lead_00030",
+    "name": "Lisa Martin",
+    "company": "WinRate",
+    "stages": {
+      "enrichment": {
+        "success": true,
+        "email_found": true
+      },
+      "segmentation": {
+        "icp_score": 75,
+        "tier": "tier_2",
+        "category": "WARM_LEAD",
+        "confidence": 0.84,
+        "reason": "High-quality lead data with clear tier assignment (ICP: 75)",
+        "next_action": "Prioritized campaign inclusion",
+        "needs_replan": true,
+        "enrichment_gaps": [],
+        "breakdown": {
+          "company_size": 20,
+          "title_seniority": 25,
+          "industry_fit": 5,
+          "tech_stack": 15,
+          "intent_signals": 10
+        }
+      },
+      "crafting": {
+        "crafted": true,
+        "subject": "Lisa, 3 ways AI is changing Win Rate Analytics",
+        "template_id": "template_tier_2_website_visitor",
+        "personalization_hooks": [],
+        "estimated_send_time": "2026-01-24T14:57:45.116679+00:00"
+      },
+      "approval": {
+        "approval_needed": true,
+        "approval_id": "approval_fdfe1572",
+        "status": "pending",
+        "routed_to": "AE_QUEUE",
+        "priority": 2,
+        "deadline": "2026-01-24T14:57:45.116692+00:00"
+      }
+    },
+    "final_status": "completed"
+  },
+  {
+    "lead_id": "sim_lead_00031",
+    "name": "Betty Ramirez",
+    "company": "RevOps Hub",
+    "stages": {
+      "enrichment": {
+        "success": true,
+        "email_found": true
+      },
+      "segmentation": {
+        "icp_score": 60,
+        "tier": "tier_2",
+        "category": "WARM_LEAD",
+        "confidence": 0.8,
+        "reason": "Score 60 is near tier boundary",
+        "next_action": "Prioritized campaign inclusion",
+        "needs_replan": true,
+        "enrichment_gaps": [],
+        "breakdown": {
+          "company_size": 20,
+          "title_seniority": 8,
+          "industry_fit": 5,
+          "tech_stack": 13,
+          "intent_signals": 14
+        }
+      },
+      "crafting": {
+        "crafted": true,
+        "subject": "Quick question about RevOps Hub's AI strategy",
+        "template_id": "template_tier_2_demo_requester",
+        "personalization_hooks": [],
+        "estimated_send_time": "2026-01-23T23:57:45.116727+00:00"
+      },
+      "approval": {
+        "approval_needed": true,
+        "approval_id": "approval_5f4f2800",
+        "status": "pending",
+        "routed_to": "AE_QUEUE",
+        "priority": 2,
+        "deadline": "2026-01-24T14:57:45.116735+00:00"
+      }
+    },
+    "final_status": "completed"
+  },
+  {
+    "lead_id": "sim_lead_00032",
+    "name": "Joseph Garcia",
+    "company": "DealFlow",
+    "stages": {
+      "enrichment": {
+        "success": true,
+        "email_found": true
+      },
+      "segmentation": {
+        "icp_score": 33,
+        "tier": "tier_4",
+        "category": "MONITOR",
+        "confidence": 0.64,
+        "reason": "No intent signals detected",
+        "next_action": "Monitor for intent signals",
+        "needs_replan": true,
+        "enrichment_gaps": [
+          "intent_signals"
+        ],
+        "breakdown": {
+          "company_size": 20,
+          "title_seniority": 8,
+          "industry_fit": 5,
+          "tech_stack": 0,
+          "intent_signals": 0
+        }
+      },
+      "crafting": {
+        "crafted": false,
+        "reason": "Lead not qualified for outreach"
+      },
+      "approval": {
+        "approval_needed": false,
+        "reason": "No email to approve"
+      }
+    },
+    "final_status": "completed"
+  },
+  {
+    "lead_id": "sim_lead_00033",
+    "name": "Robert Martin",
+    "company": "RevenueCloud",
+    "stages": {
+      "enrichment": {
+        "success": true,
+        "email_found": false
+      },
+      "segmentation": {
+        "icp_score": 62,
+        "tier": "tier_2",
+        "category": "WARM_LEAD",
+        "confidence": 0.52,
+        "reason": "Score 62 is near tier boundary; No intent signals detected",
+        "next_action": "Prioritized campaign inclusion",
+        "needs_replan": true,
+        "enrichment_gaps": [
+          "email",
+          "intent_signals"
+        ],
+        "breakdown": {
+          "company_size": 20,
+          "title_seniority": 22,
+          "industry_fit": 5,
+          "tech_stack": 15,
+          "intent_signals": 0
+        }
+      },
+      "crafting": {
+        "crafted": true,
+        "subject": "Quick question about RevenueCloud's AI strategy",
+        "template_id": "template_tier_2_competitor_follower",
+        "personalization_hooks": [],
+        "estimated_send_time": "2026-01-23T23:57:45.116787+00:00"
+      },
+      "approval": {
+        "approval_needed": true,
+        "approval_id": "approval_65122a0a",
+        "status": "pending",
+        "routed_to": "AE_QUEUE",
+        "priority": 2,
+        "deadline": "2026-01-24T14:57:45.116795+00:00"
+      }
+    },
+    "final_status": "completed"
+  },
+  {
+    "lead_id": "sim_lead_00034",
+    "name": "Karen Miller",
+    "company": "BookedMeetings",
+    "stages": {
+      "enrichment": {
+        "success": true,
+        "email_found": true
+      },
+      "segmentation": {
+        "icp_score": 50,
+        "tier": "tier_3",
+        "category": "NURTURE",
+        "confidence": 0.7,
+        "reason": "No intent signals detected",
+        "next_action": "Add to nurture sequence",
+        "needs_replan": true,
+        "enrichment_gaps": [
+          "intent_signals"
+        ],
+        "breakdown": {
+          "company_size": 20,
+          "title_seniority": 25,
+          "industry_fit": 5,
+          "tech_stack": 0,
+          "intent_signals": 0
+        }
+      },
+      "crafting": {
+        "crafted": false,
+        "reason": "Lead not qualified for outreach"
+      },
+      "approval": {
+        "approval_needed": false,
+        "reason": "No email to approve"
+      }
+    },
+    "final_status": "completed"
+  },
+  {
+    "lead_id": "sim_lead_00035",
+    "name": "Elizabeth Brown",
+    "company": "TechFlow",
+    "stages": {
+      "enrichment": {
+        "success": false,
+        "email_found": false
+      }
+    },
+    "final_status": "enrichment_failed"
+  },
+  {
+    "lead_id": "sim_lead_00036",
+    "name": "Betty Rodriguez",
+    "company": "Acme Corp",
+    "stages": {
+      "enrichment": {
+        "success": true,
+        "email_found": true
+      },
+      "segmentation": {
+        "icp_score": 62,
+        "tier": "tier_2",
+        "category": "WARM_LEAD",
+        "confidence": 0.53,
+        "reason": "Score 62 is near tier boundary; No intent signals detected",
+        "next_action": "Prioritized campaign inclusion",
+        "needs_replan": true,
+        "enrichment_gaps": [
+          "intent_signals"
+        ],
+        "breakdown": {
+          "company_size": 20,
+          "title_seniority": 22,
+          "industry_fit": 20,
+          "tech_stack": 0,
+          "intent_signals": 0
+        }
+      },
+      "crafting": {
+        "crafted": true,
+        "subject": "Saw you at [Event] - thoughts on AI for RevOps?",
+        "template_id": "template_tier_2_group_member",
+        "personalization_hooks": [],
+        "estimated_send_time": "2026-01-23T23:57:45.116849+00:00"
+      },
+      "approval": {
+        "approval_needed": true,
+        "approval_id": "approval_7e137f24",
+        "status": "pending",
+        "routed_to": "AE_QUEUE",
+        "priority": 2,
+        "deadline": "2026-01-24T14:57:45.116858+00:00"
+      }
+    },
+    "final_status": "completed"
+  },
+  {
+    "lead_id": "sim_lead_00037",
+    "name": "David Garcia",
+    "company": "ConvertLabs",
+    "stages": {
+      "enrichment": {
+        "success": true,
+        "email_found": true
+      },
+      "segmentation": {
+        "icp_score": 60,
+        "tier": "tier_2",
+        "category": "WARM_LEAD",
+        "confidence": 0.75,
+        "reason": "Score 60 is near tier boundary",
+        "next_action": "Prioritized campaign inclusion",
+        "needs_replan": true,
+        "enrichment_gaps": [],
+        "breakdown": {
+          "company_size": 20,
+          "title_seniority": 25,
+          "industry_fit": 5,
+          "tech_stack": 0,
+          "intent_signals": 10
+        }
+      },
+      "crafting": {
+        "crafted": true,
+        "subject": "Quick question about ConvertLabs's AI strategy",
+        "template_id": "template_tier_2_demo_requester",
+        "personalization_hooks": [],
+        "estimated_send_time": "2026-01-25T01:57:45.116883+00:00"
+      },
+      "approval": {
+        "approval_needed": true,
+        "approval_id": "approval_7813e115",
+        "status": "pending",
+        "routed_to": "AE_QUEUE",
+        "priority": 2,
+        "deadline": "2026-01-24T14:57:45.116891+00:00"
+      }
+    },
+    "final_status": "completed"
+  },
+  {
+    "lead_id": "sim_lead_00038",
+    "name": "John Ramirez",
+    "company": "OutreachMax",
+    "stages": {
+      "enrichment": {
+        "success": true,
+        "email_found": true
+      },
+      "segmentation": {
+        "icp_score": 50,
+        "tier": "tier_3",
+        "category": "NURTURE",
+        "confidence": 0.7,
+        "reason": "No intent signals detected",
+        "next_action": "Add to nurture sequence",
+        "needs_replan": true,
+        "enrichment_gaps": [
+          "intent_signals"
+        ],
+        "breakdown": {
+          "company_size": 20,
+          "title_seniority": 25,
+          "industry_fit": 5,
+          "tech_stack": 0,
+          "intent_signals": 0
+        }
+      },
+      "crafting": {
+        "crafted": false,
+        "reason": "Lead not qualified for outreach"
+      },
+      "approval": {
+        "approval_needed": false,
+        "reason": "No email to approve"
+      }
+    },
+    "final_status": "completed"
+  },
+  {
+    "lead_id": "sim_lead_00039",
+    "name": "Jessica Jones",
+    "company": "GrowthEngine",
+    "stages": {
+      "enrichment": {
+        "success": true,
+        "email_found": true
+      },
+      "segmentation": {
+        "icp_score": 56,
+        "tier": "tier_3",
+        "category": "NURTURE",
+        "confidence": 0.76,
+        "reason": "Score 56 is near tier boundary",
+        "next_action": "Add to nurture sequence",
+        "needs_replan": true,
+        "enrichment_gaps": [],
+        "breakdown": {
+          "company_size": 20,
+          "title_seniority": 22,
+          "industry_fit": 5,
+          "tech_stack": 5,
+          "intent_signals": 4
+        }
+      },
+      "crafting": {
+        "crafted": false,
+        "reason": "Lead not qualified for outreach"
+      },
+      "approval": {
+        "approval_needed": false,
+        "reason": "No email to approve"
+      }
+    },
+    "final_status": "completed"
+  },
+  {
+    "lead_id": "sim_lead_00040",
+    "name": "Robert Johnson",
+    "company": "SalesForce Pro",
+    "stages": {
+      "enrichment": {
+        "success": true,
+        "email_found": true
+      },
+      "segmentation": {
+        "icp_score": 60,
+        "tier": "tier_2",
+        "category": "WARM_LEAD",
+        "confidence": 0.5,
+        "reason": "Score 60 is near tier boundary; No intent signals detected",
+        "next_action": "Prioritized campaign inclusion",
+        "needs_replan": true,
+        "enrichment_gaps": [
+          "intent_signals"
+        ],
+        "breakdown": {
+          "company_size": 20,
+          "title_seniority": 25,
+          "industry_fit": 15,
+          "tech_stack": 0,
+          "intent_signals": 0
+        }
+      },
+      "crafting": {
+        "crafted": true,
+        "subject": "Saw you at [Event] - thoughts on AI for RevOps?",
+        "template_id": "template_tier_2_competitor_follower",
+        "personalization_hooks": [],
+        "estimated_send_time": "2026-01-24T19:57:45.117253+00:00"
+      },
+      "approval": {
+        "approval_needed": true,
+        "approval_id": "approval_97052feb",
+        "status": "pending",
+        "routed_to": "AE_QUEUE",
+        "priority": 2,
+        "deadline": "2026-01-24T14:57:45.117266+00:00"
+      }
+    },
+    "final_status": "completed"
+  },
+  {
+    "lead_id": "sim_lead_00041",
+    "name": "Sarah Brown",
+    "company": "Acme Corp",
+    "stages": {
+      "enrichment": {
+        "success": true,
+        "email_found": true
+      },
+      "segmentation": {
+        "icp_score": 65,
+        "tier": "tier_2",
+        "category": "WARM_LEAD",
+        "confidence": 0.6,
+        "reason": "No intent signals detected",
+        "next_action": "Prioritized campaign inclusion",
+        "needs_replan": true,
+        "enrichment_gaps": [
+          "intent_signals"
+        ],
+        "breakdown": {
+          "company_size": 20,
+          "title_seniority": 25,
+          "industry_fit": 20,
+          "tech_stack": 0,
+          "intent_signals": 0
+        }
+      },
+      "crafting": {
+        "crafted": true,
+        "subject": "Sarah, 3 ways AI is changing B2B SaaS",
+        "template_id": "template_tier_2_competitor_follower",
+        "personalization_hooks": [],
+        "estimated_send_time": "2026-01-25T02:57:45.117305+00:00"
+      },
+      "approval": {
+        "approval_needed": true,
+        "approval_id": "approval_b7f5a27b",
+        "status": "pending",
+        "routed_to": "AE_QUEUE",
+        "priority": 2,
+        "deadline": "2026-01-24T14:57:45.117314+00:00"
+      }
+    },
+    "final_status": "completed"
+  },
+  {
+    "lead_id": "sim_lead_00042",
+    "name": "Elizabeth Sanchez",
+    "company": "DataDriven Inc",
+    "stages": {
+      "enrichment": {
+        "success": true,
+        "email_found": true
+      },
+      "segmentation": {
+        "icp_score": 48,
+        "tier": "tier_3",
+        "category": "NURTURE",
+        "confidence": 0.71,
+        "reason": "No intent signals detected",
+        "next_action": "Add to nurture sequence",
+        "needs_replan": true,
+        "enrichment_gaps": [
+          "intent_signals"
+        ],
+        "breakdown": {
+          "company_size": 15,
+          "title_seniority": 8,
+          "industry_fit": 20,
+          "tech_stack": 5,
+          "intent_signals": 0
+        }
+      },
+      "crafting": {
+        "crafted": false,
+        "reason": "Lead not qualified for outreach"
+      },
+      "approval": {
+        "approval_needed": false,
+        "reason": "No email to approve"
+      }
+    },
+    "final_status": "completed"
+  },
+  {
+    "lead_id": "sim_lead_00043",
+    "name": "James Lopez",
+    "company": "Acme Corp",
+    "stages": {
+      "enrichment": {
+        "success": false,
+        "email_found": false
+      }
+    },
+    "final_status": "enrichment_failed"
+  },
+  {
+    "lead_id": "sim_lead_00044",
+    "name": "Steven Thompson",
+    "company": "BookedMeetings",
+    "stages": {
+      "enrichment": {
+        "success": true,
+        "email_found": true
+      },
+      "segmentation": {
+        "icp_score": 47,
+        "tier": "tier_3",
+        "category": "NURTURE",
+        "confidence": 0.64,
+        "reason": "No intent signals detected",
+        "next_action": "Add to nurture sequence",
+        "needs_replan": true,
+        "enrichment_gaps": [
+          "intent_signals"
+        ],
+        "breakdown": {
+          "company_size": 20,
+          "title_seniority": 22,
+          "industry_fit": 5,
+          "tech_stack": 0,
+          "intent_signals": 0
+        }
+      },
+      "crafting": {
+        "crafted": false,
+        "reason": "Lead not qualified for outreach"
+      },
+      "approval": {
+        "approval_needed": false,
+        "reason": "No email to approve"
+      }
+    },
+    "final_status": "completed"
+  },
+  {
+    "lead_id": "sim_lead_00045",
+    "name": "David Lee",
+    "company": "ConvertLabs",
+    "stages": {
+      "enrichment": {
+        "success": true,
+        "email_found": true
+      },
+      "segmentation": {
+        "icp_score": 40,
+        "tier": "tier_3",
+        "category": "NURTURE",
+        "confidence": 0.5,
+        "reason": "Score 40 is near tier boundary; No intent signals detected",
+        "next_action": "Add to nurture sequence",
+        "needs_replan": true,
+        "enrichment_gaps": [
+          "intent_signals"
+        ],
+        "breakdown": {
+          "company_size": 20,
+          "title_seniority": 15,
+          "industry_fit": 5,
+          "tech_stack": 0,
+          "intent_signals": 0
+        }
+      },
+      "crafting": {
+        "crafted": false,
+        "reason": "Lead not qualified for outreach"
+      },
+      "approval": {
+        "approval_needed": false,
+        "reason": "No email to approve"
+      }
+    },
+    "final_status": "completed"
+  },
+  {
+    "lead_id": "sim_lead_00046",
+    "name": "Daniel Rodriguez",
+    "company": "ProspectPro",
+    "stages": {
+      "enrichment": {
+        "success": true,
+        "email_found": true
+      },
+      "segmentation": {
+        "icp_score": 58,
+        "tier": "tier_3",
+        "category": "NURTURE",
+        "confidence": 0.79,
+        "reason": "Score 58 is near tier boundary",
+        "next_action": "Add to nurture sequence",
+        "needs_replan": true,
+        "enrichment_gaps": [],
+        "breakdown": {
+          "company_size": 20,
+          "title_seniority": 8,
+          "industry_fit": 5,
+          "tech_stack": 15,
+          "intent_signals": 10
+        }
+      },
+      "crafting": {
+        "crafted": false,
+        "reason": "Lead not qualified for outreach"
+      },
+      "approval": {
+        "approval_needed": false,
+        "reason": "No email to approve"
+      }
+    },
+    "final_status": "completed"
+  },
+  {
+    "lead_id": "sim_lead_00047",
+    "name": "Matthew Robinson",
+    "company": "OutreachMax",
+    "stages": {
+      "enrichment": {
+        "success": true,
+        "email_found": true
+      },
+      "segmentation": {
+        "icp_score": 55,
+        "tier": "tier_3",
+        "category": "NURTURE",
+        "confidence": 0.65,
+        "reason": "No intent signals detected",
+        "next_action": "Add to nurture sequence",
+        "needs_replan": true,
+        "enrichment_gaps": [
+          "intent_signals"
+        ],
+        "breakdown": {
+          "company_size": 20,
+          "title_seniority": 15,
+          "industry_fit": 5,
+          "tech_stack": 15,
+          "intent_signals": 0
+        }
+      },
+      "crafting": {
+        "crafted": false,
+        "reason": "Lead not qualified for outreach"
+      },
+      "approval": {
+        "approval_needed": false,
+        "reason": "No email to approve"
+      }
+    },
+    "final_status": "completed"
+  },
+  {
+    "lead_id": "sim_lead_00048",
+    "name": "Anthony Clark",
+    "company": "MarketMind",
+    "stages": {
+      "enrichment": {
+        "success": true,
+        "email_found": true
+      },
+      "segmentation": {
+        "icp_score": 61,
+        "tier": "tier_2",
+        "category": "WARM_LEAD",
+        "confidence": 0.74,
+        "reason": "Score 61 is near tier boundary",
+        "next_action": "Prioritized campaign inclusion",
+        "needs_replan": true,
+        "enrichment_gaps": [],
+        "breakdown": {
+          "company_size": 20,
+          "title_seniority": 8,
+          "industry_fit": 15,
+          "tech_stack": 10,
+          "intent_signals": 8
+        }
+      },
+      "crafting": {
+        "crafted": true,
+        "subject": "Quick question about MarketMind's AI strategy",
+        "template_id": "template_tier_2_content_downloader",
+        "personalization_hooks": [],
+        "estimated_send_time": "2026-01-25T07:57:45.117463+00:00"
+      },
+      "approval": {
+        "approval_needed": true,
+        "approval_id": "approval_805f2fd9",
+        "status": "pending",
+        "routed_to": "AE_QUEUE",
+        "priority": 2,
+        "deadline": "2026-01-24T14:57:45.117473+00:00"
+      }
+    },
+    "final_status": "completed"
+  },
+  {
+    "lead_id": "sim_lead_00049",
+    "name": "Lisa Jackson",
+    "company": "GrowthEngine",
+    "stages": {
+      "enrichment": {
+        "success": true,
+        "email_found": true
+      },
+      "segmentation": {
+        "icp_score": 42,
+        "tier": "tier_3",
+        "category": "NURTURE",
+        "confidence": 0.72,
+        "reason": "Score 42 is near tier boundary",
+        "next_action": "Add to nurture sequence",
+        "needs_replan": true,
+        "enrichment_gaps": [],
+        "breakdown": {
+          "company_size": 20,
+          "title_seniority": 8,
+          "industry_fit": 5,
+          "tech_stack": 5,
+          "intent_signals": 4
+        }
+      },
+      "crafting": {
+        "crafted": false,
+        "reason": "Lead not qualified for outreach"
+      },
+      "approval": {
+        "approval_needed": false,
+        "reason": "No email to approve"
+      }
+    },
+    "final_status": "completed"
+  }
+]

@@ -1,0 +1,173 @@
+{
+  "generated_at": "2026-01-17T17:47:19.699078",
+  "metrics": {
+    "icp_match_rate": {
+      "name": "icp_match_rate",
+      "value": 0,
+      "target": 80,
+      "threshold_warning": 70,
+      "threshold_alert": 60,
+      "unit": "%",
+      "trend": "stable",
+      "status": "alert",
+      "category": "pipeline",
+      "last_updated": "2026-01-17T17:47:19.698139"
+    },
+    "ae_approval_rate": {
+      "name": "ae_approval_rate",
+      "value": 0,
+      "target": 70,
+      "threshold_warning": 50,
+      "threshold_alert": 40,
+      "unit": "%",
+      "trend": "stable",
+      "status": "alert",
+      "category": "pipeline",
+      "last_updated": "2026-01-17T17:47:19.698180"
+    },
+    "email_open_rate": {
+      "name": "email_open_rate",
+      "value": 0,
+      "target": 50,
+      "threshold_warning": 40,
+      "threshold_alert": 30,
+      "unit": "%",
+      "trend": "stable",
+      "status": "alert",
+      "category": "campaign",
+      "last_updated": "2026-01-17T17:47:19.698189"
+    },
+    "reply_rate": {
+      "name": "reply_rate",
+      "value": 0,
+      "target": 8,
+      "threshold_warning": 5,
+      "threshold_alert": 3,
+      "unit": "%",
+      "trend": "stable",
+      "status": "alert",
+      "category": "campaign",
+      "last_updated": "2026-01-17T17:47:19.698195"
+    },
+    "positive_reply_rate": {
+      "name": "positive_reply_rate",
+      "value": 0,
+      "target": 60,
+      "threshold_warning": 40,
+      "threshold_alert": 30,
+      "unit": "%",
+      "trend": "stable",
+      "status": "alert",
+      "category": "conversion",
+      "last_updated": "2026-01-17T17:47:19.698200"
+    },
+    "meeting_book_rate": {
+      "name": "meeting_book_rate",
+      "value": 0,
+      "target": 2,
+      "threshold_warning": 1,
+      "threshold_alert": 0.5,
+      "unit": "%",
+      "trend": "stable",
+      "status": "alert",
+      "category": "conversion",
+      "last_updated": "2026-01-17T17:47:19.698205"
+    },
+    "ghost_recovery_rate": {
+      "name": "ghost_recovery_rate",
+      "value": 0,
+      "target": 15,
+      "threshold_warning": 10,
+      "threshold_alert": 5,
+      "unit": "%",
+      "trend": "stable",
+      "status": "alert",
+      "category": "conversion",
+      "last_updated": "2026-01-17T17:47:19.698211"
+    },
+    "agent_accuracy": {
+      "name": "agent_accuracy",
+      "value": 0,
+      "target": 90,
+      "threshold_warning": 80,
+      "threshold_alert": 70,
+      "unit": "%",
+      "trend": "stable",
+      "status": "alert",
+      "category": "agent",
+      "last_updated": "2026-01-17T17:47:19.698215"
+    }
+  },
+  "alerts": [
+    {
+      "metric": "icp_match_rate",
+      "value": 0,
+      "target": 80,
+      "status": "alert",
+      "category": "pipeline",
+      "message": "CRITICAL: icp_match_rate at 0% (target: 80%)"
+    },
+    {
+      "metric": "ae_approval_rate",
+      "value": 0,
+      "target": 70,
+      "status": "alert",
+      "category": "pipeline",
+      "message": "CRITICAL: ae_approval_rate at 0% (target: 70%)"
+    },
+    {
+      "metric": "email_open_rate",
+      "value": 0,
+      "target": 50,
+      "status": "alert",
+      "category": "campaign",
+      "message": "CRITICAL: email_open_rate at 0% (target: 50%)"
+    },
+    {
+      "metric": "reply_rate",
+      "value": 0,
+      "target": 8,
+      "status": "alert",
+      "category": "campaign",
+      "message": "CRITICAL: reply_rate at 0% (target: 8%)"
+    },
+    {
+      "metric": "positive_reply_rate",
+      "value": 0,
+      "target": 60,
+      "status": "alert",
+      "category": "conversion",
+      "message": "CRITICAL: positive_reply_rate at 0% (target: 60%)"
+    },
+    {
+      "metric": "meeting_book_rate",
+      "value": 0,
+      "target": 2,
+      "status": "alert",
+      "category": "conversion",
+      "message": "CRITICAL: meeting_book_rate at 0% (target: 2%)"
+    },
+    {
+      "metric": "ghost_recovery_rate",
+      "value": 0,
+      "target": 15,
+      "status": "alert",
+      "category": "conversion",
+      "message": "CRITICAL: ghost_recovery_rate at 0% (target: 15%)"
+    },
+    {
+      "metric": "agent_accuracy",
+      "value": 0,
+      "target": 90,
+      "status": "alert",
+      "category": "agent",
+      "message": "CRITICAL: agent_accuracy at 0% (target: 90%)"
+    }
+  ],
+  "summary": {
+    "total_metrics": 8,
+    "healthy": 0,
+    "warning": 0,
+    "alert": 8
+  }
+}

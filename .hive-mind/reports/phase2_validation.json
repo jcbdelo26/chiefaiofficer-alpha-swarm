@@ -1,0 +1,58 @@
+{
+  "timestamp": "2026-01-30T16:35:42.183121+00:00",
+  "passed": 3,
+  "failed": 2,
+  "pending": 2,
+  "ready_for_phase3": false,
+  "results": [
+    {
+      "name": "Pipeline Connectivity",
+      "status": "pass",
+      "score": null,
+      "target": null,
+      "details": "Processed 6 visitors, intent emails in queue"
+    },
+    {
+      "name": "Enrichment Rate",
+      "status": "fail",
+      "score": 0.0,
+      "target": 30,
+      "details": "Success: 0, Failed: 0"
+    },
+    {
+      "name": "Email Quality Score",
+      "status": "pending",
+      "score": 0,
+      "target": 3.5,
+      "details": "Awaiting Dani's review"
+    },
+    {
+      "name": "Test 4",
+      "status": "fail",
+      "score": null,
+      "target": null,
+      "details": "Error: '>=' not supported between instances of 'dict' and 'int'"
+    },
+    {
+      "name": "Domain Health",
+      "status": "pass",
+      "score": 75,
+      "target": 50,
+      "details": "Domain is healthy"
+    },
+    {
+      "name": "Daily Limit Enforcement",
+      "status": "pass",
+      "score": 5,
+      "target": 25,
+      "details": "Queued 5/25 today"
+    },
+    {
+      "name": "Zero Send Errors (48h)",
+      "status": "pending",
+      "score": null,
+      "target": null,
+      "details": "No audit log yet"
+    }
+  ]
+}

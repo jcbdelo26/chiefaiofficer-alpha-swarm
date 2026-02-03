@@ -1,0 +1,14 @@
+{
+  "request_id": "enr_20260124_051523_test_vis",
+  "visitor_id": "test_visitor_001",
+  "email": "john.smith@testcompany.com",
+  "linkedin_url": "",
+  "first_name": "John",
+  "last_name": "Smith",
+  "full_name": "John Smith",
+  "company_name": "Test Company Inc",
+  "company_domain": "testcompany.com",
+  "source": "rb2b",
+  "priority": "high",
+  "timestamp": "2026-01-23T21:15:23.863199+00:00"
+}

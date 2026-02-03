@@ -1,0 +1,32 @@
+{
+  "timestamp": "2026-01-23T18:39:16.627125",
+  "failures": {
+    "total": 8,
+    "resolved": 0,
+    "unresolved": 8,
+    "by_category": {
+      "api_error": 1,
+      "validation_error": 2,
+      "resource_error": 3,
+      "logic_error": 1,
+      "unknown": 1
+    },
+    "by_agent": {
+      "HUNTER": 2,
+      "SEGMENTOR": 1,
+      "QUEEN": 1,
+      "GATEKEEPER": 2,
+      "SYSTEM_MONITOR": 1,
+      "ORCHESTRATOR": 1
+    },
+    "resolution_rate": 0.0
+  },
+  "performance": {
+    "avg_latency": 0.0,
+    "throughput": 0.0
+  },
+  "coverage": {
+    "total_coverage": 85.0
+  },
+  "system_health_score": 60
+}

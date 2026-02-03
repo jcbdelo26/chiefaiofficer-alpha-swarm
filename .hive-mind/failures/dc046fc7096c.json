@@ -1,0 +1,18 @@
+{
+  "failure_id": "dc046fc7096c",
+  "agent_name": "GATEKEEPER",
+  "task_id": "test_logic_conflict",
+  "category": "logic_error",
+  "error_message": "Logic Error: Qualified lead is on blacklist",
+  "error_type": "AssertionError",
+  "context": {
+    "lead": {
+      "domain": "competitor.com",
+      "revenue": "$100M"
+    }
+  },
+  "stack_trace": null,
+  "timestamp": "2026-01-23T17:57:24.262404+00:00",
+  "resolved": false,
+  "resolution_notes": null
+}

@@ -1,0 +1,46 @@
+{
+  "tested_at": "2026-01-28T16:05:38.115792",
+  "all_required_pass": false,
+  "results": {
+    "Supabase": {
+      "success": true,
+      "message": "Connected - leads table accessible",
+      "tested_at": "2026-01-28T16:05:28.470444"
+    },
+    "GoHighLevel": {
+      "success": true,
+      "message": "Connected via V2 (Location: CAIO Corporate)",
+      "tested_at": "2026-01-28T16:05:29.118219"
+    },
+    "Clay": {
+      "success": true,
+      "message": "API key format valid (full test requires usage)",
+      "tested_at": "2026-01-28T16:05:30.271008"
+    },
+    "RB2B": {
+      "success": false,
+      "message": "Missing RB2B_API_KEY",
+      "tested_at": "2026-01-28T16:05:30.272354"
+    },
+    "Instantly": {
+      "success": true,
+      "message": "Connected via V2 (Found 10 accounts)",
+      "tested_at": "2026-01-28T16:05:31.554926"
+    },
+    "LinkedIn": {
+      "success": false,
+      "message": "HTTP 403",
+      "tested_at": "2026-01-28T16:05:32.629169"
+    },
+    "Anthropic": {
+      "success": true,
+      "message": "Claude API accessible",
+      "tested_at": "2026-01-28T16:05:35.595984"
+    },
+    "Exa": {
+      "success": true,
+      "message": "Search API accessible",
+      "tested_at": "2026-01-28T16:05:38.114534"
+    }
+  }
+}

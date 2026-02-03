@@ -1,0 +1,39 @@
+{
+  "thread_id": "8be7ef368e18",
+  "saved_at": "2026-01-21T03:22:38.106584",
+  "message_count": 2,
+  "messages": [
+    {
+      "message_id": "<bf5859cd-0e2a-452b-b1a2-45d313a63895@caio-swarm.local>",
+      "subject": "Re: Meeting Request",
+      "from_email": "john@example.com",
+      "from_name": "John Smith",
+      "to_emails": [
+        "sales@company.com"
+      ],
+      "cc_emails": [],
+      "date": "Mon, 21 Jan 2026 14:30:00 -0500",
+      "body_text": "Hi there,\n    \n    Yes, I'm very interested in learning more! Can we schedule a call for \n    next Tuesday at 2pm EST? Please send me a calendar invite.\n    \n    Looking forward to it!\n    John",
+      "body_html": null,
+      "in_reply_to": null,
+      "references": [],
+      "headers": {}
+    },
+    {
+      "message_id": "<a3203214-d204-4192-b7fb-5874899acefd@caio-swarm.local>",
+      "subject": "Meeting Request",
+      "from_email": "sales@company.com",
+      "from_name": "",
+      "to_emails": [
+        "john@example.com"
+      ],
+      "cc_emails": [],
+      "date": "",
+      "body_text": "Hi John,\n    \n    I wanted to follow up on our previous conversation about your RevOps needs.\n    Would you be available for a quick call this week?\n    \n    Best,\n    Sales Team",
+      "body_html": null,
+      "in_reply_to": null,
+      "references": [],
+      "headers": {}
+    }
+  ]
+}

@@ -1,0 +1,125 @@
+{
+  "last_updated": "2026-01-17T17:43:31.861683",
+  "entry_count": 8,
+  "entries": [
+    {
+      "id": "df837bf7-9aa7-475d-a212-cdf655ed8999",
+      "output_id": "e6b2277c-47a1-4620-bae0-c63b0ace37ae",
+      "action": "output_created",
+      "claim_id": null,
+      "timestamp": "2026-01-17T17:43:17.379974",
+      "details": {
+        "agent": "SDR_Agent",
+        "type": "lead_qualification",
+        "claim_count": 4,
+        "confidence": 0.625,
+        "status": "pending"
+      },
+      "actor": "SDR_Agent"
+    },
+    {
+      "id": "385da04c-8812-4153-a01e-6b57f0edb002",
+      "output_id": "e6b2277c-47a1-4620-bae0-c63b0ace37ae",
+      "action": "claim_verified",
+      "claim_id": "f182f9b0-94fd-4ce7-a683-314dda8787ac",
+      "timestamp": "2026-01-17T17:43:17.380320",
+      "details": {
+        "result": {
+          "verified": true,
+          "data": {
+            "name": "John Smith",
+            "title": "CEO",
+            "company": "Acme Corp"
+          }
+        },
+        "new_confidence": 0.8999999999999999
+      },
+      "actor": "system"
+    },
+    {
+      "id": "e068c97c-5710-4691-a66c-cdcccd723da2",
+      "output_id": "6d8907fb-099c-4511-a97b-a7741328ffe6",
+      "action": "output_created",
+      "claim_id": null,
+      "timestamp": "2026-01-17T17:43:31.859655",
+      "details": {
+        "agent": "SDR_Agent",
+        "type": "lead_qualification",
+        "claim_count": 4,
+        "confidence": 0.625,
+        "status": "pending"
+      },
+      "actor": "SDR_Agent"
+    },
+    {
+      "id": "9e43f4a7-ad9b-40a1-b707-8614184aa374",
+      "output_id": "6d8907fb-099c-4511-a97b-a7741328ffe6",
+      "action": "claim_verified",
+      "claim_id": "9dd1a439-8e60-496d-ab2f-034032aaf58b",
+      "timestamp": "2026-01-17T17:43:31.860100",
+      "details": {
+        "result": {
+          "verified": true,
+          "data": {
+            "name": "John Smith",
+            "title": "CEO",
+            "company": "Acme Corp"
+          }
+        },
+        "new_confidence": 0.8999999999999999
+      },
+      "actor": "system"
+    },
+    {
+      "id": "979eb54a-6c24-42d6-af56-3a50d58b5c77",
+      "output_id": "6d8907fb-099c-4511-a97b-a7741328ffe6",
+      "action": "claim_verified",
+      "claim_id": "6fa89733-97ab-4857-a4c9-c764221a1487",
+      "timestamp": "2026-01-17T17:43:31.860513",
+      "details": {
+        "result": {
+          "partial": true,
+          "notes": "Pipeline found, details differ"
+        },
+        "new_confidence": 0.7
+      },
+      "actor": "system"
+    },
+    {
+      "id": "5d71c7c5-0052-41d9-8ee9-d99cd459dea5",
+      "output_id": "6d8907fb-099c-4511-a97b-a7741328ffe6",
+      "action": "verification_skipped",
+      "claim_id": "4a931a34-cc51-4f36-81fa-b779fe2e55c3",
+      "timestamp": "2026-01-17T17:43:31.860879",
+      "details": {
+        "reason": "no_hook",
+        "source": "inferred"
+      },
+      "actor": "system"
+    },
+    {
+      "id": "816bc5fc-2817-4972-887f-726d1d0c6e95",
+      "output_id": "6d8907fb-099c-4511-a97b-a7741328ffe6",
+      "action": "verification_skipped",
+      "claim_id": "d6706f8a-65f9-4da1-9e2e-ad173f75251b",
+      "timestamp": "2026-01-17T17:43:31.861278",
+      "details": {
+        "reason": "no_hook",
+        "source": "linkedin"
+      },
+      "actor": "system"
+    },
+    {
+      "id": "3e5afe44-ce99-4b43-b5e6-b7b0573b6a42",
+      "output_id": "6d8907fb-099c-4511-a97b-a7741328ffe6",
+      "action": "hallucination_flagged",
+      "claim_id": "4a931a34-cc51-4f36-81fa-b779fe2e55c3",
+      "timestamp": "2026-01-17T17:43:31.861681",
+      "details": {
+        "reason": "Budget inference not backed by concrete data",
+        "claim_content": "Based on company size, budget is likely $50k-100k"
+      },
+      "actor": "QA_Agent"
+    }
+  ]
+}

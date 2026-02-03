@@ -1,0 +1,50 @@
+{
+  "test_mode": true,
+  "started_at": "2026-01-19T09:33:52.307808",
+  "input_file": ".hive-mind\\testing\\sample_campaigns.json",
+  "campaign_id_filter": null,
+  "steps": [
+    {
+      "step": "initialize_test_queue",
+      "status": "success",
+      "queue_path": "D:\\Agent Swarm Orchestration\\chiefaiofficer-alpha-swarm\\.hive-mind\\testing\\test_review_queue.json"
+    },
+    {
+      "step": "queue_campaigns",
+      "status": "success",
+      "campaigns_queued": 0,
+      "campaign_ids": []
+    },
+    {
+      "step": "simulate_approval_workflow",
+      "status": "success",
+      "approved_count": 0,
+      "rejected_count": 0,
+      "approved_ids": [],
+      "rejected_ids": []
+    },
+    {
+      "step": "verify_dashboard_accessibility",
+      "status": "warning",
+      "flask_available": false,
+      "dashboard_would_be_accessible": false,
+      "note": "Flask not installed - dashboard requires 'pip install flask'"
+    },
+    {
+      "step": "final_queue_stats",
+      "status": "success",
+      "stats": {
+        "pending_count": 0,
+        "approved_count": 0,
+        "rejected_count": 0,
+        "total_queued": 0,
+        "approval_rate": 0.0,
+        "avg_review_time_hours": 0.0,
+        "updated_at": "2026-01-19T09:33:52.319607"
+      }
+    }
+  ],
+  "success": true,
+  "errors": [],
+  "completed_at": "2026-01-19T09:33:52.319925"
+}

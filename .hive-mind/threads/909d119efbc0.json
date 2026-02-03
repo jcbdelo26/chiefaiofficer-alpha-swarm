@@ -1,0 +1,23 @@
+{
+  "thread_id": "909d119efbc0",
+  "saved_at": "2026-01-21T03:21:23.275472",
+  "message_count": 1,
+  "messages": [
+    {
+      "message_id": "<cbf7e932-40e5-4570-ab35-b0f22f83b0c9@caio-swarm.local>",
+      "subject": "Meeting Request",
+      "from_email": "n@example.com",
+      "from_name": "joh",
+      "to_emails": [
+        "s@company.com"
+      ],
+      "cc_emails": [],
+      "date": "Mon, 21 Jan 2026 10:00:00 -0500",
+      "body_text": "Hi, I'm interested in your product. Can we chat?\n        \n        Thanks,\n        John",
+      "body_html": null,
+      "in_reply_to": null,
+      "references": [],
+      "headers": {}
+    }
+  ]
+}

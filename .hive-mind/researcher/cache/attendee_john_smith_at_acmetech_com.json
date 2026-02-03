@@ -1,0 +1,18 @@
+{
+  "email": "john.smith@acmetech.com",
+  "name": "John Smith",
+  "title": null,
+  "linkedin_url": null,
+  "company": "Acme Technology Corp",
+  "department": "Engineering",
+  "seniority": "unknown",
+  "background": null,
+  "interests": [],
+  "past_interactions": [],
+  "communication_style": "technical_details",
+  "decision_maker": false,
+  "ghl_contact_id": null,
+  "ghl_tags": [],
+  "researched_at": "2026-01-21T17:59:33.844257+00:00",
+  "confidence": 0.3
+}

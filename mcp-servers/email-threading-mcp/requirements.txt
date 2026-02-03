@@ -1,0 +1,10 @@
+# Email Threading MCP Server Dependencies
+
+# MCP Protocol
+mcp>=0.1.0
+
+# Email parsing (stdlib - no extra deps needed)
+# email, email.parser, email.policy are built-in
+
+# Date parsing
+python-dateutil>=2.8.2

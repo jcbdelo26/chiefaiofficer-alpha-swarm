@@ -1,0 +1,238 @@
+{% extends "base.html" %}
+
+{% block title %}All Campaigns{% endblock %}
+{% block page_title %}All Pending Campaigns{% endblock %}
+
+{% block header_actions %}
+{% if campaigns %}
+<div class="batch-actions">
+    <button class="btn btn-success" onclick="batchApprove()">✓ Approve Selected</button>
+    <button class="btn btn-danger" onclick="batchReject()">✗ Reject Selected</button>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block content %}
+{% if campaigns %}
+<div class="card">
+    <table class="campaigns-table">
+        <thead>
+            <tr>
+                <th><input type="checkbox" id="selectAll" onchange="toggleSelectAll()"></th>
+                <th>Campaign</th>
+                <th>Segment</th>
+                <th>Leads</th>
+                <th>Created</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for campaign in campaigns %}
+            <tr class="campaign-row" data-campaign-id="{{ campaign.id }}">
+                <td>
+                    <input type="checkbox" class="campaign-select" value="{{ campaign.id }}">
+                </td>
+                <td>
+                    <a href="{{ url_for('campaign_detail', campaign_id=campaign.id) }}" class="campaign-name">
+                        {{ campaign.name or campaign.id }}
+                    </a>
+                </td>
+                <td>
+                    <span class="segment-badge {{ campaign.segment }}">
+                        {{ campaign.segment.replace('_', ' ').title() }}
+                    </span>
+                </td>
+                <td>{{ campaign.lead_count or campaign.leads|length }}</td>
+                <td>{{ campaign.created_at[:10] if campaign.created_at else 'N/A' }}</td>
+                <td class="actions">
+                    <button class="btn btn-sm btn-success" onclick="approveInline('{{ campaign.id }}')">
+                        ✓
+                    </button>
+                    <button class="btn btn-sm btn-danger" onclick="showRejectModalFor('{{ campaign.id }}')">
+                        ✗
+                    </button>
+                    <a href="{{ url_for('campaign_detail', campaign_id=campaign.id) }}"
+                        class="btn btn-sm btn-secondary">
+                        👁
+                    </a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="card empty-state">
+    <div class="empty-icon">✨</div>
+    <h4>All caught up!</h4>
+    <p>No campaigns pending review.</p>
+</div>
+{% endif %}
+
+<!-- Reject Modal -->
+<div id="rejectModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Reject Campaign</h3>
+            <button class="modal-close" onclick="closeRejectModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" id="rejectCampaignId">
+            <label for="rejectReason">Rejection Reason</label>
+            <select id="rejectReasonSelect" onchange="updateRejectReason()">
+                <option value="">-- Select Reason --</option>
+                <option value="Poor ICP Fit">Poor ICP Fit</option>
+                <option value="Wrong Tone">Wrong Tone</option>
+                <option value="Bad Personalization">Bad Personalization</option>
+                <option value="Compliance Issue">Compliance Issue</option>
+                <option value="Other">Other</option>
+            </select>
+            <textarea id="rejectReason" placeholder="Details..."></textarea>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeRejectModal()">Cancel</button>
+            <button class="btn btn-danger" onclick="confirmReject()">Reject</button>
+        </div>
+    </div>
+</div>
+
+<!-- Batch Reject Modal -->
+<div id="batchRejectModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Batch Reject</h3>
+            <button class="modal-close" onclick="closeBatchRejectModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <p><strong id="batchCount">0</strong> campaigns selected</p>
+            <label for="batchRejectReason">Rejection Reason</label>
+            <textarea id="batchRejectReason" placeholder="Reason for batch rejection..."></textarea>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeBatchRejectModal()">Cancel</button>
+            <button class="btn btn-danger" onclick="confirmBatchReject()">Reject All</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    function toggleSelectAll() {
+        const checked = document.getElementById('selectAll').checked;
+        document.querySelectorAll('.campaign-select').forEach(cb => cb.checked = checked);
+    }
+
+    function getSelectedCampaigns() {
+        return Array.from(document.querySelectorAll('.campaign-select:checked')).map(cb => cb.value);
+    }
+
+    function approveInline(campaignId) {
+        fetch(`/api/campaign/${campaignId}/approve`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ reviewer: 'AE' })
+        })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    document.querySelector(`[data-campaign-id="${campaignId}"]`).remove();
+                }
+            });
+    }
+
+    let currentRejectId = null;
+
+    function showRejectModalFor(campaignId) {
+        currentRejectId = campaignId;
+        document.getElementById('rejectModal').style.display = 'flex';
+    }
+
+    function closeRejectModal() {
+        document.getElementById('rejectModal').style.display = 'none';
+        currentRejectId = null;
+    }
+
+    function updateRejectReason() {
+        const select = document.getElementById('rejectReasonSelect');
+        const textarea = document.getElementById('rejectReason');
+        if (select.value && select.value !== 'Other') {
+            textarea.value = select.value;
+        }
+    }
+
+    function confirmReject() {
+        const reason = document.getElementById('rejectReason').value.trim();
+        if (!reason) {
+            alert('Please provide a reason');
+            return;
+        }
+
+        fetch(`/api/campaign/${currentRejectId}/reject`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ reviewer: 'AE', notes: reason })
+        })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    closeRejectModal();
+                    document.querySelector(`[data-campaign-id="${currentRejectId}"]`).remove();
+                }
+            });
+    }
+
+    function batchApprove() {
+        const selected = getSelectedCampaigns();
+        if (!selected.length) {
+            alert('Select campaigns first');
+            return;
+        }
+        if (!confirm(`Approve ${selected.length} campaigns?`)) return;
+
+        fetch('/api/batch/approve', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ campaign_ids: selected, reviewer: 'AE' })
+        })
+            .then(res => res.json())
+            .then(data => {
+                alert(`Approved ${data.approved} campaigns`);
+                location.reload();
+            });
+    }
+
+    function batchReject() {
+        const selected = getSelectedCampaigns();
+        if (!selected.length) {
+            alert('Select campaigns first');
+            return;
+        }
+        document.getElementById('batchCount').textContent = selected.length;
+        document.getElementById('batchRejectModal').style.display = 'flex';
+    }
+
+    function closeBatchRejectModal() {
+        document.getElementById('batchRejectModal').style.display = 'none';
+    }
+
+    function confirmBatchReject() {
+        const reason = document.getElementById('batchRejectReason').value.trim();
+        if (!reason) {
+            alert('Please provide a reason');
+            return;
+        }
+
+        const selected = getSelectedCampaigns();
+
+        fetch('/api/batch/reject', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ campaign_ids: selected, reviewer: 'AE', notes: reason })
+        })
+            .then(res => res.json())
+            .then(data => {
+                alert(`Rejected ${data.rejected} campaigns`);
+                location.reload();
+            });
+    }
+</script>
+{% endblock %}

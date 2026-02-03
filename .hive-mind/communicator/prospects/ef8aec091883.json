@@ -1,0 +1,28 @@
+{
+  "email": "newprospect@example.com",
+  "name": "newprospect",
+  "company": "example.com",
+  "current_stage": "qualification",
+  "thread_id": "7f5323a17b6f",
+  "last_contact": "2026-01-22T04:16:53.618994",
+  "total_exchanges": 1,
+  "tone_profile": {
+    "formality": 0.24,
+    "warmth": 0.5,
+    "urgency": 0.0,
+    "complexity": 0.59,
+    "assertiveness": 0.5,
+    "sentiment": 1.0,
+    "avg_sentence_length": 4.5,
+    "vocabulary_richness": 1.0,
+    "keywords": [
+      "thanks",
+      "email",
+      "very",
+      "interested",
+      "learning"
+    ]
+  },
+  "tags": [],
+  "metadata": {}
+}

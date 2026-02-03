@@ -1,0 +1,31 @@
+{
+  "queue_id": "blog_intent_sample_head_sales_004",
+  "type": "blog_triggered_email",
+  "priority": "medium",
+  "visitor": {
+    "id": "sample_head_sales_004",
+    "email": "jennifer.lee@cloudops.io",
+    "name": "Jennifer Lee",
+    "company": "CloudOps",
+    "title": "Head of Sales"
+  },
+  "email": {
+    "subject": "Jennifer - quick question about your AI sales rollout timeline",
+    "body": "Hi Jennifer,\n\nI noticed you were checking out our AI sales implementation guide. That's usually a sign someone's moving from 'maybe someday' to 'we need this quarter.'\n\nAs a Head of Sales, I'm guessing you're weighing quick wins (like automated lead scoring) against the bigger transformation plays. The tricky part is usually getting your team bought in while keeping pipeline moving.\n\nWhat's the biggest friction point you're seeing as you think about rolling this out - is it more about proving ROI fast, or getting your reps comfortable with AI tools?\n\nI've got a 10-minute framework I walk sales leaders through that maps out week 1 wins vs. quarter 1 transformations. It's helped teams like yours see results without disrupting what's working.\n\nWould you be up for a quick screen share later today or tomorrow?\n\nBest,\nDani\n\n--\nDani Apgar\nHead of Partnerships & Revenue\nChief AI Officer Inc.\ndani@chiefaiofficer.com | chiefaiofficer.com\nBook a 15-min intro: https://caio.cx/meet",
+    "template_used": "implementation_ready",
+    "generated_by": "gemini_crafter"
+  },
+  "context": {
+    "intent_score": 80,
+    "icp_tier": "tier_1",
+    "triggers": [
+      "implementation",
+      "general"
+    ],
+    "warm_connections": [],
+    "pages_viewed": [
+      "/blog/implementation-guide-ai-sales"
+    ]
+  },
+  "created_at": "2026-01-30T16:35:01.944321+00:00"
+}

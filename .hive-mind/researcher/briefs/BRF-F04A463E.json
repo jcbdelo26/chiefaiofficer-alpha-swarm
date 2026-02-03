@@ -1,0 +1,125 @@
+{
+  "brief_id": "BRF-F04A463E",
+  "meeting_id": "MTG-001",
+  "meeting_time": "2026-01-22T17:59:33.844868+00:00",
+  "meeting_type": "discovery",
+  "status": "ready",
+  "company": {
+    "company_name": "Acme Technology Corp",
+    "website": "https://acmetech.com",
+    "industry": "Technology",
+    "company_size": "51-200 employees",
+    "headquarters": null,
+    "description": "Company information for query: Acme Technology Corp company overview",
+    "tech_stack": [
+      "Salesforce",
+      "Slack",
+      "AWS",
+      "React"
+    ],
+    "recent_news": [
+      {
+        "title": "Acme Technology Corp Announces Q4 Growth",
+        "source": "TechCrunch",
+        "date": "2026-01-17T01:59:33.842372",
+        "summary": "Strong performance reported by Acme Technology Corp.",
+        "url": "https://techcrunch.com/acme-technology-corp"
+      },
+      {
+        "title": "Acme Technology Corp Expands Team",
+        "source": "LinkedIn",
+        "date": "2026-01-10T01:59:33.842409",
+        "summary": "Acme Technology Corp hiring for multiple positions.",
+        "url": "https://linkedin.com/company/acme-technology-corp"
+      }
+    ],
+    "competitors": [],
+    "pain_points": [
+      "Technical debt",
+      "Scaling operations efficiently",
+      "Scaling challenges"
+    ],
+    "linkedin_url": null,
+    "funding": null,
+    "employee_count": 100,
+    "revenue_estimate": "$10M-$50M ARR",
+    "researched_at": "2026-01-21T17:59:33.841156+00:00",
+    "confidence": 0.9
+  },
+  "attendees": [
+    {
+      "email": "john.smith@acmetech.com",
+      "name": "John Smith",
+      "title": null,
+      "linkedin_url": null,
+      "company": "Acme Technology Corp",
+      "department": "Engineering",
+      "seniority": "unknown",
+      "background": null,
+      "interests": [],
+      "past_interactions": [],
+      "communication_style": "technical_details",
+      "decision_maker": false,
+      "ghl_contact_id": null,
+      "ghl_tags": [],
+      "researched_at": "2026-01-21T17:59:33.844257+00:00",
+      "confidence": 0.3
+    }
+  ],
+  "primary_contact": "john.smith@acmetech.com",
+  "talking_points": [
+    {
+      "topic": "Opening Hook",
+      "key_message": "I saw Acme Technology Corp in the news recently regarding acme technology corp announces q4 growth. Congratulations!",
+      "supporting_evidence": "Strong performance reported by Acme Technology Corp.",
+      "priority": 1
+    },
+    {
+      "topic": "Pain Point",
+      "key_message": "Companies in your space often struggle with technical debt. Is that something you're experiencing?",
+      "supporting_evidence": "Common industry challenge",
+      "priority": 2
+    },
+    {
+      "topic": "Integration",
+      "key_message": "I noticed you're using Salesforce. We integrate seamlessly with that.",
+      "supporting_evidence": "Detected tech: Salesforce, Slack, AWS",
+      "priority": 3
+    },
+    {
+      "topic": "Engineering Focus",
+      "key_message": "For your Engineering function specifically, the key benefits are...",
+      "supporting_evidence": "Department: Engineering",
+      "priority": 4
+    }
+  ],
+  "objections": [
+    {
+      "objection_type": "competitor",
+      "likelihood": 0.55,
+      "objection_text": "We're already using [competitor] for this.",
+      "recommended_response": "Great that you're already addressing this. Let me share how we're different...",
+      "evidence": "Tech stack includes: Salesforce, Slack, AWS"
+    },
+    {
+      "objection_type": "authority",
+      "likelihood": 0.44999999999999996,
+      "objection_text": "I'll need to check with my manager/team.",
+      "recommended_response": "Absolutely, involving the right stakeholders is crucial. Would it help if I provided materials for that conversation?",
+      "evidence": "Attendee seniority: unknown"
+    },
+    {
+      "objection_type": "timing",
+      "likelihood": 0.19999999999999998,
+      "objection_text": "We're too busy growing right now.",
+      "recommended_response": "That growth is exactly why now is the right time. Let me show you how we can scale with you...",
+      "evidence": "Recent growth-related news found"
+    }
+  ],
+  "meeting_goal": "Understand their current challenges and identify if there's a fit.",
+  "next_step": "Schedule a demo with key stakeholders",
+  "created_at": "2026-01-21T17:59:33.845751+00:00",
+  "expires_at": "2026-01-23T17:59:33.844868+00:00",
+  "quality_score": 0.75,
+  "summary": "Discovery with Acme Technology Corp (1 attendee). Primary: john.smith@acmetech.com. Goal: Understand their current challenges and identify if there's a fit."
+}

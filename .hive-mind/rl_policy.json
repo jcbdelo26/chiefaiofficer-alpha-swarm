@@ -1,0 +1,15 @@
+{
+  "q_table": {
+    "tier_4|cold||0|off_hours": {
+      "segment": -1.572278256982525
+    },
+    "tier_3|cold||0|off_hours": {
+      "segment": -2.523412284807842
+    }
+  },
+  "episode_rewards": [],
+  "action_counts": {},
+  "epsilon": 0.09415232409133925,
+  "saved_at": "2026-01-19T15:20:46.823626",
+  "version": "1.0.0"
+}

@@ -1,0 +1,21 @@
+{
+  "thread_id": "18ba885ae8ec",
+  "saved_at": "2026-01-23T20:09:19.056873",
+  "message_count": 1,
+  "messages": [
+    {
+      "message_id": "<bd647924-fdf9-4a0b-8cee-fe5689a6f105@caio-swarm.local>",
+      "subject": "Meeting Request",
+      "from_email": "john@example.com",
+      "from_name": "",
+      "to_emails": [],
+      "cc_emails": [],
+      "date": "",
+      "body_text": "Hi, can we schedule a call for next Tuesday at 2pm EST?\n        Please send me a calendar invite.\n        \n        Thanks,\n        John",
+      "body_html": null,
+      "in_reply_to": null,
+      "references": [],
+      "headers": {}
+    }
+  ]
+}
