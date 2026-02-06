@@ -44,6 +44,26 @@ from dotenv import load_dotenv
 # Load environment variables
 load_dotenv()
 
+
+def _categorize_rejection(reason: str) -> str:
+    """Categorize rejection reason for ML training patterns."""
+    reason_lower = (reason or "").lower()
+    
+    if any(word in reason_lower for word in ["tone", "formal", "casual", "aggressive"]):
+        return "tone_issue"
+    elif any(word in reason_lower for word in ["wrong", "incorrect", "inaccurate", "fact"]):
+        return "accuracy_issue"
+    elif any(word in reason_lower for word in ["long", "short", "verbose", "brief"]):
+        return "length_issue"
+    elif any(word in reason_lower for word in ["personal", "generic", "template"]):
+        return "personalization_issue"
+    elif any(word in reason_lower for word in ["subject", "headline", "title"]):
+        return "subject_issue"
+    elif any(word in reason_lower for word in ["cta", "call to action", "ask"]):
+        return "cta_issue"
+    else:
+        return "other"
+
 # =============================================================================
 # CORRELATION ID MIDDLEWARE
 # =============================================================================
@@ -675,7 +695,7 @@ async def get_pending_emails(auth: bool = Depends(require_auth)):
                         # Sanitize critical fields to prevent frontend crash
                         email_data["to"] = email_data.get("to") or "unknown@example.com"
                         email_data["subject"] = email_data.get("subject") or "No Subject"
-                        email_data["body"] = email_data.get("body") or "No Body Content"
+                        email_data["body"] = email_data.get("body") or email_data.get("body_preview") or "No Body Content"
                         email_data["tier"] = email_data.get("tier", "tier_3")
                         email_data["angle"] = email_data.get("angle", "General")
                         
@@ -735,6 +755,9 @@ async def approve_email(
 
     if email_data.get("status") == "approved":
         raise HTTPException(status_code=400, detail="Email already approved")
+    
+    # Capture original body BEFORE overwriting for training logs
+    original_body = email_data.get("body") if edited_body else None
     
     # Handle Body Edits
     if edited_body:
@@ -857,21 +880,33 @@ async def approve_email(
     except Exception:
         pass
 
-    # Log to Training Feedback Log
-    if feedback or edited_body:
-        training_log = PROJECT_ROOT / ".hive-mind" / "audit" / "agent_feedback.jsonl"
-        try:
-            with open(training_log, "a") as fp:
-                fp.write(json.dumps({
-                    "email_id": email_id,
-                    "action": "approved_with_changes" if edited_body else "approved_with_feedback",
-                    "feedback": feedback,
-                    "original_body": email_data.get("body") if edited_body else None,
-                    "edited_body": edited_body, 
-                    "timestamp": datetime.now().isoformat()
-                }) + "\n")
-        except Exception:
-            pass
+    # Log to Training Feedback Log - ALWAYS log for learning, not just when edited
+    training_log = PROJECT_ROOT / ".hive-mind" / "audit" / "agent_feedback.jsonl"
+    training_log.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        # Build comprehensive learning record
+        learning_record = {
+            "email_id": email_id,
+            "action": "approved_with_edits" if edited_body else ("approved_with_feedback" if feedback else "approved"),
+            "feedback": feedback,
+            "original_body": original_body,  # Preserved before overwrite
+            "edited_body": edited_body,
+            "subject": email_data.get("subject"),
+            "recipient": email_data.get("to"),
+            "tier": email_data.get("tier"),
+            "angle": email_data.get("angle"),
+            "approver": approver,
+            "timestamp": datetime.now().isoformat(),
+            "learning_signals": {
+                "was_edited": bool(edited_body),
+                "had_feedback": bool(feedback),
+                "edit_type": "minor_tweak" if edited_body and len(edited_body) - len(original_body or "") < 100 else "major_rewrite" if edited_body else None
+            }
+        }
+        with open(training_log, "a") as fp:
+            fp.write(json.dumps(learning_record) + "\n")
+    except Exception as e:
+        print(f"Warning: Failed to log training feedback: {e}")
     
     return {
         "status": "approved",
@@ -940,19 +975,31 @@ async def reject_email(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to save rejection: {e}")
 
-    # Log to Training Feedback Log
+    # Log to Training Feedback Log - comprehensive learning record
     training_log = PROJECT_ROOT / ".hive-mind" / "audit" / "agent_feedback.jsonl"
+    training_log.parent.mkdir(parents=True, exist_ok=True)
     try:
+        learning_record = {
+            "email_id": email_id,
+            "action": "rejected",
+            "feedback": reason,
+            "original_body": email_data.get("body"),
+            "subject": email_data.get("subject"),
+            "recipient": email_data.get("to"),
+            "tier": email_data.get("tier"),
+            "angle": email_data.get("angle"),
+            "approver": approver,
+            "timestamp": datetime.now().isoformat(),
+            "learning_signals": {
+                "was_edited": False,
+                "had_feedback": bool(reason),
+                "rejection_category": _categorize_rejection(reason) if reason else "no_reason"
+            }
+        }
         with open(training_log, "a") as fp:
-            fp.write(json.dumps({
-                "email_id": email_id,
-                "action": "rejected",
-                "feedback": reason,
-                "original_body": email_data.get("body"),
-                "timestamp": datetime.now().isoformat()
-            }) + "\n")
-    except Exception:
-        pass
+            fp.write(json.dumps(learning_record) + "\n")
+    except Exception as e:
+        print(f"Warning: Failed to log training feedback: {e}")
     
     # Log the rejection
     audit_log = PROJECT_ROOT / ".hive-mind" / "audit" / "email_approvals.jsonl"

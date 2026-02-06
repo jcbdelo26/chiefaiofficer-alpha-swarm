@@ -910,6 +910,8 @@
         </div>
     </div>
 
+    <!-- Error Reporter for debug-mcp correlation -->
+    <script src="/static/error-reporter.js"></script>
     <script>
         const pendingEmails = [];
         const recentActivity = [];
@@ -1098,18 +1100,21 @@
         async function approveEmail() {
             if (!currentEmailId) return;
 
+            // Save email ID before closing modal (closeModal sets currentEmailId to null)
+            const emailId = currentEmailId;
+
             const urlParams = new URLSearchParams(window.location.search);
             const token = urlParams.get('token');
             const editedBody = document.getElementById('emailBodyInput').innerHTML;
             const feedback = document.getElementById('feedbackInput').value;
 
             closeModal();
-            const index = pendingEmails.findIndex(e => e.id === currentEmailId);
+            const index = pendingEmails.findIndex(e => e.id === emailId);
             if (index > -1) pendingEmails.splice(index, 1);
             renderPendingEmails();
 
             try {
-                const response = await fetch(`/api/emails/${currentEmailId}/approve?token=${token}`, {
+                const response = await fetch(`/api/emails/${emailId}/approve?token=${token}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -1130,6 +1135,9 @@
         async function rejectEmail() {
             if (!currentEmailId) return;
 
+            // Save email ID before closing modal (closeModal sets currentEmailId to null)
+            const emailId = currentEmailId;
+
             const feedback = document.getElementById('feedbackInput').value;
             if (!feedback) {
                 if (!confirm("Reject without feedback? The AI won't learn why.")) return;
@@ -1139,12 +1147,12 @@
             const token = urlParams.get('token');
 
             closeModal();
-            const index = pendingEmails.findIndex(e => e.id === currentEmailId);
+            const index = pendingEmails.findIndex(e => e.id === emailId);
             if (index > -1) pendingEmails.splice(index, 1);
             renderPendingEmails();
 
             try {
-                const response = await fetch(`/api/emails/${currentEmailId}/reject?token=${token}&reason=${encodeURIComponent(feedback)}`, {
+                const response = await fetch(`/api/emails/${emailId}/reject?token=${token}&reason=${encodeURIComponent(feedback)}`, {
                     method: 'POST'
                 });
                 if (!response.ok) {

@@ -89,6 +89,7 @@ class ShadowProcessResult:
     tier: Optional[str] = None
     would_send_email: bool = False
     email_subject: Optional[str] = None
+    email_body_full: Optional[str] = None
     email_body_preview: Optional[str] = None
     errors: List[str] = field(default_factory=list)
     warnings: List[str] = field(default_factory=list)
@@ -428,6 +429,7 @@ class ShadowModeDeployer:
                     email_content = self._generate_shadow_email(contact, result.tier)
                     result.would_send_email = True
                     result.email_subject = email_content["subject"]
+                    result.email_body_full = email_content["body"]
                     result.email_body_preview = email_content["body"][:200] + "..."
                     print(f"      Would Send Email: {result.email_subject}")
                 else:
@@ -460,7 +462,7 @@ class ShadowModeDeployer:
             results.append(result)
             
             # Log individual result
-            self._log_shadow_email(result)
+            self._log_shadow_email(result, contact)
         
         self.report.contacts_processed = len(results)
         self.report.processing_results = [asdict(r) for r in results]
@@ -595,26 +597,45 @@ Reply STOP to unsubscribe."""
 
         return {"subject": subject, "body": body}
     
-    def _log_shadow_email(self, result: ShadowProcessResult):
-        """Log shadow email to file."""
+    def _log_shadow_email(self, result: ShadowProcessResult, contact: Dict[str, Any] = None):
+        """Log shadow email to file with complete data for dashboard display."""
         if not result.would_send_email:
             return
         
         log_file = SHADOW_EMAILS_PATH / f"{result.contact_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
         
+        # Extract custom fields for recipient data
+        custom_fields = {}
+        if contact:
+            custom_fields = {cf.get("key"): cf.get("value") for cf in contact.get("customFields", [])}
+        
         log_data = {
+            "email_id": f"{result.contact_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
+            "status": "pending",
             "shadow_mode": True,
             "would_have_sent": True,
             "actual_sent": False,
             "contact_id": result.contact_id,
             "contact_name": result.contact_name,
-            "to": "[REDACTED]",  # Don't log actual email
+            "to": result.contact_email,  # Include actual email for dashboard display
             "subject": result.email_subject,
+            "body": result.email_body_full,  # Full email body for dashboard
             "body_preview": result.email_body_preview,
             "icp_score": result.icp_score,
             "tier": result.tier,
             "timestamp": result.processed_at,
-            "warnings": result.warnings
+            "warnings": result.warnings,
+            "recipient_data": {
+                "name": result.contact_name,
+                "company": contact.get("companyName", "Unknown Corp") if contact else "Unknown Corp",
+                "title": custom_fields.get("title", "Unknown Title"),
+                "location": custom_fields.get("location") or custom_fields.get("city", "Unknown Location"),
+                "employees": custom_fields.get("employee_count", "N/A"),
+                "industry": custom_fields.get("industry", "N/A"),
+                "linkedin_url": contact.get("linkedin_url") if contact else None
+            },
+            "source": "shadow_mode_processor",
+            "synthetic": contact.get("_synthetic", False) if contact else False
         }
         
         with open(log_file, 'w') as f:

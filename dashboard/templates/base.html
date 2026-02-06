@@ -79,6 +79,8 @@
         </main>
     </div>
     
+    <!-- Error Reporter for debug-mcp correlation -->
+    <script src="{{ url_for('static', filename='error-reporter.js') }}"></script>
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>
     {% block extra_js %}{% endblock %}
 </body>

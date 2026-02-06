@@ -1,0 +1,1 @@
+{"timestamp": "2026-02-04T11:00:49.956754+00:00", "message": "Test error from correlation test", "stack": "Error: Test error\n    at testFunction (test.js:42:10)", "url": "http://localhost:8080/dashboard", "correlation_id": "test-correlation-123", "user_agent": null, "console_type": "error", "source": "frontend"}
