@@ -14,15 +14,19 @@ Setup:
 import os
 import json
 import asyncio
-from datetime import datetime, timezone
+import logging
+import time
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 import inngest
 from inngest.fast_api import serve
 from dotenv import load_dotenv
+from core.trace_envelope import emit_tool_trace
 
 load_dotenv()
+logger = logging.getLogger("inngest_scheduler")
 
 # Initialize Inngest client
 inngest_client = inngest.Inngest(
@@ -63,14 +67,15 @@ async def pipeline_scan(ctx: inngest.Context, step: inngest.Step) -> Dict[str, A
         "upcoming_meetings": upcoming_meetings,
         "ghost_candidates": ghost_candidates
     }))
-    
-    return {
+    result = {
         "status": "completed",
         "scan_time": scan_time,
         "stale_leads_count": len(stale_leads) if stale_leads else 0,
         "meetings_count": len(upcoming_meetings) if upcoming_meetings else 0,
         "ghost_count": len(ghost_candidates) if ghost_candidates else 0
     }
+    _emit_scheduler_summary_trace("pipeline_scan", result)
+    return result
 
 
 @inngest_client.create_function(
@@ -103,7 +108,7 @@ async def daily_health_check(ctx: inngest.Context, step: inngest.Step) -> Dict[s
         "queue_status": queue_status,
         "error_status": error_status
     }))
-    
+    _emit_scheduler_summary_trace("daily_health_check", report)
     return report
 
 
@@ -129,12 +134,14 @@ async def weekly_icp_analysis(ctx: inngest.Context, step: inngest.Step) -> Dict[
     # Update ICP weights
     await step.run("update-weights", lambda: update_icp_weights(patterns))
     
-    return {
+    result = {
         "status": "completed",
         "analysis_time": analysis_time,
         "deals_analyzed": len(outcomes) if outcomes else 0,
         "patterns_found": len(patterns) if patterns else 0
     }
+    _emit_scheduler_summary_trace("weekly_icp_analysis", result)
+    return result
 
 
 @inngest_client.create_function(
@@ -150,19 +157,28 @@ async def meeting_prep_trigger(ctx: inngest.Context, step: inngest.Step) -> Dict
     meetings = await step.run("get-tomorrow-meetings", get_tomorrow_meetings)
     
     if not meetings:
-        return {"status": "no_meetings", "count": 0}
+        result = {"status": "no_meetings", "count": 0}
+        _emit_scheduler_summary_trace("meeting_prep_trigger", result)
+        return result
     
     # Generate prep for each meeting
     for meeting in meetings:
+        meeting_id = str(meeting.get("id", "unknown")).replace("/", "_")
+        
+        async def _prep(m=meeting):
+            return await generate_meeting_prep(m)
+        
         await step.run(
-            f"prep-{meeting.get('id', 'unknown')}",
-            lambda m=meeting: generate_meeting_prep(m)
+            f"prep-{meeting_id}",
+            _prep
         )
     
-    return {
+    result = {
         "status": "completed",
         "meetings_prepped": len(meetings)
     }
+    _emit_scheduler_summary_trace("meeting_prep_trigger", result)
+    return result
 
 
 # =============================================================================
@@ -171,20 +187,47 @@ async def meeting_prep_trigger(ctx: inngest.Context, step: inngest.Step) -> Dict
 
 async def check_stale_leads() -> list:
     """Check for leads that haven't been contacted in 3+ days."""
-    # TODO: Query GHL for stale leads
-    return []
+    data = await _gateway_execute(
+        integration="ghl",
+        action="read_pipeline",
+        params={
+            "status": "open",
+            "stale_days": 3,
+            "limit": 200,
+        },
+    )
+    records = _extract_records(data, ["leads", "opportunities", "contacts", "results"])
+    return records
 
 
 async def check_upcoming_meetings() -> list:
     """Check for meetings in the next 24 hours."""
-    # TODO: Query GHL/GCal for upcoming meetings
-    return []
+    now_utc = datetime.now(timezone.utc)
+    window_end = now_utc + timedelta(hours=24)
+    data = await _gateway_execute(
+        integration="google_calendar",
+        action="get_events",
+        params={
+            "start": now_utc.isoformat(),
+            "end": window_end.isoformat(),
+            "limit": 100,
+        },
+    )
+    return _extract_records(data, ["events", "meetings", "items", "results"])
 
 
 async def check_ghost_candidates() -> list:
     """Check for leads that stopped responding (ghost recovery)."""
-    # TODO: Query GHL for ghost candidates
-    return []
+    data = await _gateway_execute(
+        integration="ghl",
+        action="search_contacts",
+        params={
+            "segment": "ghost_recovery",
+            "days_since_last_reply": 14,
+            "limit": 200,
+        },
+    )
+    return _extract_records(data, ["contacts", "leads", "results"])
 
 
 def log_scan_results(results: Dict[str, Any]) -> bool:
@@ -200,32 +243,89 @@ def log_scan_results(results: Dict[str, Any]) -> bool:
 
 async def check_api_connections() -> Dict[str, bool]:
     """Check all API connections."""
-    # TODO: Ping each API endpoint
-    return {
-        "ghl": True,
-        "instantly": True,
-        "supabase": True,
-        "anthropic": True
-    }
+    try:
+        from core.unified_integration_gateway import get_gateway
+        
+        gateway = get_gateway()
+        health = await gateway.health_check_all()
+        status_map = {
+            name: status.status.value in {"healthy", "degraded"}
+            for name, status in health.items()
+        }
+        return status_map or {"gateway": False}
+    except Exception as exc:
+        logger.error("Failed to check API connections: %s", exc)
+        return {"gateway": False}
 
 
 async def check_queue_depths() -> Dict[str, int]:
     """Check queue depths for each agent."""
     queue_dir = Path(".hive-mind/enrichment/queue")
     enrichment_count = len(list(queue_dir.glob("*.json"))) if queue_dir.exists() else 0
+    shadow_dir = Path(".hive-mind/shadow_mode_emails")
+    approval_count = 0
+    
+    if shadow_dir.exists():
+        for file_path in shadow_dir.glob("*.json"):
+            try:
+                with open(file_path, encoding="utf-8") as f:
+                    data = json.load(f)
+                if data.get("status", "pending") == "pending":
+                    approval_count += 1
+            except Exception as exc:
+                logger.warning("Failed to parse approval queue item %s: %s", file_path, exc)
     
     return {
         "enrichment_queue": enrichment_count,
-        "approval_queue": 0  # TODO: Count pending approvals
+        "approval_queue": approval_count,
     }
 
 
 async def check_error_rates() -> Dict[str, float]:
     """Calculate error rates for the last 24 hours."""
-    # TODO: Analyze failure logs
+    now_utc = datetime.now(timezone.utc)
+    cutoff = now_utc - timedelta(hours=24)
+    
+    total_events = 0
+    error_events = 0
+    warning_count = 0
+    
+    audit_file = Path(".hive-mind/integration_audit.json")
+    if audit_file.exists():
+        try:
+            with open(audit_file, encoding="utf-8") as f:
+                payload = json.load(f)
+            for entry in payload.get("entries", []):
+                ts = _parse_iso(entry.get("timestamp"))
+                if ts and ts >= cutoff:
+                    total_events += 1
+                    if not entry.get("success", False):
+                        error_events += 1
+        except Exception as exc:
+            logger.warning("Failed to inspect integration audit for error rates: %s", exc)
+    
+    frontend_log = Path(".hive-mind/frontend_errors.jsonl")
+    if frontend_log.exists():
+        try:
+            with open(frontend_log, encoding="utf-8") as f:
+                for line in f:
+                    if not line.strip():
+                        continue
+                    try:
+                        event = json.loads(line)
+                    except json.JSONDecodeError:
+                        continue
+                    ts = _parse_iso(event.get("timestamp"))
+                    if ts and ts >= cutoff:
+                        warning_count += 1
+        except Exception as exc:
+            logger.warning("Failed to inspect frontend error log: %s", exc)
+    
+    error_rate = (error_events / total_events * 100) if total_events else 0.0
     return {
-        "error_rate_percent": 0.0,
-        "warning_count": 0
+        "error_rate_percent": round(error_rate, 2),
+        "warning_count": warning_count,
+        "total_events": total_events,
     }
 
 
@@ -247,7 +347,7 @@ async def get_deal_outcomes() -> list:
         from core.self_learning_icp import icp_memory
         return icp_memory.deals
     except Exception as e:
-        print(f"Error getting deal outcomes: {e}")
+        logger.error("Error getting deal outcomes: %s", e)
         return []
 
 
@@ -263,7 +363,7 @@ def analyze_deal_patterns(outcomes: list) -> Dict[str, Any]:
         else:
             return asyncio.run(pattern_analyzer.run_weekly_analysis())
     except Exception as e:
-        print(f"Error analyzing patterns: {e}")
+        logger.error("Error analyzing deal patterns: %s", e)
         return {}
 
 
@@ -274,39 +374,181 @@ def update_icp_weights(patterns: Dict[str, Any]) -> bool:
         # Weights are updated automatically when deals are recorded
         # This function just triggers a save
         icp_memory._save_weights()
-        print(f"✓ ICP weights updated ({len(icp_memory.weights)} traits)")
+        logger.info("✓ ICP weights updated (%s traits)", len(icp_memory.weights))
         return True
     except Exception as e:
-        print(f"Error updating weights: {e}")
+        logger.error("Error updating ICP weights: %s", e)
         return False
 
 
 async def get_tomorrow_meetings() -> list:
     """Get meetings scheduled for tomorrow."""
-    # TODO: Query GHL/GCal
+    now_utc = datetime.now(timezone.utc)
+    tomorrow_start = (now_utc + timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
+    tomorrow_end = tomorrow_start + timedelta(days=1)
+    
+    data = await _gateway_execute(
+        integration="google_calendar",
+        action="get_events",
+        params={
+            "start": tomorrow_start.isoformat(),
+            "end": tomorrow_end.isoformat(),
+            "limit": 200,
+        },
+    )
+    return _extract_records(data, ["events", "meetings", "items", "results"])
+
+
+async def generate_meeting_prep(meeting: Dict[str, Any]) -> Dict[str, Any]:
+    """Generate meeting prep brief."""
+    meeting_id = meeting.get("id")
+    contact_id = meeting.get("contact_id") or meeting.get("contactId")
+    
+    if not contact_id:
+        return {
+            "meeting_id": meeting_id,
+            "status": "skipped",
+            "reason": "missing_contact_id",
+        }
+    
+    try:
+        from core.call_prep_agent import get_call_prep_agent
+        
+        call_prep_agent = get_call_prep_agent()
+        update_ghl = os.getenv("ENVIRONMENT", "development") == "production"
+        prep = await call_prep_agent.prepare_contact_for_call(
+            contact_id=str(contact_id),
+            update_ghl=update_ghl,
+        )
+        return {
+            "meeting_id": meeting_id,
+            "status": "prepared",
+            "contact_id": contact_id,
+            "summary": prep.summary,
+            "confidence_score": prep.confidence_score,
+            "ghl_updated": update_ghl,
+        }
+    except Exception as exc:
+        logger.error("Meeting prep generation failed for meeting %s: %s", meeting_id, exc)
+        return {
+            "meeting_id": meeting_id,
+            "status": "failed",
+            "contact_id": contact_id,
+            "error": str(exc),
+        }
+
+
+def _extract_records(payload: Any, keys: List[str]) -> List[Dict[str, Any]]:
+    if payload is None:
+        return []
+    if isinstance(payload, list):
+        return [item for item in payload if isinstance(item, dict)]
+    if isinstance(payload, dict):
+        for key in keys:
+            value = payload.get(key)
+            if isinstance(value, list):
+                return [item for item in value if isinstance(item, dict)]
     return []
 
 
-def generate_meeting_prep(meeting: Dict[str, Any]) -> Dict[str, Any]:
-    """Generate meeting prep brief."""
-    # TODO: Call RESEARCHER agent for prep
-    return {"meeting_id": meeting.get("id"), "status": "prepared"}
+async def _gateway_execute(integration: str, action: str, params: Dict[str, Any]) -> Any:
+    start = time.time()
+    error_code = None
+    error_message = None
+    output: Any = None
+    status = "failure"
+    try:
+        from core.unified_integration_gateway import get_gateway
+        
+        gateway = get_gateway()
+        result = await gateway.execute(
+            integration=integration,
+            action=action,
+            params=params,
+            agent="SCHEDULER",
+        )
+        if not result.success:
+            error_code = "GATEWAY_EXECUTION_FAILED"
+            error_message = result.error
+            logger.warning(
+                "Gateway execution failed for %s.%s: %s",
+                integration,
+                action,
+                result.error,
+            )
+            return None
+        output = result.data
+        status = "success"
+        return result.data
+    except Exception as exc:
+        error_code = "GATEWAY_EXECUTION_EXCEPTION"
+        error_message = str(exc)
+        logger.error("Gateway execution error for %s.%s: %s", integration, action, exc)
+        return None
+    finally:
+        try:
+            emit_tool_trace(
+                agent="SCHEDULER",
+                tool_name=f"Inngest.{integration}.{action}",
+                tool_input=params,
+                tool_output=output,
+                retrieved_context_refs=[],
+                status=status,
+                duration_ms=(time.time() - start) * 1000,
+                error_code=error_code,
+                error_message=error_message,
+            )
+        except Exception as trace_exc:
+            logger.debug("Failed to emit scheduler trace: %s", trace_exc)
+
+
+def _parse_iso(value: Any) -> Any:
+    if not value:
+        return None
+    try:
+        parsed = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+        if parsed.tzinfo is None:
+            parsed = parsed.replace(tzinfo=timezone.utc)
+        return parsed.astimezone(timezone.utc)
+    except Exception:
+        return None
+
+
+def _emit_scheduler_summary_trace(function_name: str, output: Dict[str, Any]) -> None:
+    try:
+        emit_tool_trace(
+            agent="SCHEDULER",
+            tool_name=f"Inngest.{function_name}",
+            tool_input={},
+            tool_output=output,
+            retrieved_context_refs=[],
+            status="success",
+            duration_ms=0,
+        )
+    except Exception as exc:
+        logger.debug("Failed to emit scheduler summary trace for %s: %s", function_name, exc)
 
 
 # =============================================================================
 # FASTAPI INTEGRATION
 # =============================================================================
 
-def get_inngest_serve():
-    """Get the Inngest serve middleware for FastAPI."""
-    return serve(
+def get_inngest_serve(app):
+    """Register Inngest functions on a FastAPI app.
+
+    In inngest v0.5+, serve() takes the FastAPI app and modifies it in-place.
+    """
+    serve(
+        app,
         client=inngest_client,
         functions=[
             pipeline_scan,
             daily_health_check,
             weekly_icp_analysis,
             meeting_prep_trigger
-        ]
+        ],
+        serve_origin=os.getenv("INNGEST_SERVE_ORIGIN"),
+        serve_path="/inngest",
     )
 
 

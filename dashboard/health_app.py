@@ -19,12 +19,13 @@ import os
 import sys
 import json
 import asyncio
+import logging
 from uuid import uuid4
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, List, Any, Optional
 
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, Query, Depends, Body, Request
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, Query, Depends, Body, Request, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse, FileResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -39,10 +40,20 @@ from core.precision_scorecard import get_scorecard, reset_scorecard
 from core.messaging_strategy import MessagingStrategy
 from core.signal_detector import SignalDetector
 from core.ghl_outreach import OutreachConfig, GHLOutreachClient, EmailTemplate, OutreachType
+from core.runtime_reliability import get_runtime_dependency_health
+from core.trace_envelope import (
+    set_current_case_id,
+    reset_current_case_id,
+    set_current_correlation_id,
+    reset_current_correlation_id,
+)
 from dotenv import load_dotenv
 
 # Load environment variables
 load_dotenv()
+
+logger = logging.getLogger("health_app")
+INNGEST_ROUTE_MOUNTED = False
 
 
 def _categorize_rejection(reason: str) -> str:
@@ -64,6 +75,73 @@ def _categorize_rejection(reason: str) -> str:
     else:
         return "other"
 
+
+def _priority_to_tier(priority: Optional[str]) -> str:
+    p = (priority or "").strip().lower()
+    if p == "high":
+        return "tier_1"
+    if p == "medium":
+        return "tier_2"
+    return "tier_3"
+
+
+def _sync_gatekeeper_queue_to_shadow(project_root: Path) -> int:
+    """
+    Ensure gatekeeper queue items are mirrored into shadow_mode_emails.
+
+    This prevents dashboard staleness if upstream writes only to gatekeeper_queue.
+    Returns number of files synced.
+    """
+    gatekeeper_dir = project_root / ".hive-mind" / "gatekeeper_queue"
+    shadow_dir = project_root / ".hive-mind" / "shadow_mode_emails"
+    shadow_dir.mkdir(parents=True, exist_ok=True)
+
+    if not gatekeeper_dir.exists():
+        return 0
+
+    synced_count = 0
+    for queue_file in gatekeeper_dir.glob("*.json"):
+        shadow_file = shadow_dir / queue_file.name
+        if shadow_file.exists():
+            continue
+
+        try:
+            with open(queue_file, "r", encoding="utf-8") as f:
+                queue_data = json.load(f)
+
+            visitor = queue_data.get("visitor", {})
+            email = queue_data.get("email", {})
+            context = queue_data.get("context", {})
+
+            shadow_payload = {
+                "email_id": queue_data.get("queue_id") or queue_file.stem,
+                "status": "pending",
+                "to": visitor.get("email") or queue_data.get("to") or "unknown@example.com",
+                "subject": email.get("subject") or queue_data.get("subject") or "No Subject",
+                "body": email.get("body") or queue_data.get("body") or "No Body Content",
+                "tier": context.get("icp_tier") or _priority_to_tier(queue_data.get("priority")),
+                "angle": (context.get("triggers") or ["general"])[0],
+                "recipient_data": {
+                    "name": visitor.get("name"),
+                    "company": visitor.get("company"),
+                    "title": visitor.get("title"),
+                },
+                "context": context,
+                "priority": queue_data.get("priority", "medium"),
+                "source": "gatekeeper_queue_sync",
+                "created_at": queue_data.get("created_at"),
+                "timestamp": queue_data.get("created_at"),
+                "synced_at": datetime.now(timezone.utc).isoformat(),
+            }
+
+            with open(shadow_file, "w", encoding="utf-8") as f:
+                json.dump(shadow_payload, f, indent=2)
+            synced_count += 1
+        except Exception as exc:
+            logger.warning("Failed to sync gatekeeper queue file %s: %s", queue_file, exc)
+
+    return synced_count
+
 # =============================================================================
 # CORRELATION ID MIDDLEWARE
 # =============================================================================
@@ -83,15 +161,25 @@ class CorrelationIDMiddleware(BaseHTTPMiddleware):
         correlation_id = request.headers.get("X-Correlation-ID")
         if not correlation_id:
             correlation_id = str(uuid4())
+        case_id = request.headers.get("X-Replay-Case-ID") or request.headers.get("X-Case-ID")
 
         # Store in request state for route handlers
         request.state.correlation_id = correlation_id
+        request.state.case_id = case_id
+        correlation_token = set_current_correlation_id(correlation_id)
+        case_token = set_current_case_id(case_id) if case_id else None
 
-        # Process request
-        response = await call_next(request)
+        try:
+            response = await call_next(request)
+        finally:
+            reset_current_correlation_id(correlation_token)
+            if case_token is not None:
+                reset_current_case_id(case_token)
 
         # Add correlation ID to response headers
         response.headers["X-Correlation-ID"] = correlation_id
+        if case_id:
+            response.headers["X-Replay-Case-ID"] = case_id
 
         return response
 
@@ -172,7 +260,8 @@ class ConnectionManager:
         for connection in self.active_connections:
             try:
                 await connection.send_json(message)
-            except Exception:
+            except Exception as exc:
+                logger.warning("Failed to broadcast websocket message: %s", exc)
                 disconnected.append(connection)
         
         for conn in disconnected:
@@ -201,7 +290,7 @@ async def health_broadcast_loop():
                     "data": status
                 })
             except Exception as e:
-                print(f"Broadcast error: {e}")
+                logger.error("Broadcast error: %s", e)
 
 
 @app.on_event("startup")
@@ -342,7 +431,21 @@ async def health_check(token: str = Query(None)):
     """Get current health status of all components."""
     require_auth(token)
     monitor = get_health_monitor()
-    return monitor.get_health_status()
+    status = monitor.get_health_status()
+    status["runtime_dependencies"] = get_runtime_dependency_health(
+        check_connections=False,
+        inngest_route_mounted=INNGEST_ROUTE_MOUNTED,
+    )
+    return status
+
+
+@app.get("/api/runtime/dependencies")
+async def get_runtime_dependencies(auth: bool = Depends(require_auth)):
+    """Runtime reliability health for Redis/Inngest dependency checks."""
+    return get_runtime_dependency_health(
+        check_connections=True,
+        inngest_route_mounted=INNGEST_ROUTE_MOUNTED,
+    )
 
 
 @app.get("/api/metrics")
@@ -667,12 +770,20 @@ async def sales_dashboard():
 
 
 @app.get("/api/pending-emails")
-async def get_pending_emails(auth: bool = Depends(require_auth)):
+async def get_pending_emails(response: Response, auth: bool = Depends(require_auth)):
     """
     Get pending emails awaiting approval.
     
     Returns emails that need HoS review before sending.
     """
+    # Prevent stale browser/proxy caches for queue polling
+    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
+
+    # Keep shadow queue in sync with gatekeeper queue for resilience
+    synced_count = _sync_gatekeeper_queue_to_shadow(PROJECT_ROOT)
+
     # Load from shadow mode log
     shadow_log = PROJECT_ROOT / ".hive-mind" / "shadow_mode_emails"
     pending = []
@@ -700,10 +811,15 @@ async def get_pending_emails(auth: bool = Depends(require_auth)):
                         email_data["angle"] = email_data.get("angle", "General")
                         
                         pending.append(email_data)
-            except Exception:
-                pass
+            except Exception as exc:
+                logger.warning("Failed to read pending email file %s: %s", email_file, exc)
     
-    return {"pending_emails": pending, "count": len(pending)}
+    return {
+        "pending_emails": pending,
+        "count": len(pending),
+        "synced_from_gatekeeper": synced_count,
+        "refreshed_at": datetime.now(timezone.utc).isoformat(),
+    }
 
 
 @app.post("/api/emails/{email_id}/approve")
@@ -878,7 +994,7 @@ async def approve_email(
                 "feedback": feedback
             }) + "\n")
     except Exception:
-        pass
+        logger.warning("Failed to append email approval audit event for %s", email_id)
 
     # Log to Training Feedback Log - ALWAYS log for learning, not just when edited
     training_log = PROJECT_ROOT / ".hive-mind" / "audit" / "agent_feedback.jsonl"
@@ -1016,7 +1132,7 @@ async def reject_email(
                 "subject": email_data.get("subject")
             }) + "\n")
     except Exception:
-        pass  # Non-critical
+        logger.warning("Failed to append rejection audit event for %s", email_id)
     
     return {
         "status": "rejected",
@@ -1061,8 +1177,8 @@ async def get_queue_status(auth: bool = Depends(require_auth)):
                         shadow_approved += 1
                     elif status == "rejected":
                         shadow_rejected += 1
-            except Exception:
-                pass
+            except Exception as exc:
+                logger.warning("Failed to parse queue file %s: %s", f, exc)
     
     # Gatekeeper queue count
     gatekeeper_count = 0
@@ -1075,8 +1191,8 @@ async def get_queue_status(auth: bool = Depends(require_auth)):
         try:
             with open(metrics_file) as f:
                 daily_counts = json.load(f)
-        except Exception:
-            pass
+        except Exception as exc:
+            logger.warning("Failed to read daily metrics file %s: %s", metrics_file, exc)
     
     # Recent intent queue events (last 10)
     recent_events = []
@@ -1087,10 +1203,10 @@ async def get_queue_status(auth: bool = Depends(require_auth)):
                 for line in lines[-10:]:
                     try:
                         recent_events.append(json.loads(line.strip()))
-                    except Exception:
-                        pass
-        except Exception:
-            pass
+                    except Exception as exc:
+                        logger.debug("Skipping malformed intent log line: %s", exc)
+        except Exception as exc:
+            logger.warning("Failed to read intent log %s: %s", intent_log, exc)
     
     return {
         "shadow_mode_emails": {
@@ -1125,18 +1241,31 @@ async def readiness_probe():
     try:
         monitor = get_health_monitor()
         status = monitor.get_health_status()
+        runtime_health = get_runtime_dependency_health(
+            check_connections=True,
+            inngest_route_mounted=INNGEST_ROUTE_MOUNTED,
+        )
+
+        if not runtime_health.get("ready", False):
+            failures = runtime_health.get("required_failures", [])
+            raise HTTPException(
+                status_code=503,
+                detail=f"Runtime dependencies not ready: {', '.join(failures)}"
+            )
         
         # Check critical dependencies
         integrations = status.get("integrations", {})
-        critical_healthy = True
-        unhealthy = []
-        
-        for name, integration in integrations.items():
-            if integration.get("critical", False) and integration.get("status") != "healthy":
-                critical_healthy = False
-                unhealthy.append(name)
-        
-        if not critical_healthy:
+        critical_integrations = [
+            name.strip()
+            for name in os.getenv("CRITICAL_INTEGRATIONS", "ghl,supabase,clay").split(",")
+            if name.strip()
+        ]
+        unhealthy = [
+            name for name in critical_integrations
+            if integrations.get(name, {}).get("status") == "unhealthy"
+        ]
+
+        if unhealthy:
             raise HTTPException(
                 status_code=503,
                 detail=f"Critical integrations unhealthy: {', '.join(unhealthy)}"
@@ -1147,8 +1276,10 @@ async def readiness_probe():
             "timestamp": datetime.now().isoformat(),
             "checks": {
                 "health_monitor": "ok",
-                "integrations": "ok"
-            }
+                "integrations": "ok",
+                "runtime_dependencies": runtime_health.get("status", "unknown")
+            },
+            "runtime_dependencies": runtime_health,
         }
     except HTTPException:
         raise
@@ -1235,11 +1366,20 @@ async def prepare_hot_leads_batch(
 # =============================================================================
 
 try:
+    from core.inngest_scheduler import get_inngest_serve
+    get_inngest_serve(app)
+    INNGEST_ROUTE_MOUNTED = True
+    logger.info("✓ Inngest route mounted at /inngest")
+except Exception as e:
+    INNGEST_ROUTE_MOUNTED = False
+    logger.warning("Inngest route could not be mounted: %s", e)
+
+try:
     from webhooks.rb2b_webhook import router as rb2b_router
     app.include_router(rb2b_router)
-    print("✓ RB2B Webhook mounted")
+    logger.info("✓ RB2B Webhook mounted")
 except Exception as e:
-    print(f"Warning: RB2B Webhook could not be mounted: {e}")
+    logger.warning("RB2B Webhook could not be mounted: %s", e)
 
 # =============================================================================
 # MAIN

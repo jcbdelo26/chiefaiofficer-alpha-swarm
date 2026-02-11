@@ -43,6 +43,10 @@ import json
 import time
 import asyncio
 import functools
+import logging
+import tempfile
+import threading
+import uuid
 from enum import Enum
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -60,6 +64,18 @@ from core.circuit_breaker import (
     get_registry as get_circuit_registry
 )
 from core.audit_trail import AuditTrail, get_audit_trail
+from core.trace_envelope import (
+    emit_tool_trace,
+    get_current_case_id,
+    get_current_correlation_id,
+)
+
+try:
+    import redis
+except Exception:  # pragma: no cover - optional dependency in some test environments
+    redis = None
+
+logger = logging.getLogger("unified_guardrails")
 
 # Import MultiLayerFailsafe for enhanced protection
 try:
@@ -181,7 +197,8 @@ class GroundingEvidence:
                 verified = verified.replace(tzinfo=timezone.utc)
             age = datetime.now(timezone.utc) - verified
             return age < timedelta(hours=1)
-        except:
+        except Exception as exc:
+            logger.warning("Grounding evidence validation failed: %s", exc)
             return False
 
 
@@ -466,35 +483,101 @@ class UnifiedRateLimiter:
     
     GHL_LIMITS = RateLimitConfig(per_minute=20, per_hour=20, per_day=150)
     EMAIL_LIMITS = RateLimitConfig(per_minute=2, per_hour=20, per_day=150)
+    _WINDOWS = (
+        ("minute", 60, "per_minute"),
+        ("hour", 3600, "per_hour"),
+        ("day", 86400, "per_day"),
+    )
     
-    def __init__(self, storage_path: Optional[Path] = None):
+    def __init__(
+        self,
+        storage_path: Optional[Path] = None,
+        redis_url: Optional[str] = None,
+        redis_namespace: str = "caio:ratelimit",
+    ):
         self.storage_path = storage_path or PROJECT_ROOT / ".hive-mind" / "rate_limits.json"
         self.storage_path.parent.mkdir(parents=True, exist_ok=True)
+        self._lock = threading.RLock()
         
-        self.counters: Dict[str, Dict[str, List[float]]] = defaultdict(lambda: {
-            "minute": [],
-            "hour": [],
-            "day": []
-        })
-        self._load_state()
+        self.redis_namespace = os.getenv("RATE_LIMIT_REDIS_NAMESPACE", redis_namespace)
+        self._redis = None
+        self._use_redis = False
+        configured_redis_url = os.getenv("REDIS_URL") if redis_url is None else redis_url
+        self._initialize_redis(configured_redis_url)
+        
+        self.counters: Dict[str, Dict[str, List[float]]] = defaultdict(
+            lambda: {"minute": [], "hour": [], "day": []}
+        )
+        if not self._use_redis:
+            self._load_state()
+    
+    def _initialize_redis(self, redis_url: Optional[str]) -> None:
+        if not redis_url or redis is None:
+            return
+        try:
+            self._redis = redis.Redis.from_url(
+                redis_url,
+                decode_responses=True,
+                socket_connect_timeout=2,
+                socket_timeout=2,
+            )
+            self._redis.ping()
+            self._use_redis = True
+            logger.info("UnifiedRateLimiter configured with Redis backend")
+        except Exception as exc:
+            self._use_redis = False
+            self._redis = None
+            logger.warning(
+                "Redis unavailable for UnifiedRateLimiter (%s), using file fallback.",
+                exc,
+            )
+    
+    def _redis_key(self, key: str, window_name: str) -> str:
+        normalized = "".join(ch if ch.isalnum() or ch in ("_", "-") else "_" for ch in key)
+        return f"{self.redis_namespace}:{window_name}:{normalized}"
     
     def _load_state(self):
-        if self.storage_path.exists():
-            try:
-                with open(self.storage_path) as f:
-                    data = json.load(f)
-                    for key, counters in data.get("counters", {}).items():
-                        self.counters[key] = counters
-            except:
-                pass
+        if not self.storage_path.exists():
+            return
+        try:
+            with open(self.storage_path, encoding="utf-8") as f:
+                data = json.load(f)
+            for key, counters in data.get("counters", {}).items():
+                if isinstance(counters, dict):
+                    self.counters[key] = {
+                        "minute": list(counters.get("minute", [])),
+                        "hour": list(counters.get("hour", [])),
+                        "day": list(counters.get("day", [])),
+                    }
+        except Exception as exc:
+            logger.warning("Failed to load rate-limit state from %s: %s", self.storage_path, exc)
     
-    def _save_state(self):
+    def _save_state_locked(self):
         data = {
             "counters": dict(self.counters),
-            "updated_at": datetime.now(timezone.utc).isoformat()
+            "updated_at": datetime.now(timezone.utc).isoformat(),
         }
-        with open(self.storage_path, "w") as f:
-            json.dump(data, f)
+        fd = None
+        temp_path = None
+        try:
+            fd, temp_path = tempfile.mkstemp(
+                suffix=".json",
+                prefix="rate_limits_",
+                dir=str(self.storage_path.parent),
+            )
+            with os.fdopen(fd, "w", encoding="utf-8") as f:
+                fd = None
+                json.dump(data, f)
+            os.replace(temp_path, self.storage_path)
+            temp_path = None
+        finally:
+            if fd is not None:
+                os.close(fd)
+            if temp_path and os.path.exists(temp_path):
+                try:
+                    os.unlink(temp_path)
+                except OSError:
+                    pass
     
     def _clean_old_timestamps(self, key: str):
         """Remove timestamps outside windows."""
@@ -504,39 +587,102 @@ class UnifiedRateLimiter:
         counters["hour"] = [t for t in counters["hour"] if now - t < 3600]
         counters["day"] = [t for t in counters["day"] if now - t < 86400]
     
+    def _get_redis_counts(self, key: str) -> Optional[Dict[str, int]]:
+        if not self._use_redis or not self._redis:
+            return None
+        now = time.time()
+        try:
+            pipe = self._redis.pipeline(transaction=True)
+            for window_name, window_seconds, _ in self._WINDOWS:
+                redis_key = self._redis_key(key, window_name)
+                pipe.zremrangebyscore(redis_key, 0, now - window_seconds)
+                pipe.zcard(redis_key)
+            results = pipe.execute()
+            counts: Dict[str, int] = {}
+            idx = 0
+            for window_name, _, _ in self._WINDOWS:
+                idx += 1  # skip zremrangebyscore result
+                counts[window_name] = int(results[idx])
+                idx += 1
+            return counts
+        except Exception as exc:
+            logger.warning("Redis check_limit failed, falling back to file backend: %s", exc)
+            self._use_redis = False
+            self._redis = None
+            return None
+    
     def check_limit(self, key: str, limits: Optional[RateLimitConfig] = None) -> Tuple[bool, Optional[str]]:
         """Check if rate limit allows action. Returns (allowed, reason)."""
         limits = limits or self.DEFAULT_LIMITS
-        self._clean_old_timestamps(key)
-        counters = self.counters[key]
         
-        if len(counters["minute"]) >= limits.per_minute:
-            return False, f"Rate limit: {limits.per_minute}/minute exceeded"
-        if len(counters["hour"]) >= limits.per_hour:
-            return False, f"Rate limit: {limits.per_hour}/hour exceeded"
-        if len(counters["day"]) >= limits.per_day:
-            return False, f"Rate limit: {limits.per_day}/day exceeded"
+        counts = self._get_redis_counts(key)
+        if counts is not None:
+            if counts["minute"] >= limits.per_minute:
+                return False, f"Rate limit: {limits.per_minute}/minute exceeded"
+            if counts["hour"] >= limits.per_hour:
+                return False, f"Rate limit: {limits.per_hour}/hour exceeded"
+            if counts["day"] >= limits.per_day:
+                return False, f"Rate limit: {limits.per_day}/day exceeded"
+            return True, None
         
-        return True, None
+        with self._lock:
+            self._clean_old_timestamps(key)
+            counters = self.counters[key]
+            
+            if len(counters["minute"]) >= limits.per_minute:
+                return False, f"Rate limit: {limits.per_minute}/minute exceeded"
+            if len(counters["hour"]) >= limits.per_hour:
+                return False, f"Rate limit: {limits.per_hour}/hour exceeded"
+            if len(counters["day"]) >= limits.per_day:
+                return False, f"Rate limit: {limits.per_day}/day exceeded"
+            
+            return True, None
     
     def record_action(self, key: str):
         """Record an action timestamp."""
         now = time.time()
-        self.counters[key]["minute"].append(now)
-        self.counters[key]["hour"].append(now)
-        self.counters[key]["day"].append(now)
-        self._save_state()
+        
+        if self._use_redis and self._redis:
+            try:
+                pipe = self._redis.pipeline(transaction=True)
+                member = f"{now}:{uuid.uuid4().hex}"
+                for window_name, window_seconds, _ in self._WINDOWS:
+                    redis_key = self._redis_key(key, window_name)
+                    pipe.zadd(redis_key, {member: now})
+                    pipe.expire(redis_key, window_seconds + 120)
+                pipe.execute()
+                return
+            except Exception as exc:
+                logger.warning("Redis record_action failed, falling back to file backend: %s", exc)
+                self._use_redis = False
+                self._redis = None
+        
+        with self._lock:
+            self._clean_old_timestamps(key)
+            self.counters[key]["minute"].append(now)
+            self.counters[key]["hour"].append(now)
+            self.counters[key]["day"].append(now)
+            self._save_state_locked()
     
     def get_usage(self, key: str, limits: Optional[RateLimitConfig] = None) -> Dict[str, Any]:
         """Get current usage for a key."""
         limits = limits or self.DEFAULT_LIMITS
-        self._clean_old_timestamps(key)
-        counters = self.counters[key]
+        
+        counts = self._get_redis_counts(key)
+        if counts is None:
+            with self._lock:
+                self._clean_old_timestamps(key)
+                counters = self.counters[key]
+                counts = {
+                    "minute": len(counters["minute"]),
+                    "hour": len(counters["hour"]),
+                    "day": len(counters["day"]),
+                }
         
         return {
-            "minute": {"used": len(counters["minute"]), "limit": limits.per_minute},
-            "hour": {"used": len(counters["hour"]), "limit": limits.per_hour},
-            "day": {"used": len(counters["day"]), "limit": limits.per_day},
+            "minute": {"used": counts["minute"], "limit": limits.per_minute},
+            "hour": {"used": counts["hour"], "limit": limits.per_hour},
+            "day": {"used": counts["day"], "limit": limits.per_day},
         }
 
 
@@ -592,7 +738,9 @@ class HookSystem:
                 if asyncio.iscoroutine(res):
                     await res
             except Exception as e:
-                pass  # Don't fail on post-hook errors
+                context["hook_errors"] = context.get("hook_errors", [])
+                context["hook_errors"].append(f"{hook.name}: {e}")
+                logger.error("Post-hook '%s' failed: %s", hook.name, e)
     
     async def run_error_hooks(self, context: Dict[str, Any], error: Exception):
         for hook in self.error_hooks:
@@ -600,8 +748,10 @@ class HookSystem:
                 res = hook.callback(context, error)
                 if asyncio.iscoroutine(res):
                     await res
-            except:
-                pass
+            except Exception as hook_error:
+                context["hook_errors"] = context.get("hook_errors", [])
+                context["hook_errors"].append(f"{hook.name}: {hook_error}")
+                logger.error("Error-hook '%s' failed: %s", hook.name, hook_error)
 
 
 # =============================================================================
@@ -742,8 +892,41 @@ class UnifiedGuardrails:
                 duration_ms=result.execution_time_ms,
                 error=result.error
             )
-        except Exception:
-            pass  # Don't fail action on audit failure
+        except Exception as exc:
+            logger.error("Audit trail write failed: %s", exc)
+    
+    def _emit_execution_trace(self, context: Dict[str, Any], result: ActionResult):
+        """Emit deterministic trace envelope for guardrail execution."""
+        try:
+            grounding = context.get("grounding_evidence") or {}
+            context_refs: List[str] = []
+            if isinstance(grounding, dict):
+                data_id = grounding.get("data_id")
+                if data_id:
+                    context_refs.append(str(data_id))
+            
+            error_message = result.error or result.blocked_reason
+            error_code = None
+            if result.blocked_reason:
+                error_code = "GUARDRAIL_BLOCKED"
+            elif result.error:
+                error_code = "ACTION_EXECUTION_ERROR"
+            
+            emit_tool_trace(
+                correlation_id=context.get("correlation_id"),
+                case_id=context.get("case_id"),
+                agent=result.agent,
+                tool_name=f"UnifiedGuardrails.execute:{result.action_type}",
+                tool_input=context.get("parameters"),
+                tool_output=result.result if result.success else {"error": error_message},
+                retrieved_context_refs=context_refs,
+                status="success" if result.success else "failure",
+                duration_ms=result.execution_time_ms,
+                error_code=error_code,
+                error_message=error_message,
+            )
+        except Exception as exc:
+            logger.warning("Failed to emit guardrail trace: %s", exc)
     
     async def get_audit_log(self, limit: int = 100) -> List[Dict]:
         """Query recent audit log entries."""
@@ -1001,7 +1184,9 @@ class UnifiedGuardrails:
             "agent_name": agent_name,
             "action_type": action_type,
             "parameters": parameters,
-            "grounding_evidence": grounding_evidence
+            "grounding_evidence": grounding_evidence,
+            "correlation_id": get_current_correlation_id(),
+            "case_id": get_current_case_id(),
         }
         
         # Run pre-hooks
@@ -1018,6 +1203,7 @@ class UnifiedGuardrails:
                 execution_time_ms=(time.time() - start_time) * 1000
             )
             await self.hook_system.run_post_hooks(context, result)
+            self._emit_execution_trace(context, result)
             return result
         
         # Check rate limits
@@ -1031,6 +1217,7 @@ class UnifiedGuardrails:
                 execution_time_ms=(time.time() - start_time) * 1000
             )
             await self.hook_system.run_post_hooks(context, result)
+            self._emit_execution_trace(context, result)
             return result
         
         # Check backoff
@@ -1085,6 +1272,7 @@ class UnifiedGuardrails:
         
         # Run post-hooks
         await self.hook_system.run_post_hooks(context, result)
+        self._emit_execution_trace(context, result)
         
         return result
     
@@ -1165,10 +1353,12 @@ class UnifiedGuardrails:
             "agent_name": agent_name,
             "action_type": action_type,
             "parameters": parameters,
-            "grounding_evidence": grounding_evidence
+            "grounding_evidence": grounding_evidence,
+            "correlation_id": get_current_correlation_id(),
+            "case_id": get_current_case_id(),
         }
         
-        await self.hook_system.run_pre_hooks(context)
+        context = await self.hook_system.run_pre_hooks(context)
         
         valid, reason = self.validate_action(agent_name, action_type, grounding_evidence)
         if not valid:
@@ -1180,6 +1370,7 @@ class UnifiedGuardrails:
                 execution_time_ms=(time.time() - start_time) * 1000
             )
             await self.hook_system.run_post_hooks(context, result)
+            self._emit_execution_trace(context, result)
             return result
         
         allowed, limit_reason = self.check_rate_limits(agent_name, action_type)
@@ -1192,6 +1383,7 @@ class UnifiedGuardrails:
                 execution_time_ms=(time.time() - start_time) * 1000
             )
             await self.hook_system.run_post_hooks(context, result)
+            self._emit_execution_trace(context, result)
             return result
         
         failsafe = get_failsafe()
@@ -1247,6 +1439,7 @@ class UnifiedGuardrails:
             )
         
         await self.hook_system.run_post_hooks(context, result)
+        self._emit_execution_trace(context, result)
         
         return result
     

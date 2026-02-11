@@ -915,48 +915,99 @@
     <script>
         const pendingEmails = [];
         const recentActivity = [];
+        let lastRefreshAt = null;
+        let refreshInFlight = false;
+        const REFRESH_INTERVAL_MS = 15000;
 
-        async function fetchPendingEmails() {
+        function getToken() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const tokenFromQuery = urlParams.get('token');
+            if (tokenFromQuery) {
+                localStorage.setItem('caio_dashboard_token', tokenFromQuery);
+                return tokenFromQuery;
+            }
+            return localStorage.getItem('caio_dashboard_token');
+        }
+
+        function buildPendingEmailsUrl() {
+            const token = getToken();
+            const params = new URLSearchParams();
+            if (token) {
+                params.set('token', token);
+            }
+            params.set('_ts', String(Date.now()));
+            return `/api/pending-emails?${params.toString()}`;
+        }
+
+        async function fetchPendingEmails({ silent = false } = {}) {
+            if (refreshInFlight) return;
+            refreshInFlight = true;
             try {
-                const urlParams = new URLSearchParams(window.location.search);
-                const token = urlParams.get('token');
+                const response = await fetch(buildPendingEmailsUrl(), {
+                    method: 'GET',
+                    cache: 'no-store',
+                    headers: { 'Accept': 'application/json' }
+                });
 
-                const response = await fetch(`/api/pending-emails?auth_token=${token}&token=${token}`);
-                if (response.ok) {
-                    const data = await response.json();
-                    if (data.pending_emails && data.pending_emails.length > 0) {
-                        pendingEmails.length = 0;
-                        data.pending_emails.forEach(e => {
-                            pendingEmails.push({
-                                id: e.email_id,
-                                tier: e.tier || 'tier1',
-                                tierLabel: (e.tier || 'Tier 1').toUpperCase(),
-                                subject: e.subject,
-                                recipient: e.to,
-                                recipientName: e.recipient_data?.name || e.to.split('@')[0],
-                                company: e.recipient_data?.company || 'Unknown Corp',
-                                title: e.recipient_data?.title || 'Unknown Title',
-                                location: e.recipient_data?.location || 'Unknown Location',
-                                employees: e.recipient_data?.employees || 'N/A',
-                                industry: e.recipient_data?.industry || 'N/A',
-                                angle: e.angle || 'General',
-                                timestamp: 'Just now',
-                                body: e.body
-                            });
-                        });
-                        renderPendingEmails();
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(errorData.detail || `Server error (${response.status})`);
+                }
+
+                const data = await response.json();
+                pendingEmails.length = 0;
+
+                const emails = Array.isArray(data.pending_emails) ? data.pending_emails : [];
+                emails.forEach(e => {
+                    const recipientEmail = e.to || 'unknown@example.com';
+                    pendingEmails.push({
+                        id: e.email_id,
+                        tier: e.tier || 'tier_3',
+                        tierLabel: (e.tier || 'tier_3').toUpperCase(),
+                        subject: e.subject || 'No Subject',
+                        recipient: recipientEmail,
+                        recipientName: e.recipient_data?.name || recipientEmail.split('@')[0],
+                        company: e.recipient_data?.company || 'Unknown Corp',
+                        title: e.recipient_data?.title || 'Unknown Title',
+                        location: e.recipient_data?.location || 'Unknown Location',
+                        employees: e.recipient_data?.employees || 'N/A',
+                        industry: e.recipient_data?.industry || 'N/A',
+                        angle: e.angle || 'General',
+                        timestamp: 'Just now',
+                        body: e.body || 'No Body Content'
+                    });
+                });
+
+                lastRefreshAt = data.refreshed_at || new Date().toISOString();
+                renderPendingEmails();
+
+                if (!silent) {
+                    const synced = data.synced_from_gatekeeper || 0;
+                    if (synced > 0) {
+                        showToast(`Synced ${synced} queued emails into dashboard inbox`);
                     }
                 }
             } catch (e) {
                 console.error("Failed to fetch pending emails:", e);
+                if (!silent) {
+                    showToast(`Refresh failed: ${e.message}`);
+                }
+            } finally {
+                refreshInFlight = false;
             }
         }
 
-        fetchPendingEmails();
+        function startAutoRefresh() {
+            fetchPendingEmails({ silent: false });
+            setInterval(() => {
+                fetchPendingEmails({ silent: true });
+            }, REFRESH_INTERVAL_MS);
 
-        function getToken() {
-            const urlParams = new URLSearchParams(window.location.search);
-            return urlParams.get('token');
+            document.addEventListener('visibilitychange', () => {
+                if (document.visibilityState === 'visible') {
+                    fetchPendingEmails({ silent: true });
+                }
+            });
         }
 
         function renderPendingEmails() {
@@ -1102,19 +1153,13 @@
 
             // Save email ID before closing modal (closeModal sets currentEmailId to null)
             const emailId = currentEmailId;
-
-            const urlParams = new URLSearchParams(window.location.search);
-            const token = urlParams.get('token');
+            const token = getToken();
             const editedBody = document.getElementById('emailBodyInput').innerHTML;
             const feedback = document.getElementById('feedbackInput').value;
 
-            closeModal();
-            const index = pendingEmails.findIndex(e => e.id === emailId);
-            if (index > -1) pendingEmails.splice(index, 1);
-            renderPendingEmails();
-
             try {
-                const response = await fetch(`/api/emails/${emailId}/approve?token=${token}`, {
+                const query = token ? `?token=${encodeURIComponent(token)}` : '';
+                const response = await fetch(`/api/emails/${emailId}/approve${query}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -1127,6 +1172,10 @@
                     const errorData = await response.json().catch(() => ({}));
                     throw new Error(errorData.detail || `Server error (${response.status})`);
                 }
+
+                closeModal();
+                await fetchPendingEmails({ silent: true });
+                showToast('Email approved');
             } catch (e) {
                 alert('Error approving email: ' + e.message);
             }
@@ -1137,28 +1186,29 @@
 
             // Save email ID before closing modal (closeModal sets currentEmailId to null)
             const emailId = currentEmailId;
-
             const feedback = document.getElementById('feedbackInput').value;
             if (!feedback) {
                 if (!confirm("Reject without feedback? The AI won't learn why.")) return;
             }
 
-            const urlParams = new URLSearchParams(window.location.search);
-            const token = urlParams.get('token');
-
-            closeModal();
-            const index = pendingEmails.findIndex(e => e.id === emailId);
-            if (index > -1) pendingEmails.splice(index, 1);
-            renderPendingEmails();
+            const token = getToken();
 
             try {
-                const response = await fetch(`/api/emails/${emailId}/reject?token=${token}&reason=${encodeURIComponent(feedback)}`, {
+                const params = new URLSearchParams();
+                if (token) params.set('token', token);
+                params.set('reason', feedback);
+
+                const response = await fetch(`/api/emails/${emailId}/reject?${params.toString()}`, {
                     method: 'POST'
                 });
                 if (!response.ok) {
                     const errorData = await response.json().catch(() => ({}));
                     throw new Error(errorData.detail || `Server error (${response.status})`);
                 }
+
+                closeModal();
+                await fetchPendingEmails({ silent: true });
+                showToast('Email rejected');
             } catch (e) {
                 alert('Error rejecting email: ' + e.message);
             }
@@ -1233,13 +1283,14 @@
             if (!confirm(`Approve ${lowPriorityEmails.length} low priority emails?`)) return;
 
             let approved = 0;
+            const token = getToken();
             for (const email of lowPriorityEmails) {
                 try {
-                    const token = getToken();
-                    const response = await fetch(`/api/approve?token=${token}`, {
+                    const query = token ? `?token=${encodeURIComponent(token)}` : '';
+                    const response = await fetch(`/api/emails/${email.id}/approve${query}`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ email_id: email.id })
+                        body: JSON.stringify({ feedback: 'bulk_approved_low_priority' })
                     });
                     if (response.ok) approved++;
                 } catch (e) {
@@ -1248,7 +1299,7 @@
             }
 
             showToast(`✅ Approved ${approved} emails`);
-            location.reload();
+            await fetchPendingEmails({ silent: true });
         }
 
         function getPriorityBadge(email) {
@@ -1263,10 +1314,7 @@
 
         renderPendingEmails();
         renderActivityFeed();
-
-        setInterval(() => {
-            console.log('Auto-refresh...');
-        }, 30000);
+        startAutoRefresh();
     </script>
 </body>
 

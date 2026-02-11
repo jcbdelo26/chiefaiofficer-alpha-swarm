@@ -1,5 +1,8 @@
 # Railway Ignore File - Optimized for Fast Upload
 
+# Windows reserved device names (causes upload errors)
+nul
+
 # CRITICAL: Exclude 1.5GB Virtual Environment
 .venv/
 venv/

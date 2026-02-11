@@ -32,6 +32,8 @@ import hmac
 import hashlib
 import asyncio
 import logging
+import tempfile
+import threading
 from abc import ABC, abstractmethod
 from enum import Enum
 from datetime import datetime, timedelta
@@ -48,6 +50,11 @@ sys.path.insert(0, str(PROJECT_ROOT))
 
 from core.circuit_breaker import CircuitBreakerRegistry, get_registry
 from core.unified_guardrails import UnifiedGuardrails, ActionType, RiskLevel, ACTION_RISK_LEVELS
+from core.trace_envelope import (
+    emit_tool_trace,
+    get_current_case_id,
+    get_current_correlation_id,
+)
 
 
 class IntegrationStatus(Enum):
@@ -596,6 +603,7 @@ class UnifiedIntegrationGateway:
         self._hive_mind = PROJECT_ROOT / ".hive-mind"
         self._hive_mind.mkdir(exist_ok=True)
         self._audit_file = self._hive_mind / "integration_audit.json"
+        self._audit_lock = threading.RLock()
         
         # Register default adapters
         self._register_default_adapters()
@@ -653,17 +661,74 @@ class UnifiedIntegrationGateway:
     def _log_audit(self, result: ExecutionResult):
         """Log execution to audit trail."""
         try:
-            audit = {"entries": []}
-            if self._audit_file.exists():
-                audit = json.loads(self._audit_file.read_text())
-            
-            audit["entries"].append(asdict(result))
-            audit["entries"] = audit["entries"][-10000:]  # Keep last 10k
-            audit["last_updated"] = datetime.utcnow().isoformat()
-            
-            self._audit_file.write_text(json.dumps(audit, indent=2))
+            with self._audit_lock:
+                audit = {"entries": []}
+                if self._audit_file.exists():
+                    try:
+                        audit = json.loads(self._audit_file.read_text(encoding="utf-8"))
+                    except Exception as exc:
+                        logger.warning("Integration audit file read failed, resetting file: %s", exc)
+                        audit = {"entries": []}
+                
+                audit["entries"].append(asdict(result))
+                audit["entries"] = audit["entries"][-10000:]  # Keep last 10k
+                audit["last_updated"] = datetime.utcnow().isoformat()
+                
+                fd = None
+                temp_path = None
+                try:
+                    fd, temp_path = tempfile.mkstemp(
+                        suffix=".json",
+                        prefix="integration_audit_",
+                        dir=str(self._audit_file.parent),
+                    )
+                    with os.fdopen(fd, "w", encoding="utf-8") as f:
+                        fd = None
+                        json.dump(audit, f, indent=2, default=str)
+                    os.replace(temp_path, self._audit_file)
+                    temp_path = None
+                finally:
+                    if fd is not None:
+                        os.close(fd)
+                    if temp_path and os.path.exists(temp_path):
+                        try:
+                            os.unlink(temp_path)
+                        except OSError:
+                            pass
         except Exception as e:
             logger.error(f"Audit log error: {e}")
+    
+    def _emit_execution_trace(
+        self,
+        *,
+        result: ExecutionResult,
+        params: Dict[str, Any],
+        correlation_id: Optional[str],
+        case_id: Optional[str],
+        error_code: Optional[str] = None,
+    ) -> None:
+        """Emit standardized tool trace for gateway execution."""
+        context_refs: List[str] = []
+        refs = params.get("retrieved_context_refs")
+        if isinstance(refs, list):
+            context_refs = [str(v) for v in refs]
+        
+        try:
+            emit_tool_trace(
+                correlation_id=correlation_id,
+                case_id=case_id,
+                agent=result.agent,
+                tool_name=f"UnifiedIntegrationGateway.execute:{result.integration}.{result.action}",
+                tool_input=params,
+                tool_output=result.data if result.success else {"error": result.error},
+                retrieved_context_refs=context_refs,
+                status="success" if result.success else "failure",
+                duration_ms=result.latency_ms,
+                error_code=error_code,
+                error_message=result.error,
+            )
+        except Exception as exc:
+            logger.warning("Trace emission failed for gateway execution: %s", exc)
     
     async def execute(
         self,
@@ -687,39 +752,62 @@ class UnifiedIntegrationGateway:
             ExecutionResult with success/failure details
         """
         start = time.time()
+        params = params or {}
+        correlation_id = get_current_correlation_id()
+        case_id = get_current_case_id()
+        if not case_id:
+            candidate_case_id = params.get("case_id") or params.get("replay_case_id")
+            if candidate_case_id:
+                case_id = str(candidate_case_id)
+        
+        def finalize(result: ExecutionResult, error_code: Optional[str] = None) -> ExecutionResult:
+            if result.latency_ms <= 0:
+                result.latency_ms = (time.time() - start) * 1000
+            self._log_audit(result)
+            self._emit_execution_trace(
+                result=result,
+                params=params,
+                correlation_id=correlation_id,
+                case_id=case_id,
+                error_code=error_code,
+            )
+            return result
         
         # Get adapter
         adapter = self._adapters.get(integration)
         if not adapter:
-            return ExecutionResult(
+            return finalize(ExecutionResult(
                 success=False,
                 integration=integration,
                 action=action,
                 agent=agent,
-                error=f"Unknown integration: {integration}"
-            )
+                error=f"Unknown integration: {integration}",
+                latency_ms=(time.time() - start) * 1000,
+            ), "UNKNOWN_INTEGRATION")
         
         # Check circuit breaker
         breaker_key = f"integration_{integration}"
         if not self._circuit_registry.is_available(breaker_key):
-            return ExecutionResult(
+            return finalize(ExecutionResult(
                 success=False,
                 integration=integration,
                 action=action,
                 agent=agent,
-                error=f"Circuit breaker OPEN for {integration}"
-            )
+                error=f"Circuit breaker OPEN for {integration}",
+                latency_ms=(time.time() - start) * 1000,
+            ), "CIRCUIT_OPEN")
         
         # Check rate limits
         allowed, reason = self._check_rate_limit(adapter)
         if not allowed:
-            return ExecutionResult(
+            return finalize(ExecutionResult(
                 success=False,
                 integration=integration,
                 action=action,
                 agent=agent,
-                error=reason
-            )
+                error=reason,
+                latency_ms=(time.time() - start) * 1000,
+            ), "RATE_LIMIT_EXCEEDED")
         
         # Map to ActionType for guardrails if applicable
         action_type_map = {
@@ -739,13 +827,14 @@ class UnifiedIntegrationGateway:
                     agent, action_type, grounding_evidence
                 )
                 if not valid:
-                    return ExecutionResult(
+                    return finalize(ExecutionResult(
                         success=False,
                         integration=integration,
                         action=action,
                         agent=agent,
-                        error=f"Guardrails blocked: {reason}"
-                    )
+                        error=f"Guardrails blocked: {reason}",
+                        latency_ms=(time.time() - start) * 1000,
+                    ), "GUARDRAIL_BLOCKED")
         
         # Execute action
         try:
@@ -771,9 +860,9 @@ class UnifiedIntegrationGateway:
                 error=str(e),
                 latency_ms=(time.time() - start) * 1000
             )
+            return finalize(result, "ADAPTER_EXECUTION_ERROR")
         
-        self._log_audit(result)
-        return result
+        return finalize(result)
     
     async def health_check_all(self) -> Dict[str, AdapterHealth]:
         """Run health check on all adapters."""

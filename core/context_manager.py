@@ -17,12 +17,20 @@ from datetime import datetime, timezone
 from typing import Dict, List, Any, Optional, Tuple
 from pathlib import Path
 from enum import IntEnum
+import os
 import json
 import logging
+import tempfile
+import threading
 import uuid
 import time
 
 logger = logging.getLogger(__name__)
+
+try:
+    import redis
+except Exception:  # pragma: no cover - optional dependency in some environments
+    redis = None
 
 
 # Priority levels for context items
@@ -195,7 +203,10 @@ class ContextManager:
         max_tokens: int = 128000,
         warning_threshold: float = 0.40,
         critical_threshold: float = 0.60,
-        session_id: Optional[str] = None
+        session_id: Optional[str] = None,
+        redis_url: Optional[str] = None,
+        redis_prefix: str = "caio:context",
+        state_ttl_seconds: int = 3600,
     ):
         self.session_id = session_id or str(uuid.uuid4())[:8]
         self.budget = ContextBudget(
@@ -208,12 +219,81 @@ class ContextManager:
         self.items_added = 0
         self.items_removed = 0
         self.created_at = time.time()
+        self._state_lock = threading.RLock()
+        
+        self.redis_prefix = os.getenv("CONTEXT_REDIS_PREFIX", redis_prefix)
+        ttl_value = os.getenv("CONTEXT_STATE_TTL_SECONDS", str(state_ttl_seconds))
+        try:
+            self.state_ttl_seconds = int(ttl_value)
+        except ValueError:
+            logger.warning(
+                "Invalid CONTEXT_STATE_TTL_SECONDS='%s', using default %s",
+                ttl_value,
+                state_ttl_seconds,
+            )
+            self.state_ttl_seconds = state_ttl_seconds
+        self._redis = None
+        self._use_redis = False
+        configured_redis_url = os.getenv("REDIS_URL") if redis_url is None else redis_url
+        self._init_redis(configured_redis_url)
         
         logger.info(
             f"ContextManager initialized: session={self.session_id}, "
             f"max_tokens={max_tokens}, warn={warning_threshold:.0%}, "
             f"critical={critical_threshold:.0%}"
         )
+    
+    def _init_redis(self, redis_url: Optional[str]) -> None:
+        if not redis_url or redis is None:
+            return
+        try:
+            self._redis = redis.Redis.from_url(
+                redis_url,
+                decode_responses=True,
+                socket_connect_timeout=2,
+                socket_timeout=2,
+            )
+            self._redis.ping()
+            self._use_redis = True
+            logger.info("ContextManager configured with Redis backend")
+        except Exception as exc:
+            self._use_redis = False
+            self._redis = None
+            logger.warning("ContextManager Redis unavailable (%s), using file fallback.", exc)
+    
+    def _redis_key(self) -> str:
+        return f"{self.redis_prefix}:{self.session_id}"
+    
+    def _serialize_state(self) -> Dict[str, Any]:
+        return {
+            "session_id": self.session_id,
+            "created_at": self.created_at,
+            "saved_at": time.time(),
+            "budget": self.budget.to_dict(),
+            "items": {k: v.to_dict() for k, v in self.items.items()},
+            "stats": {
+                "compaction_count": self.compaction_count,
+                "items_added": self.items_added,
+                "items_removed": self.items_removed
+            }
+        }
+    
+    def _apply_state(self, state: Dict[str, Any]) -> None:
+        self.session_id = state.get("session_id", self.session_id)
+        self.created_at = state.get("created_at", self.created_at)
+        self.budget = ContextBudget.from_dict(state.get("budget", {}))
+        
+        self.items = {
+            k: ContextItem.from_dict(v)
+            for k, v in state.get("items", {}).items()
+        }
+        
+        stats = state.get("stats", {})
+        self.compaction_count = stats.get("compaction_count", 0)
+        self.items_added = stats.get("items_added", 0)
+        self.items_removed = stats.get("items_removed", 0)
+        
+        self.budget.current_tokens = sum(item.token_count for item in self.items.values())
     
     def add_context(
         self,
@@ -497,24 +577,44 @@ class ContextManager:
         
         path = Path(path)
         path.parent.mkdir(parents=True, exist_ok=True)
+        state = self._serialize_state()
         
-        state = {
-            "session_id": self.session_id,
-            "created_at": self.created_at,
-            "saved_at": time.time(),
-            "budget": self.budget.to_dict(),
-            "items": {k: v.to_dict() for k, v in self.items.items()},
-            "stats": {
-                "compaction_count": self.compaction_count,
-                "items_added": self.items_added,
-                "items_removed": self.items_removed
-            }
-        }
+        if self._use_redis and self._redis:
+            try:
+                self._redis.setex(
+                    self._redis_key(),
+                    self.state_ttl_seconds,
+                    json.dumps(state),
+                )
+            except Exception as exc:
+                logger.warning("Failed to persist context state to Redis: %s", exc)
+                self._use_redis = False
+                self._redis = None
         
-        with open(path, "w", encoding="utf-8") as f:
-            json.dump(state, f, indent=2)
+        with self._state_lock:
+            fd = None
+            temp_path = None
+            try:
+                fd, temp_path = tempfile.mkstemp(
+                    suffix=".json",
+                    prefix="context_state_",
+                    dir=str(path.parent),
+                )
+                with os.fdopen(fd, "w", encoding="utf-8") as f:
+                    fd = None
+                    json.dump(state, f, indent=2)
+                os.replace(temp_path, path)
+                temp_path = None
+            finally:
+                if fd is not None:
+                    os.close(fd)
+                if temp_path and os.path.exists(temp_path):
+                    try:
+                        os.unlink(temp_path)
+                    except OSError:
+                        pass
         
-        logger.info(f"Context state saved to {path}")
+        logger.info("Context state saved to %s", path)
         return path
     
     def restore_state(self, path: Optional[Path] = None) -> bool:
@@ -532,6 +632,24 @@ class ContextManager:
         
         path = Path(path)
         
+        if self._use_redis and self._redis:
+            try:
+                raw = self._redis.get(self._redis_key())
+                if raw:
+                    state = json.loads(raw)
+                    self._apply_state(state)
+                    logger.info(
+                        "Context state restored from Redis key %s: %s items, %s tokens",
+                        self._redis_key(),
+                        len(self.items),
+                        self.budget.current_tokens,
+                    )
+                    return True
+            except Exception as exc:
+                logger.warning("Failed to restore context state from Redis: %s", exc)
+                self._use_redis = False
+                self._redis = None
+        
         if not path.exists():
             logger.warning(f"State file not found: {path}")
             return False
@@ -539,25 +657,7 @@ class ContextManager:
         try:
             with open(path, "r", encoding="utf-8") as f:
                 state = json.load(f)
-            
-            self.session_id = state.get("session_id", self.session_id)
-            self.created_at = state.get("created_at", self.created_at)
-            self.budget = ContextBudget.from_dict(state.get("budget", {}))
-            
-            self.items = {
-                k: ContextItem.from_dict(v)
-                for k, v in state.get("items", {}).items()
-            }
-            
-            stats = state.get("stats", {})
-            self.compaction_count = stats.get("compaction_count", 0)
-            self.items_added = stats.get("items_added", 0)
-            self.items_removed = stats.get("items_removed", 0)
-            
-            # Recalculate current tokens
-            self.budget.current_tokens = sum(
-                item.token_count for item in self.items.values()
-            )
+            self._apply_state(state)
             
             logger.info(
                 f"Context state restored from {path}: "
