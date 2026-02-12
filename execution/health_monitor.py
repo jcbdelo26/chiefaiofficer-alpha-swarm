@@ -60,6 +60,9 @@ class HealthMonitor:
         # Check LinkedIn cookie expiration
         cookie_warning = self._check_linkedin_cookie_expiration()
         
+        # Check scraper readiness (new Layer 3)
+        scraper_readiness = self._check_scraper_readiness()
+        
         # Log results
         self._log_health_check(results, critical_failures, cookie_warning)
         
@@ -74,8 +77,85 @@ class HealthMonitor:
             "timestamp": datetime.utcnow().isoformat(),
             "results": results,
             "critical_failures": critical_failures,
-            "cookie_warning": cookie_warning
+            "cookie_warning": cookie_warning,
+            "scraper_readiness": scraper_readiness
         }
+    
+    def _check_scraper_readiness(self) -> Dict[str, Any]:
+        """Check if the LinkedIn scraper is ready to operate.
+        
+        Validates:
+        1. LINKEDIN_COOKIE env var exists and is non-empty
+        2. Cookie passes the /voyager/api/me health check (if network available)
+        3. Reports scraper status for /api/health/ready endpoint
+        """
+        import requests
+        
+        cookie = os.getenv("LINKEDIN_COOKIE", "")
+        
+        if not cookie:
+            return {
+                "ready": False,
+                "reason": "LINKEDIN_COOKIE not configured",
+                "recommendation": "Add li_at cookie to .env or use Proxycurl (PROXYCURL_API_KEY)",
+                "fallback_available": True  # test data will be used
+            }
+        
+        if len(cookie) < 150:
+            return {
+                "ready": False,
+                "reason": f"LINKEDIN_COOKIE too short ({len(cookie)} chars, expected 150-400)",
+                "recommendation": "Cookie may be truncated. Recopy full li_at from DevTools.",
+                "fallback_available": True
+            }
+        
+        # Quick session validation (with tight timeout)
+        try:
+            headers = {
+                "Cookie": f"li_at={cookie}",
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+                "x-restli-protocol-version": "2.0.0",
+            }
+            response = requests.get(
+                "https://www.linkedin.com/voyager/api/me",
+                headers=headers,
+                timeout=10
+            )
+            
+            if response.status_code == 200:
+                return {"ready": True, "session_status": "valid", "fallback_available": True}
+            elif response.status_code == 401:
+                return {
+                    "ready": False,
+                    "reason": "LinkedIn session EXPIRED (401)",
+                    "recommendation": "Rotate li_at cookie and run: python execution/health_monitor.py --update-linkedin-rotation",
+                    "fallback_available": True
+                }
+            elif response.status_code == 403:
+                return {
+                    "ready": False,
+                    "reason": "LinkedIn session BLOCKED (403)",
+                    "recommendation": "Account may be rate-limited. Wait 24h or use Proxycurl.",
+                    "fallback_available": True
+                }
+            else:
+                return {
+                    "ready": False,
+                    "reason": f"Unexpected status {response.status_code}",
+                    "fallback_available": True
+                }
+        except requests.exceptions.Timeout:
+            return {
+                "ready": False,
+                "reason": "LinkedIn API unreachable (timeout)",
+                "fallback_available": True
+            }
+        except Exception as e:
+            return {
+                "ready": False,
+                "reason": f"Session check error: {str(e)[:100]}",
+                "fallback_available": True
+            }
     
     def _check_critical_failures(self, results: Dict[str, Any]) -> List[str]:
         """Check for failures in critical services."""

@@ -139,7 +139,21 @@ class UnifiedPipeline:
         self.campaigns: List[Dict] = []
     
     def _is_safe_mode(self) -> bool:
-        return self.mode in [PipelineMode.DRY_RUN, PipelineMode.SANDBOX]
+        """Check if pipeline should use test data instead of real APIs.
+        
+        Safe mode is triggered when:
+        - Mode is explicitly SANDBOX or DRY_RUN
+        - LINKEDIN_COOKIE is missing/empty (can't scrape without it)
+        """
+        if self.mode in [PipelineMode.DRY_RUN, PipelineMode.SANDBOX]:
+            return True
+        # If no LinkedIn cookie is configured, treat as safe mode
+        # to prevent hanging on scraper initialization
+        import os
+        if not os.getenv("LINKEDIN_COOKIE"):
+            console.print("[yellow]⚠️ LINKEDIN_COOKIE not set — using test data fallback[/yellow]")
+            return True
+        return False
     
     async def run_full_pipeline(
         self,
@@ -217,39 +231,61 @@ class UnifiedPipeline:
         
         return self.current_run
     
+    # Hard timeout for scrape stage — prevents pipeline from ever hanging
+    SCRAPE_STAGE_TIMEOUT_SECONDS = 45
+    
     async def _stage_scrape(
         self, 
         source: Optional[str], 
         input_file: Optional[Path],
         limit: int
     ) -> StageResult:
-        """Stage 1: Scrape or load leads."""
+        """Stage 1: Scrape or load leads.
+        
+        Architecture:
+        1. If input_file provided → load from file (instant)
+        2. If safe mode → generate test data (instant)
+        3. Otherwise → attempt LinkedIn scraping with hard timeout
+           - Pre-flight: validate LinkedIn session (10s timeout)
+           - Scrape: fetch_followers with 30s timeout
+           - Backstop: asyncio.wait_for(45s) wraps entire attempt
+           - On ANY failure → graceful fallback to test data
+        """
         import time
         start = time.time()
         errors = []
+        scraper_source = "test_data"  # Track actual data source
         
         if input_file and input_file.exists():
             with open(input_file) as f:
                 self.leads = json.load(f)[:limit]
+            scraper_source = f"file:{input_file.name}"
         elif self._is_safe_mode():
             from execution.generate_test_data import generate_test_batch
             scenario = "competitor_displacement" if source and "competitor" in source else "event_followup"
             self.leads = generate_test_batch(min(limit, 20), scenario)
+            scraper_source = "test_data_safe_mode"
         else:
             try:
-                from execution.hunter_scrape_followers import LinkedInFollowerScraper
-                scraper = LinkedInFollowerScraper()
-                
-                if source and source.startswith("competitor_"):
-                    company = source.replace("competitor_", "")
-                    self.leads = [vars(l) if hasattr(l, '__dict__') else l for l in scraper.fetch_followers(f"https://www.linkedin.com/company/{company}", company, limit=limit)]
-                else:
-                    self.leads = [vars(l) if hasattr(l, '__dict__') else l for l in scraper.fetch_followers("https://www.linkedin.com/company/gong", "gong", limit=limit)]
-                    
+                # Wrap entire scraper path in a hard timeout
+                self.leads = await asyncio.wait_for(
+                    self._attempt_live_scrape(source, limit),
+                    timeout=self.SCRAPE_STAGE_TIMEOUT_SECONDS
+                )
+                scraper_source = f"linkedin_live:{source or 'gong'}"
+            except asyncio.TimeoutError:
+                errors.append(
+                    f"Scraper timed out after {self.SCRAPE_STAGE_TIMEOUT_SECONDS}s — "
+                    "falling back to test data"
+                )
+                from execution.generate_test_data import generate_test_batch
+                self.leads = generate_test_batch(20, "competitor_displacement")
+                scraper_source = "test_data_timeout_fallback"
             except Exception as e:
                 errors.append(f"Scraper error: {e}")
                 from execution.generate_test_data import generate_test_batch
                 self.leads = generate_test_batch(20, "competitor_displacement")
+                scraper_source = "test_data_error_fallback"
         
         duration = (time.time() - start) * 1000
         
@@ -260,8 +296,46 @@ class UnifiedPipeline:
             input_count=0,
             output_count=len(self.leads),
             errors=errors,
-            metrics={"source": source or "test_data"}
+            metrics={"source": scraper_source}
         )
+    
+    async def _attempt_live_scrape(
+        self, source: Optional[str], limit: int
+    ) -> List[Dict]:
+        """Attempt live LinkedIn scraping with pre-flight validation.
+        
+        Runs in a thread executor to prevent blocking the async event loop.
+        Raises ScraperUnavailableError if session is invalid.
+        """
+        from execution.hunter_scrape_followers import (
+            LinkedInFollowerScraper, ScraperUnavailableError
+        )
+        
+        def _sync_scrape():
+            scraper = LinkedInFollowerScraper()
+            
+            # Pre-flight: validate session before attempting scrape
+            scraper.validate_session()
+            
+            if source and source.startswith("competitor_"):
+                company = source.replace("competitor_", "")
+                results = scraper.fetch_followers(
+                    f"https://www.linkedin.com/company/{company}",
+                    company, limit=limit
+                )
+            else:
+                results = scraper.fetch_followers(
+                    "https://www.linkedin.com/company/gong",
+                    "gong", limit=limit
+                )
+            
+            # Convert dataclass to dict if needed
+            return [vars(l) if hasattr(l, '__dict__') else l for l in results]
+        
+        # Run synchronous scraper in thread pool to avoid blocking event loop
+        import asyncio
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(None, _sync_scrape)
     
     async def _stage_enrich(self) -> StageResult:
         """Stage 2: Enrich leads with contact/company data."""

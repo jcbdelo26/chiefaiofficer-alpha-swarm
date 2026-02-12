@@ -50,3 +50,31 @@
 *   **Logs:** `railway logs --service caio-swarm-dashboard`
 *   **Status:** `railway status`
 *   **Test Script:** `python execution/test_connections.py`
+
+---
+
+## 🔌 External API Resilience Rules
+
+> **Added 2026-02-13:** After LinkedIn scraper hung the pipeline for 8+ minutes.
+
+### Timeout Requirements
+1.  **Every external API call MUST have a hard timeout (≤30s).** No exceptions.
+2.  **NEVER use `time.sleep()` for rate-limit handling.** Use `tenacity` exponential backoff with `max=10`.
+3.  **Every pipeline stage MUST complete within 60 seconds.** Use `asyncio.wait_for()` around network-bound stages.
+
+### Session Validation
+4.  **Before calling LinkedIn/Clay/any cookie-based API, ALWAYS validate the session first.** Call `/voyager/api/me` for LinkedIn. If validation fails, skip the call and use fallback data.
+5.  **LINKEDIN_COOKIE** is the canonical env var name (not `LINKEDIN_COOKIES` plural). Must match in `.env`, `.env.staging`, and all code.
+
+### Method Signature Verification
+6.  **When calling a method from another module, ALWAYS check the actual method signature.** Don't assume parameters exist. Use `view_code_item` or `grep_search` first.
+
+### Scraper Architecture
+7.  **All 4 LinkedIn scrapers (`followers`, `events`, `posts`, `groups`) are scaffolds.** They return empty results. Real scraping requires Proxycurl API or Playwright browser automation.
+8.  **The pipeline MUST work with test-data fallback in all modes.** `_is_safe_mode()` triggers on SANDBOX, DRY_RUN, or missing `LINKEDIN_COOKIE`.
+9.  **Scraper errors are INFO-level, not CRITICAL.** The `generate_test_batch()` fallback is the expected path in local dev and staging.
+
+### Health Monitoring
+10. **`health_monitor.py` checks scraper readiness** via `_check_scraper_readiness()`. This validates cookie existence, length, and live session status.
+11. **Run `python execution/health_monitor.py --once`** before any production pipeline run to verify all APIs are reachable.
+
