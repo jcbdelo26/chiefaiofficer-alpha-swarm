@@ -1,0 +1,117 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "SME Judge Result",
+  "type": "object",
+  "required": [
+    "overall_score",
+    "pass",
+    "rubric",
+    "expected_tools_evaluation",
+    "constraints_evaluation",
+    "hallucination_check",
+    "final_verdict"
+  ],
+  "properties": {
+    "overall_score": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 5
+    },
+    "pass": {
+      "type": "boolean"
+    },
+    "rubric": {
+      "type": "object",
+      "required": [
+        "tool_selection_accuracy",
+        "groundedness",
+        "completeness",
+        "reliability_consistency"
+      ],
+      "properties": {
+        "tool_selection_accuracy": { "$ref": "#/$defs/scoredReason" },
+        "groundedness": { "$ref": "#/$defs/scoredReason" },
+        "completeness": { "$ref": "#/$defs/scoredReason" },
+        "reliability_consistency": { "$ref": "#/$defs/scoredReason" }
+      },
+      "additionalProperties": false
+    },
+    "expected_tools_evaluation": {
+      "type": "object",
+      "required": [
+        "missing_tools",
+        "unexpected_tools",
+        "tool_match_summary"
+      ],
+      "properties": {
+        "missing_tools": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "unexpected_tools": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "tool_match_summary": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "constraints_evaluation": {
+      "type": "object",
+      "required": [
+        "positive_constraints_met",
+        "positive_constraints_missed",
+        "negative_constraints_violated"
+      ],
+      "properties": {
+        "positive_constraints_met": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "positive_constraints_missed": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "negative_constraints_violated": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      },
+      "additionalProperties": false
+    },
+    "hallucination_check": {
+      "type": "object",
+      "required": [
+        "unsupported_claims",
+        "notes"
+      ],
+      "properties": {
+        "unsupported_claims": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "notes": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "final_verdict": {
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "scoredReason": {
+      "type": "object",
+      "required": ["score", "reason"],
+      "properties": {
+        "score": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 5
+        },
+        "reason": { "type": "string" }
+      },
+      "additionalProperties": false
+    }
+  }
+}

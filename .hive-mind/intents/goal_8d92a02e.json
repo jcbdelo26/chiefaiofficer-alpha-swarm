@@ -1,0 +1,36 @@
+{
+  "goal_id": "goal_8d92a02e",
+  "objective": "custom",
+  "original_input": "Generate a call prep brief for contact_id 12345 including pain points, likely objections, and a recommended opening angle.",
+  "interpreted_intent": "Process custom request (limit: 12345)",
+  "steps": [
+    {
+      "step_id": "step_1",
+      "sequence": 1,
+      "agent": "UNIFIED_QUEEN",
+      "action": "analyze_request",
+      "description": "Analyze custom request",
+      "inputs": {},
+      "outputs": [
+        "result"
+      ],
+      "depends_on": [],
+      "timeout_seconds": 300,
+      "retry_count": 2
+    }
+  ],
+  "success_criteria": "Request analyzed and action taken (target: 12345 leads)",
+  "estimated_duration_minutes": 5,
+  "priority": 2,
+  "requires_approval": false,
+  "context": {
+    "extracted_params": {
+      "raw_input": "Generate a call prep brief for contact_id 12345 including pain points, likely objections, and a recommended opening angle.",
+      "objective": "custom",
+      "limit": 12345,
+      "urgency": "normal"
+    },
+    "confidence": 0.0
+  },
+  "created_at": "2026-02-11T17:46:13.303507+00:00"
+}

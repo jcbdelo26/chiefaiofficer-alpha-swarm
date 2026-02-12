@@ -1,0 +1,38 @@
+{
+  "goal_id": "goal_e2194d62",
+  "objective": "research_company",
+  "original_input": "Create a low-pressure Tier 3 nurture sequence for a RevOps Manager who is only researching options.",
+  "interpreted_intent": "Research a company for insights (limit: 3)",
+  "steps": [
+    {
+      "step_id": "step_1",
+      "sequence": 1,
+      "agent": "RESEARCHER",
+      "action": "deep_research",
+      "description": "Comprehensive company research",
+      "inputs": {},
+      "outputs": [
+        "research_report",
+        "insights"
+      ],
+      "depends_on": [],
+      "timeout_seconds": 300,
+      "retry_count": 2
+    }
+  ],
+  "success_criteria": "Research report generated with key insights (target: 3 leads) (focus: tier_3)",
+  "estimated_duration_minutes": 5,
+  "priority": 2,
+  "requires_approval": false,
+  "context": {
+    "extracted_params": {
+      "raw_input": "Create a low-pressure Tier 3 nurture sequence for a RevOps Manager who is only researching options.",
+      "objective": "research_company",
+      "limit": 3,
+      "target_tier": "tier_3",
+      "urgency": "normal"
+    },
+    "confidence": 0.2
+  },
+  "created_at": "2026-02-11T18:43:43.515953+00:00"
+}

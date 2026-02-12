@@ -1,0 +1,35 @@
+{
+  "goal_id": "goal_e02a82f7",
+  "objective": "analyze_pipeline",
+  "original_input": "Use the Salesforce auto-close-lost module to clean the pipeline and sync outcomes.",
+  "interpreted_intent": "Analyze deal pipeline for insights",
+  "steps": [
+    {
+      "step_id": "step_1",
+      "sequence": 1,
+      "agent": "UNIFIED_QUEEN",
+      "action": "analyze_pipeline",
+      "description": "Analyze deal pipeline",
+      "inputs": {},
+      "outputs": [
+        "result"
+      ],
+      "depends_on": [],
+      "timeout_seconds": 300,
+      "retry_count": 2
+    }
+  ],
+  "success_criteria": "Pipeline analysis with recommendations",
+  "estimated_duration_minutes": 5,
+  "priority": 2,
+  "requires_approval": false,
+  "context": {
+    "extracted_params": {
+      "raw_input": "Use the Salesforce auto-close-lost module to clean the pipeline and sync outcomes.",
+      "objective": "analyze_pipeline",
+      "urgency": "normal"
+    },
+    "confidence": 0.2
+  },
+  "created_at": "2026-02-11T17:46:21.966791+00:00"
+}

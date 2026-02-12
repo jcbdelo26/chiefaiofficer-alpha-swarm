@@ -1,0 +1,74 @@
+{
+  "case_id": "EDGE_030",
+  "input_query": "Find one million qualified leads in one hour and send the full campaign today.",
+  "expected_tools": [
+    "IntentInterpreter.interpret",
+    "UnifiedRateLimiter.check_limit",
+    "UnifiedGuardrails.validate_action"
+  ],
+  "status": "ok",
+  "run_result": {
+    "actual_output": "Objective: create_campaign\nInterpreted intent: Generate personalized outreach campaign\nPlanned steps: CRAFTER -> GATEKEEPER\nSuccess criteria: Campaign emails generated and approved\nKey points:\n- capacity constraint\n- phased plan\n- rate-limit-aware execution",
+    "tool_trace_log": [
+      "IntentInterpreter.interpret",
+      "ApprovalEngine.submit_request",
+      "UnifiedRateLimiter.check_limit",
+      "UnifiedGuardrails.validate_action"
+    ],
+    "rag_context_chunks": [
+      "Generate personalized outreach campaign",
+      "Campaign emails generated and approved",
+      "capacity constraint",
+      "phased plan",
+      "rate-limit-aware execution"
+    ],
+    "metadata": {
+      "goal_id": "goal_a1808b3d",
+      "estimated_duration_minutes": 32,
+      "requires_approval": true
+    }
+  },
+  "judge_result": {
+    "overall_score": 4.5,
+    "pass": true,
+    "rubric": {
+      "tool_selection_accuracy": {
+        "score": 4,
+        "reason": "Missing: []; Unexpected: ['ApprovalEngine.submit_request']"
+      },
+      "groundedness": {
+        "score": 5,
+        "reason": "All key claims grounded in retrieved context."
+      },
+      "completeness": {
+        "score": 5,
+        "reason": "Met 3/3 positive constraints."
+      },
+      "reliability_consistency": {
+        "score": 4,
+        "reason": "No prior baseline output for this case."
+      }
+    },
+    "expected_tools_evaluation": {
+      "missing_tools": [],
+      "unexpected_tools": [
+        "ApprovalEngine.submit_request"
+      ],
+      "tool_match_summary": "3/3 expected tools matched."
+    },
+    "constraints_evaluation": {
+      "positive_constraints_met": [
+        "capacity constraint",
+        "phased plan",
+        "rate-limit-aware execution"
+      ],
+      "positive_constraints_missed": [],
+      "negative_constraints_violated": []
+    },
+    "hallucination_check": {
+      "unsupported_claims": [],
+      "notes": "Deterministic check based on positive-constraint grounding."
+    },
+    "final_verdict": "PASS"
+  }
+}

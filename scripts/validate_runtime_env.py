@@ -186,7 +186,9 @@ def main() -> int:
     args = parser.parse_args()
 
     if os.path.exists(args.env_file):
-        load_dotenv(args.env_file, override=False)
+        # Enforce deterministic env-file validation.
+        # Without override=True, existing shell env values can mask missing keys.
+        load_dotenv(args.env_file, override=True)
 
     result = validate(
         mode=args.mode,

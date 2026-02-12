@@ -1,0 +1,35 @@
+{
+  "goal_id": "goal_96462893",
+  "objective": "custom",
+  "original_input": "Generate a board-ready daily ops report combining health, queue movement, approvals, and risk flags.",
+  "interpreted_intent": "Process custom request",
+  "steps": [
+    {
+      "step_id": "step_1",
+      "sequence": 1,
+      "agent": "UNIFIED_QUEEN",
+      "action": "analyze_request",
+      "description": "Analyze custom request",
+      "inputs": {},
+      "outputs": [
+        "result"
+      ],
+      "depends_on": [],
+      "timeout_seconds": 300,
+      "retry_count": 2
+    }
+  ],
+  "success_criteria": "Request analyzed and action taken",
+  "estimated_duration_minutes": 5,
+  "priority": 2,
+  "requires_approval": false,
+  "context": {
+    "extracted_params": {
+      "raw_input": "Generate a board-ready daily ops report combining health, queue movement, approvals, and risk flags.",
+      "objective": "custom",
+      "urgency": "normal"
+    },
+    "confidence": 0.0
+  },
+  "created_at": "2026-02-11T18:44:02.909252+00:00"
+}

@@ -1,0 +1,36 @@
+{
+  "goal_id": "goal_acb486b2",
+  "objective": "custom",
+  "original_input": "Pull approval audit activity from the last 24 hours and summarize approve vs reject patterns.",
+  "interpreted_intent": "Process custom request (limit: 24)",
+  "steps": [
+    {
+      "step_id": "step_1",
+      "sequence": 1,
+      "agent": "UNIFIED_QUEEN",
+      "action": "analyze_request",
+      "description": "Analyze custom request",
+      "inputs": {},
+      "outputs": [
+        "result"
+      ],
+      "depends_on": [],
+      "timeout_seconds": 300,
+      "retry_count": 2
+    }
+  ],
+  "success_criteria": "Request analyzed and action taken (target: 24 leads)",
+  "estimated_duration_minutes": 5,
+  "priority": 2,
+  "requires_approval": false,
+  "context": {
+    "extracted_params": {
+      "raw_input": "Pull approval audit activity from the last 24 hours and summarize approve vs reject patterns.",
+      "objective": "custom",
+      "limit": 24,
+      "urgency": "normal"
+    },
+    "confidence": 0.0
+  },
+  "created_at": "2026-02-11T17:46:16.988076+00:00"
+}

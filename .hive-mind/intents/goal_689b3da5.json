@@ -1,0 +1,56 @@
+{
+  "goal_id": "goal_689b3da5",
+  "objective": "enrich_leads",
+  "original_input": "Enrich this contact using Clay and return title, company domain, and ICP fit score.",
+  "interpreted_intent": "Enrich existing leads with additional data",
+  "steps": [
+    {
+      "step_id": "step_1",
+      "sequence": 1,
+      "agent": "ENRICHER",
+      "action": "enrich_batch",
+      "description": "Enrich leads via Clay waterfall",
+      "inputs": {
+        "validate_email": true,
+        "enrich_company": true
+      },
+      "outputs": [
+        "enriched_leads_file",
+        "enrichment_rate"
+      ],
+      "depends_on": [],
+      "timeout_seconds": 300,
+      "retry_count": 2
+    },
+    {
+      "step_id": "step_2",
+      "sequence": 2,
+      "agent": "SEGMENTOR",
+      "action": "rescore",
+      "description": "Rescore with enriched data",
+      "inputs": {},
+      "outputs": [
+        "segmented_leads_file",
+        "tier_distribution"
+      ],
+      "depends_on": [
+        "step_1"
+      ],
+      "timeout_seconds": 120,
+      "retry_count": 2
+    }
+  ],
+  "success_criteria": "Leads enriched with email, company size, and industry",
+  "estimated_duration_minutes": 5,
+  "priority": 2,
+  "requires_approval": false,
+  "context": {
+    "extracted_params": {
+      "raw_input": "Enrich this contact using Clay and return title, company domain, and ICP fit score.",
+      "objective": "enrich_leads",
+      "urgency": "normal"
+    },
+    "confidence": 0.2
+  },
+  "created_at": "2026-02-11T18:09:22.133673+00:00"
+}

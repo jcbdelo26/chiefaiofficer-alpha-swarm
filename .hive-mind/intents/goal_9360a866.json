@@ -1,0 +1,35 @@
+{
+  "goal_id": "goal_9360a866",
+  "objective": "analyze_pipeline",
+  "original_input": "Run tool 'quantum_predict_pipeline' and give me tomorrow's exact close rate.",
+  "interpreted_intent": "Analyze deal pipeline for insights",
+  "steps": [
+    {
+      "step_id": "step_1",
+      "sequence": 1,
+      "agent": "UNIFIED_QUEEN",
+      "action": "analyze_pipeline",
+      "description": "Analyze deal pipeline",
+      "inputs": {},
+      "outputs": [
+        "result"
+      ],
+      "depends_on": [],
+      "timeout_seconds": 300,
+      "retry_count": 2
+    }
+  ],
+  "success_criteria": "Pipeline analysis with recommendations",
+  "estimated_duration_minutes": 5,
+  "priority": 2,
+  "requires_approval": false,
+  "context": {
+    "extracted_params": {
+      "raw_input": "Run tool 'quantum_predict_pipeline' and give me tomorrow's exact close rate.",
+      "objective": "analyze_pipeline",
+      "urgency": "normal"
+    },
+    "confidence": 0.2
+  },
+  "created_at": "2026-02-11T18:43:55.173532+00:00"
+}
