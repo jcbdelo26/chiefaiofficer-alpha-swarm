@@ -3,7 +3,17 @@ import subprocess
 import sys
 import webbrowser
 import time
+import os
 from pathlib import Path
+
+# Fix Windows encoding for emoji output
+if sys.platform == "win32":
+    os.environ.setdefault("PYTHONIOENCODING", "utf-8")
+    try:
+        sys.stdout.reconfigure(encoding='utf-8')
+        sys.stderr.reconfigure(encoding='utf-8')
+    except Exception:
+        pass
 
 def run_command(cmd, shell=True, check=True):
     try:
