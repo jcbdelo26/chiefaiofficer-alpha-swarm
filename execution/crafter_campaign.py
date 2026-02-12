@@ -27,7 +27,7 @@ load_dotenv()
 
 from rich.console import Console
 from rich.table import Table
-from rich.progress import Progress
+from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn
 
 from core.compliance import validate_campaign, ValidationResult
 from core.event_log import log_event, EventType

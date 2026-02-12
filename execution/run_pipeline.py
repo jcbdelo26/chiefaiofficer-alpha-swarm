@@ -242,9 +242,9 @@ class UnifiedPipeline:
                 
                 if source and source.startswith("competitor_"):
                     company = source.replace("competitor_", "")
-                    self.leads = scraper.scrape_company_followers(company, limit=limit)
+                    self.leads = [vars(l) if hasattr(l, '__dict__') else l for l in scraper.fetch_followers(f"https://www.linkedin.com/company/{company}", company, limit=limit)]
                 else:
-                    self.leads = scraper.scrape_company_followers("gong", limit=limit)
+                    self.leads = [vars(l) if hasattr(l, '__dict__') else l for l in scraper.fetch_followers("https://www.linkedin.com/company/gong", "gong", limit=limit)]
                     
             except Exception as e:
                 errors.append(f"Scraper error: {e}")
@@ -285,7 +285,12 @@ class UnifiedPipeline:
                 
                 for lead in self.leads:
                     try:
-                        result = enricher.enrich_lead(lead)
+                        result = enricher.enrich_lead(
+                            lead_id=lead.get("lead_id", lead.get("email", "")),
+                            linkedin_url=lead.get("linkedin_url", lead.get("profile_url", "")),
+                            name=lead.get("name", ""),
+                            company=lead.get("company", "")
+                        )
                         self.enriched.append(result)
                     except Exception as e:
                         errors.append(f"Enrich failed for {lead.get('email', 'unknown')}: {e}")
