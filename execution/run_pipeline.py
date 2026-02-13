@@ -36,12 +36,15 @@ sys.path.insert(0, str(PROJECT_ROOT))
 from dotenv import load_dotenv
 load_dotenv()
 
+import platform
 from rich.console import Console
 from rich.table import Table
 from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn
 from rich.panel import Panel
 
-console = Console()
+# On Windows, disable legacy renderer to avoid cp1252 braille/emoji crashes
+_is_windows = platform.system() == "Windows"
+console = Console(force_terminal=not _is_windows)
 
 try:
     from execution.sandbox_manager import SandboxManager, SandboxMode
@@ -140,18 +143,20 @@ class UnifiedPipeline:
     
     def _is_safe_mode(self) -> bool:
         """Check if pipeline should use test data instead of real APIs.
-        
+
         Safe mode is triggered when:
         - Mode is explicitly SANDBOX or DRY_RUN
-        - LINKEDIN_COOKIE is missing/empty (can't scrape without it)
+        - No scraping credentials at all (no cookie AND no API keys)
         """
         if self.mode in [PipelineMode.DRY_RUN, PipelineMode.SANDBOX]:
             return True
-        # If no LinkedIn cookie is configured, treat as safe mode
-        # to prevent hanging on scraper initialization
+        # Allow scraping if ANY credential is available (cookie, Proxycurl, or Apollo)
         import os
-        if not os.getenv("LINKEDIN_COOKIE"):
-            console.print("[yellow]⚠️ LINKEDIN_COOKIE not set — using test data fallback[/yellow]")
+        has_cookie = bool(os.getenv("LINKEDIN_COOKIE"))
+        has_proxycurl = bool(os.getenv("PROXYCURL_API_KEY"))
+        has_apollo = bool(os.getenv("APOLLO_API_KEY"))
+        if not has_cookie and not has_proxycurl and not has_apollo:
+            console.print("[yellow]No scraping credentials set — using test data fallback[/yellow]")
             return True
         return False
     
@@ -186,8 +191,10 @@ class UnifiedPipeline:
             ("Sending", PipelineStage.SEND, lambda: self._stage_send()),
         ]
         
+        # Use ASCII spinner on Windows to avoid cp1252 braille character crash
+        spinner = SpinnerColumn("line") if _is_windows else SpinnerColumn()
         with Progress(
-            SpinnerColumn(),
+            spinner,
             TextColumn("[progress.description]{task.description}"),
             BarColumn(),
             TextColumn("{task.completed}/{task.total}"),
@@ -289,9 +296,10 @@ class UnifiedPipeline:
         
         duration = (time.time() - start) * 1000
         
+        # Stage succeeds if we have leads (even via fallback). Errors become warnings.
         return StageResult(
             stage=PipelineStage.SCRAPE,
-            success=len(errors) == 0,
+            success=len(self.leads) > 0,
             duration_ms=duration,
             input_count=0,
             output_count=len(self.leads),
@@ -354,9 +362,10 @@ class UnifiedPipeline:
         else:
             try:
                 from execution.enricher_clay_waterfall import ClayEnricher
+                from dataclasses import asdict
                 enricher = ClayEnricher()
                 self.enriched = []
-                
+
                 for lead in self.leads:
                     try:
                         result = enricher.enrich_lead(
@@ -365,11 +374,23 @@ class UnifiedPipeline:
                             name=lead.get("name", ""),
                             company=lead.get("company", "")
                         )
-                        self.enriched.append(result)
+                        if result is not None:
+                            # Merge original lead dict with enrichment data
+                            enriched_dict = {**lead, **asdict(result), "enriched": True}
+                            self.enriched.append(enriched_dict)
+                        else:
+                            # Normalize company to dict for downstream segmentor compatibility
+                            fallback = {**lead, "enriched": False}
+                            if isinstance(fallback.get("company"), str):
+                                fallback["company"] = {"name": fallback["company"]}
+                            self.enriched.append(fallback)
                     except Exception as e:
                         errors.append(f"Enrich failed for {lead.get('email', 'unknown')}: {e}")
-                        self.enriched.append({**lead, "enriched": False, "enrich_error": str(e)})
-                        
+                        fallback = {**lead, "enriched": False, "enrich_error": str(e)}
+                        if isinstance(fallback.get("company"), str):
+                            fallback["company"] = {"name": fallback["company"]}
+                        self.enriched.append(fallback)
+
             except ImportError as e:
                 errors.append(f"Enricher import error: {e}")
                 self.enriched = [{**l, "enriched": False} for l in self.leads]

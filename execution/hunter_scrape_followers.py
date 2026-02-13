@@ -1,19 +1,23 @@
 #!/usr/bin/env python3
 """
-Hunter Agent - LinkedIn Follower Scraper
-=========================================
-Scrapes followers from competitor LinkedIn company pages.
+Hunter Agent - Lead Discovery via Apollo.io
+============================================
+Discovers ICP-matching leads at target companies using Apollo.io People Search.
 
 Architecture Notes (for AI agents reading this):
-- This scraper uses LinkedIn's undocumented Voyager API via li_at cookie.
-- The cookie expires every ~30 days and requires manual rotation.
-- All 4 scrapers (followers, events, posts, groups) share this pattern.
+- Primary: Apollo.io People Search (free) -> People Match (1 credit/reveal)
+- Fallback: LinkedIn Voyager API via li_at cookie (rate-limited, unreliable)
 - The pipeline MUST work with test-data fallback in all modes.
-- Full scraping requires Proxycurl ($0.01/profile) or Playwright browser automation.
+- Apollo covers 275M+ contacts — broader than LinkedIn scraping.
+
+Provider History:
+- LinkedIn cookie: blocked/rate-limited (403) since early 2026
+- Proxycurl: REMOVED — sued by LinkedIn, shutting down Jul 2026
+- Clay API v1: deprecated (404) since early 2026
 
 Usage:
+    python execution/hunter_scrape_followers.py --company "gong" --limit 10
     python execution/hunter_scrape_followers.py --url "https://linkedin.com/company/gong"
-    python execution/hunter_scrape_followers.py --company "gong" --limit 100
 """
 
 import os
@@ -102,13 +106,14 @@ RETRY_MAX_WAIT_SECONDS = 10
 
 class LinkedInFollowerScraper:
     """
-    Scrapes followers from LinkedIn company pages.
-    
-    IMPORTANT: This scraper validates the LinkedIn session BEFORE
-    attempting any API calls. If the session is invalid, it raises
-    ScraperUnavailableError immediately (fail-fast, no retry loop).
+    Discovers ICP-matching leads at target companies.
+
+    Strategy:
+    1. Try Apollo.io People Search (free) + People Match (1 credit/reveal)
+    2. If no Apollo key -> try LinkedIn Voyager API via li_at cookie
+    3. If neither available -> raise ScraperUnavailableError (pipeline uses test data)
     """
-    
+
     # Pre-defined competitors
     COMPETITORS = {
         "gong": {
@@ -132,73 +137,85 @@ class LinkedInFollowerScraper:
             "name": "Outreach"
         }
     }
-    
+
     def __init__(self):
         self.cookie = os.getenv("LINKEDIN_COOKIE")
+        self.apollo_key = os.getenv("APOLLO_API_KEY")
         self.session_id = "primary"
         self.batch_id = str(uuid.uuid4())
         self.leads: List[ScrapedLead] = []
         self._session_validated = False
-        
-        if not self.cookie:
+        self._use_api_fallback = False
+
+        if not self.cookie and not self.apollo_key:
             raise ValueError(
-                "LINKEDIN_COOKIE not set. Add li_at cookie to .env. "
-                "Alternative: use Proxycurl (PROXYCURL_API_KEY) for cookie-free scraping."
+                "No scraping credentials configured. Set at least one of: "
+                "LINKEDIN_COOKIE or APOLLO_API_KEY in .env"
             )
     
     def validate_session(self) -> bool:
         """
         Pre-flight session health check. Calls /voyager/api/me to verify
-        the LinkedIn cookie is alive. Returns True if valid, raises
-        ScraperUnavailableError if expired/invalid.
-        
-        This MUST be called before any scraping operation.
+        the LinkedIn cookie is alive. If cookie fails, checks for API
+        fallback providers (Proxycurl/Apollo). Returns True if any path
+        is available. Raises ScraperUnavailableError only if ALL paths fail.
         """
         import requests
-        
+
+        # If no cookie, skip directly to API fallback check
+        if not self.cookie:
+            return self._check_api_fallback("No LinkedIn cookie configured")
+
         console.print("[dim]Validating LinkedIn session...[/dim]")
-        
+
         headers = {
             "Cookie": f"li_at={self.cookie}",
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
             "x-restli-protocol-version": "2.0.0",
         }
-        
+
         try:
             response = requests.get(
                 "https://www.linkedin.com/voyager/api/me",
                 headers=headers,
                 timeout=SESSION_CHECK_TIMEOUT_SECONDS
             )
-            
+
             if response.status_code == 200:
-                console.print("[green]✅ LinkedIn session valid[/green]")
+                console.print("[green]LinkedIn session valid[/green]")
                 self._session_validated = True
                 return True
             elif response.status_code == 401:
-                raise ScraperUnavailableError(
-                    "LinkedIn session EXPIRED (401). Rotate the li_at cookie in .env "
-                    "and run: python execution/health_monitor.py --update-linkedin-rotation"
+                return self._check_api_fallback(
+                    "LinkedIn session EXPIRED (401). Rotate li_at cookie in .env"
                 )
             elif response.status_code == 403:
-                raise ScraperUnavailableError(
-                    "LinkedIn session BLOCKED (403). Account may be rate-limited or restricted. "
-                    "Wait 24h or use Proxycurl as alternative."
+                return self._check_api_fallback(
+                    "LinkedIn session BLOCKED (403). Account rate-limited or restricted"
                 )
             else:
-                raise ScraperUnavailableError(
-                    f"LinkedIn session check failed with status {response.status_code}. "
-                    "Cookie may be invalid."
+                return self._check_api_fallback(
+                    f"LinkedIn session check failed with status {response.status_code}"
                 )
-                
+
         except requests.exceptions.Timeout:
-            raise ScraperUnavailableError(
-                f"LinkedIn session check timed out after {SESSION_CHECK_TIMEOUT_SECONDS}s. "
-                "LinkedIn may be unreachable."
+            return self._check_api_fallback(
+                f"LinkedIn session check timed out after {SESSION_CHECK_TIMEOUT_SECONDS}s"
             )
         except requests.exceptions.ConnectionError:
+            return self._check_api_fallback("Cannot connect to LinkedIn")
+
+    def _check_api_fallback(self, reason: str) -> bool:
+        """Check if an API fallback provider is available when cookie fails."""
+        if self.apollo_key:
+            console.print(f"[yellow]{reason} -- falling back to Apollo.io API[/yellow]")
+            self._use_api_fallback = True
+            self._session_validated = True
+            return True
+        else:
             raise ScraperUnavailableError(
-                "Cannot connect to LinkedIn. Check network connectivity."
+                f"{reason}. No API fallback available. "
+                "Set APOLLO_API_KEY in .env for cookie-free lead discovery."
             )
     
     @sleep_and_retry
@@ -241,51 +258,148 @@ class LinkedInFollowerScraper:
     )
     def fetch_followers(self, company_url: str, company_name: str, limit: int = 100) -> List[ScrapedLead]:
         """
-        Fetch followers from a LinkedIn company page.
-        
-        Pre-conditions:
-        - validate_session() MUST be called first (enforced here)
-        - LINKEDIN_COOKIE must be valid
-        
-        Note: This is a simplified implementation. Real LinkedIn scraping
-        requires browser automation (Selenium/Playwright) due to heavy JavaScript.
+        Discover ICP-matching leads at a target company.
+
+        Args:
+            company_url: LinkedIn company URL (kept for backward compat, unused by Apollo)
+            company_name: Company name for Apollo search
+            limit: Max leads to return
+
+        Routes to the best available provider:
+        1. Apollo.io People Search + Match -- if APOLLO_API_KEY set
+        2. LinkedIn Voyager API (cookie) -- if session validated
         """
-        # Enforce session validation
         if not self._session_validated:
             self.validate_session()
-        
-        console.print(f"\n[bold blue]🕵️ HUNTER: Scraping followers from {company_name}[/bold blue]")
-        
-        # Extract company ID from URL
-        company_id = company_url.rstrip("/").split("/")[-1]
-        
-        scraped_leads = []
-        
+
+        self.batch_id = str(uuid.uuid4())
+
+        # If API fallback is active, use Apollo API instead of cookie scraping
+        if self._use_api_fallback:
+            if self.apollo_key:
+                return self._fetch_via_apollo(company_name, limit)
+
+        # Cookie-based LinkedIn Voyager scraping (scaffold)
+        console.print(f"[dim]Cookie-based scrape of {company_name} (scaffold -- returns 0 leads)[/dim]")
+        raise ScraperUnavailableError(
+            f"Cookie-based scraper scaffold returned 0 leads for {company_name}. "
+            "Pipeline will use test data fallback."
+        )
+
+    def _fetch_via_apollo(self, company_name: str, limit: int) -> List[ScrapedLead]:
+        """Fetch leads via Apollo.io two-step flow: Search (free) -> Match (1 credit/lead).
+
+        Step 1: api_search returns anonymized results with Apollo person IDs,
+                first names, titles, and company matches. No credits consumed.
+        Step 2: people/match by ID reveals full name, email, LinkedIn URL,
+                and company details. Costs 1 credit per reveal.
+        """
+        import requests
+
+        console.print(f"[dim]Apollo.io: searching people at {company_name}...[/dim]")
+
+        headers = {
+            "x-api-key": self.apollo_key,
+            "Content-Type": "application/json",
+        }
+
+        # Step 1: Free search — find ICP-matching people at target company
+        search_payload = {
+            "q_organization_name": company_name,
+            "per_page": min(limit, 25),
+            "person_seniorities": ["vp", "c_suite", "director"],
+            "person_titles": [
+                "VP of Sales", "Head of Sales", "CRO", "Chief Revenue Officer",
+                "VP of Business Development", "Sales Director", "Head of RevOps",
+                "VP Marketing", "CMO", "Head of Growth",
+            ],
+        }
+
         try:
-            # NOTE: The Voyager API scaffold below shows the expected data flow.
-            # Real scraping requires Playwright browser automation or Proxycurl API.
-            console.print(f"[yellow]Note: Full scraping requires browser automation or Proxycurl.[/yellow]")
-            console.print(f"[dim]Would scrape up to {limit} followers from {company_url}[/dim]")
-            
-            # Store batch metadata
-            self.batch_id = str(uuid.uuid4())
-            
-            # Return empty — caller (pipeline) should fall back to test data
-            if not scraped_leads:
+            search_resp = requests.post(
+                "https://api.apollo.io/api/v1/mixed_people/api_search",
+                headers=headers,
+                json=search_payload,
+                timeout=20,
+            )
+
+            if search_resp.status_code != 200:
                 raise ScraperUnavailableError(
-                    f"Scraper scaffold returned 0 leads for {company_name}. "
-                    "Real scraping requires Proxycurl or Playwright. "
-                    "Pipeline should use test data fallback."
+                    f"Apollo people search failed: {search_resp.status_code}"
                 )
-            
-            return scraped_leads
-            
-        except ScraperUnavailableError:
-            raise  # Don't retry scaffold failures
-        except Exception as e:
-            console.print(f"[red]Error scraping followers: {e}[/red]")
-            raise
-    
+
+            search_data = search_resp.json()
+            candidates = search_data.get("people") or []
+            console.print(f"[dim]  Step 1: Found {len(candidates)} ICP candidates (free search)[/dim]")
+
+            if not candidates:
+                raise ScraperUnavailableError(f"Apollo search returned 0 candidates for {company_name}")
+
+            # Step 2: Reveal top candidates via People Match (1 credit each)
+            scraped = []
+            reveal_count = min(len(candidates), limit)
+            console.print(f"[dim]  Step 2: Revealing {reveal_count} contacts (1 credit each)...[/dim]")
+
+            for candidate in candidates[:limit]:
+                apollo_id = candidate.get("id")
+                if not apollo_id:
+                    continue
+
+                try:
+                    match_resp = requests.post(
+                        "https://api.apollo.io/api/v1/people/match",
+                        headers=headers,
+                        json={"id": apollo_id},
+                        timeout=15,
+                    )
+
+                    if match_resp.status_code == 402:
+                        console.print("[red]Apollo credits exhausted — stopping reveals[/red]")
+                        break
+                    if match_resp.status_code != 200:
+                        continue
+
+                    person = match_resp.json().get("person") or match_resp.json()
+                    name = person.get("name", "")
+                    parts = name.split(None, 1)
+                    org = person.get("organization") or {}
+
+                    scraped.append(ScrapedLead(
+                        lead_id=str(uuid.uuid4()),
+                        source_type="apollo_search",
+                        source_id=company_name.lower().replace(" ", "_"),
+                        source_url=person.get("linkedin_url", ""),
+                        source_name=company_name,
+                        captured_at=datetime.utcnow().isoformat(),
+                        batch_id=self.batch_id,
+                        linkedin_url=person.get("linkedin_url", ""),
+                        linkedin_id=person.get("id", ""),
+                        name=name,
+                        first_name=parts[0] if parts else "",
+                        last_name=parts[1] if len(parts) > 1 else "",
+                        title=person.get("title", ""),
+                        company=org.get("name", company_name),
+                        company_linkedin_url=org.get("linkedin_url"),
+                        location=f"{person.get('city', '')}, {person.get('state', '')}".strip(", "),
+                        connection_degree=0,
+                        profile_image_url=person.get("photo_url"),
+                        engagement_action="apollo_search",
+                        engagement_content=None,
+                        engagement_timestamp=None,
+                        raw_html=None,
+                    ))
+                except requests.exceptions.RequestException:
+                    continue
+
+            console.print(f"[green]Apollo: {len(scraped)} leads revealed for {company_name}[/green]")
+
+            if not scraped:
+                raise ScraperUnavailableError(f"Apollo revealed 0 leads for {company_name}")
+            return scraped
+
+        except requests.exceptions.RequestException as e:
+            raise ScraperUnavailableError(f"Apollo API request failed: {e}")
+
     def _normalize_profile(self, raw_profile: Dict[str, Any], company_name: str, company_url: str) -> ScrapedLead:
         """Normalize LinkedIn profile data to our schema."""
         
@@ -392,8 +506,7 @@ def main():
             console.print(f"Next step: Run enrichment with:")
             console.print(f"  python execution/enricher_clay_waterfall.py --input {output_path}")
         else:
-            console.print("\n[yellow]No leads scraped. This may be expected for the scaffold.[/yellow]")
-            console.print("[yellow]Full implementation requires browser automation or Proxycurl.[/yellow]")
+            console.print("\n[yellow]No leads scraped. Check APOLLO_API_KEY in .env[/yellow]")
             
     except ScraperUnavailableError as e:
         console.print(f"[yellow]⚠️ Scraper unavailable: {e}[/yellow]")

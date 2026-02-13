@@ -11,12 +11,15 @@ import sys
 import hmac
 import hashlib
 import json
+import logging
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, Any, Optional
 
 from fastapi import FastAPI, Request, HTTPException, Header, APIRouter, BackgroundTasks
 from dotenv import load_dotenv
+
+logger = logging.getLogger("rb2b_webhook")
 
 # Load environment
 load_dotenv()
@@ -330,46 +333,59 @@ async def handle_clay_callback(
     background_tasks: BackgroundTasks
 ):
     """
-    Handle incoming Clay enrichment callback.
-    Receives JSON with enriched data and syncing to GHL.
-    Also re-triggers Website Intent Monitor to use new signals (Hiring, Tech Stack).
+    Unified Clay enrichment callback — routes both RB2B visitors and pipeline leads.
+
+    The same Clay workbook enriches both sources. Routing logic:
+      - payload has "lead_id" + source="caio_pipeline" → write callback file for pipeline enricher
+      - payload has "visitor_id" or source="rb2b"       → existing RB2B/GHL flow
+      - both present                                    → handle both paths
     """
     try:
         payload = await request.json()
-        print(f"Received Clay callback: {json.dumps(payload)[:100]}...")
-        
-        if clay_enricher:
-            # Async processing (sync ghl, cache)
-            await clay_enricher.receive_clay_callback(payload)
-            
-            # Re-trigger Website Intent Monitor with enriched data
-            if website_monitor:
-                # Map Clay payload to Visitor Data format
-                visitor_data = {
-                    "visitor_id": payload.get("visitor_id") or payload.get("id"),
-                    "email": payload.get("work_email") or payload.get("email"),
-                    "first_name": payload.get("first_name"),
-                    "last_name": payload.get("last_name"),
-                    "company_name": payload.get("company_name"),
-                    "company_domain": payload.get("company_domain"),
-                    "job_title": payload.get("job_title"),
-                    "linkedin_url": payload.get("linkedin_url"),
-                    # Critical Signals from Clay
-                    "hiring": payload.get("hiring") or payload.get("open_roles"),
-                    "technologies": payload.get("technologies") or payload.get("tech_stack"),
-                    "pages_viewed": payload.get("pages_viewed", []) # Carry over if passed back, else empty
-                }
-                
-                print(f"Re-processing intent for enriched visitor: {visitor_data.get('email')}")
-                background_tasks.add_task(process_visitor_intent, visitor_data, force_update=True)
-            
-            return {"status": "processed"}
-        else:
-             print("Warning: Clay enricher not initialized")
-             return {"status": "error", "detail": "Enricher not initialized"}
-             
+        logger.info("Clay callback received: %s", json.dumps(payload)[:120])
+
+        source = (payload.get("source") or "").lower()
+        lead_id = payload.get("lead_id")
+        visitor_id = payload.get("visitor_id") or payload.get("id")
+
+        # ── Pipeline lead path: write callback file for enricher to poll ──
+        if lead_id and source == "caio_pipeline":
+            callback_dir = Path(__file__).resolve().parent.parent / ".hive-mind" / "clay_callbacks"
+            callback_dir.mkdir(parents=True, exist_ok=True)
+            callback_file = callback_dir / f"{lead_id}.json"
+            payload["received_at"] = datetime.now(timezone.utc).isoformat()
+            with open(callback_file, "w", encoding="utf-8") as f:
+                json.dump(payload, f, indent=2)
+            logger.info("Pipeline callback saved for lead %s", lead_id)
+
+        # ── RB2B visitor path: existing GHL sync + Website Intent Monitor ──
+        if visitor_id or source != "caio_pipeline":
+            if clay_enricher:
+                await clay_enricher.receive_clay_callback(payload)
+
+                if website_monitor:
+                    visitor_data = {
+                        "visitor_id": visitor_id,
+                        "email": payload.get("work_email") or payload.get("email"),
+                        "first_name": payload.get("first_name"),
+                        "last_name": payload.get("last_name"),
+                        "company_name": payload.get("company_name"),
+                        "company_domain": payload.get("company_domain"),
+                        "job_title": payload.get("job_title"),
+                        "linkedin_url": payload.get("linkedin_url"),
+                        "hiring": payload.get("hiring") or payload.get("open_roles"),
+                        "technologies": payload.get("technologies") or payload.get("tech_stack"),
+                        "pages_viewed": payload.get("pages_viewed", []),
+                    }
+                    logger.info("Re-processing intent for enriched visitor: %s", visitor_data.get("email"))
+                    background_tasks.add_task(process_visitor_intent, visitor_data, force_update=True)
+            else:
+                logger.warning("Clay enricher not initialized — skipping RB2B path")
+
+        return {"status": "processed", "lead_id": lead_id, "visitor_id": visitor_id}
+
     except Exception as e:
-        print(f"Clay callback error: {e}")
+        logger.error("Clay callback error: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
 
 

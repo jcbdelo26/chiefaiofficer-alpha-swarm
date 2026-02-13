@@ -69,9 +69,9 @@ RETRY_QUEUE_FILE = Path(".hive-mind/retry_queue.jsonl")
 
 EXCEPTION_POLICIES: dict[str, RetryPolicy] = {
     "enrichment_failure": RetryPolicy(
-        max_retries=3,
-        base_delay=30.0,
-        max_delay=300.0,
+        max_retries=2,
+        base_delay=5.0,
+        max_delay=30.0,
         exponential_factor=2.0
     ),
     "scraping_blocked": RetryPolicy(

@@ -1,22 +1,28 @@
 #!/usr/bin/env python3
 """
-Enricher Agent - Clay Waterfall Enrichment
-==========================================
-Enriches leads with contact data via Clay's waterfall enrichment.
+Enricher Agent - Waterfall Enrichment
+=====================================
+Enriches leads with contact data via waterfall enrichment providers.
+
+Provider Priority:
+    1. Apollo.io (APOLLO_API_KEY) — People Match, 1 credit/lead, synchronous
+    2. Clay Explorer (CLAY_WEBHOOK_URL) — Webhook-driven waterfall (10+ providers),
+       async via callback, $499/mo Explorer plan with 14K credits/mo
+    3. BetterContact (BETTERCONTACT_API_KEY) — Waterfall aggregator (20+ sources),
+       async polling, pay-only-for-verified, $0.04-0.05/email
+    4. Mock/test mode — deterministic test data
+
+Provider History:
+    - Clay API v1: deprecated early 2026 (404)
+    - Proxycurl: removed (shutting down Jul 2026, sued by LinkedIn)
 
 Usage:
     python execution/enricher_clay_waterfall.py --input .hive-mind/scraped/leads.json
     python execution/enricher_clay_waterfall.py --lead-id "uuid" --linkedin-url "url"
-    
+
 Test Mode (no real API calls):
     python execution/enricher_clay_waterfall.py --input .hive-mind/scraped/leads.json --test-mode
     python execution/enricher_clay_waterfall.py --linkedin-url "url" --name "John Doe" --company "Acme Inc" --test-mode
-
-Test mode features:
-    - Generates mock enrichment data based on input leads
-    - Saves results to .hive-mind/testing/enricher_test_results.json
-    - Tracks simulated API costs and success rates
-    - Simulates >80% success rate as per Day 3 criteria
 """
 
 import os
@@ -104,8 +110,8 @@ class EnrichedLead:
 
 
 class ClayEnricher:
-    """Enrich leads using Clay's waterfall enrichment."""
-    
+    """Enrich leads using waterfall enrichment (Apollo -> Clay Explorer -> BetterContact)."""
+
     def __init__(self, test_mode: bool = False):
         self.test_mode = test_mode
         self.test_stats = {
@@ -115,35 +121,67 @@ class ClayEnricher:
             "simulated_cost_usd": 0.0,
             "credits_used": 0
         }
-        
+        self.provider = "none"
+
         if test_mode:
-            console.print("[yellow]🧪 TEST MODE: Using mock enrichment data[/yellow]")
+            console.print("[yellow]TEST MODE: Using mock enrichment data[/yellow]")
             self.api_key = "test_mode_key"
-            self.base_url = "https://api.clay.com/v1"
+            self.base_url = ""
+            self.provider = "mock"
         else:
-            self.api_key = os.getenv("CLAY_API_KEY")
-            self.base_url = os.getenv("CLAY_BASE_URL", "https://api.clay.com/v1")
-            
-            if not self.api_key:
-                raise ValueError("CLAY_API_KEY not set in .env")
+            # Provider waterfall: Apollo → Clay Explorer → BetterContact → mock fallback
+            self.apollo_key = os.getenv("APOLLO_API_KEY")
+            # Clay webhook: prefer CLAY_WEBHOOK_URL, fall back to shared CLAY_WORKBOOK_WEBHOOK_URL
+            self.clay_webhook_url = os.getenv("CLAY_WEBHOOK_URL") or os.getenv("CLAY_WORKBOOK_WEBHOOK_URL")
+            self.clay_webhook_token = os.getenv("CLAY_WEBHOOK_TOKEN", "")
+            self.clay_callback_dir = Path(__file__).parent.parent / ".hive-mind" / "clay_callbacks"
+            self.bettercontact_key = os.getenv("BETTERCONTACT_API_KEY")
+
+            if self.apollo_key:
+                self.provider = "apollo"
+                self.base_url = "https://api.apollo.io/api/v1"
+                self.api_key = self.apollo_key
+                console.print("[dim]Enrichment provider: Apollo.io[/dim]")
+                fallbacks = []
+                if self.clay_webhook_url:
+                    fallbacks.append("Clay Explorer")
+                if self.bettercontact_key:
+                    fallbacks.append("BetterContact")
+                if fallbacks:
+                    console.print(f"[dim]Fallback chain: {' -> '.join(fallbacks)}[/dim]")
+            elif self.clay_webhook_url:
+                self.provider = "clay"
+                self.base_url = ""
+                self.api_key = "clay_webhook"
+                console.print("[dim]Enrichment provider: Clay Explorer (no Apollo key)[/dim]")
+            elif self.bettercontact_key:
+                self.provider = "bettercontact"
+                self.base_url = "https://app.bettercontact.rocks/api/v2"
+                self.api_key = self.bettercontact_key
+                console.print("[dim]Enrichment provider: BetterContact (no Apollo/Clay key)[/dim]")
+            else:
+                console.print("[yellow]No enrichment API key found (APOLLO_API_KEY, CLAY_WEBHOOK_URL, or BETTERCONTACT_API_KEY). Using mock mode.[/yellow]")
+                self.test_mode = True
+                self.provider = "mock_fallback"
+                self.api_key = "fallback_mock"
+                self.base_url = ""
     
-    def enrich_lead(self, lead_id: str, linkedin_url: str, name: str = "", company: str = "", 
+    def enrich_lead(self, lead_id: str, linkedin_url: str, name: str = "", company: str = "",
                     buying_signals: List[str] = None, original_lead: Dict[str, Any] = None) -> Optional[EnrichedLead]:
         """
-        Enrich a single lead via Clay waterfall.
-        
-        Clay will try multiple providers in sequence:
-        1. Apollo
-        2. ZoomInfo
-        3. Clearbit
-        4. Hunter.io
-        5. Lusha
+        Enrich a single lead via waterfall providers.
+
+        Provider priority:
+        1. Apollo.io (APOLLO_API_KEY) — synchronous people match
+        2. Clay Explorer (CLAY_WEBHOOK_URL) — async webhook enrichment (10+ providers)
+        3. BetterContact (BETTERCONTACT_API_KEY) — async waterfall (20+ sources)
+        4. Mock — test data fallback
         """
         console.print(f"[dim]Enriching: {linkedin_url}[/dim]")
-        
+
         if self.test_mode:
             return self._mock_enrich(lead_id, linkedin_url, name, company, buying_signals or [], original_lead or {})
-        
+
         return self._enrich_with_retry(lead_id, linkedin_url, name, company)
     
     def _mock_enrich(self, lead_id: str, linkedin_url: str, name: str, company: str,
@@ -315,106 +353,337 @@ class ClayEnricher:
         )
     )
     def _enrich_with_retry(self, lead_id: str, linkedin_url: str, name: str = "", company: str = "") -> Optional[EnrichedLead]:
-        """Internal method with retry logic."""
-        import requests
-        
-        headers = {
-            "Authorization": f"Bearer {self.api_key}",
-            "Content-Type": "application/json"
-        }
-        
-        payload = {
-            "linkedin_url": linkedin_url,
-            "name": name,
-            "company": company,
-            "enrichments": [
-                "email",
-                "phone",
-                "company",
-                "technologies"
-            ]
-        }
-        
-        response = requests.post(
-            f"{self.base_url}/enrich",
-            headers=headers,
-            json=payload,
-            timeout=30
-        )
-        
-        if response.status_code == 200:
-            data = response.json()
-            log_event(EventType.ENRICHMENT_COMPLETED, {
-                "lead_id": lead_id,
-                "linkedin_url": linkedin_url,
-                "quality": self._calculate_quality(
-                    self._parse_clay_response(lead_id, linkedin_url, data).contact,
-                    self._parse_clay_response(lead_id, linkedin_url, data).company
-                ) if data else 0
-            })
-            return self._parse_clay_response(lead_id, linkedin_url, data)
-        elif response.status_code == 402:
-            send_critical(
-                "Clay Credits Exhausted",
-                "Clay API credits have been exhausted. Enrichment paused.",
-                {"lead_id": lead_id}
-            )
-            log_event(EventType.ENRICHMENT_FAILED, {
-                "lead_id": lead_id,
-                "reason": "credits_exhausted"
-            })
-            return None
-        elif response.status_code == 429:
-            log_event(EventType.ENRICHMENT_FAILED, {
-                "lead_id": lead_id,
-                "reason": "rate_limited",
-                "status_code": 429
-            })
-            raise Exception(f"Rate limited by Clay API")
+        """Internal method with retry logic. Routes to correct provider with fallback chain."""
+        result = None
+
+        # Try Apollo first (synchronous, fastest)
+        if self.provider == "apollo":
+            result = self._enrich_via_apollo(lead_id, linkedin_url, name, company)
+            # Fallback 1: Clay Explorer webhook (async, 10+ providers)
+            if result is None and self.clay_webhook_url:
+                console.print(f"[dim]  Apollo miss — falling back to Clay Explorer[/dim]")
+                result = self._enrich_via_clay(lead_id, linkedin_url, name, company)
+            # Fallback 2: BetterContact (async polling, 20+ sources)
+            if result is None and self.bettercontact_key:
+                console.print(f"[dim]  Clay miss — falling back to BetterContact[/dim]")
+                result = self._enrich_via_bettercontact(lead_id, linkedin_url, name, company)
+        elif self.provider == "clay":
+            result = self._enrich_via_clay(lead_id, linkedin_url, name, company)
+            if result is None and self.bettercontact_key:
+                console.print(f"[dim]  Clay miss — falling back to BetterContact[/dim]")
+                result = self._enrich_via_bettercontact(lead_id, linkedin_url, name, company)
+        elif self.provider == "bettercontact":
+            result = self._enrich_via_bettercontact(lead_id, linkedin_url, name, company)
         else:
             log_event(EventType.ENRICHMENT_FAILED, {
                 "lead_id": lead_id,
-                "reason": "api_error",
-                "status_code": response.status_code
+                "reason": "no_provider_configured"
             })
-            raise Exception(f"Clay API error: {response.status_code}")
-    
-    def _parse_clay_response(self, lead_id: str, linkedin_url: str, data: Dict[str, Any]) -> EnrichedLead:
-        """Parse Clay API response into our schema."""
-        
-        # Contact data
+
+        return result
+
+    def _enrich_via_apollo(self, lead_id: str, linkedin_url: str, name: str = "", company: str = "") -> Optional[EnrichedLead]:
+        """Enrich via Apollo.io People Match API."""
+        import requests
+
+        headers = {
+            "x-api-key": self.apollo_key,
+            "Content-Type": "application/json",
+        }
+
+        payload = {
+            "linkedin_url": linkedin_url,
+            "reveal_personal_emails": True,
+        }
+        # Add name fields if available
+        if name:
+            parts = name.split(None, 1)
+            if len(parts) >= 2:
+                payload["first_name"] = parts[0]
+                payload["last_name"] = parts[1]
+            else:
+                payload["first_name"] = parts[0]
+        if company:
+            payload["organization_name"] = company
+
+        response = requests.post(
+            f"{self.base_url}/people/match",
+            headers=headers,
+            json=payload,
+            timeout=20,
+        )
+
+        if response.status_code == 200:
+            data = response.json()
+            person = data.get("person") or data
+            result = self._parse_apollo_response(lead_id, linkedin_url, person)
+            log_event(EventType.ENRICHMENT_COMPLETED, {
+                "lead_id": lead_id,
+                "linkedin_url": linkedin_url,
+                "provider": "apollo",
+                "quality": result.enrichment_quality if result else 0,
+            })
+            return result
+        elif response.status_code == 402:
+            send_critical(
+                "Apollo Credits Exhausted",
+                "Apollo API credits exhausted. Enrichment paused.",
+                {"lead_id": lead_id},
+            )
+            log_event(EventType.ENRICHMENT_FAILED, {"lead_id": lead_id, "reason": "credits_exhausted"})
+            return None
+        elif response.status_code == 429:
+            log_event(EventType.ENRICHMENT_FAILED, {"lead_id": lead_id, "reason": "rate_limited", "status_code": 429})
+            raise Exception("Rate limited by Apollo API (429)")
+        elif response.status_code == 404:
+            # No match found — not retryable, return None
+            console.print(f"[dim]  Apollo: no match for {linkedin_url}[/dim]")
+            log_event(EventType.ENRICHMENT_FAILED, {"lead_id": lead_id, "reason": "no_match"})
+            return None
+        else:
+            log_event(EventType.ENRICHMENT_FAILED, {
+                "lead_id": lead_id, "reason": "api_error", "status_code": response.status_code
+            })
+            raise Exception(f"Apollo API error: {response.status_code} - {response.text[:200]}")
+
+    def _enrich_via_clay(self, lead_id: str, linkedin_url: str, name: str = "", company: str = "") -> Optional[EnrichedLead]:
+        """
+        Enrich via Clay Explorer webhook-driven waterfall (10+ providers).
+
+        Flow: POST to Clay webhook -> Clay auto-enriches -> Clay HTTP action POSTs
+        enriched data to /api/clay-callback -> enricher polls callback file.
+
+        Env vars: CLAY_WEBHOOK_URL, CLAY_WEBHOOK_TOKEN (optional)
+        Latency: 1-3 minutes (async, polls callback directory)
+        """
+        import requests
+        import time
+
+        headers = {"Content-Type": "application/json"}
+        if self.clay_webhook_token:
+            headers["x-clay-webhook-auth"] = self.clay_webhook_token
+
+        # Parse name
+        first_name, last_name = "", ""
+        if name:
+            parts = name.split(None, 1)
+            first_name = parts[0] if parts else ""
+            last_name = parts[1] if len(parts) >= 2 else ""
+
+        # Extract domain from company
+        company_domain = ""
+        if company:
+            if "." in company and " " not in company:
+                company_domain = company
+
+        payload = {
+            "lead_id": lead_id,
+            "linkedin_url": linkedin_url,
+            "first_name": first_name,
+            "last_name": last_name,
+            "company": company if not company_domain else "",
+            "company_domain": company_domain,
+            "source": "caio_pipeline",
+        }
+
+        # Step 1: POST to Clay webhook
+        try:
+            response = requests.post(
+                self.clay_webhook_url,
+                headers=headers,
+                json=payload,
+                timeout=20,
+            )
+        except Exception as e:
+            console.print(f"[red]  Clay: webhook POST failed: {e}[/red]")
+            log_event(EventType.ENRICHMENT_FAILED, {"lead_id": lead_id, "reason": "clay_webhook_error"})
+            return None
+
+        if response.status_code != 200:
+            console.print(f"[red]  Clay: webhook returned {response.status_code}[/red]")
+            log_event(EventType.ENRICHMENT_FAILED, {
+                "lead_id": lead_id, "reason": "clay_webhook_error",
+                "status_code": response.status_code,
+            })
+            return None
+
+        # Step 2: Poll callback directory for results (max 3 min, check every 10s)
+        console.print(f"[dim]  Clay: waiting for enrichment callback (lead {lead_id[:8]}...)[/dim]")
+        self.clay_callback_dir.mkdir(parents=True, exist_ok=True)
+        callback_file = self.clay_callback_dir / f"{lead_id}.json"
+
+        for attempt in range(18):  # 18 x 10s = 3 min max
+            time.sleep(10)
+            if callback_file.exists():
+                try:
+                    with open(callback_file, "r") as f:
+                        data = json.load(f)
+                    # Clean up callback file
+                    callback_file.unlink(missing_ok=True)
+                    # Parse enriched data
+                    result = self._parse_clay_response(lead_id, linkedin_url, data)
+                    if result and result.contact.work_email:
+                        log_event(EventType.ENRICHMENT_COMPLETED, {
+                            "lead_id": lead_id,
+                            "linkedin_url": linkedin_url,
+                            "provider": "clay_explorer",
+                            "quality": result.enrichment_quality,
+                        })
+                        return result
+                    else:
+                        console.print(f"[dim]  Clay: no email found for {linkedin_url}[/dim]")
+                        log_event(EventType.ENRICHMENT_FAILED, {"lead_id": lead_id, "reason": "clay_no_email"})
+                        return None
+                except Exception as e:
+                    console.print(f"[red]  Clay: error parsing callback: {e}[/red]")
+                    callback_file.unlink(missing_ok=True)
+                    return None
+
+        # Timed out waiting for callback
+        console.print(f"[yellow]  Clay: timed out after 3 min for {linkedin_url}[/yellow]")
+        log_event(EventType.ENRICHMENT_FAILED, {"lead_id": lead_id, "reason": "clay_timeout"})
+        return None
+
+    def _enrich_via_bettercontact(self, lead_id: str, linkedin_url: str, name: str = "", company: str = "") -> Optional[EnrichedLead]:
+        """
+        Enrich via BetterContact async waterfall API (20+ sources).
+
+        Flow: POST /async → poll GET /async/{request_id} until status=terminated.
+        Only charged for verified results (not-found = free).
+        """
+        import requests
+        import time
+
+        bc_url = "https://app.bettercontact.rocks/api/v2"
+        headers = {
+            "X-API-Key": self.bettercontact_key,
+            "Content-Type": "application/json",
+        }
+
+        # Parse name into first/last
+        first_name, last_name = "", ""
+        if name:
+            parts = name.split(None, 1)
+            first_name = parts[0] if parts else ""
+            last_name = parts[1] if len(parts) >= 2 else ""
+
+        # Extract domain from company if available
+        company_domain = ""
+        if company:
+            # Simple heuristic: if it looks like a domain, use it; otherwise just pass company name
+            if "." in company and " " not in company:
+                company_domain = company
+
+        contact_data = {
+            "first_name": first_name,
+            "last_name": last_name,
+            "linkedin_url": linkedin_url,
+            "custom_fields": {"lead_id": lead_id},
+        }
+        if company_domain:
+            contact_data["company_domain"] = company_domain
+        elif company:
+            contact_data["company"] = company
+
+        payload = {
+            "data": [contact_data],
+            "enrich_email_address": True,
+            "enrich_phone_number": False,  # Save credits on Starter plan (phones cost 10x)
+        }
+
+        # Step 1: Submit enrichment request
+        response = requests.post(
+            f"{bc_url}/async",
+            headers=headers,
+            json=payload,
+            timeout=20,
+        )
+
+        if response.status_code == 401:
+            console.print("[red]  BetterContact: invalid API key[/red]")
+            log_event(EventType.ENRICHMENT_FAILED, {"lead_id": lead_id, "reason": "bettercontact_auth_error"})
+            return None
+        elif response.status_code not in (200, 201):
+            raise Exception(f"BetterContact submit error: {response.status_code} - {response.text[:200]}")
+
+        request_id = response.json().get("id")
+        if not request_id:
+            console.print("[red]  BetterContact: no request_id in response[/red]")
+            return None
+
+        # Step 2: Poll for results (max ~2 min with 15s intervals)
+        console.print(f"[dim]  BetterContact: polling for results (request {request_id[:8]}...)[/dim]")
+        for attempt in range(8):  # 8 × 15s = 2 min max
+            time.sleep(15)
+            poll_resp = requests.get(
+                f"{bc_url}/async/{request_id}",
+                headers=headers,
+                timeout=20,
+            )
+            if poll_resp.status_code != 200:
+                continue
+
+            poll_data = poll_resp.json()
+            if poll_data.get("status") == "terminated":
+                # Parse results
+                contacts = poll_data.get("data", [])
+                if contacts and contacts[0].get("enriched"):
+                    result = self._parse_bettercontact_response(lead_id, linkedin_url, contacts[0])
+                    log_event(EventType.ENRICHMENT_COMPLETED, {
+                        "lead_id": lead_id,
+                        "linkedin_url": linkedin_url,
+                        "provider": "bettercontact",
+                        "quality": result.enrichment_quality if result else 0,
+                        "credits_consumed": poll_data.get("credits_consumed", 0),
+                    })
+                    return result
+                else:
+                    console.print(f"[dim]  BetterContact: no match for {linkedin_url}[/dim]")
+                    log_event(EventType.ENRICHMENT_FAILED, {"lead_id": lead_id, "reason": "bettercontact_no_match"})
+                    return None
+
+        # Timed out waiting for results
+        console.print(f"[yellow]  BetterContact: timed out after 2 min for {linkedin_url}[/yellow]")
+        log_event(EventType.ENRICHMENT_FAILED, {"lead_id": lead_id, "reason": "bettercontact_timeout"})
+        return None
+
+    # ── Response Parsers ──────────────────────────────────────────────
+
+    def _parse_apollo_response(self, lead_id: str, linkedin_url: str, person: Dict[str, Any]) -> EnrichedLead:
+        """Parse Apollo.io People Match response into our schema."""
+        org = person.get("organization") or {}
+
         contact = EnrichedContact(
-            work_email=data.get("email", {}).get("work_email"),
-            personal_email=data.get("email", {}).get("personal_email"),
-            phone=data.get("phone", {}).get("work_phone"),
-            mobile=data.get("phone", {}).get("mobile"),
-            email_verified=data.get("email", {}).get("verified", False),
-            email_confidence=data.get("email", {}).get("confidence", 0)
+            work_email=person.get("email"),
+            personal_email=(person.get("personal_emails") or [None])[0],
+            phone=person.get("organization_phone") or (person.get("phone_numbers") or [{}])[0].get("sanitized_number") if person.get("phone_numbers") else None,
+            mobile=(person.get("phone_numbers") or [{}])[0].get("sanitized_number") if person.get("phone_numbers") else None,
+            email_verified=person.get("email_status") == "verified",
+            email_confidence=95 if person.get("email_status") == "verified" else 60 if person.get("email") else 0,
         )
-        
-        # Company data
-        company_data = data.get("company", {})
+
         company = EnrichedCompany(
-            name=company_data.get("name", ""),
-            domain=company_data.get("domain", ""),
-            linkedin_url=company_data.get("linkedin_url", ""),
-            description=company_data.get("description", ""),
-            employee_count=company_data.get("employee_count", 0),
-            employee_range=company_data.get("employee_range", ""),
-            revenue_estimate=company_data.get("revenue", 0),
-            revenue_range=company_data.get("revenue_range", ""),
-            industry=company_data.get("industry", ""),
-            founded=company_data.get("founded"),
-            headquarters=company_data.get("headquarters", ""),
-            technologies=company_data.get("technologies", [])
+            name=org.get("name", person.get("organization_name", "")),
+            domain=org.get("primary_domain") or org.get("website_url", ""),
+            linkedin_url=org.get("linkedin_url", ""),
+            description=org.get("short_description", ""),
+            employee_count=org.get("estimated_num_employees") or 0,
+            employee_range=org.get("employee_count_range", ""),
+            revenue_estimate=org.get("annual_revenue") or 0,
+            revenue_range=org.get("annual_revenue_printed", ""),
+            industry=org.get("industry", ""),
+            founded=org.get("founded_year"),
+            headquarters=f"{org.get('city', '')}, {org.get('state', '')}".strip(", "),
+            technologies=org.get("current_technologies") or [],
         )
-        
-        # Intent signals (derived)
-        intent = self._detect_intent_signals(data)
-        
-        # Calculate enrichment quality
+
+        intent = self._detect_intent_signals({
+            "company": {"technologies": company.technologies},
+            "hiring_signals": {"has_open_roles": bool(org.get("publicly_traded_symbol"))},
+        })
+
         quality = self._calculate_quality(contact, company)
-        
+
         return EnrichedLead(
             lead_id=lead_id,
             linkedin_url=linkedin_url,
@@ -423,10 +692,110 @@ class ClayEnricher:
             intent=intent,
             enrichment_quality=quality,
             enriched_at=datetime.utcnow().isoformat(),
-            enrichment_sources=data.get("sources", ["clay"]),
-            raw_enrichment=data
+            enrichment_sources=["apollo"],
+            raw_enrichment=person,
         )
-    
+
+    def _parse_bettercontact_response(self, lead_id: str, linkedin_url: str, data: Dict[str, Any]) -> EnrichedLead:
+        """Parse BetterContact enrichment result into our schema."""
+        email = data.get("contact_email_address")
+        email_status = data.get("contact_email_address_status", "")
+        phone = data.get("contact_phone_number")
+
+        # Map BetterContact verification status to confidence
+        confidence_map = {
+            "deliverable": 95,
+            "catch_all_safe": 70,
+            "catch_all_not_safe": 30,
+            "undeliverable": 0,
+        }
+
+        contact = EnrichedContact(
+            work_email=email if email_status in ("deliverable", "catch_all_safe") else None,
+            personal_email=None,
+            phone=phone,
+            mobile=phone,
+            email_verified=email_status == "deliverable",
+            email_confidence=confidence_map.get(email_status, 0),
+        )
+
+        # BetterContact returns minimal company data — use what we have
+        company = EnrichedCompany(
+            name=data.get("contact_company", ""),
+            domain=data.get("contact_company_domain", ""),
+        )
+
+        intent = IntentSignals()
+        quality = self._calculate_quality(contact, company)
+
+        return EnrichedLead(
+            lead_id=lead_id,
+            linkedin_url=linkedin_url,
+            contact=contact,
+            company=company,
+            intent=intent,
+            enrichment_quality=quality,
+            enriched_at=datetime.utcnow().isoformat(),
+            enrichment_sources=["bettercontact"],
+            raw_enrichment=data,
+        )
+
+    def _parse_clay_response(self, lead_id: str, linkedin_url: str, data: Dict[str, Any]) -> EnrichedLead:
+        """Parse Clay Explorer HTTP callback data into our schema.
+
+        Clay's HTTP API action column sends whatever fields we configure.
+        Expected fields match the callback payload defined in health_app.py.
+        """
+        email = data.get("work_email") or data.get("email")
+        email_status = (data.get("email_status") or data.get("email_verified") or "").lower()
+
+        # Map Clay's email verification to confidence
+        is_verified = email_status in ("valid", "verified", "true", "deliverable")
+        confidence = 95 if is_verified else 70 if email else 0
+
+        contact = EnrichedContact(
+            work_email=email,
+            personal_email=data.get("personal_email"),
+            phone=data.get("phone"),
+            mobile=data.get("mobile") or data.get("phone"),
+            email_verified=is_verified,
+            email_confidence=confidence,
+        )
+
+        # Clay Clearbit enrichment returns company data
+        emp_count = data.get("company_employee_count")
+        company = EnrichedCompany(
+            name=data.get("company_name") or data.get("company") or "",
+            domain=data.get("company_domain") or "",
+            linkedin_url=data.get("company_linkedin_url") or "",
+            description=data.get("company_description") or "",
+            employee_count=int(emp_count) if emp_count else 0,
+            employee_range=data.get("company_employee_range") or "",
+            revenue_estimate=int(data.get("company_revenue") or 0),
+            revenue_range=data.get("company_revenue_range") or "",
+            industry=data.get("company_industry") or "",
+            founded=data.get("company_founded"),
+            headquarters=data.get("company_hq") or "",
+            technologies=data.get("company_technologies") or [],
+        )
+
+        intent = self._detect_intent_signals({
+            "company": {"technologies": company.technologies},
+        })
+        quality = self._calculate_quality(contact, company)
+
+        return EnrichedLead(
+            lead_id=lead_id,
+            linkedin_url=linkedin_url,
+            contact=contact,
+            company=company,
+            intent=intent,
+            enrichment_quality=quality,
+            enriched_at=datetime.utcnow().isoformat(),
+            enrichment_sources=["clay_explorer"],
+            raw_enrichment=data,
+        )
+
     def _detect_intent_signals(self, data: Dict[str, Any]) -> IntentSignals:
         """Detect intent signals from enrichment data."""
         

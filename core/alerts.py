@@ -5,6 +5,7 @@ Sends notifications for critical events, warnings, and info.
 
 import json
 import os
+import sys
 import uuid
 from dataclasses import dataclass, asdict, field
 from datetime import datetime, timezone
@@ -37,7 +38,7 @@ class Alert:
     acknowledged: bool = False
     acknowledged_at: Optional[str] = None
     acknowledged_by: Optional[str] = None
-    
+
     def __post_init__(self):
         if not self.created_at:
             self.created_at = datetime.now(timezone.utc).isoformat()
@@ -46,13 +47,24 @@ class Alert:
 
 
 ALERTS_DIR = Path(".hive-mind/alerts")
-console = Console()
 
-LEVEL_STYLES = {
-    AlertLevel.INFO.value: ("blue", "ℹ️"),
-    AlertLevel.WARNING.value: ("yellow", "⚠️"),
-    AlertLevel.CRITICAL.value: ("red bold", "🚨")
-}
+# Use force_terminal=True with utf-8 to avoid Windows cp1252 emoji crashes
+_is_windows = sys.platform == "win32"
+console = Console(force_terminal=not _is_windows)
+
+# ASCII-safe fallback for Windows, emoji for Linux/Railway
+if _is_windows:
+    LEVEL_STYLES = {
+        AlertLevel.INFO.value: ("blue", "[i]"),
+        AlertLevel.WARNING.value: ("yellow", "[!]"),
+        AlertLevel.CRITICAL.value: ("red bold", "[!!!]")
+    }
+else:
+    LEVEL_STYLES = {
+        AlertLevel.INFO.value: ("blue", "ℹ️"),
+        AlertLevel.WARNING.value: ("yellow", "⚠️"),
+        AlertLevel.CRITICAL.value: ("red bold", "🚨")
+    }
 
 
 def send_alert(
@@ -95,7 +107,7 @@ def send_alert(
     if console_output:
         _print_alert(alert)
     
-    if slack_webhook and level_str == AlertLevel.CRITICAL.value:
+    if slack_webhook and level_str in (AlertLevel.CRITICAL.value, AlertLevel.WARNING.value):
         _send_slack_webhook(alert)
     
     return alert
@@ -124,31 +136,35 @@ def _save_alert(alert: Alert) -> Path:
 
 def _print_alert(alert: Alert) -> None:
     """Print alert to console with rich formatting."""
-    style, emoji = LEVEL_STYLES.get(alert.level, ("white", "📢"))
-    
-    title_text = Text(f"{emoji} {alert.title}", style=style)
-    
-    content = Text()
-    content.append(alert.message)
-    
-    if alert.metadata:
-        content.append("\n\nMetadata:\n", style="dim")
-        for key, value in alert.metadata.items():
-            content.append(f"  {key}: ", style="dim")
-            content.append(f"{value}\n")
-    
-    content.append(f"\nSource: {alert.source}", style="dim")
-    content.append(f"\nTime: {alert.created_at}", style="dim")
-    
-    border_style = style.split()[0] if style else "white"
-    panel = Panel(
-        content,
-        title=title_text,
-        border_style=border_style,
-        padding=(0, 1)
-    )
-    
-    console.print(panel)
+    style, emoji = LEVEL_STYLES.get(alert.level, ("white", "[*]"))
+
+    try:
+        title_text = Text(f"{emoji} {alert.title}", style=style)
+
+        content = Text()
+        content.append(alert.message)
+
+        if alert.metadata:
+            content.append("\n\nMetadata:\n", style="dim")
+            for key, value in alert.metadata.items():
+                content.append(f"  {key}: ", style="dim")
+                content.append(f"{value}\n")
+
+        content.append(f"\nSource: {alert.source}", style="dim")
+        content.append(f"\nTime: {alert.created_at}", style="dim")
+
+        border_style = style.split()[0] if style else "white"
+        panel = Panel(
+            content,
+            title=title_text,
+            border_style=border_style,
+            padding=(0, 1)
+        )
+
+        console.print(panel)
+    except UnicodeEncodeError:
+        # Fallback for environments that can't render Rich panels
+        print(f"[{alert.level.upper()}] {alert.title}: {alert.message} (source={alert.source})")
 
 
 def _send_slack_webhook(alert: Alert) -> bool:
@@ -208,7 +224,10 @@ def _send_slack_webhook(alert: Alert) -> bool:
         return response.status_code == 200
         
     except Exception as e:
-        console.print(f"[dim]Slack webhook failed: {e}[/dim]")
+        try:
+            console.print(f"[dim]Slack webhook failed: {e}[/dim]")
+        except UnicodeEncodeError:
+            print(f"Slack webhook failed: {e}")
         return False
 
 
@@ -292,16 +311,16 @@ def acknowledge_alert(alert_id: str, acknowledged_by: str = "system") -> bool:
     return False
 
 
-def send_critical(title: str, message: str, metadata: Optional[dict[str, Any]] = None, source: str = "system") -> Alert:
+def send_critical(title: str, message: str, metadata: Optional[dict[str, Any]] = None, source: str = "system", **kwargs) -> Alert:
     """Convenience function for critical alerts."""
-    return send_alert(AlertLevel.CRITICAL, title, message, metadata, source)
+    return send_alert(AlertLevel.CRITICAL, title, message, metadata, source, **kwargs)
 
 
-def send_warning(title: str, message: str, metadata: Optional[dict[str, Any]] = None, source: str = "system") -> Alert:
+def send_warning(title: str, message: str, metadata: Optional[dict[str, Any]] = None, source: str = "system", **kwargs) -> Alert:
     """Convenience function for warning alerts."""
-    return send_alert(AlertLevel.WARNING, title, message, metadata, source)
+    return send_alert(AlertLevel.WARNING, title, message, metadata, source, **kwargs)
 
 
-def send_info(title: str, message: str, metadata: Optional[dict[str, Any]] = None, source: str = "system") -> Alert:
+def send_info(title: str, message: str, metadata: Optional[dict[str, Any]] = None, source: str = "system", **kwargs) -> Alert:
     """Convenience function for info alerts."""
-    return send_alert(AlertLevel.INFO, title, message, metadata, source)
+    return send_alert(AlertLevel.INFO, title, message, metadata, source, **kwargs)

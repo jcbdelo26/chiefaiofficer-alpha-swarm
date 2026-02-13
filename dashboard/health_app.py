@@ -1362,6 +1362,34 @@ async def prepare_hot_leads_batch(
 
 
 # =============================================================================
+# CLAY ENRICHMENT CALLBACK (legacy — unified handler is POST /webhooks/clay)
+# =============================================================================
+
+@app.post("/api/clay-callback")
+async def clay_enrichment_callback_legacy(request: Request):
+    """
+    Legacy endpoint kept for backward compatibility.
+    The unified handler at POST /webhooks/clay now routes both RB2B and pipeline
+    callbacks from the same Clay workbook. This endpoint writes the callback file
+    directly as a fallback if someone has configured this URL in Clay.
+    """
+    data = await request.json()
+    lead_id = data.get("lead_id")
+    if not lead_id:
+        raise HTTPException(status_code=400, detail="Missing lead_id in payload")
+
+    callback_dir = PROJECT_ROOT / ".hive-mind" / "clay_callbacks"
+    callback_dir.mkdir(parents=True, exist_ok=True)
+    callback_file = callback_dir / f"{lead_id}.json"
+    data["received_at"] = datetime.now(timezone.utc).isoformat()
+    with open(callback_file, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=2)
+
+    logger.info("Legacy clay-callback received for lead %s", lead_id)
+    return {"status": "received", "lead_id": lead_id}
+
+
+# =============================================================================
 # WEBHOOKS INTEGRATION
 # =============================================================================
 

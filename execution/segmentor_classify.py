@@ -242,7 +242,7 @@ class LeadSegmentor:
         dq_reason = None
         
         # === COMPANY SIZE (20 points max) ===
-        employee_count = lead.get("company", {}).get("employee_count", 0)
+        employee_count = lead.get("company", {}).get("employee_count") or 0
         if isinstance(employee_count, str):
             try:
                 employee_count = int(employee_count.replace(',', '').replace('+', ''))
@@ -268,7 +268,7 @@ class LeadSegmentor:
             score += 10
         
         # === TITLE SENIORITY (25 points max) ===
-        title = lead.get("title", "").lower()
+        title = (lead.get("title") or "").lower()
         if any(kw in title for kw in self.C_LEVEL_TITLES):
             breakdown["title_seniority"] = 25
             score += 25
@@ -285,7 +285,7 @@ class LeadSegmentor:
             breakdown["title_seniority"] = 0
         
         # === INDUSTRY FIT (20 points max) ===
-        industry = lead.get("company", {}).get("industry", "").lower()
+        industry = (lead.get("company", {}).get("industry") or "").lower()
         if any(kw in industry for kw in self.TIER1_INDUSTRIES):
             breakdown["industry_fit"] = 20
             score += 20
