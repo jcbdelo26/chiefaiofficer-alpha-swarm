@@ -110,6 +110,7 @@ Production pipeline validated with real Apollo data. All critical blockers resol
 | Existing Clay workbook assessment | DONE | Existing Website Visitor Enrichment Workbook fully compatible |
 | Unified Clay callback handler | DONE | `POST /webhooks/clay` routes both RB2B visitors AND pipeline leads |
 | Enricher env var unification | DONE | Reads `CLAY_WEBHOOK_URL` or `CLAY_WORKBOOK_WEBHOOK_URL` (same URL) |
+| Clay webhook source URL located | DONE | User found URL in Clay workbook settings, added to Railway |
 
 ### 3A-Assessment: Existing Workbook Reuse — CONFIRMED
 
@@ -132,9 +133,10 @@ Production pipeline validated with real Apollo data. All critical blockers resol
 
 | Task | Status | Notes |
 |------|--------|-------|
-| Verify Clay workbook HTTP action column sends `lead_id` in callback | NEEDS USER | Check if Clay passes through all webhook input fields in the HTTP action |
-| Set `CLAY_WORKBOOK_WEBHOOK_URL` env var on Railway (if not already set) | NEEDS USER | Same URL used by RB2B flow — check `.env` |
-| End-to-end Clay enrichment test | BLOCKED | Waiting for env var verification + HTTP action column check |
+| Set `CLAY_WORKBOOK_WEBHOOK_URL` env var on Railway | DONE | User located webhook source URL and added to Railway |
+| Verify Clay HTTP API Body includes `lead_id` + `source` in callback | NEEDS CHECK | Expand Body section in HTTP API column config to confirm passthrough |
+| Deploy Railway with new env var | NEEDS USER | Click "Apply 1 change" → Deploy (rate limit may delay) |
+| End-to-end Clay enrichment test | READY | All config in place — test after deploy |
 
 ### Deferred Tasks
 
