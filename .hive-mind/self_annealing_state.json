@@ -1,8 +1,8 @@
 {
   "epsilon": 0.10460353203000003,
   "metrics": {
-    "total_outcomes": 31,
-    "success_count": 31,
+    "total_outcomes": 180,
+    "success_count": 180,
     "failure_count": 0,
     "patterns_detected": 2,
     "refinements_generated": 115,
@@ -835,14 +835,1951 @@
         "icp_score": 45
       },
       "action": "segment"
+    },
+    {
+      "workflow_id": "segment_lead_0000",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_2"
+      },
+      "timestamp": "2026-02-12T16:57:36.237724+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_lead_0001",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_2"
+      },
+      "timestamp": "2026-02-12T16:57:36.237741+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_lead_0002",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_2"
+      },
+      "timestamp": "2026-02-12T16:57:36.237750+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_lead_0003",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_1"
+      },
+      "timestamp": "2026-02-12T16:57:36.237756+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_lead_0004",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_2"
+      },
+      "timestamp": "2026-02-12T16:57:36.237760+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_lead_0005",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_2"
+      },
+      "timestamp": "2026-02-12T16:57:36.237764+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_lead_0006",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_2"
+      },
+      "timestamp": "2026-02-12T16:57:36.237769+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_lead_0007",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_1"
+      },
+      "timestamp": "2026-02-12T16:57:36.237772+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_lead_0008",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_1"
+      },
+      "timestamp": "2026-02-12T16:57:36.237776+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_lead_0009",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_1"
+      },
+      "timestamp": "2026-02-12T16:57:36.239677+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_lead_0010",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_2"
+      },
+      "timestamp": "2026-02-12T16:57:36.239687+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_lead_0011",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_2"
+      },
+      "timestamp": "2026-02-12T16:57:36.239691+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_lead_0012",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_2"
+      },
+      "timestamp": "2026-02-12T16:57:36.239695+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_lead_0013",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_1"
+      },
+      "timestamp": "2026-02-12T16:57:36.239698+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_lead_0014",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_2"
+      },
+      "timestamp": "2026-02-12T16:57:36.239700+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_lead_0015",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_2"
+      },
+      "timestamp": "2026-02-12T16:57:36.239703+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_lead_0016",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_1"
+      },
+      "timestamp": "2026-02-12T16:57:36.239705+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_lead_0017",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_2"
+      },
+      "timestamp": "2026-02-12T16:57:36.239708+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_lead_0018",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_1"
+      },
+      "timestamp": "2026-02-12T16:57:36.239710+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_lead_0000",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_2"
+      },
+      "timestamp": "2026-02-12T17:07:47.652521+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_lead_0001",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_1"
+      },
+      "timestamp": "2026-02-12T17:07:47.652535+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_lead_0002",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_2"
+      },
+      "timestamp": "2026-02-12T17:07:47.652542+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_lead_0003",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_2"
+      },
+      "timestamp": "2026-02-12T17:07:47.652547+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_lead_0004",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_2"
+      },
+      "timestamp": "2026-02-12T17:07:47.652550+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_lead_0005",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_2"
+      },
+      "timestamp": "2026-02-12T17:07:47.652553+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_lead_0006",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_2"
+      },
+      "timestamp": "2026-02-12T17:07:47.652556+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_lead_0007",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_2"
+      },
+      "timestamp": "2026-02-12T17:07:47.652558+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_lead_0008",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_2"
+      },
+      "timestamp": "2026-02-12T17:07:47.652561+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_lead_0009",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_2"
+      },
+      "timestamp": "2026-02-12T17:07:47.652563+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_lead_0010",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_2"
+      },
+      "timestamp": "2026-02-12T17:07:47.654490+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_lead_0011",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_2"
+      },
+      "timestamp": "2026-02-12T17:07:47.654501+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_lead_0012",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_2"
+      },
+      "timestamp": "2026-02-12T17:07:47.654505+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_lead_0013",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_2"
+      },
+      "timestamp": "2026-02-12T17:07:47.654507+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_lead_0014",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_2"
+      },
+      "timestamp": "2026-02-12T17:07:47.654510+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_lead_0015",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_1"
+      },
+      "timestamp": "2026-02-12T17:07:47.654513+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_lead_0016",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_2"
+      },
+      "timestamp": "2026-02-12T17:07:47.654515+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_lead_0017",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_1"
+      },
+      "timestamp": "2026-02-12T17:07:47.654517+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_lead_0018",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_2"
+      },
+      "timestamp": "2026-02-12T17:07:47.654520+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_lead_0019",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_1"
+      },
+      "timestamp": "2026-02-12T17:07:47.654522+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_lead_0000",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_2"
+      },
+      "timestamp": "2026-02-12T18:59:37.410347+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_lead_0001",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_2"
+      },
+      "timestamp": "2026-02-12T18:59:37.410370+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_lead_0002",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_1"
+      },
+      "timestamp": "2026-02-12T18:59:37.410378+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_lead_0003",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_1"
+      },
+      "timestamp": "2026-02-12T18:59:37.410382+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_lead_0004",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_2"
+      },
+      "timestamp": "2026-02-12T18:59:37.410385+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_lead_0005",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_2"
+      },
+      "timestamp": "2026-02-12T18:59:37.410388+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_lead_0006",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_2"
+      },
+      "timestamp": "2026-02-12T18:59:37.410391+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_lead_0007",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_1"
+      },
+      "timestamp": "2026-02-12T18:59:37.410394+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_lead_0008",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_1"
+      },
+      "timestamp": "2026-02-12T18:59:37.410397+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_lead_0009",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_1"
+      },
+      "timestamp": "2026-02-12T18:59:37.410399+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_lead_0010",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_2"
+      },
+      "timestamp": "2026-02-12T18:59:37.412824+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_lead_0011",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_1"
+      },
+      "timestamp": "2026-02-12T18:59:37.412837+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_lead_0012",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_1"
+      },
+      "timestamp": "2026-02-12T18:59:37.412842+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_lead_0013",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_1"
+      },
+      "timestamp": "2026-02-12T18:59:37.412845+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_lead_0014",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_2"
+      },
+      "timestamp": "2026-02-12T18:59:37.412848+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_lead_0015",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_2"
+      },
+      "timestamp": "2026-02-12T18:59:37.412850+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_lead_0016",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_2"
+      },
+      "timestamp": "2026-02-12T18:59:37.412853+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_lead_0017",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_1"
+      },
+      "timestamp": "2026-02-12T18:59:37.412855+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_lead_0018",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_2"
+      },
+      "timestamp": "2026-02-12T18:59:37.412857+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_lead_0019",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_2"
+      },
+      "timestamp": "2026-02-12T18:59:37.412860+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_unknown",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_3"
+      },
+      "timestamp": "2026-02-12T20:38:45.698464+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_unknown",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_2"
+      },
+      "timestamp": "2026-02-12T20:38:45.698476+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_unknown",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_3"
+      },
+      "timestamp": "2026-02-12T20:38:45.698482+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_unknown",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_2"
+      },
+      "timestamp": "2026-02-12T20:38:45.698486+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_unknown",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_3"
+      },
+      "timestamp": "2026-02-12T20:38:45.698489+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_unknown",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_2"
+      },
+      "timestamp": "2026-02-12T20:38:45.698492+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_unknown",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_3"
+      },
+      "timestamp": "2026-02-12T20:38:45.698495+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_unknown",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_2"
+      },
+      "timestamp": "2026-02-12T20:38:45.698497+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_unknown",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_2"
+      },
+      "timestamp": "2026-02-12T20:38:45.698500+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_unknown",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_2"
+      },
+      "timestamp": "2026-02-12T20:38:45.698503+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_unknown",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_2"
+      },
+      "timestamp": "2026-02-13T15:15:50.325978+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_unknown",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_3"
+      },
+      "timestamp": "2026-02-13T15:15:50.325990+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_unknown",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_2"
+      },
+      "timestamp": "2026-02-13T15:15:50.325997+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_unknown",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_3"
+      },
+      "timestamp": "2026-02-13T15:15:50.326001+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_unknown",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_2"
+      },
+      "timestamp": "2026-02-13T15:15:50.326004+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_unknown",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_3"
+      },
+      "timestamp": "2026-02-13T15:15:50.326007+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_unknown",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_2"
+      },
+      "timestamp": "2026-02-13T15:15:50.326009+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_unknown",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_2"
+      },
+      "timestamp": "2026-02-13T15:15:50.326012+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_unknown",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_2"
+      },
+      "timestamp": "2026-02-13T15:15:50.326015+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_unknown",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_2"
+      },
+      "timestamp": "2026-02-13T15:15:50.326018+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_unknown",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_3"
+      },
+      "timestamp": "2026-02-13T15:15:50.328750+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_unknown",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_2"
+      },
+      "timestamp": "2026-02-13T15:15:50.328766+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_unknown",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_2"
+      },
+      "timestamp": "2026-02-13T15:15:50.328772+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_unknown",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_1"
+      },
+      "timestamp": "2026-02-13T15:15:50.328776+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_unknown",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_2"
+      },
+      "timestamp": "2026-02-13T15:15:50.328780+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_unknown",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_2"
+      },
+      "timestamp": "2026-02-13T15:15:50.328787+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_unknown",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_2"
+      },
+      "timestamp": "2026-02-13T15:15:50.328790+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_unknown",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_2"
+      },
+      "timestamp": "2026-02-13T15:15:50.328794+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_unknown",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_2"
+      },
+      "timestamp": "2026-02-13T15:15:50.328797+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_unknown",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_3"
+      },
+      "timestamp": "2026-02-13T15:15:50.328801+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_unknown",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_2"
+      },
+      "timestamp": "2026-02-13T15:18:33.401931+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_unknown",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_2"
+      },
+      "timestamp": "2026-02-13T15:18:33.401944+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_unknown",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_2"
+      },
+      "timestamp": "2026-02-13T15:18:33.401950+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_unknown",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_2"
+      },
+      "timestamp": "2026-02-13T15:18:33.401954+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_unknown",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_3"
+      },
+      "timestamp": "2026-02-13T15:18:33.401957+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_unknown",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_3"
+      },
+      "timestamp": "2026-02-13T15:18:33.401961+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_unknown",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_2"
+      },
+      "timestamp": "2026-02-13T15:18:33.401964+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_unknown",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_2"
+      },
+      "timestamp": "2026-02-13T15:18:33.401966+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_unknown",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_3"
+      },
+      "timestamp": "2026-02-13T15:18:33.401969+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_unknown",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_3"
+      },
+      "timestamp": "2026-02-13T15:18:33.401972+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_unknown",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_2"
+      },
+      "timestamp": "2026-02-13T15:18:33.404973+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_unknown",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_2"
+      },
+      "timestamp": "2026-02-13T15:18:33.404985+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_unknown",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_2"
+      },
+      "timestamp": "2026-02-13T15:18:33.404990+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_unknown",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_2"
+      },
+      "timestamp": "2026-02-13T15:18:33.404993+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_unknown",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_2"
+      },
+      "timestamp": "2026-02-13T15:18:33.404995+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_unknown",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_2"
+      },
+      "timestamp": "2026-02-13T15:18:33.404998+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_unknown",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_1"
+      },
+      "timestamp": "2026-02-13T15:18:33.405003+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_unknown",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_3"
+      },
+      "timestamp": "2026-02-13T15:18:33.405005+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_unknown",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_2"
+      },
+      "timestamp": "2026-02-13T15:18:33.405008+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_unknown",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_2"
+      },
+      "timestamp": "2026-02-13T15:18:33.405010+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_unknown",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_2"
+      },
+      "timestamp": "2026-02-13T15:21:03.665717+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_unknown",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_3"
+      },
+      "timestamp": "2026-02-13T15:21:03.665730+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_unknown",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_3"
+      },
+      "timestamp": "2026-02-13T15:21:03.665737+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_unknown",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_3"
+      },
+      "timestamp": "2026-02-13T15:21:03.665741+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_unknown",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_1"
+      },
+      "timestamp": "2026-02-13T15:21:03.665744+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_unknown",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_2"
+      },
+      "timestamp": "2026-02-13T15:21:03.665747+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_unknown",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_2"
+      },
+      "timestamp": "2026-02-13T15:21:03.665750+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_unknown",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_2"
+      },
+      "timestamp": "2026-02-13T15:21:03.665753+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_unknown",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_3"
+      },
+      "timestamp": "2026-02-13T15:21:03.665755+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_unknown",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_3"
+      },
+      "timestamp": "2026-02-13T15:21:03.665758+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_unknown",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_3"
+      },
+      "timestamp": "2026-02-13T15:21:03.668867+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_unknown",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_2"
+      },
+      "timestamp": "2026-02-13T15:21:03.668880+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_unknown",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_3"
+      },
+      "timestamp": "2026-02-13T15:21:03.668885+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_unknown",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_2"
+      },
+      "timestamp": "2026-02-13T15:21:03.668888+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_unknown",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_2"
+      },
+      "timestamp": "2026-02-13T15:21:03.668891+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_unknown",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_3"
+      },
+      "timestamp": "2026-02-13T15:21:03.668894+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_unknown",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_2"
+      },
+      "timestamp": "2026-02-13T15:21:03.668897+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_unknown",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_2"
+      },
+      "timestamp": "2026-02-13T15:21:03.668899+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_unknown",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_3"
+      },
+      "timestamp": "2026-02-13T15:21:03.668902+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_unknown",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_3"
+      },
+      "timestamp": "2026-02-13T15:21:03.668907+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_unknown",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_2"
+      },
+      "timestamp": "2026-02-13T15:36:31.898934+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_unknown",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_2"
+      },
+      "timestamp": "2026-02-13T15:36:31.898947+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_unknown",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_2"
+      },
+      "timestamp": "2026-02-13T15:36:31.898954+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_unknown",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_2"
+      },
+      "timestamp": "2026-02-13T15:36:31.898958+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_unknown",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_2"
+      },
+      "timestamp": "2026-02-13T15:36:31.898961+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_unknown",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_2"
+      },
+      "timestamp": "2026-02-13T15:36:31.898964+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_unknown",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_2"
+      },
+      "timestamp": "2026-02-13T15:36:31.898967+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_unknown",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_2"
+      },
+      "timestamp": "2026-02-13T15:36:31.898970+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_unknown",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_2"
+      },
+      "timestamp": "2026-02-13T15:36:31.898972+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_unknown",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_2"
+      },
+      "timestamp": "2026-02-13T15:36:31.898975+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_unknown",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_2"
+      },
+      "timestamp": "2026-02-13T16:19:16.444662+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_unknown",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_2"
+      },
+      "timestamp": "2026-02-13T16:19:16.444675+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_unknown",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_2"
+      },
+      "timestamp": "2026-02-13T16:19:16.444682+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_unknown",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_2"
+      },
+      "timestamp": "2026-02-13T16:19:16.444686+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_unknown",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_2"
+      },
+      "timestamp": "2026-02-13T16:19:16.444690+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_unknown",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_2"
+      },
+      "timestamp": "2026-02-13T16:19:16.444693+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_unknown",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_2"
+      },
+      "timestamp": "2026-02-13T16:19:16.444696+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_unknown",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_2"
+      },
+      "timestamp": "2026-02-13T16:19:16.444698+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_unknown",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_2"
+      },
+      "timestamp": "2026-02-13T16:19:16.444701+00:00",
+      "state": null,
+      "action": null
+    },
+    {
+      "workflow_id": "segment_unknown",
+      "workflow_type": "segment",
+      "outcome_type": "no_response",
+      "success": true,
+      "details": {
+        "segmented": true,
+        "tier": "tier_2"
+      },
+      "timestamp": "2026-02-13T16:19:16.444703+00:00",
+      "state": null,
+      "action": null
     }
   ],
   "patterns": {
     "segment_no_response": {
       "pattern_id": "segment_no_response",
       "pattern_type": "success",
-      "frequency": 10,
-      "last_seen": "2026-01-15T20:19:48.533842",
+      "frequency": 159,
+      "last_seen": "2026-02-13T16:19:16.444703+00:00",
       "context": {
         "workflow_type": "segment",
         "outcome_type": "no_response"
@@ -864,8 +2801,8 @@
   "refinements": [],
   "q_table": {
     "segment|no_response": {
-      "default": -1.3026431198000001
+      "default": -1.9999998939308725
     }
   },
-  "saved_at": "2026-01-19T15:20:46.821689"
+  "saved_at": "2026-02-13T16:19:16.444783+00:00"
 }

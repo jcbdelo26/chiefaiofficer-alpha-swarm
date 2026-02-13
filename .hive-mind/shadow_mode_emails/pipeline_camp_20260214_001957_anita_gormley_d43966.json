@@ -1,0 +1,29 @@
+{
+  "email_id": "pipeline_camp_20260214_001957_anita_gormley_d43966",
+  "status": "pending",
+  "to": "anita.gormley@gong.io",
+  "subject": "Personalized outreach",
+  "body": "",
+  "source": "pipeline",
+  "timestamp": "2026-02-13T16:19:57.677396+00:00",
+  "created_at": "2026-02-13T16:19:57.677401+00:00",
+  "recipient_data": {
+    "name": "Anita Gormley",
+    "company": "Gong",
+    "title": "Chief of Staff, CMO",
+    "linkedin_url": "http://www.linkedin.com/in/anita-gormley-1591303"
+  },
+  "context": {
+    "intent_score": 15,
+    "icp_tier": "tier_2",
+    "icp_score": 65,
+    "campaign_type": "standard_outreach",
+    "campaign_id": "camp_20260214_001957",
+    "pipeline_run_id": "run_20260214_001943_2e149e"
+  },
+  "priority": "medium",
+  "tier": "tier_2",
+  "synthetic": false,
+  "contact_id": null,
+  "template_id": null
+}

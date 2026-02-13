@@ -1,0 +1,29 @@
+{
+  "email_id": "pipeline_camp_20260214_001757_jessie_sloan_d5b863",
+  "status": "pending",
+  "to": "jessie.sloan@gong.io",
+  "subject": "Personalized outreach",
+  "body": "",
+  "source": "pipeline",
+  "timestamp": "2026-02-13T16:17:57.595655+00:00",
+  "created_at": "2026-02-13T16:17:57.595659+00:00",
+  "recipient_data": {
+    "name": "Jessie Sloan",
+    "company": "Gong",
+    "title": "Area Vice President of Sales",
+    "linkedin_url": "http://www.linkedin.com/in/jessie-sloan-440230a1"
+  },
+  "context": {
+    "intent_score": 15,
+    "icp_tier": "tier_2",
+    "icp_score": 62,
+    "campaign_type": "standard_outreach",
+    "campaign_id": "camp_20260214_001757",
+    "pipeline_run_id": "run_20260214_001738_62ac8e"
+  },
+  "priority": "medium",
+  "tier": "tier_2",
+  "synthetic": false,
+  "contact_id": null,
+  "template_id": null
+}

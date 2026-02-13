@@ -1,0 +1,20 @@
+[
+  {
+    "campaign_id": "camp_20260213_010747",
+    "name": "Competitor_Displacement Campaign - February 13",
+    "segment": "competitor_displacement",
+    "campaign_type": "competitor_displacement",
+    "lead_count": 20,
+    "sequence": [],
+    "status": "pending_review",
+    "created_at": "2026-02-13T01:07:47.783146",
+    "avg_icp_score": 74.15,
+    "avg_intent_score": 0.0,
+    "personalization_hooks": [],
+    "metadata": {
+      "skipped_count": 0,
+      "skipped_reasons": []
+    },
+    "requires_approval": true
+  }
+]

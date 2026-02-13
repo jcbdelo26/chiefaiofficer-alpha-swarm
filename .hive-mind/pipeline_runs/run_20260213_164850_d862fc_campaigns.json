@@ -1,0 +1,33 @@
+[
+  {
+    "campaign_id": "camp_20260213_164858",
+    "name": "Tier2_Standard_Sequence Campaign - February 13",
+    "segment": "tier2_standard_sequence",
+    "campaign_type": "standard_outreach",
+    "lead_count": 0,
+    "sequence": [],
+    "status": "approved",
+    "created_at": "2026-02-13T16:48:58.040855",
+    "avg_icp_score": 65.0,
+    "avg_intent_score": 0.0,
+    "personalization_hooks": [],
+    "metadata": {
+      "skipped_count": 3,
+      "skipped_reasons": [
+        {
+          "email": "shaneevans@gong.io",
+          "reason": "Missing critical fields: first_name"
+        },
+        {
+          "email": "emily.he@gong.io",
+          "reason": "Missing critical fields: first_name"
+        },
+        {
+          "email": "anita.gormley@gong.io",
+          "reason": "Missing critical fields: first_name"
+        }
+      ]
+    },
+    "requires_approval": false
+  }
+]

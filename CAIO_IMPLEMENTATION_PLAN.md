@@ -1,6 +1,6 @@
 # CAIO Alpha Swarm — Unified Implementation Plan
 
-**Last Updated**: 2026-02-13
+**Last Updated**: 2026-02-14
 **Owner**: ChiefAIOfficer Production Team
 **AI**: Claude Opus 4.6
 
@@ -10,15 +10,16 @@
 
 The CAIO Alpha Swarm is a 12-agent autonomous SDR pipeline: Lead Discovery (Apollo.io) -> Enrichment (Apollo + fallback) -> ICP Scoring -> Email Crafting -> Approval -> Send (Instantly.ai). This plan tracks all phases from foundation through production autonomy.
 
-**Current Position**: Phase 3 (Expand & Harden) — IN PROGRESS
-**Production Pipeline**: 5/6 stages PASS with real Apollo data (7.2s end-to-end)
-**Autonomy Score**: ~82/100
+**Current Position**: Phase 3 (Expand & Harden) — 95% COMPLETE
+**Production Pipeline**: 6/6 stages PASS with real Apollo data (12-68s end-to-end)
+**Autonomy Score**: ~88/100
+**Total Production Runs**: 27 (16 fully clean, last 4 consecutive 6/6 PASS)
 
 ```
 Phase 0: Foundation Lock          [##########] 100%  COMPLETE
 Phase 1: Live Pipeline Validation [##########] 100%  COMPLETE
 Phase 2: Supervised Burn-In       [##########] 100%  COMPLETE
-Phase 3: Expand & Harden          [########--]  85%  IN PROGRESS
+Phase 3: Expand & Harden          [#########-]  95%  CLOSING OUT
 Phase 4: Autonomy Graduation      [----------]   0%  PENDING
 ```
 
@@ -71,13 +72,13 @@ Production pipeline validated with real Apollo data. All critical blockers resol
 
 | Stage | Status | Detail | Duration |
 |-------|--------|--------|----------|
-| Scrape | PASS | 3 leads via Apollo People Search | 4.7s |
-| Enrich | PASS | 3/3 enriched via Apollo People Match | 2.5s |
-| Segment | PASS | ICP scoring with real data | 8ms |
-| Craft | PASS | 1 campaign created | 21ms |
+| Scrape | PASS | 5 leads via Apollo People Search | 7.3s |
+| Enrich | PASS | 5/5 enriched via Apollo People Match | 4.7s |
+| Segment | PASS | ICP scoring with real data | 9ms |
+| Craft | PASS | 1 campaign created | 56ms |
 | Approve | PASS | Auto-approve | 0ms |
-| Send | FAIL (expected) | Instantly not configured | — |
-| **Total** | **5/6 PASS** | | **7.2s** |
+| Send | PASS | 5 emails queued to shadow_mode_emails | 2ms |
+| **Total** | **6/6 PASS** | | **12.1s** |
 
 ### 2C: Bugfixes Applied
 
@@ -86,10 +87,15 @@ Production pipeline validated with real Apollo data. All critical blockers resol
 | Apollo `reveal_phone_number` requires `webhook_url` (400) | Removed `reveal_phone_number: True` from payload | `enricher_clay_waterfall.py` |
 | Segmentor `NoneType has no attribute 'lower'` | Changed to `(lead.get("title") or "").lower()` pattern | `segmentor_classify.py` (3 locations) |
 | Segmentor `employee_count` None crash | Changed to `lead.get("company", {}).get("employee_count") or 0` | `segmentor_classify.py` |
+| Segmentor email only checking `work_email` | Added fallback chain: `work_email` OR `verified_email` OR top-level `email` | `segmentor_classify.py` |
+| Send stage broken Instantly import | Rewrote to queue shadow emails for HoS dashboard approval | `run_pipeline.py` |
+| CampaignCrafter requires `first_name` but pipeline has `name` | Added name normalization in `_stage_craft()`: splits `name` → `first_name`/`last_name` | `run_pipeline.py` |
+| Circuit breaker state transitions silent | Wired OPEN/recovery alerts to Slack via `core/alerts.py` | `circuit_breaker.py` |
+| Pipeline stage failures not alerted | Added `send_warning` on stage failure, `send_critical` on exception | `run_pipeline.py` |
 
 ---
 
-## Phase 3: Expand & Harden — IN PROGRESS (85%)
+## Phase 3: Expand & Harden — 95% COMPLETE
 
 ### Completed Tasks
 
@@ -101,136 +107,89 @@ Production pipeline validated with real Apollo data. All critical blockers resol
 | Proxycurl removal from scraper | DONE | `_fetch_via_proxycurl` method deleted |
 | Proxycurl removal from enricher | DONE | All Proxycurl code replaced with BetterContact |
 | BetterContact fallback code integration | DONE | Async polling in `enricher_clay_waterfall.py` |
-| Clay workbook research | DONE | Requires $314/mo Explorer (we have it!), async webhooks |
+| Clay workbook research | DONE | Explorer plan active, async webhooks |
 | Multi-channel cadence research | DONE | [MULTI_CHANNEL_CADENCE_RESEARCH_2026.md](docs/research/MULTI_CHANNEL_CADENCE_RESEARCH_2026.md) |
-| Clay Explorer webhook enrichment CODE | DONE | `_enrich_via_clay` + `_parse_clay_response` + callback endpoint |
-| Clay callback endpoint | DONE | `POST /api/clay-callback` in `dashboard/health_app.py` (legacy) |
-| Enricher waterfall: Apollo -> Clay -> BC | DONE | 3-tier fallback chain with file-based callback |
+| Clay pipeline fallback — REMOVED | DONE | `lead_id` not accessible in Clay HTTP callback → 3-min guaranteed timeouts. Clay kept for RB2B visitor enrichment ONLY |
+| `/webhooks/clay` handler simplified | DONE | RB2B visitor path only (pipeline lead path removed) |
+| Pipeline waterfall: Apollo -> BC -> mock | DONE | No Clay in pipeline enrichment |
 | Railway deployment (all fixes) | DONE | Build successful |
-| Existing Clay workbook assessment | DONE | Existing Website Visitor Enrichment Workbook fully compatible |
-| Unified Clay callback handler | DONE | `POST /webhooks/clay` routes both RB2B visitors AND pipeline leads |
-| Enricher env var unification | DONE | Reads `CLAY_WEBHOOK_URL` or `CLAY_WORKBOOK_WEBHOOK_URL` (same URL) |
-| Clay webhook source URL located | DONE | User found URL in Clay workbook settings, added to Railway |
+| Send stage rewrite | DONE | Shadow mode email queue for HoS dashboard approval (Instantly import removed) |
+| Pipeline alerts → Slack | DONE | Stage failures → WARNING, exceptions → CRITICAL |
+| Circuit breaker alerts → Slack | DONE | OPEN/recovery transitions alerted |
+| Segmentor email resolution fix | DONE | Fallback chain: work_email → verified_email → top-level email |
+| first_name normalization | DONE | Pipeline splits `name` → `first_name`/`last_name` before craft |
+| 3 consecutive clean production runs | DONE | 6/6 PASS x3, 0 errors each |
+| 20-lead scale test | DONE | 19 enriched, 2 campaigns, 68.4s, 0 errors |
+| Dashboard API E2E test | DONE | approve/reject/pending flows verified with real data |
+| Google Calendar setup guide | DONE | `docs/GOOGLE_CALENDAR_SETUP_GUIDE.md` + `scripts/setup_google_calendar.py` |
 
-### 3A-Assessment: Existing Workbook Reuse — CONFIRMED
+### 3A-Assessment: Clay in Pipeline — REMOVED (RB2B Only)
 
-**Finding**: The existing **Website Visitor Enrichment Workbook** (`share_0t9c5h2Dt6hzzFrz4Gv`) already has all enrichment columns the pipeline needs: email waterfall, email validation, company enrichment, and HTTP API callback. **No new workbook required.**
+**Finding**: Clay HTTP API callback does NOT include the `lead_id` field that the pipeline enricher needs to correlate responses. This causes a guaranteed 3-minute timeout on every lead routed through Clay, making it unusable as a pipeline enrichment fallback.
 
-**How it works now (unified)**:
-- Both RB2B visitors and pipeline leads POST to the **same Clay webhook URL** (`CLAY_WORKBOOK_WEBHOOK_URL`)
-- Clay enriches both the same way (waterfall columns don't care about source)
-- Clay HTTP API action column POSTs enriched data to `POST /webhooks/clay`
-- The unified callback handler routes by checking `source` and `lead_id`:
-  - `source=caio_pipeline` + `lead_id` present → writes `.hive-mind/clay_callbacks/{lead_id}.json` for enricher
-  - `visitor_id` present / no pipeline source → existing RB2B/GHL sync + Website Intent Monitor
+**Decision**: Clay REMOVED from pipeline enrichment waterfall. Clay Explorer ($499/mo) remains active and valuable for **RB2B visitor enrichment only** (visitor_id works in callbacks).
 
-**Key files modified**:
-- `webhooks/rb2b_webhook.py` — unified `POST /webhooks/clay` handler
-- `execution/enricher_clay_waterfall.py` — reads `CLAY_WORKBOOK_WEBHOOK_URL` as fallback
-- `dashboard/health_app.py` — legacy `/api/clay-callback` kept for backward compatibility
+**Pipeline enrichment waterfall (current)**:
+1. Apollo.io People Match (primary, synchronous, 1 credit/reveal)
+2. BetterContact (fallback, async polling — code ready, subscription pending)
+3. Mock/skip (graceful degradation)
+
+**Clay usage**:
+- RB2B visitors → Clay workbook webhook → enrichment columns → HTTP callback to `/webhooks/clay`
+- `/webhooks/clay` handler: RB2B visitor path only (pipeline lead path removed)
 
 ### In Progress Tasks
 
 | Task | Status | Notes |
 |------|--------|-------|
-| Set `CLAY_WORKBOOK_WEBHOOK_URL` env var on Railway | DONE | User located webhook source URL and added to Railway |
-| Verify Clay HTTP API Body includes `lead_id` + `source` in callback | NEEDS CHECK | Expand Body section in HTTP API column config to confirm passthrough |
-| Deploy Railway with new env var | NEEDS USER | Click "Apply 1 change" → Deploy (rate limit may delay) |
-| End-to-end Clay enrichment test | READY | All config in place — test after deploy |
+| Deploy latest fixes to Railway | NEEDS PUSH | Send stage rewrite, alerts, email fixes — all local |
+| Google Calendar OAuth flow | NEEDS USER | Run `python scripts/setup_google_calendar.py` (guide in `docs/GOOGLE_CALENDAR_SETUP_GUIDE.md`) |
+| Hit 10+ clean production runs | 4/10 | Last 4 consecutive 6/6 PASS — need 6 more |
 
 ### Deferred Tasks
 
 | Task | Status | Reason |
 |------|--------|--------|
-| BetterContact Starter subscription | DEFERRED | Clay Explorer already paid ($499/mo, 14K credits), use Clay first |
-| FullEnrich integration | DEFERRED | Clay Explorer covers enrichment fallback needs |
-| ZeroBounce email verification layer | DEFERRED | Clay has built-in ZeroBounce verification |
+| BetterContact Starter subscription | DEFERRED | Code ready, activate when Apollo miss rate justifies $15/mo |
+| FullEnrich integration | DEFERRED | BetterContact preferred as first fallback |
+| ZeroBounce email verification layer | DEFERRED | Add when real sends begin (pre-send verification) |
 | HeyReach LinkedIn automation | DEFERRED | Multi-channel Phase 4+ (need warm LinkedIn accounts first) |
 | Instantly.ai Send stage configuration | DEFERRED | Requires domain warm-up plan execution |
 | Supabase Lead 360 view | DEFERRED | Need unified lead schema first |
 | Job change detection (Bombora/G2) | DEFERRED | Phase 4+ |
+| Clay pipeline enrichment fallback | CANCELLED | `lead_id` not accessible in HTTP callback → 3-min timeouts |
 
 ---
 
-### 3A: Clay Explorer Webhook Enrichment — ARCHITECTURE (UNIFIED)
+### 3A: Enrichment Architecture — CURRENT
 
-**Why Clay over BetterContact**: You're already paying $499/mo for Clay Explorer with 14,000 credits/month (25,812.7 available). Using Clay's built-in waterfall enrichment (10+ providers including Hunter, Apollo, Prospeo, DropContact, Clearbit) eliminates the need for a separate BetterContact subscription.
-
-**Key Insight**: The existing Website Visitor Enrichment Workbook ALREADY provides the enrichment columns needed. No new workbook or additional webhook required. Both RB2B visitors and pipeline leads share the same Clay workbook.
-
-**Credit Economics**:
-- Email waterfall (avg): 4 credits/lead
-- Email validation (ZeroBounce): 1 credit/lead
-- Company enrichment (Clearbit): 8 credits/lead
-- **Email only**: ~2,800-3,500 leads/month with 14K credits
-- **Email + company**: ~1,000-1,400 leads/month
-
-**Unified Architecture**:
-
+**Pipeline Enrichment Waterfall (synchronous)**:
 ```
-  SOURCE A: RB2B Visitor                    SOURCE B: Pipeline Lead (Apollo miss)
-       |                                         |
-       | visitor_id, email, company_domain        | lead_id, linkedin_url, source="caio_pipeline"
-       |                                         |
-       +------------------+----------------------+
-                          |
-                          v
-               Clay Workbook Webhook
-               (CLAY_WORKBOOK_WEBHOOK_URL)
-                          |
-            [Auto-run enrichment columns]
-            Col 1: Find Work Email (waterfall: Hunter->Apollo->Prospeo->...)
-            Col 2: Validate Email (ZeroBounce)
-            Col 3: Enrich Company (Clearbit)
-            Col 4: HTTP API POST (callback to /webhooks/clay)
-                          |
-                          v
-               POST /webhooks/clay (unified handler)
-                          |
-              +-----------+-----------+
-              |                       |
-       has lead_id +            has visitor_id
-       source=caio_pipeline     (or no lead_id)
-              |                       |
-              v                       v
-     Write callback file       ClayDirectEnrichment
-     .hive-mind/clay_callbacks/  -> GHL sync
-     {lead_id}.json               -> Website Intent Monitor
-              |
-              v
-     Enricher polls file
-     -> Pipeline continues (Segment -> Craft -> Approve -> Send)
+Apollo.io People Match (primary, 1 credit/reveal)
+  -> miss -> BetterContact async poll (fallback, code ready)
+    -> miss -> graceful skip (lead continues without enrichment)
 ```
 
-**Latency**: 1-3 minutes (async — requires callback endpoint + Redis queue)
+**Clay Explorer** ($499/mo, 14K credits/mo): Used for **RB2B visitor enrichment only**.
+```
+RB2B Visitor webhook
+  -> Clay Workbook (waterfall: Hunter->Apollo->Prospeo->DropContact)
+  -> HTTP API callback -> POST /webhooks/clay
+  -> GHL sync + Website Intent Monitor
+```
 
-**Implementation Steps**:
+**Why Clay was removed from pipeline**: Clay HTTP API callback does not pass through the `lead_id` field, making it impossible to correlate enriched data back to the pipeline lead. This caused a guaranteed 3-minute timeout on every lead. Apollo synchronous enrichment is faster (2-5s) and more reliable.
 
-1. **Create Clay Table** (`Pipeline Lead Enrichment`):
-   - Webhook source with auth token
-   - Email waterfall column (Hunter -> Apollo -> Prospeo -> DropContact)
-   - Email validation column (ZeroBounce, 1 credit)
-   - Company enrichment column (Clearbit, 8 credits)
-   - HTTP API action column (POST to our callback)
+### 3C: Production Stability Results
 
-2. **Add Callback Endpoint** (`dashboard/health_app.py`):
-   ```
-   POST /api/clay-callback
-   - Receives enriched lead data from Clay
-   - Stores in Redis with lead_id as key
-   - Triggers pipeline continuation via Inngest
-   ```
+| Run | Mode | Leads | Stages | Duration | Errors |
+|-----|------|-------|--------|----------|--------|
+| `232408_bd1c74` | production | 5 | 6/6 PASS | 12.1s | 0 |
+| `233340_89c546` | production | 5 | 6/6 PASS | 15.0s | 0 |
+| `233407_aaa29c` | production | 5 | 6/6 PASS | 19.8s | 0 |
+| `233523_3b4913` | production | 19 | 6/6 PASS | 68.4s | 0 |
 
-3. **Modify Enricher** (`enricher_clay_waterfall.py`):
-   ```
-   Apollo (sync, primary)
-     -> miss -> Clay webhook (async, fallback)
-       -> POST to Clay, store lead_id in Redis as "pending"
-       -> Clay callback triggers pipeline continuation
-     -> miss -> BetterContact (sync, tertiary — code ready, no subscription yet)
-   ```
-
-4. **50K Webhook Limit**: At ~1,000-2,000 leads/month, one webhook lasts 25-50 months.
+**Dashboard API E2E**: Approve/reject/pending flows verified with real pipeline data.
 
 ---
 
@@ -303,12 +262,12 @@ Day 21: Email #5 (graceful close)
 | Service | Status | Notes |
 |---------|--------|-------|
 | **Apollo.io** | WORKING | People Search (free) + Match (1 credit/reveal) |
-| **Clay Explorer** | ACTIVE | $499/mo, 14K credits/mo, 25.8K available. Existing workbook reused for pipeline enrichment. |
+| **Clay Explorer** | ACTIVE | $499/mo, 14K credits/mo. RB2B visitor enrichment ONLY (removed from pipeline). |
 | **BetterContact** | CODE READY | Async API integrated in enricher, no subscription yet (Clay preferred) |
 | **Slack Alerting** | WORKING | Webhook configured, WARNING + CRITICAL alerts |
 | **Redis (Upstash)** | WORKING | 62ms from Railway |
 | **Inngest** | WORKING | 4 functions mounted |
-| **Instantly.ai** | CONFIGURED | Send stage untested (expected FAIL) |
+| **Instantly.ai** | DEFERRED | Send stage rewired to shadow mode queue |
 | **Railway** | DEPLOYED | Auto-deploy on push |
 | **Proxycurl** | REMOVED | Shutting down Jul 2026 (sued by LinkedIn) |
 | **Clay API v1** | DEPRECATED | Returns 404, replaced by webhook pattern |
@@ -321,7 +280,7 @@ Day 21: Email #5 (graceful close)
 | Purpose | File |
 |---------|------|
 | Pipeline runner | `execution/run_pipeline.py` |
-| Enricher (Apollo + BetterContact + Clay planned) | `execution/enricher_clay_waterfall.py` |
+| Enricher (Apollo + BetterContact fallback) | `execution/enricher_clay_waterfall.py` |
 | Lead discovery (Apollo) | `execution/hunter_scrape_followers.py` |
 | ICP scoring | `execution/segmentor_classify.py` |
 | Dashboard + API | `dashboard/health_app.py` |
@@ -329,6 +288,8 @@ Day 21: Email #5 (graceful close)
 | Production config | `config/production.json` |
 | Enrichment research | `docs/research/ENRICHMENT_PROVIDER_RESEARCH_2026.md` |
 | Multi-channel research | `docs/research/MULTI_CHANNEL_CADENCE_RESEARCH_2026.md` |
+| Google Calendar setup guide | `docs/GOOGLE_CALENDAR_SETUP_GUIDE.md` |
+| Google Calendar setup script | `scripts/setup_google_calendar.py` |
 | This plan | `CAIO_IMPLEMENTATION_PLAN.md` |
 
 ---
@@ -377,9 +338,13 @@ Day 21: Email #5 (graceful close)
 | 2026-02-13 | Clay webhook pattern for enrichment fallback | Already on Explorer plan, 25.8K credits available, 10+ waterfall providers |
 | 2026-02-13 | Reuse existing Clay workbook (not new table) | Website Visitor Enrichment Workbook already has all columns needed. Same webhook serves both RB2B and pipeline. Saves 50K-row webhook slot. |
 | 2026-02-13 | Unified `/webhooks/clay` callback handler | Single endpoint routes by `source`/`lead_id` for pipeline vs `visitor_id` for RB2B. Eliminates duplicate endpoints. |
+| 2026-02-14 | Remove Clay from pipeline enrichment | `lead_id` not passed through Clay HTTP callback → 3-min guaranteed timeouts. Apollo sync is faster and reliable. |
+| 2026-02-14 | Rewrite Send stage to shadow queue | Replaced broken Instantly import with shadow email queue in `.hive-mind/shadow_mode_emails/` for HoS dashboard review |
+| 2026-02-14 | Wire pipeline + circuit breaker alerts to Slack | Stage failures → WARNING, exceptions/OPEN transitions → CRITICAL |
+| 2026-02-14 | Google Calendar setup guide created | Non-technical guide for HoS + OAuth setup script (`scripts/setup_google_calendar.py`) |
 
 ---
 
-*Plan Version: 2.1*
+*Plan Version: 3.0*
 *Created: 2026-02-13*
 *Supersedes: IMPLEMENTATION_ROADMAP.md (v1.0, 2026-01-17)*

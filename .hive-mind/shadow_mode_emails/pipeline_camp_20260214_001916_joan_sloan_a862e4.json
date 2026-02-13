@@ -1,0 +1,29 @@
+{
+  "email_id": "pipeline_camp_20260214_001916_joan_sloan_a862e4",
+  "status": "pending",
+  "to": "joan.sloan@gong.io",
+  "subject": "Personalized outreach",
+  "body": "",
+  "source": "pipeline",
+  "timestamp": "2026-02-13T16:19:16.525438+00:00",
+  "created_at": "2026-02-13T16:19:16.525442+00:00",
+  "recipient_data": {
+    "name": "Joan Sloan",
+    "company": "Gong",
+    "title": "Director of Sales",
+    "linkedin_url": "http://www.linkedin.com/in/joan-leonard-s-b7b642240"
+  },
+  "context": {
+    "intent_score": 15,
+    "icp_tier": "tier_2",
+    "icp_score": 65,
+    "campaign_type": "standard_outreach",
+    "campaign_id": "camp_20260214_001916",
+    "pipeline_run_id": "run_20260214_001834_d638e9"
+  },
+  "priority": "medium",
+  "tier": "tier_2",
+  "synthetic": false,
+  "contact_id": null,
+  "template_id": null
+}

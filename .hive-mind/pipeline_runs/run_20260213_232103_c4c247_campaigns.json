@@ -1,0 +1,38 @@
+[
+  {
+    "campaign_id": "camp_tier2_standard_sequence_91552324",
+    "campaign_type": "tier2_standard_sequence",
+    "lead_count": 9,
+    "status": "approved_sandbox",
+    "created_at": "2026-02-13T15:21:03.671950",
+    "subject_line": "[Tier2 Standard Sequence] Personalized outreach",
+    "sequence_steps": 3,
+    "requires_approval": false,
+    "shadow_queued": true,
+    "shadow_email_count": 9
+  },
+  {
+    "campaign_id": "camp_nurture_sequence_3c9d9ec5",
+    "campaign_type": "nurture_sequence",
+    "lead_count": 10,
+    "status": "approved_sandbox",
+    "created_at": "2026-02-13T15:21:03.671960",
+    "subject_line": "[Nurture Sequence] Personalized outreach",
+    "sequence_steps": 3,
+    "requires_approval": false,
+    "shadow_queued": true,
+    "shadow_email_count": 10
+  },
+  {
+    "campaign_id": "camp_tier1_priority_outreach_8638cd54",
+    "campaign_type": "tier1_priority_outreach",
+    "lead_count": 1,
+    "status": "pending_review",
+    "created_at": "2026-02-13T15:21:03.671964",
+    "subject_line": "[Tier1 Priority Outreach] Personalized outreach",
+    "sequence_steps": 3,
+    "requires_approval": true,
+    "shadow_queued": true,
+    "shadow_email_count": 1
+  }
+]

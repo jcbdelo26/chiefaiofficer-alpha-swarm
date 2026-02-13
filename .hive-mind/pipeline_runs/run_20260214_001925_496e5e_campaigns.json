@@ -1,0 +1,22 @@
+[
+  {
+    "campaign_id": "camp_20260214_001938",
+    "name": "Tier2_Standard_Sequence Campaign - February 14",
+    "segment": "tier2_standard_sequence",
+    "campaign_type": "standard_outreach",
+    "lead_count": 5,
+    "sequence": [],
+    "status": "approved",
+    "created_at": "2026-02-14T00:19:38.603180",
+    "avg_icp_score": 63.8,
+    "avg_intent_score": 0.0,
+    "personalization_hooks": [],
+    "metadata": {
+      "skipped_count": 0,
+      "skipped_reasons": []
+    },
+    "requires_approval": false,
+    "shadow_queued": true,
+    "shadow_email_count": 5
+  }
+]

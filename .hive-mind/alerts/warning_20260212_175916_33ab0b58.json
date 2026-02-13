@@ -1,0 +1,14 @@
+{
+  "alert_id": "33ab0b58-618f-4761-a6a2-6aff19888ba3",
+  "level": "warning",
+  "title": "Enrichment Failed",
+  "message": "Lead enrichment failed after 4 attempts",
+  "metadata": {
+    "error": "Clay API error: 404"
+  },
+  "created_at": "2026-02-12T17:59:16.884400+00:00",
+  "source": "system",
+  "acknowledged": false,
+  "acknowledged_at": null,
+  "acknowledged_by": null
+}

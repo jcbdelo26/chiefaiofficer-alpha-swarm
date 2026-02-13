@@ -602,7 +602,9 @@ class LeadSegmentor:
             score_breakdown=breakdown,
             disqualification_reason=dq_reason,
             needs_review=icp_score >= 70 and icp_score <= 85,  # Review borderline Tier 1
-            email=lead.get("contact", {}).get("work_email"),
+            email=(lead.get("contact", {}).get("work_email")
+                  or lead.get("contact", {}).get("verified_email")
+                  or lead.get("email")),
             company_size=lead.get("company", {}).get("employee_count", 0),
             industry=lead.get("company", {}).get("industry", ""),
             recommended_campaign=campaign,

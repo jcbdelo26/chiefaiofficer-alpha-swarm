@@ -1,0 +1,57 @@
+[
+  {
+    "campaign_id": "camp_20260213_145909",
+    "name": "Nurture_Sequence Campaign - February 13",
+    "segment": "nurture_sequence",
+    "campaign_type": "standard_outreach",
+    "lead_count": 0,
+    "sequence": [],
+    "status": "approved",
+    "created_at": "2026-02-13T14:59:09.493148",
+    "avg_icp_score": 50.55555555555556,
+    "avg_intent_score": 0.0,
+    "personalization_hooks": [],
+    "metadata": {
+      "skipped_count": 9,
+      "skipped_reasons": [
+        {
+          "email": "nmiller@dealflowsystems.com",
+          "reason": "Missing critical fields: first_name"
+        },
+        {
+          "email": "jrodriguez@leadgenmasters.com",
+          "reason": "Missing critical fields: first_name"
+        },
+        {
+          "email": "jtaylor@closerai.com",
+          "reason": "Missing critical fields: first_name"
+        },
+        {
+          "email": "ajones@cloudscalesolutions.com",
+          "reason": "Missing critical fields: first_name"
+        },
+        {
+          "email": "cmartin@growthpath.com",
+          "reason": "Missing critical fields: first_name"
+        },
+        {
+          "email": "awilson@techforwardinc.com",
+          "reason": "Missing critical fields: first_name"
+        },
+        {
+          "email": "amoore@datadrivencorp.com",
+          "reason": "Missing critical fields: first_name"
+        },
+        {
+          "email": "sjones@datadrivencorp.com",
+          "reason": "Missing critical fields: first_name"
+        },
+        {
+          "email": "jthompson@dealflowsystems.com",
+          "reason": "Missing critical fields: first_name"
+        }
+      ]
+    },
+    "requires_approval": false
+  }
+]

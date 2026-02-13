@@ -1,0 +1,17 @@
+{
+  "alert_id": "4667f3cd-011b-40b5-bc8f-bc85a9f394a6",
+  "level": "warning",
+  "title": "Pipeline stage failed: Segmenting",
+  "message": "Stage 'Segmenting' failed in run run_20260213_232145_89a5b6 (production). Errors: ",
+  "metadata": {
+    "run_id": "run_20260213_232145_89a5b6",
+    "stage": "Segmenting",
+    "mode": "production",
+    "error_count": 0
+  },
+  "created_at": "2026-02-13T15:21:58.964399+00:00",
+  "source": "pipeline",
+  "acknowledged": false,
+  "acknowledged_at": null,
+  "acknowledged_by": null
+}

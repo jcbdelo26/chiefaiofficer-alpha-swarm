@@ -12,6 +12,12 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Dict, Optional, Callable, Any
 
+try:
+    from core.alerts import send_critical, send_info
+    _ALERTS_AVAILABLE = True
+except ImportError:
+    _ALERTS_AVAILABLE = False
+
 
 class CircuitState(Enum):
     """Circuit breaker states."""
@@ -170,6 +176,13 @@ class CircuitBreakerRegistry:
                 breaker.failure_count = 0
                 breaker.half_open_call_count = 0
                 print(f"[CircuitBreaker] {breaker.name}: HALF_OPEN -> CLOSED (recovered)")
+                if _ALERTS_AVAILABLE:
+                    send_info(
+                        f"Circuit breaker recovered: {breaker.name}",
+                        f"Service '{breaker.name}' has recovered after "
+                        f"{breaker.half_open_max_calls} successful calls.",
+                        source="circuit_breaker",
+                    )
         elif breaker.state == CircuitState.CLOSED:
             breaker.failure_count = 0
         
@@ -187,11 +200,32 @@ class CircuitBreakerRegistry:
         if breaker.state == CircuitState.HALF_OPEN:
             breaker.state = CircuitState.OPEN
             print(f"[CircuitBreaker] {breaker.name}: HALF_OPEN -> OPEN (failure during recovery)")
+            if _ALERTS_AVAILABLE:
+                send_critical(
+                    f"Circuit breaker re-opened: {breaker.name}",
+                    f"Service '{breaker.name}' failed during recovery "
+                    f"(HALF_OPEN -> OPEN). Retry in "
+                    f"{breaker.recovery_timeout_seconds}s.",
+                    metadata={"service": breaker.name,
+                              "failure_count": breaker.failure_count},
+                    source="circuit_breaker",
+                )
         elif breaker.state == CircuitState.CLOSED:
             if breaker.failure_count >= breaker.failure_threshold:
                 breaker.state = CircuitState.OPEN
                 print(f"[CircuitBreaker] {breaker.name}: CLOSED -> OPEN "
                       f"(failures: {breaker.failure_count}/{breaker.failure_threshold})")
+                if _ALERTS_AVAILABLE:
+                    send_critical(
+                        f"Circuit breaker OPEN: {breaker.name}",
+                        f"Service '{breaker.name}' exceeded failure threshold "
+                        f"({breaker.failure_count}/{breaker.failure_threshold}). "
+                        f"Blocked for {breaker.recovery_timeout_seconds}s.",
+                        metadata={"service": breaker.name,
+                                  "failure_count": breaker.failure_count,
+                                  "threshold": breaker.failure_threshold},
+                        source="circuit_breaker",
+                    )
         
         if error:
             print(f"[CircuitBreaker] {breaker.name} failure: {type(error).__name__}: {error}")

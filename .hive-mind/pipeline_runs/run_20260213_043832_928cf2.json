@@ -1,0 +1,86 @@
+{
+  "run_id": "run_20260213_043832_928cf2",
+  "mode": "sandbox",
+  "started_at": "2026-02-12T20:38:32.258315",
+  "completed_at": "2026-02-12T20:38:32.266897",
+  "total_leads_processed": 5,
+  "total_campaigns_created": 2,
+  "total_errors": 0,
+  "stages": [
+    {
+      "stage": "scrape",
+      "success": true,
+      "duration_ms": 1.5103816986083984,
+      "input_count": 0,
+      "output_count": 5,
+      "errors": [],
+      "metrics": {
+        "source": "test_data_safe_mode"
+      }
+    },
+    {
+      "stage": "enrich",
+      "success": true,
+      "duration_ms": 0.062465667724609375,
+      "input_count": 5,
+      "output_count": 5,
+      "errors": [],
+      "metrics": {
+        "enriched_count": 5,
+        "failed_count": 0
+      }
+    },
+    {
+      "stage": "segment",
+      "success": true,
+      "duration_ms": 5.168914794921875,
+      "input_count": 5,
+      "output_count": 5,
+      "errors": [],
+      "metrics": {
+        "tier_distribution": {
+          "tier_3": 3,
+          "tier_2": 2
+        }
+      }
+    },
+    {
+      "stage": "craft",
+      "success": true,
+      "duration_ms": 0.03910064697265625,
+      "input_count": 5,
+      "output_count": 2,
+      "errors": [],
+      "metrics": {
+        "campaigns_by_type": {
+          "nurture_sequence": 3,
+          "tier2_standard_sequence": 2
+        }
+      }
+    },
+    {
+      "stage": "approve",
+      "success": true,
+      "duration_ms": 0.004291534423828125,
+      "input_count": 2,
+      "output_count": 2,
+      "errors": [],
+      "metrics": {
+        "pending_review": 0,
+        "auto_approved": 2
+      }
+    },
+    {
+      "stage": "send",
+      "success": true,
+      "duration_ms": 0.0054836273193359375,
+      "input_count": 2,
+      "output_count": 5,
+      "errors": [],
+      "metrics": {
+        "leads_queued": 5,
+        "campaigns_pushed": 2
+      }
+    }
+  ]
+}

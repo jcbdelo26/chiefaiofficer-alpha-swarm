@@ -1,0 +1,14 @@
+{
+  "alert_id": "45bc5606-6434-4db6-8a53-240a674589dd",
+  "level": "critical",
+  "title": "Critical Test",
+  "message": "Critical test alert.",
+  "metadata": {
+    "component": "enricher"
+  },
+  "created_at": "2026-02-13T06:53:08.705074+00:00",
+  "source": "enricher",
+  "acknowledged": false,
+  "acknowledged_at": null,
+  "acknowledged_by": null
+}

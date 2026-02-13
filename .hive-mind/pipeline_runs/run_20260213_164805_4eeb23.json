@@ -1,0 +1,45 @@
+{
+  "run_id": "run_20260213_164805_4eeb23",
+  "mode": "production",
+  "started_at": "2026-02-13T08:48:05.642682",
+  "completed_at": "2026-02-13T08:48:15.759245",
+  "total_leads_processed": 0,
+  "total_campaigns_created": 0,
+  "total_errors": 0,
+  "stages": [
+    {
+      "stage": "scrape",
+      "success": true,
+      "duration_ms": 5476.105213165283,
+      "input_count": 0,
+      "output_count": 3,
+      "errors": [],
+      "metrics": {
+        "source": "linkedin_live:gong"
+      }
+    },
+    {
+      "stage": "enrich",
+      "success": true,
+      "duration_ms": 4630.539655685425,
+      "input_count": 3,
+      "output_count": 3,
+      "errors": [],
+      "metrics": {
+        "enriched_count": 3,
+        "failed_count": 0
+      }
+    },
+    {
+      "stage": "segment",
+      "success": false,
+      "duration_ms": 7.899999618530273,
+      "input_count": 3,
+      "output_count": 0,
+      "errors": [],
+      "metrics": {
+        "tier_distribution": {}
+      }
+    }
+  ]
+}

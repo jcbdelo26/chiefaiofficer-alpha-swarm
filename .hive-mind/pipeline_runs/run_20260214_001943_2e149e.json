@@ -1,0 +1,84 @@
+{
+  "run_id": "run_20260214_001943_2e149e",
+  "mode": "production",
+  "started_at": "2026-02-13T16:19:43.874857",
+  "completed_at": "2026-02-13T16:19:57.679113",
+  "total_leads_processed": 5,
+  "total_campaigns_created": 1,
+  "total_errors": 0,
+  "stages": [
+    {
+      "stage": "scrape",
+      "success": true,
+      "duration_ms": 9316.401243209839,
+      "input_count": 0,
+      "output_count": 5,
+      "errors": [],
+      "metrics": {
+        "source": "linkedin_live:gong"
+      }
+    },
+    {
+      "stage": "enrich",
+      "success": true,
+      "duration_ms": 4424.0593910217285,
+      "input_count": 5,
+      "output_count": 5,
+      "errors": [],
+      "metrics": {
+        "enriched_count": 5,
+        "failed_count": 0
+      }
+    },
+    {
+      "stage": "segment",
+      "success": true,
+      "duration_ms": 8.493661880493164,
+      "input_count": 5,
+      "output_count": 5,
+      "errors": [],
+      "metrics": {
+        "tier_distribution": {
+          "tier_2": 5
+        }
+      }
+    },
+    {
+      "stage": "craft",
+      "success": true,
+      "duration_ms": 51.54919624328613,
+      "input_count": 5,
+      "output_count": 1,
+      "errors": [],
+      "metrics": {
+        "campaigns_by_type": {
+          "standard_outreach": 5
+        }
+      }
+    },
+    {
+      "stage": "approve",
+      "success": true,
+      "duration_ms": 0.0045299530029296875,
+      "input_count": 1,
+      "output_count": 1,
+      "errors": [],
+      "metrics": {
+        "pending_review": 0,
+        "auto_approved": 1
+      }
+    },
+    {
+      "stage": "send",
+      "success": true,
+      "duration_ms": 2.2034645080566406,
+      "input_count": 1,
+      "output_count": 5,
+      "errors": [],
+      "metrics": {
+        "emails_queued": 5,
+        "campaigns_processed": 1
+      }
+    }
+  ]
+}

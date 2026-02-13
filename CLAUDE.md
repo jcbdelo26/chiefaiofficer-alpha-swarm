@@ -912,3 +912,188 @@ Dani Apgar
 ```
 
 > ⚠️ **All blog-triggered emails require GATEKEEPER approval before sending.**
+
+---
+
+## 🤖 Agent Teams Configuration (Parallel Collaborative Sessions)
+
+Agent Teams are multiple Claude Code instances that communicate peer-to-peer, share task lists, and self-coordinate. Use them for **interdependent** work that benefits from live collaboration.
+
+> ⚠️ **Agent Teams consume 5-15x more tokens than single sessions. Only use when peer collaboration is genuinely needed.**
+
+### Enable Agent Teams
+
+Add to `~/.claude/settings.json`:
+```json
+{
+  "env": {
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
+  }
+}
+```
+
+### Team Definitions
+
+#### Code Review Team (4 Teammates)
+**Trigger**: Before deployments, after major refactoring, or periodic audits.
+
+```
+Form an agent team of 4 code reviewers:
+
+1. "Security Reviewer": Audit core/unified_guardrails.py, 
+   core/ghl_execution_gateway.py, and core/agent_action_permissions.json 
+   for permission gaps, exposed secrets, and gateway bypasses.
+
+2. "Performance Reviewer": Check core/circuit_breaker.py, 
+   core/swarm_coordination.py, and execution/unified_runner.py 
+   for timeout enforcement, backoff correctness, and async safety.
+
+3. "Integration Reviewer": Verify all API adapters in 
+   core/unified_integration_gateway.py match external API contracts.
+   Check GHL, Clay, LinkedIn, and Supabase adapter signatures.
+
+4. "Test Reviewer": Audit tests/ for coverage gaps against core/ 
+   changes. Check that all mocks match current API signatures.
+
+Share findings. Challenge each other's conclusions. 
+Produce a unified security+performance+integration report.
+```
+
+#### Debug Team (3 Investigators)
+**Trigger**: Production errors, pipeline hangs, unexpected behavior.
+
+```
+Debug [DESCRIBE THE BUG] by forming a team of 3 investigators:
+
+1. "Hypothesis A": [First theory — e.g., "session cookie expired"]
+   Focus files: [relevant files]
+   
+2. "Hypothesis B": [Second theory — e.g., "rate limiter not backing off"]
+   Focus files: [relevant files]
+
+3. "Hypothesis C": [Third theory — e.g., "async timeout missing"]
+   Focus files: [relevant files]
+
+Each investigator: read code, trace execution path, gather evidence.
+Share findings with each other. Challenge weak hypotheses.
+Converge on the root cause and propose a unified fix.
+```
+
+#### Feature Team (4 Specialists)
+**Trigger**: New features spanning dashboard ↔ core ↔ execution ↔ tests.
+
+```
+Build [DESCRIBE FEATURE] as an agent team:
+
+1. "Frontend Lead": Only modify files in dashboard/
+   - Update hos_dashboard.html or health_app.py as needed
+   
+2. "Backend Lead": Only modify files in core/
+   - Implement the core logic with proper guardrails
+
+3. "Pipeline Lead": Only modify files in execution/
+   - Wire the feature into the pipeline runner
+
+4. "Test Lead": Only modify files in tests/
+   - Write comprehensive tests covering all 3 layers
+
+Coordinate on interfaces. Frontend should NOT import core directly.
+Backend provides API endpoints. Pipeline uses core functions.
+Tests cover the full integration path.
+```
+
+#### Refactoring Team (3 Specialists)
+**Trigger**: Cross-module refactoring (e.g., renaming agents, changing routing).
+
+```
+Refactor [DESCRIBE CHANGE] as an agent team:
+
+1. "Core Lead": Update the primary module in core/
+   
+2. "Consumer Lead": Update all files that import/use the changed module
+   (execution/, dashboard/, mcp-servers/)
+
+3. "Test Lead": Update all tests to match the refactored interfaces.
+   Run verification after changes.
+
+Coordinate to ensure no broken imports. Share interface changes 
+before implementing so all teammates stay aligned.
+```
+
+### Agent Team Rules
+
+| Rule | Description |
+|------|-------------|
+| **Max 4 teammates** | More creates coordination overhead > benefit |
+| **No recursive teams** | Teams don't spawn sub-teams. Keep it flat |
+| **File ownership** | Only ONE teammate touches a given file per session |
+| **Start with research** | Teams should gather context before making changes |
+| **Monitor token usage** | Check usage after team sessions, adjust scope |
+
+---
+
+## 🔧 Sub-Agent Registry (Specialized Single-Session Workers)
+
+Sub-agents are focused workers that operate within a single Claude Code session, report back to the main agent, and cost less tokens. Use them for **independent** work.
+
+### Available Sub-Agents
+
+| Agent | File | Model | Mode | Purpose |
+|-------|------|-------|------|---------|
+| **Lead Analyzer** | `.claude/agents/lead-analyzer.md` | Sonnet | READ-ONLY | Trace lead data flow across pipeline |
+| **Campaign Pattern Finder** | `.claude/agents/campaign-pattern-finder.md` | Sonnet | READ-ONLY | Find & document campaign patterns |
+| **Codebase Researcher** | `.claude/agents/codebase-researcher.md` | Sonnet | READ-ONLY | Find symbol usage, trace imports, map dependencies |
+| **File Operator** | `.claude/agents/file-operator.md` | Sonnet | WRITE | Bulk file edits, template updates, config changes |
+| **Test Writer** | `.claude/agents/test-writer.md` | Sonnet | READ→WRITE | Generate pytest test suites with mocks |
+| **Directive Updater** | `.claude/agents/directive-updater.md` | Sonnet | WRITE | Update SOPs, workflows, directives |
+| **Security Auditor** | `.claude/agents/security-auditor.md` | Sonnet | READ-ONLY | Audit for secrets, permission gaps, bypasses |
+| **GHL Master** | `.claude/agents/ghl-master-agent.md` | — | Full | GHL CRM operations |
+| **GHL Outreach** | `.claude/agents/ghl-outreach-agent.md` | — | Full | GHL email outreach |
+
+### When to Use Sub-Agents vs Agent Teams
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                  DECISION FLOWCHART                      │
+│                                                         │
+│  Is the task collaborative? (need peer review/debate)   │
+│    YES → Use Agent Team                                 │
+│    NO  ↓                                                │
+│                                                         │
+│  Can it be parallelized into independent pieces?        │
+│    YES → Use Sub-Agents (parallel)                      │
+│    NO  ↓                                                │
+│                                                         │
+│  Is it a single focused task?                           │
+│    YES → Use one Sub-Agent                              │
+│    NO  → Do it directly (no agent overhead)             │
+└─────────────────────────────────────────────────────────┘
+```
+
+### Sub-Agent Usage Examples
+
+```bash
+# Research: "Where is the circuit breaker used?"
+# → Auto-delegates to codebase-researcher sub-agent
+
+# File ops: "Update all 12 agent permissions to add new action"
+# → Auto-delegates to file-operator sub-agent
+
+# Testing: "Generate tests for core/website_intent_monitor.py"
+# → Auto-delegates to test-writer sub-agent
+
+# Security: "Audit execution/ for hardcoded secrets"
+# → Auto-delegates to security-auditor sub-agent
+
+# SOPs: "Add the new LinkedIn timeout rule to scraping_sop.md"
+# → Auto-delegates to directive-updater sub-agent
+```
+
+### Sub-Agent Cost Optimization
+
+All sub-agents default to **Sonnet** model for token efficiency:
+- Sonnet: ~$3/1M input, ~$15/1M output
+- Opus: ~$15/1M input, ~$75/1M output
+- **Savings: ~80% per sub-agent task vs Opus**
+
+Only use Opus for complex reasoning tasks that require the main agent.

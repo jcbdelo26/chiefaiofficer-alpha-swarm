@@ -1,0 +1,29 @@
+{
+  "email_id": "pipeline_camp_20260214_001916_jordan_plater_3dc0a1",
+  "status": "pending",
+  "to": "jordan.plater@gong.io",
+  "subject": "Personalized outreach",
+  "body": "",
+  "source": "pipeline",
+  "timestamp": "2026-02-13T16:19:16.524915+00:00",
+  "created_at": "2026-02-13T16:19:16.524919+00:00",
+  "recipient_data": {
+    "name": "Jordan Plater",
+    "company": "Gong",
+    "title": "VP, Head of Sales - Industry Expansion",
+    "linkedin_url": "http://www.linkedin.com/in/jordanplater"
+  },
+  "context": {
+    "intent_score": 15,
+    "icp_tier": "tier_2",
+    "icp_score": 62,
+    "campaign_type": "standard_outreach",
+    "campaign_id": "camp_20260214_001916",
+    "pipeline_run_id": "run_20260214_001834_d638e9"
+  },
+  "priority": "medium",
+  "tier": "tier_2",
+  "synthetic": false,
+  "contact_id": null,
+  "template_id": null
+}

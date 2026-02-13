@@ -1,0 +1,47 @@
+{
+  "run_id": "run_20260213_145613_c1cd57",
+  "mode": "production",
+  "started_at": "2026-02-13T06:56:13.789541",
+  "completed_at": "2026-02-13T06:56:14.543190",
+  "total_leads_processed": 0,
+  "total_campaigns_created": 0,
+  "total_errors": 1,
+  "stages": [
+    {
+      "stage": "scrape",
+      "success": true,
+      "duration_ms": 735.7282638549805,
+      "input_count": 0,
+      "output_count": 20,
+      "errors": [
+        "Scraper error: LinkedIn session BLOCKED (403). Account rate-limited or restricted. No API fallback available. Set PROXYCURL_API_KEY or APOLLO_API_KEY in .env for cookie-free scraping."
+      ],
+      "metrics": {
+        "source": "test_data_error_fallback"
+      }
+    },
+    {
+      "stage": "enrich",
+      "success": true,
+      "duration_ms": 10.042190551757812,
+      "input_count": 20,
+      "output_count": 20,
+      "errors": [],
+      "metrics": {
+        "enriched_count": 19,
+        "failed_count": 1
+      }
+    },
+    {
+      "stage": "segment",
+      "success": false,
+      "duration_ms": 6.269216537475586,
+      "input_count": 20,
+      "output_count": 0,
+      "errors": [],
+      "metrics": {
+        "tier_distribution": {}
+      }
+    }
+  ]
+}

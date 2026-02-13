@@ -1,0 +1,16 @@
+{
+  "alert_id": "ea309755-7d9c-4a55-b053-e1d964fb7c47",
+  "level": "critical",
+  "title": "Circuit breaker OPEN: test_alert_service",
+  "message": "Service 'test_alert_service' exceeded failure threshold (2/2). Blocked for 5s.",
+  "metadata": {
+    "service": "test_alert_service",
+    "failure_count": 2,
+    "threshold": 2
+  },
+  "created_at": "2026-02-13T15:21:19.396434+00:00",
+  "source": "circuit_breaker",
+  "acknowledged": false,
+  "acknowledged_at": null,
+  "acknowledged_by": null
+}

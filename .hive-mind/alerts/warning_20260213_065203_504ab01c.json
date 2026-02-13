@@ -1,0 +1,15 @@
+{
+  "alert_id": "504ab01c-a293-4ce8-b253-7b7073fb07c5",
+  "level": "warning",
+  "title": "Pipeline Test Alert",
+  "message": "This is a test alert from Phase 2 burn-in testing.",
+  "metadata": {
+    "phase": "2B",
+    "test": true
+  },
+  "created_at": "2026-02-13T06:52:03.160617+00:00",
+  "source": "pipeline_validator",
+  "acknowledged": false,
+  "acknowledged_at": null,
+  "acknowledged_by": null
+}

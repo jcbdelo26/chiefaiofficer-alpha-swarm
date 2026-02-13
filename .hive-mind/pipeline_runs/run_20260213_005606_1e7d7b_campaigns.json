@@ -1,0 +1,26 @@
+[
+  {
+    "campaign_id": "camp_tier2_standard_sequence_cc209714",
+    "campaign_type": "tier2_standard_sequence",
+    "lead_count": 2,
+    "status": "approved_sandbox",
+    "created_at": "2026-02-12T16:56:06.587315",
+    "subject_line": "[Tier2 Standard Sequence] Personalized outreach",
+    "sequence_steps": 3,
+    "requires_approval": false,
+    "sent_to_instantly": true,
+    "instantly_campaign_id": "mock_39e980b9"
+  },
+  {
+    "campaign_id": "camp_nurture_sequence_ec6b4ae3",
+    "campaign_type": "nurture_sequence",
+    "lead_count": 3,
+    "status": "approved_sandbox",
+    "created_at": "2026-02-12T16:56:06.587322",
+    "subject_line": "[Nurture Sequence] Personalized outreach",
+    "sequence_steps": 3,
+    "requires_approval": false,
+    "sent_to_instantly": true,
+    "instantly_campaign_id": "mock_19496433"
+  }
+]

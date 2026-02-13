@@ -59,6 +59,12 @@ except ImportError:
     ANNEALING_AVAILABLE = False
 
 try:
+    from core.alerts import send_warning, send_critical, send_info
+    ALERTS_AVAILABLE = True
+except ImportError:
+    ALERTS_AVAILABLE = False
+
+try:
     from core.context import ContextManager, EventType
     CONTEXT_AVAILABLE = True
 except ImportError:
@@ -115,7 +121,7 @@ class UnifiedPipeline:
     3. SEGMENTOR: Score ICP fit, assign tiers, route to campaigns
     4. CRAFTER: Generate personalized email sequences
     5. GATEKEEPER: Queue for human approval (Tier 1) or auto-approve
-    6. OUTBOX: Push to Instantly for sending
+    6. OUTBOX: Queue to shadow mode for HoS dashboard approval → GHL send
     """
     
     def __init__(self, mode: PipelineMode = PipelineMode.SANDBOX):
@@ -150,12 +156,11 @@ class UnifiedPipeline:
         """
         if self.mode in [PipelineMode.DRY_RUN, PipelineMode.SANDBOX]:
             return True
-        # Allow scraping if ANY credential is available (cookie, Proxycurl, or Apollo)
+        # Allow scraping if ANY credential is available (cookie or Apollo)
         import os
         has_cookie = bool(os.getenv("LINKEDIN_COOKIE"))
-        has_proxycurl = bool(os.getenv("PROXYCURL_API_KEY"))
         has_apollo = bool(os.getenv("APOLLO_API_KEY"))
-        if not has_cookie and not has_proxycurl and not has_apollo:
+        if not has_cookie and not has_apollo:
             console.print("[yellow]No scraping credentials set — using test data fallback[/yellow]")
             return True
         return False
@@ -208,12 +213,23 @@ class UnifiedPipeline:
                 try:
                     result = await executor()
                     self.current_run.stages.append(result)
-                    
+
                     if not result.success:
                         console.print(f"[red]Stage {name} failed: {result.errors}[/red]")
+                        if ALERTS_AVAILABLE:
+                            send_warning(
+                                f"Pipeline stage failed: {name}",
+                                f"Stage '{name}' failed in run {self.run_id} "
+                                f"({self.mode.value}). Errors: {'; '.join(result.errors[:3])}",
+                                metadata={"run_id": self.run_id,
+                                          "stage": name,
+                                          "mode": self.mode.value,
+                                          "error_count": len(result.errors)},
+                                source="pipeline",
+                            )
                         if self.mode == PipelineMode.PRODUCTION:
                             break
-                    
+
                 except Exception as e:
                     error_result = StageResult(
                         stage=stage,
@@ -225,6 +241,17 @@ class UnifiedPipeline:
                     )
                     self.current_run.stages.append(error_result)
                     console.print(f"[red]Stage {name} error: {e}[/red]")
+                    if ALERTS_AVAILABLE:
+                        send_critical(
+                            f"Pipeline stage exception: {name}",
+                            f"Stage '{name}' threw an exception in run "
+                            f"{self.run_id}: {e}",
+                            metadata={"run_id": self.run_id,
+                                      "stage": name,
+                                      "mode": self.mode.value,
+                                      "exception": str(e)},
+                            source="pipeline",
+                        )
                 
                 progress.advance(task)
         
@@ -235,7 +262,22 @@ class UnifiedPipeline:
         
         self._save_run_report()
         self._print_summary()
-        
+
+        # Send pipeline completion alert
+        if ALERTS_AVAILABLE and self.current_run.total_errors > 0:
+            send_warning(
+                f"Pipeline completed with {self.current_run.total_errors} errors",
+                f"Run {self.run_id} ({self.mode.value}): "
+                f"{self.current_run.total_leads_processed} leads, "
+                f"{self.current_run.total_campaigns_created} campaigns, "
+                f"{self.current_run.total_errors} errors.",
+                metadata={"run_id": self.run_id,
+                          "mode": self.mode.value,
+                          "leads": self.current_run.total_leads_processed,
+                          "campaigns": self.current_run.total_campaigns_created},
+                source="pipeline",
+            )
+
         return self.current_run
     
     # Hard timeout for scrape stage — prevents pipeline from ever hanging
@@ -506,6 +548,13 @@ class UnifiedPipeline:
         start = time.time()
         errors = []
         
+        # Normalize lead fields for downstream crafter compatibility
+        for lead in self.segmented:
+            if not lead.get("first_name") and lead.get("name"):
+                parts = lead["name"].strip().split(None, 1)
+                lead["first_name"] = parts[0] if parts else ""
+                lead["last_name"] = parts[1] if len(parts) > 1 else ""
+
         campaign_groups = {}
         for lead in self.segmented:
             campaign_type = lead.get("recommended_campaign", "nurture_sequence")
@@ -588,46 +637,115 @@ class UnifiedPipeline:
         )
     
     async def _stage_send(self) -> StageResult:
-        """Stage 6: Push to outbox (Instantly)."""
+        """Stage 6: Queue emails to shadow mode for HoS dashboard approval.
+
+        All campaign emails are written to .hive-mind/shadow_mode_emails/
+        with status 'pending'. The HoS dashboard shows these for human
+        review, and approved emails are sent via GHL.
+        """
         import time
         start = time.time()
         errors = []
-        sent = 0
-        
-        approved_campaigns = [c for c in self.campaigns if c.get("status") in ["approved", "approved_sandbox"]]
-        
-        if self._is_safe_mode():
-            for campaign in approved_campaigns:
-                campaign["sent_to_instantly"] = True
-                campaign["instantly_campaign_id"] = f"mock_{uuid.uuid4().hex[:8]}"
-                sent += campaign.get("lead_count", 0)
-        elif self.mode == PipelineMode.PRODUCTION:
-            try:
-                from execution.ingest_instantly_templates import push_campaign_to_instantly
-                
-                for campaign in approved_campaigns:
-                    try:
-                        result = push_campaign_to_instantly(campaign)
-                        campaign["sent_to_instantly"] = True
-                        campaign["instantly_campaign_id"] = result.get("campaign_id")
-                        sent += campaign.get("lead_count", 0)
-                    except Exception as e:
-                        errors.append(f"Instantly push failed: {e}")
-                        campaign["sent_to_instantly"] = False
-                        
-            except ImportError:
-                errors.append("Instantly integration not available")
-        
+        queued = 0
+
+        shadow_dir = self.hive_mind / "shadow_mode_emails"
+        shadow_dir.mkdir(parents=True, exist_ok=True)
+
+        approved_campaigns = [c for c in self.campaigns
+                              if c.get("status") in ["approved", "approved_sandbox",
+                                                      "pending_review"]]
+
+        for campaign in approved_campaigns:
+            leads = campaign.get("leads", [])
+            sequence = campaign.get("sequence", [])
+
+            # Extract first email step content (production has full sequence)
+            if sequence:
+                step = sequence[0] if isinstance(sequence[0], dict) else {}
+                subject = step.get("subject_a", campaign.get("subject_line", "Outreach"))
+                body = step.get("body_a", "")
+            else:
+                subject = campaign.get("subject_line", "Personalized outreach")
+                body = ""
+
+            for lead in leads:
+                # Resolve email from multiple possible locations
+                email_addr = (
+                    lead.get("email")
+                    or lead.get("work_email")
+                    or lead.get("contact", {}).get("verified_email")
+                    or lead.get("contact", {}).get("work_email")
+                    or lead.get("original_lead", {}).get("email")
+                )
+                if not email_addr:
+                    errors.append(f"No email for lead {lead.get('name', 'unknown')}")
+                    continue
+
+                lead_slug = (lead.get("name", "unknown")
+                             .replace(" ", "_").lower()[:30])
+                email_id = (f"pipeline_{campaign['campaign_id']}"
+                            f"_{lead_slug}_{uuid.uuid4().hex[:6]}")
+
+                tier = lead.get("icp_tier", "tier_3")
+                company_raw = lead.get("company", "")
+                company_name = (company_raw if isinstance(company_raw, str)
+                                else company_raw.get("name", "")
+                                if isinstance(company_raw, dict) else "")
+
+                shadow_email = {
+                    "email_id": email_id,
+                    "status": "pending",
+                    "to": email_addr,
+                    "subject": subject,
+                    "body": body,
+                    "source": "pipeline",
+                    "timestamp": datetime.utcnow().isoformat() + "+00:00",
+                    "created_at": datetime.utcnow().isoformat() + "+00:00",
+                    "recipient_data": {
+                        "name": lead.get("name", ""),
+                        "company": company_name,
+                        "title": lead.get("title", ""),
+                        "linkedin_url": lead.get("linkedin_url"),
+                    },
+                    "context": {
+                        "intent_score": lead.get("intent_score", 0),
+                        "icp_tier": tier,
+                        "icp_score": lead.get("icp_score", 0),
+                        "campaign_type": campaign.get("campaign_type", ""),
+                        "campaign_id": campaign.get("campaign_id", ""),
+                        "pipeline_run_id": self.run_id,
+                    },
+                    "priority": ("high" if tier == "tier_1"
+                                 else "medium" if tier == "tier_2"
+                                 else "normal"),
+                    "tier": tier,
+                    "synthetic": self._is_safe_mode(),
+                    "contact_id": lead.get("contact_id"),
+                    "template_id": None,
+                }
+
+                filepath = shadow_dir / f"{email_id}.json"
+                try:
+                    with open(filepath, "w", encoding="utf-8") as f:
+                        json.dump(shadow_email, f, indent=2, ensure_ascii=False)
+                    queued += 1
+                except Exception as e:
+                    errors.append(f"Failed to write shadow email: {e}")
+
+            campaign["shadow_queued"] = True
+            campaign["shadow_email_count"] = len(leads)
+
         duration = (time.time() - start) * 1000
-        
+
         return StageResult(
             stage=PipelineStage.SEND,
-            success=sent > 0 or len(approved_campaigns) == 0,
+            success=queued > 0 or len(approved_campaigns) == 0,
             duration_ms=duration,
             input_count=len(approved_campaigns),
-            output_count=sent,
+            output_count=queued,
             errors=errors,
-            metrics={"leads_queued": sent, "campaigns_pushed": len(approved_campaigns)}
+            metrics={"emails_queued": queued,
+                     "campaigns_processed": len(approved_campaigns)}
         )
     
     def _save_run_report(self):

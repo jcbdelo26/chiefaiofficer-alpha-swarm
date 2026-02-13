@@ -1,0 +1,17 @@
+{
+  "alert_id": "dbde3510-97c8-4387-a875-0896f4f494d6",
+  "level": "warning",
+  "title": "Pipeline stage failed: Sending",
+  "message": "Stage 'Sending' failed in run run_20260213_232228_a8ea52 (production). Errors: ",
+  "metadata": {
+    "run_id": "run_20260213_232228_a8ea52",
+    "stage": "Sending",
+    "mode": "production",
+    "error_count": 0
+  },
+  "created_at": "2026-02-13T15:22:46.053295+00:00",
+  "source": "pipeline",
+  "acknowledged": false,
+  "acknowledged_at": null,
+  "acknowledged_by": null
+}

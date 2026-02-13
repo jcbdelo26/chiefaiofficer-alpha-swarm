@@ -1,0 +1,14 @@
+{
+  "alert_id": "6d3c5b15-15ec-4ede-8d94-fff31f474ab1",
+  "level": "warning",
+  "title": "Enrichment Failed",
+  "message": "Lead enrichment failed after 3 attempts",
+  "metadata": {
+    "error": "Apollo API error: 400 - {\"error\":\"Please add a valid 'webhook_url' parameter when using 'reveal_phone_number'\"}"
+  },
+  "created_at": "2026-02-13T08:46:11.070090+00:00",
+  "source": "system",
+  "acknowledged": false,
+  "acknowledged_at": null,
+  "acknowledged_by": null
+}

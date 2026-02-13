@@ -1,0 +1,42 @@
+[
+  {
+    "campaign_id": "camp_20260213_233632",
+    "name": "Tier2_Standard_Sequence Campaign - February 13",
+    "segment": "tier2_standard_sequence",
+    "campaign_type": "standard_outreach",
+    "lead_count": 18,
+    "sequence": [],
+    "status": "approved",
+    "created_at": "2026-02-13T23:36:32.009747",
+    "avg_icp_score": 63.666666666666664,
+    "avg_intent_score": 0.0,
+    "personalization_hooks": [],
+    "metadata": {
+      "skipped_count": 0,
+      "skipped_reasons": []
+    },
+    "requires_approval": false,
+    "shadow_queued": true,
+    "shadow_email_count": 18
+  },
+  {
+    "campaign_id": "camp_20260213_233632",
+    "name": "Nurture_Sequence Campaign - February 13",
+    "segment": "nurture_sequence",
+    "campaign_type": "standard_outreach",
+    "lead_count": 1,
+    "sequence": [],
+    "status": "approved",
+    "created_at": "2026-02-13T23:36:32.015688",
+    "avg_icp_score": 42.0,
+    "avg_intent_score": 0.0,
+    "personalization_hooks": [],
+    "metadata": {
+      "skipped_count": 0,
+      "skipped_reasons": []
+    },
+    "requires_approval": false,
+    "shadow_queued": true,
+    "shadow_email_count": 1
+  }
+]

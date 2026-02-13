@@ -1,0 +1,93 @@
+{
+  "run_id": "run_20260213_005736_3e6958",
+  "mode": "staging",
+  "started_at": "2026-02-12T16:57:36.219459",
+  "completed_at": "2026-02-12T16:57:36.301804",
+  "total_leads_processed": 20,
+  "total_campaigns_created": 0,
+  "total_errors": 7,
+  "stages": [
+    {
+      "stage": "scrape",
+      "success": false,
+      "duration_ms": 5.918264389038086,
+      "input_count": 0,
+      "output_count": 20,
+      "errors": [
+        "Scraper error: No module named 'ratelimit'"
+      ],
+      "metrics": {
+        "source": "test_data"
+      }
+    },
+    {
+      "stage": "enrich",
+      "success": false,
+      "duration_ms": 4.950761795043945,
+      "input_count": 20,
+      "output_count": 20,
+      "errors": [
+        "Enrich failed for robert.johnson@datadrivencorp.com: ClayEnricher.enrich_lead() missing 1 required positional argument: 'linkedin_url'",
+        "Enrich failed for robert.martin@techforwardinc.com: ClayEnricher.enrich_lead() missing 1 required positional argument: 'linkedin_url'",
+        "Enrich failed for megan.garcia@quotacrushers.com: ClayEnricher.enrich_lead() missing 1 required positional argument: 'linkedin_url'",
+        "Enrich failed for stephanie.anderson@quotacrushers.com: ClayEnricher.enrich_lead() missing 1 required positional argument: 'linkedin_url'",
+        "Enrich failed for elizabeth.martin@winrateanalytics.com: ClayEnricher.enrich_lead() missing 1 required positional argument: 'linkedin_url'"
+      ],
+      "metrics": {
+        "enriched_count": 0,
+        "failed_count": 20
+      }
+    },
+    {
+      "stage": "segment",
+      "success": true,
+      "duration_ms": 9.275197982788086,
+      "input_count": 20,
+      "output_count": 20,
+      "errors": [],
+      "metrics": {
+        "tier_distribution": {
+          "tier_2": 13,
+          "tier_1": 7
+        }
+      }
+    },
+    {
+      "stage": "craft",
+      "success": false,
+      "duration_ms": 59.36408042907715,
+      "input_count": 20,
+      "output_count": 0,
+      "errors": [
+        "Crafter error for competitor_displacement: name 'SpinnerColumn' is not defined"
+      ],
+      "metrics": {
+        "campaigns_by_type": {}
+      }
+    },
+    {
+      "stage": "approve",
+      "success": true,
+      "duration_ms": 0.0011920928955078125,
+      "input_count": 0,
+      "output_count": 0,
+      "errors": [],
+      "metrics": {
+        "pending_review": 0,
+        "auto_approved": 0
+      }
+    },
+    {
+      "stage": "send",
+      "success": true,
+      "duration_ms": 0.0016689300537109375,
+      "input_count": 0,
+      "output_count": 0,
+      "errors": [],
+      "metrics": {
+        "leads_queued": 0,
+        "campaigns_pushed": 0
+      }
+    }
+  ]
+}
