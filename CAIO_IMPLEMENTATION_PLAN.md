@@ -122,6 +122,7 @@ Production pipeline validated with real Apollo data. All critical blockers resol
 | 20-lead scale test | DONE | 19 enriched, 2 campaigns, 68.4s, 0 errors |
 | Dashboard API E2E test | DONE | approve/reject/pending flows verified with real data |
 | Google Calendar setup guide | DONE | `docs/GOOGLE_CALENDAR_SETUP_GUIDE.md` + `scripts/setup_google_calendar.py` |
+| GHL Calendar integration | DONE | Replaced Google Calendar with GHL Calendar API in scheduler agent. Zero new dependencies. |
 
 ### 3A-Assessment: Clay in Pipeline — REMOVED (RB2B Only)
 
@@ -142,9 +143,9 @@ Production pipeline validated with real Apollo data. All critical blockers resol
 
 | Task | Status | Notes |
 |------|--------|-------|
-| Deploy latest fixes to Railway | NEEDS PUSH | Send stage rewrite, alerts, email fixes — all local |
-| Google Calendar OAuth flow | NEEDS USER | Run `python scripts/setup_google_calendar.py` (guide in `docs/GOOGLE_CALENDAR_SETUP_GUIDE.md`) |
-| Hit 10+ clean production runs | 4/10 | Last 4 consecutive 6/6 PASS — need 6 more |
+| Deploy GHL calendar + latest fixes to Railway | NEEDS PUSH | GHL calendar, send stage rewrite, alerts |
+| Set GHL_CALENDAR_ID in Railway | NEEDS USER | Get calendar ID from GHL account → add as Railway env var |
+| Hit 10+ clean production runs | 10/10 | 10 consecutive 6/6 PASS achieved |
 
 ### Deferred Tasks
 
@@ -288,8 +289,9 @@ Day 21: Email #5 (graceful close)
 | Production config | `config/production.json` |
 | Enrichment research | `docs/research/ENRICHMENT_PROVIDER_RESEARCH_2026.md` |
 | Multi-channel research | `docs/research/MULTI_CHANNEL_CADENCE_RESEARCH_2026.md` |
-| Google Calendar setup guide | `docs/GOOGLE_CALENDAR_SETUP_GUIDE.md` |
-| Google Calendar setup script | `scripts/setup_google_calendar.py` |
+| GHL Calendar client (adapter) | `mcp-servers/ghl-mcp/calendar_client.py` |
+| GHL MCP server (CRM + Calendar) | `mcp-servers/ghl-mcp/server.py` |
+| Calendar guardrails (shared) | `mcp-servers/google-calendar-mcp/guardrails.py` |
 | This plan | `CAIO_IMPLEMENTATION_PLAN.md` |
 
 ---
@@ -342,9 +344,10 @@ Day 21: Email #5 (graceful close)
 | 2026-02-14 | Rewrite Send stage to shadow queue | Replaced broken Instantly import with shadow email queue in `.hive-mind/shadow_mode_emails/` for HoS dashboard review |
 | 2026-02-14 | Wire pipeline + circuit breaker alerts to Slack | Stage failures → WARNING, exceptions/OPEN transitions → CRITICAL |
 | 2026-02-14 | Google Calendar setup guide created | Non-technical guide for HoS + OAuth setup script (`scripts/setup_google_calendar.py`) |
+| 2026-02-14 | Replace Google Calendar with GHL Calendar | Zero setup (GHL API keys already on Railway), CRM-native (appointments link to contacts), no OAuth flow needed. GHLCalendarClient is a drop-in adapter matching GoogleCalendarMCP interface. |
 
 ---
 
-*Plan Version: 3.0*
+*Plan Version: 3.1*
 *Created: 2026-02-13*
 *Supersedes: IMPLEMENTATION_ROADMAP.md (v1.0, 2026-01-17)*

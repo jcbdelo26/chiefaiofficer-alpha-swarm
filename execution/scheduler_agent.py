@@ -2,10 +2,10 @@
 """
 Scheduler Agent - Beta Swarm
 =============================
-Day 11 Implementation: Calendar scheduling agent with full guardrails.
+Calendar scheduling agent with full guardrails.
 
 Capabilities:
-1. Calendar availability checking (Google Calendar API via MCP)
+1. Calendar availability checking (GHL Calendar API)
 2. Time proposal generation (3-5 options, prospect's timezone)
 3. Back-and-forth handling (max 5 exchanges, then escalate)
 4. Calendar invite creation with Zoom link
@@ -36,8 +36,8 @@ Architecture:
     │           └────────────────────┴────────────────────┘          │
     │                              │                                  │
     │                    ┌─────────▼─────────┐                       │
-    │                    │ Google Calendar   │                       │
-    │                    │ MCP Server        │                       │
+    │                    │ GHL Calendar      │                       │
+    │                    │ Client (API)      │                       │
     │                    └───────────────────┘                       │
     └─────────────────────────────────────────────────────────────────┘
 
@@ -87,18 +87,25 @@ logger = logging.getLogger("scheduler_agent")
 PROJECT_ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
-# Import Google Calendar MCP
+# Import GHL Calendar Client (drop-in replacement for GoogleCalendarMCP)
 try:
-    from mcp_servers.google_calendar_mcp.server import GoogleCalendarMCP
+    from mcp_servers.ghl_mcp.calendar_client import GHLCalendarClient
+except ImportError:
+    try:
+        sys.path.insert(0, str(PROJECT_ROOT / "mcp-servers" / "ghl-mcp"))
+        from calendar_client import GHLCalendarClient
+    except ImportError as e:
+        logger.warning(f"GHL Calendar Client not available: {e}")
+        GHLCalendarClient = None
+
+# Import CalendarGuardrails (backend-agnostic)
+try:
     from mcp_servers.google_calendar_mcp.guardrails import CalendarGuardrails, TIMEZONE_ALIASES
 except ImportError:
     try:
         sys.path.insert(0, str(PROJECT_ROOT / "mcp-servers" / "google-calendar-mcp"))
-        from server import GoogleCalendarMCP
         from guardrails import CalendarGuardrails, TIMEZONE_ALIASES
-    except ImportError as e:
-        logger.warning(f"Google Calendar MCP not available: {e}")
-        GoogleCalendarMCP = None
+    except ImportError:
         CalendarGuardrails = None
         TIMEZONE_ALIASES = {}
 
@@ -231,18 +238,23 @@ class SchedulerAgent:
     timezone management, and self-annealing learning.
     """
     
-    def __init__(self, calendar_mcp: Optional[GoogleCalendarMCP] = None):
+    def __init__(self, calendar_client=None):
         """
         Initialize the Scheduler Agent.
-        
+
         Args:
-            calendar_mcp: Optional pre-configured GoogleCalendarMCP instance
+            calendar_client: Optional pre-configured calendar client instance.
+                             Accepts GHLCalendarClient (default) or GoogleCalendarMCP.
         """
-        # Calendar integration
-        if calendar_mcp:
-            self.calendar = calendar_mcp
-        elif GoogleCalendarMCP:
-            self.calendar = GoogleCalendarMCP()
+        # Calendar integration — GHL Calendar is the default backend
+        if calendar_client:
+            self.calendar = calendar_client
+        elif GHLCalendarClient:
+            try:
+                self.calendar = GHLCalendarClient()
+            except Exception as e:
+                logger.warning(f"GHL Calendar init failed: {e}. Running in mock mode.")
+                self.calendar = None
         else:
             self.calendar = None
             logger.warning("Running in mock mode - no calendar integration")
@@ -606,10 +618,11 @@ class SchedulerAgent:
             )
         else:
             # Mock booking
+            mock_id = self._generate_id("EVT")
             booking_result = BookingResult(
                 success=True,
-                event_id=self._generate_id("EVT"),
-                calendar_link=f"https://calendar.google.com/event?eid={self._generate_id('EVT')}",
+                event_id=mock_id,
+                calendar_link=f"https://app.gohighlevel.com/calendars/appointments/{mock_id}",
                 zoom_link=zoom_link,
                 start_time=start_time,
                 end_time=end_time,

@@ -18,6 +18,13 @@ Tools:
 - ghl_create_opportunity: Create sales opportunity (idempotent)
 - ghl_trigger_workflow: Trigger automation workflow
 - ghl_bulk_create_contacts: Batch create with idempotency
+- ghl_get_calendars: List all calendars
+- ghl_get_free_slots: Get available time slots
+- ghl_create_appointment: Create calendar appointment
+- ghl_update_appointment: Update appointment
+- ghl_get_appointment: Get appointment by ID
+- ghl_delete_calendar_event: Delete calendar event
+- ghl_get_calendar_events: List calendar events
 """
 
 import os
@@ -397,6 +404,87 @@ class AsyncGHLClient:
         """Trigger workflow for contact."""
         return await self._request("POST", f"contacts/{contact_id}/workflow/{workflow_id}")
 
+    # ========================================================================
+    # Calendar Operations
+    # ========================================================================
+
+    async def get_calendars(self) -> Dict[str, Any]:
+        """Get all calendars for the location."""
+        return await self._request(
+            "GET", "calendars/",
+            params={"locationId": self.location_id}
+        )
+
+    async def get_free_slots(
+        self,
+        calendar_id: str,
+        start_date: str,
+        end_date: str,
+        timezone_str: str = "America/New_York"
+    ) -> Dict[str, Any]:
+        """
+        Get free slots for a calendar.
+
+        Args:
+            calendar_id: GHL calendar ID
+            start_date: ISO start date
+            end_date: ISO end date
+            timezone_str: IANA timezone string
+        """
+        # Convert ISO dates to epoch milliseconds for GHL API
+        start_dt = datetime.fromisoformat(start_date.replace('Z', '+00:00'))
+        end_dt = datetime.fromisoformat(end_date.replace('Z', '+00:00'))
+
+        start_ms = int(start_dt.timestamp() * 1000)
+        end_ms = int(end_dt.timestamp() * 1000)
+
+        return await self._request(
+            "GET", f"calendars/{calendar_id}/free-slots",
+            params={
+                "startDate": start_ms,
+                "endDate": end_ms,
+                "timezone": timezone_str
+            }
+        )
+
+    async def create_appointment(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Create a calendar appointment.
+
+        Required fields in data: calendarId, contactId, startTime, endTime
+        Optional: title, appointmentStatus, address, toNotify
+        """
+        payload = {"locationId": self.location_id, **data}
+        return await self._request("POST", "calendars/events/appointments", payload)
+
+    async def update_appointment(self, event_id: str, data: Dict[str, Any]) -> Dict[str, Any]:
+        """Update a calendar appointment."""
+        return await self._request("PUT", f"calendars/events/appointments/{event_id}", data)
+
+    async def get_appointment(self, event_id: str) -> Dict[str, Any]:
+        """Get a calendar appointment by ID."""
+        return await self._request("GET", f"calendars/events/appointments/{event_id}")
+
+    async def delete_calendar_event(self, event_id: str) -> Dict[str, Any]:
+        """Delete a calendar event."""
+        return await self._request("DELETE", f"calendars/events/{event_id}")
+
+    async def get_calendar_events(
+        self,
+        calendar_id: Optional[str] = None,
+        start_time: Optional[str] = None,
+        end_time: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """Get calendar events for the location."""
+        params = {"locationId": self.location_id}
+        if calendar_id:
+            params["calendarId"] = calendar_id
+        if start_time:
+            params["startTime"] = start_time
+        if end_time:
+            params["endTime"] = end_time
+        return await self._request("GET", "calendars/events", params=params)
+
 
 # ============================================================================
 # Tool Definitions
@@ -508,6 +596,91 @@ TOOLS = [
             },
             "required": ["contacts"]
         }
+    },
+    {
+        "name": "ghl_get_calendars",
+        "description": "Get all GHL calendars for the location.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {}
+        }
+    },
+    {
+        "name": "ghl_get_free_slots",
+        "description": "Get available free slots for a GHL calendar.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "calendarId": {"type": "string", "description": "GHL calendar ID"},
+                "startDate": {"type": "string", "description": "ISO start date"},
+                "endDate": {"type": "string", "description": "ISO end date"},
+                "timezone": {"type": "string", "default": "America/New_York", "description": "IANA timezone"}
+            },
+            "required": ["calendarId", "startDate", "endDate"]
+        }
+    },
+    {
+        "name": "ghl_create_appointment",
+        "description": "Create a calendar appointment in GHL.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "calendarId": {"type": "string", "description": "GHL calendar ID"},
+                "contactId": {"type": "string", "description": "GHL contact ID"},
+                "startTime": {"type": "string", "description": "ISO start time"},
+                "endTime": {"type": "string", "description": "ISO end time"},
+                "title": {"type": "string", "description": "Appointment title"},
+                "appointmentStatus": {"type": "string", "default": "confirmed", "description": "Status: new, confirmed, cancelled"},
+                "toNotify": {"type": "boolean", "default": True, "description": "Send notification to contact"}
+            },
+            "required": ["calendarId", "contactId", "startTime", "endTime"]
+        }
+    },
+    {
+        "name": "ghl_update_appointment",
+        "description": "Update an existing GHL appointment.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "eventId": {"type": "string", "description": "Appointment/event ID"},
+                "updates": {"type": "object", "description": "Fields to update (title, startTime, endTime, etc.)"}
+            },
+            "required": ["eventId", "updates"]
+        }
+    },
+    {
+        "name": "ghl_get_appointment",
+        "description": "Get a GHL appointment by ID.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "eventId": {"type": "string", "description": "Appointment/event ID"}
+            },
+            "required": ["eventId"]
+        }
+    },
+    {
+        "name": "ghl_delete_calendar_event",
+        "description": "Delete a GHL calendar event.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "eventId": {"type": "string", "description": "Event ID to delete"}
+            },
+            "required": ["eventId"]
+        }
+    },
+    {
+        "name": "ghl_get_calendar_events",
+        "description": "List calendar events from GHL.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "calendarId": {"type": "string", "description": "GHL calendar ID"},
+                "startTime": {"type": "string", "description": "ISO start time filter"},
+                "endTime": {"type": "string", "description": "ISO end time filter"}
+            }
+        }
     }
 ]
 
@@ -576,7 +749,41 @@ async def main():
                     arguments["contacts"],
                     arguments.get("batchSize", 10)
                 )
-            
+
+            # Calendar tools
+            elif name == "ghl_get_calendars":
+                result = await ghl.get_calendars()
+
+            elif name == "ghl_get_free_slots":
+                result = await ghl.get_free_slots(
+                    arguments["calendarId"],
+                    arguments["startDate"],
+                    arguments["endDate"],
+                    arguments.get("timezone", "America/New_York")
+                )
+
+            elif name == "ghl_create_appointment":
+                result = await ghl.create_appointment(arguments)
+
+            elif name == "ghl_update_appointment":
+                result = await ghl.update_appointment(
+                    arguments["eventId"],
+                    arguments["updates"]
+                )
+
+            elif name == "ghl_get_appointment":
+                result = await ghl.get_appointment(arguments["eventId"])
+
+            elif name == "ghl_delete_calendar_event":
+                result = await ghl.delete_calendar_event(arguments["eventId"])
+
+            elif name == "ghl_get_calendar_events":
+                result = await ghl.get_calendar_events(
+                    arguments.get("calendarId"),
+                    arguments.get("startTime"),
+                    arguments.get("endTime")
+                )
+
             else:
                 result = {"error": f"Unknown tool: {name}"}
                 
