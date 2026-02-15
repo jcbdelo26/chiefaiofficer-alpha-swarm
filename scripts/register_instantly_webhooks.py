@@ -65,7 +65,7 @@ async def list_webhooks():
                 print(f"ERROR ({resp.status}): {json.dumps(data, indent=2)}")
                 return
 
-            webhooks = data if isinstance(data, list) else data.get("data", data.get("webhooks", []))
+            webhooks = data if isinstance(data, list) else data.get("items", data.get("data", data.get("webhooks", [])))
             if not webhooks:
                 print("No webhooks registered.")
                 return
@@ -91,7 +91,7 @@ async def register_webhooks():
 
             payload = {
                 "event_type": event_type,
-                "webhook_url": target_url,
+                "target_hook_url": target_url,
             }
 
             async with session.post(f"{BASE_URL}/webhooks", headers=headers, json=payload) as resp:
@@ -127,7 +127,7 @@ async def delete_all_webhooks():
         # First list
         async with session.get(f"{BASE_URL}/webhooks", headers=headers) as resp:
             data = await resp.json()
-            webhooks = data if isinstance(data, list) else data.get("data", data.get("webhooks", []))
+            webhooks = data if isinstance(data, list) else data.get("items", data.get("data", data.get("webhooks", [])))
 
         if not webhooks:
             print("No webhooks to delete.")
@@ -151,7 +151,7 @@ async def test_first_webhook():
     async with aiohttp.ClientSession() as session:
         async with session.get(f"{BASE_URL}/webhooks", headers=headers) as resp:
             data = await resp.json()
-            webhooks = data if isinstance(data, list) else data.get("data", data.get("webhooks", []))
+            webhooks = data if isinstance(data, list) else data.get("items", data.get("data", data.get("webhooks", [])))
 
         if not webhooks:
             print("No webhooks to test. Register first.")

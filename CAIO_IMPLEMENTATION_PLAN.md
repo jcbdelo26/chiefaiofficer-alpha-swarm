@@ -20,7 +20,7 @@ Phase 0: Foundation Lock          [##########] 100%  COMPLETE
 Phase 1: Live Pipeline Validation [##########] 100%  COMPLETE
 Phase 2: Supervised Burn-In       [##########] 100%  COMPLETE
 Phase 3: Expand & Harden          [##########] 100%  COMPLETE
-Phase 4: Autonomy Graduation      [####------]  35%  IN PROGRESS (V2 deployed, 6 domains warmed, DNS verified)
+Phase 4: Autonomy Graduation      [#####-----]  45%  IN PROGRESS (4A COMPLETE — V2 live, 6 domains, webhooks, test campaign)
 ```
 
 ---
@@ -229,7 +229,7 @@ Day 21: Email #5 (graceful close)
 
 ## Phase 4: Autonomy Graduation — IN PROGRESS
 
-### 4A: Domain & Instantly Go-Live — IN PROGRESS
+### 4A: Domain & Instantly Go-Live — COMPLETE
 
 **Domain Strategy**: 6 dedicated cold outreach domains + isolated nurture domain.
 
@@ -256,8 +256,8 @@ Day 21: Email #5 (graceful close)
 | Fix production.json domain mismatch | DONE | Updated from old placeholder domains to actual 6 chris.d@ accounts |
 | Set `INSTANTLY_FROM_EMAIL` in Railway | DONE | `chris.d@chiefaiofficerai.com` — Apply 1 change + Deploy pending |
 | GHL dedicated domain (`chiefai.ai`) | DONE | Stage 1 warmup (8%), Shared IP, SSL Issued (added 02/08/2026) |
-| Send 1 internal test campaign through Instantly | TODO | Validate end-to-end with real API |
-| Register Instantly webhooks (`instantly_setup_webhooks`) | TODO | Via `scripts/register_instantly_webhooks.py` |
+| Send 1 internal test campaign through Instantly | DONE | `test_internal_v2_20260215` — Active, 1 lead (josh@chiefaiofficer.com), sending via schedule |
+| Register Instantly webhooks | DONE | 4/4 registered: reply, bounce, open, unsubscribe → Railway dashboard |
 
 ### 4B: HeyReach LinkedIn Integration
 
