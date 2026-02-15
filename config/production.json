@@ -82,23 +82,29 @@
                 "burst_limit": 10
             },
             "sending_accounts": {
-                "note": "Email accounts configured in Instantly dashboard, grouped by domain. All warming up since Feb 12, 2026.",
+                "note": "Email accounts configured in Instantly dashboard. All warmed up, 100% health, DNS verified (SPF/DKIM/DMARC) as of 2026-02-15.",
                 "cold_outreach_domains": [
-                    "b2b.chiefaiofficer.com",
-                    "business.chiefaiofficer.com",
-                    "chiefaiofficer.com",
-                    "getchiefai.com",
-                    "chiefaitrends.com"
+                    "chiefaiofficerai.com",
+                    "chiefaiofficerconsulting.com",
+                    "chiefaiofficerguide.com",
+                    "chiefaiofficerlabs.com",
+                    "chiefaiofficerresources.com",
+                    "chiefaiofficersolutions.com"
                 ],
-                "do_not_use_for_cold": ["chiefai.ai"],
+                "do_not_use_for_cold": ["chiefai.ai", "b2b.chiefaiofficer.com", "business.chiefaiofficer.com"],
                 "primary_from_emails": [
-                    "chris@b2b.chiefaiofficer.com",
-                    "chris@business.chiefaiofficer.com",
-                    "chris@chiefaiofficer.com"
+                    "chris.d@chiefaiofficerai.com",
+                    "chris.d@chiefaiofficerconsulting.com",
+                    "chris.d@chiefaiofficerguide.com",
+                    "chris.d@chiefaiofficerlabs.com",
+                    "chris.d@chiefaiofficerresources.com",
+                    "chris.d@chiefaiofficersolutions.com"
                 ],
-                "accounts_per_campaign": 3,
+                "accounts_per_campaign": 6,
                 "rotation_strategy": "round_robin",
                 "warmup_started": "2026-02-12",
+                "warmup_verified": "2026-02-15",
+                "warmup_status": "complete",
                 "warmup_ramp": {
                     "week_1": 5,
                     "week_2": 10,
@@ -108,7 +114,7 @@
             },
             "domain_strategy": {
                 "note": "NEVER use chiefai.ai for cold outreach — reputation isolation",
-                "cold_outreach": "b2b.chiefaiofficer.com, business.chiefaiofficer.com (via Instantly)",
+                "cold_outreach": "chiefaiofficerai.com, chiefaiofficerconsulting.com, chiefaiofficerguide.com, chiefaiofficerlabs.com, chiefaiofficerresources.com, chiefaiofficersolutions.com (via Instantly, 6 accounts rotating)",
                 "nurture": "chiefai.ai (via GHL LC Email only)"
             }
         },

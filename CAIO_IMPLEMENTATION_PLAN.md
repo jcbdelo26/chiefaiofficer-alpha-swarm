@@ -1,6 +1,6 @@
 # CAIO Alpha Swarm — Unified Implementation Plan
 
-**Last Updated**: 2026-02-15 (v3.3)
+**Last Updated**: 2026-02-15 (v3.4)
 **Owner**: ChiefAIOfficer Production Team
 **AI**: Claude Opus 4.6
 
@@ -20,7 +20,7 @@ Phase 0: Foundation Lock          [##########] 100%  COMPLETE
 Phase 1: Live Pipeline Validation [##########] 100%  COMPLETE
 Phase 2: Supervised Burn-In       [##########] 100%  COMPLETE
 Phase 3: Expand & Harden          [##########] 100%  COMPLETE
-Phase 4: Autonomy Graduation      [##--------]  15%  IN PROGRESS (V2 code + docs + config complete)
+Phase 4: Autonomy Graduation      [####------]  35%  IN PROGRESS (V2 deployed, 6 domains warmed, DNS verified)
 ```
 
 ---
@@ -229,33 +229,35 @@ Day 21: Email #5 (graceful close)
 
 ## Phase 4: Autonomy Graduation — IN PROGRESS
 
-### 4A: Domain & Instantly Go-Live — NEXT
+### 4A: Domain & Instantly Go-Live — IN PROGRESS
 
-**Domain Strategy**: Subdomain split for reputation isolation.
+**Domain Strategy**: 6 dedicated cold outreach domains + isolated nurture domain.
 
-| Channel | Domain | Platform | Purpose |
-|---------|--------|----------|---------|
-| Cold outreach | `outbound.chiefai.ai` | Instantly V2 | New prospect cold emails |
-| Nurture/inbound | `mail.chiefai.ai` | GHL (LC Email) | Warm leads, follow-ups, booking confirmations |
+| Channel | Domains | Platform | Purpose |
+|---------|---------|----------|---------|
+| Cold outreach | `chiefaiofficerai.com`, `chiefaiofficerconsulting.com`, `chiefaiofficerguide.com`, `chiefaiofficerlabs.com`, `chiefaiofficerresources.com`, `chiefaiofficersolutions.com` | Instantly V2 | Cold emails, 6 accounts rotating |
+| Nurture/inbound | `mail.chiefai.ai` (planned) | GHL (LC Email) | Warm leads, follow-ups, booking confirmations |
 
 | Task | Status | Notes |
 |------|--------|-------|
 | Instantly V2 API migration (server.py, dispatcher, webhooks) | DONE | Bearer auth, cursor pagination, CRITICAL fixes C1-C4 |
 | Fix `email_list` bug in `create_campaign()` | DONE | V2 sending accounts were silently ignored — now passed in API payload |
-| Multi-account rotation config in production.json | DONE | `sending_accounts.primary_from_emails` — 3 accounts, round-robin |
+| Multi-account rotation config in production.json | DONE | `sending_accounts.primary_from_emails` — 6 accounts, round-robin |
 | Webhook handler V2 cleanup | DONE | `activate_campaign()` replaces `pause_campaign("resume")` |
 | CLAUDE.md dual-platform strategy update | DONE | Instantly re-added, domain isolation table, OPERATOR role |
 | INSTANTLY.md V2 documentation rewrite | DONE | 445 lines — endpoints, payloads, domains, agents, dispatcher |
 | Domain strategy config in production.json | DONE | `sending_accounts`, `domain_strategy`, `dedicated_domains` blocks |
 | All code files verified (AST + JSON parse) | DONE | server.py, dispatcher.py, webhook.py, health_app.py, production.json, permissions.json |
-| Set up `outbound.chiefai.ai` DNS (SPF, DKIM, DMARC) | TODO | Add records to DNS provider, verify in Instantly |
+| Generate Instantly V2 API key | DONE | V2 key working — `/api/instantly/campaigns` returns data |
+| Set `INSTANTLY_API_KEY` (V2) in Railway | DONE | Confirmed: endpoint returns `{"campaigns":[],"count":0}` |
+| Deploy V2 code to Railway | DONE | Commit `53ab1c1` — Instantly routes, dispatcher, webhooks all live |
+| 6 cold outreach domains DNS (SPF, DKIM, DMARC) | DONE | All 6 accounts verified green (100% health) in Instantly dashboard |
+| Instantly warm-up complete | DONE | 10 warmup emails/account, 100% health score across all 6 accounts |
+| Fix production.json domain mismatch | DONE | Updated from old placeholder domains to actual 6 chris.d@ accounts |
+| Set `INSTANTLY_FROM_EMAIL` in Railway | TODO | Set to `chris.d@chiefaiofficerai.com` (primary) |
 | Set up `mail.chiefai.ai` in GHL (LC Email dedicated domain) | TODO | GHL Settings → Email Services → Dedicated Domain |
-| Generate Instantly V2 API key | TODO | Instantly dashboard → Settings → Integrations → API V2 |
-| Set `INSTANTLY_API_KEY` (V2) in Railway | TODO | Replace V1 key with new V2 key |
-| Set `INSTANTLY_FROM_EMAIL` in Railway | TODO | e.g. `chris@outbound.chiefai.ai` |
-| Deploy V2 code to Railway | TODO | `git push` (auto-deploy) |
-| Activate Instantly warm-up (5/day ramp) | TODO | 4-week ramp: 5→10→15→25 emails/day |
 | Send 1 internal test campaign through Instantly | TODO | Validate end-to-end with real API |
+| Register Instantly webhooks (`instantly_setup_webhooks`) | TODO | Via MCP tool or API call to register callback URL |
 
 ### 4B: HeyReach LinkedIn Integration
 
@@ -443,14 +445,16 @@ QUEEN (orchestrator)
 | 2026-02-14 | Google Calendar setup guide created | Non-technical guide for HoS + OAuth setup script (`scripts/setup_google_calendar.py`) |
 | 2026-02-14 | Replace Google Calendar with GHL Calendar | Zero setup (GHL API keys already on Railway), CRM-native (appointments link to contacts), no OAuth flow needed. GHLCalendarClient is a drop-in adapter matching GoogleCalendarMCP interface. |
 | 2026-02-14 | Migrate Instantly V1 → V2 API | V1 deprecated Jan 19, 2026. Full rewrite: Bearer auth, cursor pagination, webhook CRUD, CampaignStatus enum. Fixed 4 CRITICAL failure modes (orphaned campaigns, pagination gap, suppression race condition). |
-| 2026-02-14 | Subdomain split for chiefai.ai | `outbound.chiefai.ai` for cold outreach (Instantly), `mail.chiefai.ai` for GHL nurture. Reputation isolation — cold spam reports don't poison nurture deliverability. |
+| 2026-02-14 | Domain reputation isolation | Dedicated cold outreach domains (6 domains, see 2026-02-15 entry) for Instantly, `mail.chiefai.ai` (planned) for GHL nurture. Reputation isolation — cold spam reports don't poison nurture deliverability. |
 | 2026-02-14 | HeyReach for LinkedIn automation | API compatible ($79/mo Growth). Cannot create campaigns via API (UI only). Native Instantly bidirectional sync. 11 webhook events. Lead-list-first pattern avoids campaign auto-reactivation. |
 | 2026-02-14 | OPERATOR as unified outbound agent | Consolidates Instantly email + HeyReach LinkedIn + GHL nurture under single execution layer. GATEKEEPER remains approval gate. QUEEN routes by ICP tier. |
 | 2026-02-15 | Dual-platform email strategy (GHL + Instantly) | CLAUDE.md updated from "GHL exclusive" to dual-platform. GHL handles nurture on `chiefai.ai`, Instantly handles cold outreach on 5 isolated domains. Domain reputation isolation is non-negotiable. |
-| 2026-02-15 | Multi-account rotation via `email_list` | Fixed silent V2 bug where sending accounts were never included in campaign payload. Added `sending_accounts` config block with 3 primary from-emails for round-robin rotation. |
+| 2026-02-15 | Multi-account rotation via `email_list` | Fixed silent V2 bug where sending accounts were never included in campaign payload. Added `sending_accounts` config block with 6 primary from-emails for round-robin rotation. |
+| 2026-02-15 | 6 dedicated cold outreach domains (NOT outbound.chiefai.ai) | User already has 6 warmed domains in Instantly: chiefaiofficerai.com, chiefaiofficerconsulting.com, chiefaiofficerguide.com, chiefaiofficerlabs.com, chiefaiofficerresources.com, chiefaiofficersolutions.com. This is BETTER than a single subdomain — more rotation diversity, better deliverability. Replaced placeholder domains in production.json. |
+| 2026-02-15 | Deploy Instantly routes to Railway | Commit `53ab1c1` deployed. Routes were local-only (never committed from previous session). Verified: `/api/instantly/campaigns`, `/webhooks/instantly/health`, `/api/instantly/dispatch-status` all responding. |
 
 ---
 
-*Plan Version: 3.3*
+*Plan Version: 3.4*
 *Created: 2026-02-13*
-*Supersedes: v3.2 (2026-02-14), IMPLEMENTATION_ROADMAP.md (v1.0, 2026-01-17)*
+*Supersedes: v3.3 (2026-02-15), IMPLEMENTATION_ROADMAP.md (v1.0, 2026-01-17)*
