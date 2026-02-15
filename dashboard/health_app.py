@@ -1404,6 +1404,13 @@ try:
 except Exception as e:
     logger.warning("Instantly webhook router could not be mounted: %s", e)
 
+try:
+    from webhooks.heyreach_webhook import router as heyreach_router
+    app.include_router(heyreach_router)
+    logger.info("✓ HeyReach Webhook mounted")
+except Exception as e:
+    logger.warning("HeyReach webhook router could not be mounted: %s", e)
+
 # =============================================================================
 # MAIN
 # =============================================================================

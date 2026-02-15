@@ -20,7 +20,7 @@ Phase 0: Foundation Lock          [##########] 100%  COMPLETE
 Phase 1: Live Pipeline Validation [##########] 100%  COMPLETE
 Phase 2: Supervised Burn-In       [##########] 100%  COMPLETE
 Phase 3: Expand & Harden          [##########] 100%  COMPLETE
-Phase 4: Autonomy Graduation      [#####-----]  45%  IN PROGRESS (4A COMPLETE — V2 live, 6 domains, webhooks, test campaign)
+Phase 4: Autonomy Graduation      [######----]  55%  IN PROGRESS (4A COMPLETE, 4B code built — awaiting HeyReach subscription)
 ```
 
 ---
@@ -261,20 +261,22 @@ Day 21: Email #5 (graceful close)
 
 ### 4B: HeyReach LinkedIn Integration
 
-**Status**: Research complete. API compatible with constraints (no campaign creation via API).
+**Status**: Code infrastructure BUILT. Awaiting HeyReach subscription + LinkedIn warm-up for activation.
 
 | Task | Status | Notes |
 |------|--------|-------|
-| Subscribe to HeyReach Growth ($79/mo, 1 sender) | TODO | API included on all plans |
-| Connect LinkedIn account + warm-up (4 weeks) | TODO | 20-25 connections/day ramp |
-| Build 3 campaign templates in HeyReach UI | TODO | tier_1, tier_2, tier_3 sequences |
-| Set `HEYREACH_API_KEY` in Railway | TODO | Dashboard → Settings → Integrations |
-| Create `execution/heyreach_dispatcher.py` | TODO | API client + lead-list-first safety pattern |
-| Register HeyReach webhooks (11 events → `/webhooks/heyreach`) | TODO | Via API: `POST /webhook/Create` |
-| Create `webhooks/heyreach_webhook.py` | TODO | Handle CONNECTION_ACCEPTED, REPLY, CAMPAIGN_COMPLETED |
-| Configure native HeyReach ↔ Instantly bidirectional sync | TODO | Paste API keys in both dashboards |
-| Wire CONNECTION_REQUEST_ACCEPTED → Instantly warm follow-up | TODO | RESPONDER agent routes the event |
-| Shadow test with 5 internal LinkedIn profiles | TODO | Validate before real outreach |
+| Subscribe to HeyReach Growth ($79/mo, 1 sender) | TODO | API included on all plans — USER ACTION |
+| Connect LinkedIn account + warm-up (4 weeks) | TODO | 20-25 connections/day ramp — USER ACTION |
+| Build 3 campaign templates in HeyReach UI | TODO | tier_1, tier_2, tier_3 sequences — USER ACTION |
+| Set `HEYREACH_API_KEY` in Railway | TODO | Dashboard → Settings → Integrations — USER ACTION |
+| Create `execution/heyreach_dispatcher.py` | DONE | API client + lead-list-first safety, daily ceiling (20/day), CLI with --dry-run |
+| Create `webhooks/heyreach_webhook.py` | DONE | 11 event handlers, JSONL logging, follow-up flags, Slack alerts |
+| Mount HeyReach webhook in dashboard | DONE | `dashboard/health_app.py` — router included after Instantly |
+| Create `scripts/register_heyreach_webhooks.py` | DONE | CRUD: --list, --delete-all, --check-auth (same pattern as Instantly) |
+| Register HeyReach webhooks (11 events → `/webhooks/heyreach`) | TODO | Run script after HEYREACH_API_KEY is set |
+| Configure native HeyReach ↔ Instantly bidirectional sync | TODO | Paste API keys in both dashboards — USER ACTION |
+| Wire CONNECTION_REQUEST_ACCEPTED → Instantly warm follow-up | DONE | Webhook handler writes flag file, dispatcher reads it |
+| Shadow test with 5 internal LinkedIn profiles | TODO | Validate before real outreach — USER ACTION |
 
 **HeyReach API Reference**:
 - Base URL: `https://api.heyreach.io/api/public`
@@ -432,6 +434,9 @@ QUEEN (orchestrator)
 | Instantly MCP server (V2) | `mcp-servers/instantly-mcp/server.py` |
 | Instantly webhook registration | `scripts/register_instantly_webhooks.py` |
 | Instantly integration spec (V2) | `docs/integrations/INSTANTLY.md` |
+| HeyReach dispatcher | `execution/heyreach_dispatcher.py` |
+| HeyReach webhooks | `webhooks/heyreach_webhook.py` |
+| HeyReach webhook registration | `scripts/register_heyreach_webhooks.py` |
 | Agent permissions | `core/agent_action_permissions.json` |
 | Agent registry | `execution/unified_agent_registry.py` |
 | This plan | `CAIO_IMPLEMENTATION_PLAN.md` |
