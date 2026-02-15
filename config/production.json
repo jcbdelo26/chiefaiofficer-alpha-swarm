@@ -115,7 +115,7 @@
             "domain_strategy": {
                 "note": "NEVER use chiefai.ai for cold outreach — reputation isolation",
                 "cold_outreach": "chiefaiofficerai.com, chiefaiofficerconsulting.com, chiefaiofficerguide.com, chiefaiofficerlabs.com, chiefaiofficerresources.com, chiefaiofficersolutions.com (via Instantly, 6 accounts rotating)",
-                "nurture": "chiefai.ai (via GHL LC Email only)"
+                "nurture": "chiefai.ai (GHL LC Email, Stage 1 warmup active, Shared IP, SSL issued)"
             }
         },
         "heyreach": {

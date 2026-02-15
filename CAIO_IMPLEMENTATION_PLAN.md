@@ -236,7 +236,7 @@ Day 21: Email #5 (graceful close)
 | Channel | Domains | Platform | Purpose |
 |---------|---------|----------|---------|
 | Cold outreach | `chiefaiofficerai.com`, `chiefaiofficerconsulting.com`, `chiefaiofficerguide.com`, `chiefaiofficerlabs.com`, `chiefaiofficerresources.com`, `chiefaiofficersolutions.com` | Instantly V2 | Cold emails, 6 accounts rotating |
-| Nurture/inbound | `mail.chiefai.ai` (planned) | GHL (LC Email) | Warm leads, follow-ups, booking confirmations |
+| Nurture/inbound | `chiefai.ai` | GHL (LC Email) | Warm leads, follow-ups, booking confirmations (Stage 1 warmup, 8%) |
 
 | Task | Status | Notes |
 |------|--------|-------|
@@ -254,10 +254,10 @@ Day 21: Email #5 (graceful close)
 | 6 cold outreach domains DNS (SPF, DKIM, DMARC) | DONE | All 6 accounts verified green (100% health) in Instantly dashboard |
 | Instantly warm-up complete | DONE | 10 warmup emails/account, 100% health score across all 6 accounts |
 | Fix production.json domain mismatch | DONE | Updated from old placeholder domains to actual 6 chris.d@ accounts |
-| Set `INSTANTLY_FROM_EMAIL` in Railway | TODO | Set to `chris.d@chiefaiofficerai.com` (primary) |
-| Set up `mail.chiefai.ai` in GHL (LC Email dedicated domain) | TODO | GHL Settings → Email Services → Dedicated Domain |
+| Set `INSTANTLY_FROM_EMAIL` in Railway | DONE | `chris.d@chiefaiofficerai.com` — Apply 1 change + Deploy pending |
+| GHL dedicated domain (`chiefai.ai`) | DONE | Stage 1 warmup (8%), Shared IP, SSL Issued (added 02/08/2026) |
 | Send 1 internal test campaign through Instantly | TODO | Validate end-to-end with real API |
-| Register Instantly webhooks (`instantly_setup_webhooks`) | TODO | Via MCP tool or API call to register callback URL |
+| Register Instantly webhooks (`instantly_setup_webhooks`) | TODO | Via `scripts/register_instantly_webhooks.py` |
 
 ### 4B: HeyReach LinkedIn Integration
 

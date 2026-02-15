@@ -137,9 +137,9 @@ Message 3: TodoWrite
 
 ### Email Platform Strategy (Dual-Platform)
 
-| Channel | Platform | Domain | Purpose |
-|---------|----------|--------|---------|
-| Cold outreach | Instantly (V2) | b2b.chiefaiofficer.com, business.chiefaiofficer.com | New prospect cold emails (20+ mailboxes, round-robin) |
+| Channel | Platform | Domains | Purpose |
+|---------|----------|---------|---------|
+| Cold outreach | Instantly (V2) | chiefaiofficerai.com, chiefaiofficerconsulting.com, chiefaiofficerguide.com, chiefaiofficerlabs.com, chiefaiofficerresources.com, chiefaiofficersolutions.com | Cold emails (6 accounts, chris.d@ sender, round-robin) |
 | Nurture/warm | GHL (LC Email) | chiefai.ai | Warm leads, follow-ups, booking confirmations |
 
 > **NEVER send cold outreach through GHL. NEVER send nurture through Instantly. Domain reputation isolation is non-negotiable.**
