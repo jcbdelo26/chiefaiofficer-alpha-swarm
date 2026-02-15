@@ -50,7 +50,7 @@ def register_handler(operation_name: str) -> Callable:
 @register_handler("enrichment")
 def handle_enrichment_retry(payload: dict[str, Any]) -> Any:
     """Retry enrichment for a lead."""
-    from execution.enricher_clay_waterfall import ClayEnricher
+    from execution.enricher_waterfall import ClayEnricher
     
     enricher = ClayEnricher()
     result = enricher.enrich_lead(

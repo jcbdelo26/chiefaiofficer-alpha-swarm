@@ -614,7 +614,7 @@ class SPARCCoordinator:
         """Check connectivity of all agents."""
         agents = {
             "HUNTER": EXECUTION_DIR / "hunter_scrape_followers.py",
-            "ENRICHER": EXECUTION_DIR / "enricher_clay_waterfall.py",
+            "ENRICHER": EXECUTION_DIR / "enricher_waterfall.py",
             "SEGMENTOR": EXECUTION_DIR / "segmentor_classify.py",
             "CRAFTER": EXECUTION_DIR / "crafter_campaign.py",
             "GATEKEEPER": EXECUTION_DIR / "gatekeeper_queue.py",

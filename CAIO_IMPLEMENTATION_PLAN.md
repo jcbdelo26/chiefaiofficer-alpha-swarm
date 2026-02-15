@@ -1,6 +1,6 @@
 # CAIO Alpha Swarm — Unified Implementation Plan
 
-**Last Updated**: 2026-02-15 (v3.4)
+**Last Updated**: 2026-02-16 (v3.5)
 **Owner**: ChiefAIOfficer Production Team
 **AI**: Claude Opus 4.6
 
@@ -322,9 +322,9 @@ QUEEN (orchestrator)
 ### 4E: Supervised Live Sends
 
 ### Prerequisites
-- [ ] `outbound.chiefai.ai` DNS verified + warm-up complete (4 weeks)
-- [ ] LinkedIn account warm-up complete (4 weeks)
-- [ ] Internal test campaign sent successfully via Instantly
+- [x] 6 cold outreach domains DNS verified + warm-up complete (all 100% health)
+- [x] Internal test campaign sent successfully via Instantly (`test_internal_v2_20260215`)
+- [ ] LinkedIn account warm-up complete (4 weeks) — requires HeyReach subscription
 - [ ] Shadow test via HeyReach completed (5 profiles)
 - [ ] OPERATOR agent operational
 
@@ -349,6 +349,49 @@ QUEEN (orchestrator)
 
 ---
 
+## Phase 5: Optimize & Scale (Post-Autonomy)
+
+**Principle**: Only optimize what you have production data for. Don't build infrastructure for hypothetical problems.
+
+**Strategy**: "Own the Brain, Rent the Pipes" — intelligence layer (ICP scoring, message strategy, agent orchestration, approval gates) is the moat. Email sending, CRM, enrichment APIs are rented infrastructure.
+
+### 5A: Data Optimization (Trigger: 2 weeks of live sends)
+
+| Task | Status | Notes |
+|------|--------|-------|
+| Enrichment result caching (Supabase) | TODO | Saves Apollo credits on re-encounters |
+| Self-learning ICP calibration | TODO | Feed real deal outcomes back to scoring model |
+| Enrichment quality feedback loop | TODO | Track which provider gives best data per segment |
+| Document adapter contracts in CLAUDE.md | TODO | Low effort, high clarity |
+
+### 5B: Intelligence Layer (Trigger: 30 days of send data)
+
+| Task | Status | Notes |
+|------|--------|-------|
+| Multi-source intent fusion | TODO | RB2B visitors + email opens + LinkedIn engagement → unified intent score |
+| A/B testing infrastructure | TODO | Email subject/body variants — needs real send data first |
+| Campaign performance analytics dashboard | TODO | Aggregate Instantly + HeyReach metrics |
+
+### 5C: Infrastructure Migration (Trigger: Volume exceeds 500 emails/day)
+
+| Task | Status | Notes |
+|------|--------|-------|
+| Evaluate Resend.com as secondary email backend | TODO | $20/mo for 50K — only if Instantly fails or limits hit |
+| Evaluate AWS SES for cold sending | TODO | ~$0.10/1000 — only at scale |
+| DNS health monitoring dashboard | TODO | Only if deliverability drops |
+
+### Decisioned Out (Explicitly NOT doing)
+
+| Item | Source | Why Not |
+|------|--------|---------|
+| Rebuild CRM (replace GHL) | Modernization Roadmap | CRMs are commodity infrastructure. GHL works. 2-year project, zero competitive advantage. |
+| Custom warmup at current volume | Modernization Roadmap | 6 accounts x 25/day = 150 emails. Instantly handles warmup. Building custom is absurd at this scale. |
+| Replace RB2B with custom pixel | Modernization Roadmap | IP-to-identity is proprietary tech. RB2B works. |
+| Exa.ai as third enrichment provider | Modernization Roadmap | Apollo + BetterContact covers needs. Third provider adds complexity without clear ROI. Revisit if miss rate >20%. |
+| Full email migration from Instantly | Modernization Roadmap | EmailSendingAdapter exists for future swap. Only migrate when volume justifies custom SMTP infrastructure. |
+
+---
+
 ## Current API Status
 
 | Service | Status | Notes |
@@ -359,7 +402,7 @@ QUEEN (orchestrator)
 | **Slack Alerting** | WORKING | Webhook configured, WARNING + CRITICAL alerts |
 | **Redis (Upstash)** | WORKING | 62ms from Railway |
 | **Inngest** | WORKING | 4 functions mounted |
-| **Instantly.ai** | V2 MIGRATED | Bearer auth, DRAFTED-by-default, dispatcher + webhooks. Needs V2 API key + domain setup. |
+| **Instantly.ai** | V2 LIVE | Bearer auth, DRAFTED-by-default, 6 domains warmed (100% health), 4/4 webhooks registered, test campaign sent. Phase 4A COMPLETE. |
 | **HeyReach** | RESEARCHED | API compatible ($79/mo Growth). No campaign creation via API. Needs subscription + LinkedIn warm-up. |
 | **Railway** | DEPLOYED | Auto-deploy on push |
 | **Proxycurl** | REMOVED | Shutting down Jul 2026 (sued by LinkedIn) |
@@ -387,6 +430,7 @@ QUEEN (orchestrator)
 | Instantly dispatcher | `execution/instantly_dispatcher.py` |
 | Instantly webhooks | `webhooks/instantly_webhook.py` |
 | Instantly MCP server (V2) | `mcp-servers/instantly-mcp/server.py` |
+| Instantly webhook registration | `scripts/register_instantly_webhooks.py` |
 | Instantly integration spec (V2) | `docs/integrations/INSTANTLY.md` |
 | Agent permissions | `core/agent_action_permissions.json` |
 | Agent registry | `execution/unified_agent_registry.py` |
@@ -445,7 +489,7 @@ QUEEN (orchestrator)
 | 2026-02-14 | Google Calendar setup guide created | Non-technical guide for HoS + OAuth setup script (`scripts/setup_google_calendar.py`) |
 | 2026-02-14 | Replace Google Calendar with GHL Calendar | Zero setup (GHL API keys already on Railway), CRM-native (appointments link to contacts), no OAuth flow needed. GHLCalendarClient is a drop-in adapter matching GoogleCalendarMCP interface. |
 | 2026-02-14 | Migrate Instantly V1 → V2 API | V1 deprecated Jan 19, 2026. Full rewrite: Bearer auth, cursor pagination, webhook CRUD, CampaignStatus enum. Fixed 4 CRITICAL failure modes (orphaned campaigns, pagination gap, suppression race condition). |
-| 2026-02-14 | Domain reputation isolation | Dedicated cold outreach domains (6 domains, see 2026-02-15 entry) for Instantly, `mail.chiefai.ai` (planned) for GHL nurture. Reputation isolation — cold spam reports don't poison nurture deliverability. |
+| 2026-02-14 | Domain reputation isolation | Dedicated cold outreach domains (6 domains, see 2026-02-15 entry) for Instantly, `chiefai.ai` for GHL nurture. Reputation isolation — cold spam reports don't poison nurture deliverability. |
 | 2026-02-14 | HeyReach for LinkedIn automation | API compatible ($79/mo Growth). Cannot create campaigns via API (UI only). Native Instantly bidirectional sync. 11 webhook events. Lead-list-first pattern avoids campaign auto-reactivation. |
 | 2026-02-14 | OPERATOR as unified outbound agent | Consolidates Instantly email + HeyReach LinkedIn + GHL nurture under single execution layer. GATEKEEPER remains approval gate. QUEEN routes by ICP tier. |
 | 2026-02-15 | Dual-platform email strategy (GHL + Instantly) | CLAUDE.md updated from "GHL exclusive" to dual-platform. GHL handles nurture on `chiefai.ai`, Instantly handles cold outreach on 5 isolated domains. Domain reputation isolation is non-negotiable. |
@@ -455,6 +499,6 @@ QUEEN (orchestrator)
 
 ---
 
-*Plan Version: 3.4*
+*Plan Version: 3.5*
 *Created: 2026-02-13*
-*Supersedes: v3.3 (2026-02-15), IMPLEMENTATION_ROADMAP.md (v1.0, 2026-01-17)*
+*Supersedes: v3.4, Modernization Roadmap (implementation_plan.md.resolved), Original Path to Full Autonomy (f34646b2/task.md.resolved)*

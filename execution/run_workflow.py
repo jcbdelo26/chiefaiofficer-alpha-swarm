@@ -157,7 +157,7 @@ class WorkflowOrchestrator:
             console.print("\n[bold]Step 2: Enrich via Clay[/bold]")
             step_start = time.time()
             
-            from execution.enricher_clay_waterfall import ClayEnricher
+            from execution.enricher_waterfall import ClayEnricher
             
             enricher = ClayEnricher(test_mode=self.test_mode)
             if input_file:

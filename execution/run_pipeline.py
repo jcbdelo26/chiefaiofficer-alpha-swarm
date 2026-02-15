@@ -403,7 +403,7 @@ class UnifiedPipeline:
                 self.enriched.append(enriched_lead)
         else:
             try:
-                from execution.enricher_clay_waterfall import ClayEnricher
+                from execution.enricher_waterfall import ClayEnricher
                 from dataclasses import asdict
                 enricher = ClayEnricher()
                 self.enriched = []

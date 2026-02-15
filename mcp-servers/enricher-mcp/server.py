@@ -113,7 +113,7 @@ class EnricherMCPServer:
     async def enrich_lead(self, linkedin_url: str, name: str = "", company: str = "", email: str = "") -> Dict[str, Any]:
         """Enrich a single lead via Clay waterfall."""
         try:
-            from execution.enricher_clay_waterfall import ClayEnricher
+            from execution.enricher_waterfall import ClayEnricher
             
             enricher = ClayEnricher()
             result = enricher.enrich_lead(
@@ -256,7 +256,7 @@ class EnricherMCPServer:
     async def batch_enrich(self, input_file: str, limit: int = 50) -> Dict[str, Any]:
         """Batch enrich leads from a JSON file."""
         try:
-            from execution.enricher_clay_waterfall import ClayEnricher
+            from execution.enricher_waterfall import ClayEnricher
             
             enricher = ClayEnricher()
             enriched = enricher.enrich_batch(Path(input_file))

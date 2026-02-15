@@ -89,7 +89,7 @@ class UnifiedAgentRegistry:
             name="ENRICHER",
             swarm=AgentSwarm.ALPHA,
             description="Data enrichment via Clay waterfall",
-            module_path="execution.enricher_clay_waterfall"
+            module_path="execution.enricher_waterfall"
         )
         
         self.agents["segmentor"] = AgentInfo(
