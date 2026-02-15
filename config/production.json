@@ -34,6 +34,32 @@
                 "enabled": true,
                 "failure_threshold": 5,
                 "recovery_timeout_seconds": 300
+            },
+            "dedicated_domains": {
+                "primary": {
+                    "domain": "chiefai.ai",
+                    "purpose": "nurture_only",
+                    "warmup_stage": 1,
+                    "added": "2026-02-08",
+                    "ssl": true,
+                    "ip": "shared"
+                },
+                "secondary": {
+                    "domain": "b2b.chiefaiofficer.com",
+                    "purpose": "legacy_nurture",
+                    "warmup_stage": 3,
+                    "added": "2025-09-26",
+                    "ssl": true,
+                    "ip": "shared"
+                },
+                "tertiary": {
+                    "domain": "business.chiefaiofficer.com",
+                    "purpose": "nurture_overflow",
+                    "warmup_stage": 1,
+                    "added": "2026-01-28",
+                    "ssl": true,
+                    "ip": "shared"
+                }
             }
         },
         "rb2b": {
@@ -45,15 +71,67 @@
             "retry_attempts": 2
         },
         "instantly": {
-            "enabled": false,
-            "note": "DISABLED - GHL is the exclusive email platform",
-            "base_url": "https://api.instantly.ai/api/v1",
+            "enabled": true,
+            "note": "V2 API. Campaigns start DRAFTED (paused-by-default). Dashboard activation required.",
+            "base_url": "https://api.instantly.ai/api/v2",
             "api_key_env": "INSTANTLY_API_KEY",
             "timeout_seconds": 20,
             "retry_attempts": 3,
             "rate_limit": {
                 "requests_per_minute": 60,
                 "burst_limit": 10
+            },
+            "sending_accounts": {
+                "note": "Email accounts configured in Instantly dashboard, grouped by domain. All warming up since Feb 12, 2026.",
+                "cold_outreach_domains": [
+                    "b2b.chiefaiofficer.com",
+                    "business.chiefaiofficer.com",
+                    "chiefaiofficer.com",
+                    "getchiefai.com",
+                    "chiefaitrends.com"
+                ],
+                "do_not_use_for_cold": ["chiefai.ai"],
+                "primary_from_emails": [
+                    "chris@b2b.chiefaiofficer.com",
+                    "chris@business.chiefaiofficer.com",
+                    "chris@chiefaiofficer.com"
+                ],
+                "accounts_per_campaign": 3,
+                "rotation_strategy": "round_robin",
+                "warmup_started": "2026-02-12",
+                "warmup_ramp": {
+                    "week_1": 5,
+                    "week_2": 10,
+                    "week_3": 15,
+                    "week_4": 25
+                }
+            },
+            "domain_strategy": {
+                "note": "NEVER use chiefai.ai for cold outreach — reputation isolation",
+                "cold_outreach": "b2b.chiefaiofficer.com, business.chiefaiofficer.com (via Instantly)",
+                "nurture": "chiefai.ai (via GHL LC Email only)"
+            }
+        },
+        "heyreach": {
+            "enabled": false,
+            "note": "LinkedIn automation. Campaigns must be pre-built in UI. API for lead routing + pause/resume only.",
+            "base_url": "https://api.heyreach.io/api/public",
+            "api_key_env": "HEYREACH_API_KEY",
+            "timeout_seconds": 20,
+            "retry_attempts": 2,
+            "rate_limit": {
+                "requests_per_minute": 300,
+                "burst_limit": 30
+            },
+            "campaign_templates": {
+                "note": "Campaign IDs must be pre-created in HeyReach UI and mapped here",
+                "tier_1": null,
+                "tier_2": null,
+                "tier_3": null
+            },
+            "safety": {
+                "add_to_list_first": true,
+                "note": "Adding leads directly to campaign auto-reactivates it. Route through list first."
             }
         },
         "clay": {
@@ -291,6 +369,8 @@
         "TWILIO_ACCOUNT_SID",
         "TWILIO_AUTH_TOKEN",
         "TWILIO_FROM_NUMBER",
+        "INSTANTLY_FROM_EMAIL",
+        "HEYREACH_API_KEY",
         "SMTP_USER",
         "SMTP_PASSWORD",
         "ESCALATION_PHONE_L2",

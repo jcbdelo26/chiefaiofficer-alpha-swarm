@@ -50,7 +50,10 @@
       "command": "python",
       "args": ["mcp-servers/ghl-mcp/server.py"]
     },
-    # instantly-mcp REMOVED - GHL is exclusive email platform
+    "instantly-mcp": {
+      "command": "python",
+      "args": ["mcp-servers/instantly-mcp/server.py"]
+    },
     "claude-flow": {
       "command": "npx",
       "args": ["claude-flow@alpha", "mcp", "start"]
@@ -123,13 +126,23 @@ Message 3: TodoWrite
 
 | Platform | API Key Variable | Purpose |
 |----------|-----------------|---------|
-| GoHighLevel | `GHL_API_KEY` | CRM + Email Outreach (UNIFIED) |
-| Clay | `CLAY_API_KEY` | Enrichment |
+| GoHighLevel | `GHL_API_KEY` | CRM + Nurture Email (chiefai.ai domain) |
+| Instantly | `INSTANTLY_API_KEY` | Cold Outreach Email (V2 API, multi-mailbox rotation) |
+| Apollo.io | `APOLLO_API_KEY` | Lead Discovery + Enrichment |
+| Clay | `CLAY_API_KEY` | RB2B Visitor Enrichment only |
 | RB2B | `RB2B_API_KEY` | Visitor ID |
 | LinkedIn | `LINKEDIN_COOKIE` | Scraping |
 | Supabase | `SUPABASE_URL`, `SUPABASE_KEY` | Data Layer |
+| Slack | `SLACK_WEBHOOK_URL` | Alerts (WARNING, CRITICAL, INFO) |
 
-> ⚠️ **GHL is the ONLY email platform** - No Instantly. All outreach goes through GHL.
+### Email Platform Strategy (Dual-Platform)
+
+| Channel | Platform | Domain | Purpose |
+|---------|----------|--------|---------|
+| Cold outreach | Instantly (V2) | b2b.chiefaiofficer.com, business.chiefaiofficer.com | New prospect cold emails (20+ mailboxes, round-robin) |
+| Nurture/warm | GHL (LC Email) | chiefai.ai | Warm leads, follow-ups, booking confirmations |
+
+> **NEVER send cold outreach through GHL. NEVER send nurture through Instantly. Domain reputation isolation is non-negotiable.**
 
 ---
 
@@ -327,7 +340,7 @@ The Unified Guardrails System provides enterprise-grade protection for all 12 ag
 | CRAFTER | Lead Gen | ❌ | get_templates, create_task |
 | GATEKEEPER | Approval | ✅ (weight: 2) | send_email, bulk_send |
 | SCOUT | Pipeline | ❌ | read_pipeline, search |
-| OPERATOR | Pipeline | ❌ | trigger_workflow |
+| OPERATOR | Outbound Execution | ❌ | instantly_*, heyreach_*, trigger_workflow |
 | COACH | Pipeline | ❌ | update_contact |
 | PIPER | Pipeline | ❌ | update_opportunity |
 | SCHEDULER | Scheduling | ❌ | calendar_ops |

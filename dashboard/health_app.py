@@ -1397,6 +1397,13 @@ try:
 except Exception as e:
     logger.warning("RB2B Webhook could not be mounted: %s", e)
 
+try:
+    from webhooks.instantly_webhook import router as instantly_router
+    app.include_router(instantly_router)
+    logger.info("✓ Instantly Webhook + Campaign Management mounted")
+except Exception as e:
+    logger.warning("Instantly webhook router could not be mounted: %s", e)
+
 # =============================================================================
 # MAIN
 # =============================================================================

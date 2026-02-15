@@ -296,23 +296,39 @@
       }
     },
     "OPERATOR": {
-      "description": "Pipeline operations and workflow triggers",
-      "role": "pipeline",
+      "description": "Unified outbound execution — Instantly email campaigns, HeyReach LinkedIn automation, GHL nurture workflows",
+      "role": "outbound_execution",
       "allowed_actions": [
         "read_contact",
         "read_pipeline",
         "update_opportunity",
-        "trigger_workflow"
+        "trigger_workflow",
+        "send_email",
+        "schedule_email",
+        "instantly_create_campaign",
+        "instantly_add_leads",
+        "instantly_pause_campaign",
+        "instantly_activate_campaign",
+        "instantly_delete_campaign",
+        "heyreach_add_leads_to_list",
+        "heyreach_add_leads_to_campaign",
+        "heyreach_pause_campaign",
+        "heyreach_resume_campaign",
+        "heyreach_list_campaigns",
+        "heyreach_setup_webhooks"
       ],
-      "denied_actions": [],
+      "denied_actions": [
+        "bulk_delete"
+      ],
       "can_delegate": false,
       "can_approve": false,
       "approval_weight": 1,
       "rate_limits": {
-        "per_minute": 20,
-        "per_hour": 150,
-        "per_day": 1500
-      }
+        "per_minute": 30,
+        "per_hour": 300,
+        "per_day": 3000
+      },
+      "notes": "Single execution layer for all outbound channels. Requires GATEKEEPER approval before dispatch."
     },
     "COACH": {
       "description": "Lead scoring and engagement coaching",

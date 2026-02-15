@@ -1,6 +1,6 @@
 # CAIO Alpha Swarm — Unified Implementation Plan
 
-**Last Updated**: 2026-02-14
+**Last Updated**: 2026-02-15 (v3.3)
 **Owner**: ChiefAIOfficer Production Team
 **AI**: Claude Opus 4.6
 
@@ -10,17 +10,17 @@
 
 The CAIO Alpha Swarm is a 12-agent autonomous SDR pipeline: Lead Discovery (Apollo.io) -> Enrichment (Apollo + fallback) -> ICP Scoring -> Email Crafting -> Approval -> Send (Instantly.ai). This plan tracks all phases from foundation through production autonomy.
 
-**Current Position**: Phase 3 (Expand & Harden) — 95% COMPLETE
-**Production Pipeline**: 6/6 stages PASS with real Apollo data (12-68s end-to-end)
-**Autonomy Score**: ~88/100
-**Total Production Runs**: 27 (16 fully clean, last 4 consecutive 6/6 PASS)
+**Current Position**: Phase 4 (Autonomy Graduation) — IN PROGRESS
+**Production Pipeline**: 6/6 stages PASS with real Apollo data (8-68s end-to-end)
+**Autonomy Score**: ~90/100
+**Total Production Runs**: 33+ (22 fully clean, last 10 consecutive 6/6 PASS)
 
 ```
 Phase 0: Foundation Lock          [##########] 100%  COMPLETE
 Phase 1: Live Pipeline Validation [##########] 100%  COMPLETE
 Phase 2: Supervised Burn-In       [##########] 100%  COMPLETE
-Phase 3: Expand & Harden          [#########-]  95%  CLOSING OUT
-Phase 4: Autonomy Graduation      [----------]   0%  PENDING
+Phase 3: Expand & Harden          [##########] 100%  COMPLETE
+Phase 4: Autonomy Graduation      [##--------]  15%  IN PROGRESS (V2 code + docs + config complete)
 ```
 
 ---
@@ -95,7 +95,7 @@ Production pipeline validated with real Apollo data. All critical blockers resol
 
 ---
 
-## Phase 3: Expand & Harden — 95% COMPLETE
+## Phase 3: Expand & Harden — COMPLETE
 
 ### Completed Tasks
 
@@ -139,13 +139,13 @@ Production pipeline validated with real Apollo data. All critical blockers resol
 - RB2B visitors → Clay workbook webhook → enrichment columns → HTTP callback to `/webhooks/clay`
 - `/webhooks/clay` handler: RB2B visitor path only (pipeline lead path removed)
 
-### In Progress Tasks
+### Completed (Final)
 
 | Task | Status | Notes |
 |------|--------|-------|
-| Deploy GHL calendar + latest fixes to Railway | NEEDS PUSH | GHL calendar, send stage rewrite, alerts |
-| Set GHL_CALENDAR_ID in Railway | NEEDS USER | Get calendar ID from GHL account → add as Railway env var |
-| Hit 10+ clean production runs | 10/10 | 10 consecutive 6/6 PASS achieved |
+| Deploy GHL calendar + latest fixes to Railway | DONE | Deployed 2026-02-14 (commit 348ad84) |
+| Hit 10+ clean production runs | DONE | 10 consecutive 6/6 PASS achieved |
+| Instantly V2 API migration | DONE | server.py rewrite, dispatcher orphan fix, webhook suppression JSONL |
 
 ### Deferred Tasks
 
@@ -154,10 +154,8 @@ Production pipeline validated with real Apollo data. All critical blockers resol
 | BetterContact Starter subscription | DEFERRED | Code ready, activate when Apollo miss rate justifies $15/mo |
 | FullEnrich integration | DEFERRED | BetterContact preferred as first fallback |
 | ZeroBounce email verification layer | DEFERRED | Add when real sends begin (pre-send verification) |
-| HeyReach LinkedIn automation | DEFERRED | Multi-channel Phase 4+ (need warm LinkedIn accounts first) |
-| Instantly.ai Send stage configuration | DEFERRED | Requires domain warm-up plan execution |
 | Supabase Lead 360 view | DEFERRED | Need unified lead schema first |
-| Job change detection (Bombora/G2) | DEFERRED | Phase 4+ |
+| Job change detection (Bombora/G2) | DEFERRED | Phase 5+ |
 | Clay pipeline enrichment fallback | CANCELLED | `lead_id` not accessible in HTTP callback → 3-min timeouts |
 
 ---
@@ -229,32 +227,123 @@ Day 21: Email #5 (graceful close)
 
 ---
 
-## Phase 4: Autonomy Graduation — PENDING
+## Phase 4: Autonomy Graduation — IN PROGRESS
+
+### 4A: Domain & Instantly Go-Live — NEXT
+
+**Domain Strategy**: Subdomain split for reputation isolation.
+
+| Channel | Domain | Platform | Purpose |
+|---------|--------|----------|---------|
+| Cold outreach | `outbound.chiefai.ai` | Instantly V2 | New prospect cold emails |
+| Nurture/inbound | `mail.chiefai.ai` | GHL (LC Email) | Warm leads, follow-ups, booking confirmations |
+
+| Task | Status | Notes |
+|------|--------|-------|
+| Instantly V2 API migration (server.py, dispatcher, webhooks) | DONE | Bearer auth, cursor pagination, CRITICAL fixes C1-C4 |
+| Fix `email_list` bug in `create_campaign()` | DONE | V2 sending accounts were silently ignored — now passed in API payload |
+| Multi-account rotation config in production.json | DONE | `sending_accounts.primary_from_emails` — 3 accounts, round-robin |
+| Webhook handler V2 cleanup | DONE | `activate_campaign()` replaces `pause_campaign("resume")` |
+| CLAUDE.md dual-platform strategy update | DONE | Instantly re-added, domain isolation table, OPERATOR role |
+| INSTANTLY.md V2 documentation rewrite | DONE | 445 lines — endpoints, payloads, domains, agents, dispatcher |
+| Domain strategy config in production.json | DONE | `sending_accounts`, `domain_strategy`, `dedicated_domains` blocks |
+| All code files verified (AST + JSON parse) | DONE | server.py, dispatcher.py, webhook.py, health_app.py, production.json, permissions.json |
+| Set up `outbound.chiefai.ai` DNS (SPF, DKIM, DMARC) | TODO | Add records to DNS provider, verify in Instantly |
+| Set up `mail.chiefai.ai` in GHL (LC Email dedicated domain) | TODO | GHL Settings → Email Services → Dedicated Domain |
+| Generate Instantly V2 API key | TODO | Instantly dashboard → Settings → Integrations → API V2 |
+| Set `INSTANTLY_API_KEY` (V2) in Railway | TODO | Replace V1 key with new V2 key |
+| Set `INSTANTLY_FROM_EMAIL` in Railway | TODO | e.g. `chris@outbound.chiefai.ai` |
+| Deploy V2 code to Railway | TODO | `git push` (auto-deploy) |
+| Activate Instantly warm-up (5/day ramp) | TODO | 4-week ramp: 5→10→15→25 emails/day |
+| Send 1 internal test campaign through Instantly | TODO | Validate end-to-end with real API |
+
+### 4B: HeyReach LinkedIn Integration
+
+**Status**: Research complete. API compatible with constraints (no campaign creation via API).
+
+| Task | Status | Notes |
+|------|--------|-------|
+| Subscribe to HeyReach Growth ($79/mo, 1 sender) | TODO | API included on all plans |
+| Connect LinkedIn account + warm-up (4 weeks) | TODO | 20-25 connections/day ramp |
+| Build 3 campaign templates in HeyReach UI | TODO | tier_1, tier_2, tier_3 sequences |
+| Set `HEYREACH_API_KEY` in Railway | TODO | Dashboard → Settings → Integrations |
+| Create `execution/heyreach_dispatcher.py` | TODO | API client + lead-list-first safety pattern |
+| Register HeyReach webhooks (11 events → `/webhooks/heyreach`) | TODO | Via API: `POST /webhook/Create` |
+| Create `webhooks/heyreach_webhook.py` | TODO | Handle CONNECTION_ACCEPTED, REPLY, CAMPAIGN_COMPLETED |
+| Configure native HeyReach ↔ Instantly bidirectional sync | TODO | Paste API keys in both dashboards |
+| Wire CONNECTION_REQUEST_ACCEPTED → Instantly warm follow-up | TODO | RESPONDER agent routes the event |
+| Shadow test with 5 internal LinkedIn profiles | TODO | Validate before real outreach |
+
+**HeyReach API Reference**:
+- Base URL: `https://api.heyreach.io/api/public`
+- Auth: `X-API-KEY` header
+- Rate limit: 300 req/min
+- CRITICAL: Adding leads to paused campaign auto-reactivates it → use lead-list-first pattern
+
+### 4C: OPERATOR Agent Activation
+
+**Design**: OPERATOR becomes the unified outbound execution layer for all channels.
+
+```
+QUEEN (orchestrator)
+  → GATEKEEPER (approve)
+    → OPERATOR (execute)
+      ├── Instantly API V2 (email campaigns)
+      ├── HeyReach API (LinkedIn campaigns)
+      └── GHL API (nurture workflows)
+```
+
+| Task | Status | Notes |
+|------|--------|-------|
+| Create `execution/operator_outbound.py` | TODO | Unified dispatch interface |
+| Move `instantly_dispatcher.py` under OPERATOR | TODO | OPERATOR.dispatch("email", ...) |
+| Add `heyreach_dispatcher.py` under OPERATOR | TODO | OPERATOR.dispatch("linkedin", ...) |
+| Update agent registry (module_path, description) | DONE | Points to `execution.operator_outbound` |
+| Update agent permissions (Instantly + HeyReach actions) | DONE | 17 new allowed actions for OPERATOR |
+| QUEEN routing logic: ICP tier → channel selection | TODO | tier_1: email+LinkedIn, tier_2: email, tier_3: email only |
+| GATEKEEPER approval gate for both channels | TODO | Single choke point before OPERATOR dispatches |
+
+### 4D: Multi-Channel Cadence (21-day)
+
+| Day | Channel | Action | Platform |
+|-----|---------|--------|----------|
+| 1 | Email | Personalized intro | Instantly |
+| 2 | LinkedIn | Connection request | HeyReach |
+| 3 | Phone | Call attempt #1 | GHL (PREPPER provides context) |
+| 5 | Email | Value/case study | Instantly |
+| 7 | LinkedIn | Message (if connected) | HeyReach |
+| 10 | Email | Social proof | Instantly |
+| 14 | LinkedIn | Voice message | HeyReach |
+| 17 | Email | Break-up | Instantly |
+| 21 | Email | Graceful close | Instantly |
+
+### 4E: Supervised Live Sends
 
 ### Prerequisites
-- [ ] Instantly.ai Send stage configured and tested
-- [ ] Domain warm-up plan executed (5-phase, 4 weeks)
-- [ ] 10+ successful production pipeline runs with real sends
-- [ ] ICP Match Rate >= 80% (currently untested with real sends)
-- [ ] Email Open Rate >= 50%
-- [ ] Reply Rate >= 8%
-- [ ] Bounce Rate < 5%
-- [ ] 3 consecutive days of autonomous operation without intervention
-- [ ] Self-annealing feedback loop validated
+- [ ] `outbound.chiefai.ai` DNS verified + warm-up complete (4 weeks)
+- [ ] LinkedIn account warm-up complete (4 weeks)
+- [ ] Internal test campaign sent successfully via Instantly
+- [ ] Shadow test via HeyReach completed (5 profiles)
+- [ ] OPERATOR agent operational
 
-### Planned Tasks
+| Task | Status | Notes |
+|------|--------|-------|
+| Enable `actually_send: true` for tier_1 only | TODO | Config change + Railway deploy |
+| 3 days supervised operation (5 emails/day) | TODO | Monitor delivery, opens, bounces |
+| Monitor: open rate ≥50%, reply rate ≥8%, bounce <5% | TODO | Dashboard KPI tracking |
+| Graduate to 25/day email ceiling | TODO | After 3 clean days |
+| Enable HeyReach LinkedIn sends (10 connections/day) | TODO | After LinkedIn warm-up complete |
 
-| Task | Priority | Dependency |
-|------|----------|-----------|
-| Configure Instantly.ai campaigns | HIGH | Domain warm-up complete |
-| Execute domain warm-up plan | HIGH | Instantly configured |
-| Enable real sends (flip `actually_send: true`) | HIGH | Warm-up complete, KPIs met |
-| HeyReach LinkedIn automation setup | MEDIUM | Warm LinkedIn accounts |
-| Pipeline channel router (email + LinkedIn) | MEDIUM | HeyReach configured |
-| RB2B visitor signals -> pipeline feed | MEDIUM | Clay integration working |
-| Supabase unified lead schema | LOW | All data sources connected |
-| Self-annealing feedback loop | LOW | Real send data available |
-| Job change / intent signal detection | LOW | Phase 5+ |
+### KPI Targets
+
+| Metric | Target | Measurement |
+|--------|--------|-------------|
+| ICP Match Rate | ≥ 80% | Enriched leads matching ICP criteria |
+| Email Open Rate | ≥ 50% | Instantly analytics |
+| Reply Rate | ≥ 8% | Instantly + HeyReach combined |
+| Bounce Rate | < 5% | Instantly analytics |
+| LinkedIn Accept Rate | ≥ 30% | HeyReach stats |
+| Autonomous Days | 3 consecutive | No manual intervention needed |
 
 ---
 
@@ -268,7 +357,8 @@ Day 21: Email #5 (graceful close)
 | **Slack Alerting** | WORKING | Webhook configured, WARNING + CRITICAL alerts |
 | **Redis (Upstash)** | WORKING | 62ms from Railway |
 | **Inngest** | WORKING | 4 functions mounted |
-| **Instantly.ai** | DEFERRED | Send stage rewired to shadow mode queue |
+| **Instantly.ai** | V2 MIGRATED | Bearer auth, DRAFTED-by-default, dispatcher + webhooks. Needs V2 API key + domain setup. |
+| **HeyReach** | RESEARCHED | API compatible ($79/mo Growth). No campaign creation via API. Needs subscription + LinkedIn warm-up. |
 | **Railway** | DEPLOYED | Auto-deploy on push |
 | **Proxycurl** | REMOVED | Shutting down Jul 2026 (sued by LinkedIn) |
 | **Clay API v1** | DEPRECATED | Returns 404, replaced by webhook pattern |
@@ -292,6 +382,12 @@ Day 21: Email #5 (graceful close)
 | GHL Calendar client (adapter) | `mcp-servers/ghl-mcp/calendar_client.py` |
 | GHL MCP server (CRM + Calendar) | `mcp-servers/ghl-mcp/server.py` |
 | Calendar guardrails (shared) | `mcp-servers/google-calendar-mcp/guardrails.py` |
+| Instantly dispatcher | `execution/instantly_dispatcher.py` |
+| Instantly webhooks | `webhooks/instantly_webhook.py` |
+| Instantly MCP server (V2) | `mcp-servers/instantly-mcp/server.py` |
+| Instantly integration spec (V2) | `docs/integrations/INSTANTLY.md` |
+| Agent permissions | `core/agent_action_permissions.json` |
+| Agent registry | `execution/unified_agent_registry.py` |
 | This plan | `CAIO_IMPLEMENTATION_PLAN.md` |
 
 ---
@@ -318,11 +414,12 @@ Day 21: Email #5 (graceful close)
 | Railway | ~$5/mo | Dashboard hosting | ACTIVE |
 | Upstash Redis | Free tier | 10K commands/day | ACTIVE |
 | Inngest | Free tier | 25K events/mo | ACTIVE |
-| Instantly.ai | TBD | Email sending | CONFIGURED |
-| BetterContact | $0 (not subscribed) | Code ready, Clay preferred | DEFERRED |
-| HeyReach | $0 (not subscribed) | LinkedIn automation | DEFERRED (Phase 4+) |
+| Instantly.ai | ~$30/mo | Email sending (Growth plan) | V2 MIGRATED |
+| HeyReach | $79/mo (planned) | LinkedIn automation (1 sender) | RESEARCHED |
+| BetterContact | $0 (not subscribed) | Code ready | DEFERRED |
 
-**Total Current Spend**: ~$553/mo (Clay + Apollo + Railway)
+**Total Current Spend**: ~$583/mo (Clay + Apollo + Railway + Instantly)
+**Projected with HeyReach**: ~$662/mo
 
 ---
 
@@ -345,9 +442,15 @@ Day 21: Email #5 (graceful close)
 | 2026-02-14 | Wire pipeline + circuit breaker alerts to Slack | Stage failures → WARNING, exceptions/OPEN transitions → CRITICAL |
 | 2026-02-14 | Google Calendar setup guide created | Non-technical guide for HoS + OAuth setup script (`scripts/setup_google_calendar.py`) |
 | 2026-02-14 | Replace Google Calendar with GHL Calendar | Zero setup (GHL API keys already on Railway), CRM-native (appointments link to contacts), no OAuth flow needed. GHLCalendarClient is a drop-in adapter matching GoogleCalendarMCP interface. |
+| 2026-02-14 | Migrate Instantly V1 → V2 API | V1 deprecated Jan 19, 2026. Full rewrite: Bearer auth, cursor pagination, webhook CRUD, CampaignStatus enum. Fixed 4 CRITICAL failure modes (orphaned campaigns, pagination gap, suppression race condition). |
+| 2026-02-14 | Subdomain split for chiefai.ai | `outbound.chiefai.ai` for cold outreach (Instantly), `mail.chiefai.ai` for GHL nurture. Reputation isolation — cold spam reports don't poison nurture deliverability. |
+| 2026-02-14 | HeyReach for LinkedIn automation | API compatible ($79/mo Growth). Cannot create campaigns via API (UI only). Native Instantly bidirectional sync. 11 webhook events. Lead-list-first pattern avoids campaign auto-reactivation. |
+| 2026-02-14 | OPERATOR as unified outbound agent | Consolidates Instantly email + HeyReach LinkedIn + GHL nurture under single execution layer. GATEKEEPER remains approval gate. QUEEN routes by ICP tier. |
+| 2026-02-15 | Dual-platform email strategy (GHL + Instantly) | CLAUDE.md updated from "GHL exclusive" to dual-platform. GHL handles nurture on `chiefai.ai`, Instantly handles cold outreach on 5 isolated domains. Domain reputation isolation is non-negotiable. |
+| 2026-02-15 | Multi-account rotation via `email_list` | Fixed silent V2 bug where sending accounts were never included in campaign payload. Added `sending_accounts` config block with 3 primary from-emails for round-robin rotation. |
 
 ---
 
-*Plan Version: 3.1*
+*Plan Version: 3.3*
 *Created: 2026-02-13*
-*Supersedes: IMPLEMENTATION_ROADMAP.md (v1.0, 2026-01-17)*
+*Supersedes: v3.2 (2026-02-14), IMPLEMENTATION_ROADMAP.md (v1.0, 2026-01-17)*

@@ -1,49 +1,83 @@
-# Instantly.ai Integration Specification
+# Instantly.ai Integration Specification (API V2)
 
 > Complete configuration guide for Instantly email outreach integration with Alpha Swarm
+> **API Version**: V2 (migrated from V1 on 2026-02-14, V1 deprecated Jan 19, 2026)
+> **Last Updated**: 2026-02-15
 
 ---
 
 ## Overview
 
-Instantly.ai handles all email outreach operations including campaign management, lead sequencing, and delivery optimization. This document defines the required configuration for seamless integration with the Alpha Swarm system.
+Instantly.ai handles all **cold email outreach** operations including campaign management, lead sequencing, multi-mailbox rotation, and delivery optimization. GHL handles nurture/warm email separately.
+
+### Domain Isolation Strategy
+
+| Channel | Platform | Domain(s) | Purpose |
+|---------|----------|-----------|---------|
+| Cold outreach | Instantly | b2b.chiefaiofficer.com, business.chiefaiofficer.com, chiefaiofficer.com, getchiefai.com, chiefaitrends.com | New prospect cold emails |
+| Nurture/warm | GHL (LC Email) | chiefai.ai | Warm leads, follow-ups, booking confirmations |
+
+> **NEVER use chiefai.ai for Instantly cold outreach. Reputation isolation is non-negotiable.**
 
 ---
 
-## API Authentication Setup
+## API V2 Authentication
 
-### 1. Generate API Key
+### Key Differences from V1
 
-1. Log into Instantly dashboard
-2. Navigate to **Settings → Integrations → API**
-3. Click **Generate API Key**
-4. Copy and store securely
+| Property | V1 (Deprecated) | V2 (Current) |
+|----------|-----------------|--------------|
+| Auth method | `?api_key=` query param | `Authorization: Bearer <key>` header |
+| Base URL | `https://api.instantly.ai/api/v1` | `https://api.instantly.ai/api/v2` |
+| API keys | V1 keys | V2 keys (must generate new) |
+| Campaign status | String | Integer (0=DRAFTED, 1=ACTIVE, 2=PAUSED, 3=COMPLETED) |
+| Pagination | `skip`/`offset` | Cursor-based (`starting_after`) |
+| Lead add | `POST /lead/add` | `POST /leads/bulk` |
+| Lead list | `GET /lead/list` | `POST /leads/list` |
+| Lead delete | `POST /lead/delete` | `DELETE /leads` |
 
-### 2. Environment Configuration
+### Environment Configuration
 
 ```env
-# .env configuration
-INSTANTLY_API_KEY=your_api_key_here
-INSTANTLY_API_BASE_URL=https://api.instantly.ai/api/v1
-INSTANTLY_WORKSPACE_ID=your_workspace_id
+INSTANTLY_API_KEY=<V2 Bearer token>
+INSTANTLY_WORKSPACE_ID=<workspace UUID>
 ```
 
-### 3. API Endpoints Used
+### Generate V2 API Key
+
+1. Log into Instantly dashboard
+2. Navigate to **Settings > Integrations > API**
+3. Click **Generate API Key** (generates V2 key)
+4. Copy and store — set as `INSTANTLY_API_KEY` in Railway
+
+---
+
+## V2 API Endpoints
 
 | Endpoint | Method | Purpose |
 |----------|--------|---------|
-| `/lead/add` | POST | Add leads to campaigns |
-| `/lead/delete` | POST | Remove leads |
-| `/lead/list` | GET | List leads in campaign |
-| `/campaign/list` | GET | List all campaigns |
-| `/campaign/status` | GET | Get campaign status |
-| `/campaign/analytics` | GET | Get campaign metrics |
-| `/email/list` | GET | List sent emails |
-| `/unibox/list` | GET | List replies |
+| `/campaigns` | POST | Create campaign (starts as DRAFTED) |
+| `/campaigns/{id}` | PATCH | Update campaign settings |
+| `/campaigns/{id}` | DELETE | Delete campaign |
+| `/campaigns` | GET | List campaigns (cursor pagination) |
+| `/campaigns/{id}/pause` | POST | Pause active campaign |
+| `/campaigns/{id}/activate` | POST | Activate drafted/paused campaign |
+| `/campaigns/analytics` | GET | Campaign metrics |
+| `/leads/bulk` | POST | Add leads to campaign (bulk) |
+| `/leads/list` | POST | List/search leads |
+| `/leads` | DELETE | Remove lead from campaign |
+| `/webhooks` | POST | Register webhook |
+| `/webhooks` | GET | List webhooks |
+| `/webhooks/{id}` | DELETE | Delete webhook |
+| `/webhooks/{id}/test` | POST | Test webhook |
 
 ---
 
-## Campaign Setup Requirements
+## Campaign Setup
+
+### V2 Safety: DRAFTED by Default
+
+Campaigns created via V2 API start in **DRAFTED** state (status=0). They **cannot send** until explicitly activated via `POST /campaigns/{id}/activate`. This is the natural paused-by-default behavior — no safety hack needed.
 
 ### Campaign Naming Convention
 
@@ -51,55 +85,94 @@ INSTANTLY_WORKSPACE_ID=your_workspace_id
 {tier}_{source}_{date}_{variant}
 
 Examples:
-- t1_gong-followers_20260115_v1
-- t2_event-attendees_20260115_v1
-- t3_group-members_20260115_a-test
+- t1_pipeline_20260215_v1
+- t2_event-attendees_20260215_v1
+- t3_group-members_20260215_a-test
+```
+
+### Campaign Structure (V2 Format)
+
+```json
+{
+  "name": "t1_pipeline_20260215_v1",
+  "email_list": [
+    "chris@b2b.chiefaiofficer.com",
+    "chris@business.chiefaiofficer.com",
+    "chris@chiefaiofficer.com"
+  ],
+  "campaign_schedule": {
+    "schedules": [{
+      "name": "Default",
+      "timezone": "America/New_York",
+      "days": {
+        "monday": true,
+        "tuesday": true,
+        "wednesday": true,
+        "thursday": true,
+        "friday": true,
+        "saturday": false,
+        "sunday": false
+      },
+      "timing": {
+        "from": "08:00",
+        "to": "18:00"
+      }
+    }]
+  },
+  "sequences": [{
+    "steps": [{
+      "type": "email",
+      "delay": 0,
+      "variants": [{
+        "subject": "{{firstName}}, quick question about {{companyName}}",
+        "body": "Personalized email body..."
+      }]
+    }]
+  }],
+  "stop_on_reply": true,
+  "daily_limit": 50,
+  "email_gap": 90
+}
 ```
 
 ### Required Campaign Settings
 
 | Setting | Value | Reason |
 |---------|-------|--------|
-| Daily sending limit | 50-100 per mailbox | Deliverability |
-| Time between emails | 60-120 seconds | Natural cadence |
+| Daily sending limit | 50 per mailbox | Deliverability |
+| Email gap | 90 seconds | Natural cadence |
 | Working hours | 8am-6pm recipient TZ | Open rates |
 | Weekend sending | Disabled | B2B best practice |
-| Reply detection | Enabled | Auto-pause |
-| Bounce handling | Auto-remove | List hygiene |
-| Warmup | Enabled | New mailboxes |
+| Reply detection | stop_on_reply: true | Auto-pause |
+| Warmup | Enabled in dashboard | New mailboxes |
 
-### Campaign Structure
+### Multi-Step Sequence (V2 Format)
+
+V2 sequences are inline on campaign create/update — no separate endpoint.
+
+| Step | Delay (days) | Purpose |
+|------|-------------|---------|
+| 1 | 0 | Personalized opener |
+| 2 | 2 | Reply bump |
+| 3 | 5 | Value add / case study |
+| 4 | 9 | Social proof |
+| 5 | 14 | Soft breakup |
 
 ```json
 {
-  "name": "t1_competitor-followers_20260115_v1",
-  "emailAccounts": ["chris@chiefaiofficer.com", "team@chiefaiofficer.com"],
-  "schedule": {
-    "timezone": "America/New_York",
-    "days": ["monday", "tuesday", "wednesday", "thursday", "friday"],
-    "startHour": 8,
-    "endHour": 18
-  },
-  "settings": {
-    "dailyLimit": 75,
-    "waitBetweenEmails": 90,
-    "stopOnReply": true,
-    "stopOnBounce": true,
-    "trackOpens": true,
-    "trackClicks": true
-  }
+  "sequences": [{
+    "steps": [
+      {"type": "email", "delay": 0, "variants": [{"subject": "...", "body": "..."}]},
+      {"type": "email", "delay": 2, "variants": [{"subject": "...", "body": "..."}]},
+      {"type": "email", "delay": 5, "variants": [{"subject": "...", "body": "..."}]},
+      {"type": "email", "delay": 9, "variants": [{"subject": "...", "body": "..."}]},
+      {"type": "email", "delay": 14, "variants": [{"subject": "...", "body": "..."}]}
+    ]
+  }]
 }
 ```
 
-### Sequence Steps
-
-| Step | Delay | Subject | Purpose |
-|------|-------|---------|---------|
-| 1 | Day 0 | Personalized opener | Initial touch |
-| 2 | Day 2 | Reply bump | Short follow-up |
-| 3 | Day 5 | Value add | Case study/resource |
-| 4 | Day 9 | Social proof | Testimonial |
-| 5 | Day 14 | Soft breakup | Final touch |
+A/B variant support: add multiple objects in the `variants` array per step.
 
 ---
 
@@ -109,200 +182,192 @@ Examples:
 
 | Variable | Description | Source |
 |----------|-------------|--------|
-| `{{firstName}}` | First name | GHL contact |
-| `{{lastName}}` | Last name | GHL contact |
-| `{{email}}` | Email address | GHL contact |
-| `{{companyName}}` | Company name | GHL contact |
-| `{{title}}` | Job title | Enrichment |
-| `{{phone}}` | Phone number | Enrichment |
+| `{{firstName}}` | First name | Apollo enrichment |
+| `{{lastName}}` | Last name | Apollo enrichment |
+| `{{email}}` | Email address | Apollo enrichment |
+| `{{companyName}}` | Company name | Apollo enrichment |
+| `{{title}}` | Job title | Apollo enrichment |
 
 ### Custom Variables (Alpha Swarm Specific)
 
-| Variable | Description | Source | Example |
-|----------|-------------|--------|---------|
-| `{{sourceType}}` | How we found them | Scraping | "competitor follower" |
-| `{{sourceName}}` | Specific source | Scraping | "Gong.io" |
-| `{{engagementAction}}` | What they did | Scraping | "commented on" |
-| `{{engagementContent}}` | Comment text | Scraping | "Great insights..." |
-| `{{painPoint}}` | Primary pain point | Enrichment | "manual forecasting" |
-| `{{competitorCurrent}}` | Current tool | Enrichment | "Outreach" |
-| `{{techStack}}` | Relevant tech | Enrichment | "Salesforce, HubSpot" |
-| `{{mutualConnections}}` | Shared connections | Enrichment | "3 mutual connections" |
-| `{{caseStudy}}` | Relevant case study | Matching | "Acme Corp success story" |
-| `{{eventName}}` | Event attended | Scraping | "RevOps Summit 2026" |
-| `{{groupName}}` | Group membership | Scraping | "Revenue Operations Pros" |
-| `{{icpScore}}` | ICP score | Scoring | "87" |
-| `{{icpTier}}` | ICP tier | Scoring | "Tier 1" |
+| Variable | Description | Source |
+|----------|-------------|--------|
+| `{{sourceType}}` | How we found them | Pipeline |
+| `{{painPoint}}` | Primary pain point | Enrichment |
+| `{{icpScore}}` | ICP score | Segmentor |
+| `{{icpTier}}` | ICP tier | Segmentor |
+| `{{campaignType}}` | Campaign type | Crafter |
+| `{{ghl_contact_id}}` | GHL contact ID | Pipeline sync |
+| `{{shadow_email_id}}` | Shadow email ID | Dispatcher |
+| `{{pipeline_run_id}}` | Pipeline run ID | Pipeline |
 
-### Lead Payload Structure
+### Lead Payload (V2 Bulk Format)
 
 ```json
 {
-  "campaign_id": "camp_abc123",
-  "email": "john@company.com",
-  "firstName": "John",
-  "lastName": "Doe",
-  "companyName": "Acme Inc",
-  "personalization": {
-    "title": "VP of Revenue Operations",
-    "sourceType": "competitor follower",
-    "sourceName": "Gong.io",
-    "engagementAction": "follows",
-    "painPoint": "manual forecasting taking 20+ hours per week",
-    "competitorCurrent": "Outreach",
-    "techStack": "Salesforce, Outreach, Gong",
-    "caseStudy": "How Acme Corp reduced forecasting time by 80%",
-    "icpScore": "87",
-    "icpTier": "Tier 1"
-  },
-  "custom_variables": {
-    "ghl_contact_id": "contact_xyz789",
-    "clay_record_id": "rec_abc123",
-    "sequence_version": "v1"
-  }
+  "campaign": "campaign-uuid-here",
+  "leads": [
+    {
+      "email": "john@company.com",
+      "first_name": "John",
+      "last_name": "Doe",
+      "company_name": "Acme Inc",
+      "custom_variables": {
+        "title": "VP of Revenue Operations",
+        "icpScore": "87",
+        "icpTier": "tier_1",
+        "sourceType": "pipeline",
+        "ghl_contact_id": "contact_xyz789",
+        "shadow_email_id": "se_abc123",
+        "pipeline_run_id": "run_001"
+      }
+    }
+  ],
+  "skip_if_in_workspace": true,
+  "skip_if_in_campaign": true
 }
 ```
 
+> **V2 Note**: `custom_variables` values must be scalar (string/number/boolean/null). No nested objects.
+
 ---
 
-## Webhook Endpoint Configuration
+## Sending Accounts
 
-### Outbound Webhooks (Instantly → Alpha Swarm)
+### Multi-Mailbox Rotation
 
-Configure in Instantly dashboard under **Settings → Webhooks**:
+20+ email accounts warming up since Feb 12, 2026 across 5 isolated cold domains:
 
-| Event | Webhook URL | Purpose |
+| Domain | Purpose | Warmup Status |
+|--------|---------|---------------|
+| b2b.chiefaiofficer.com | Cold outreach (primary) | Stage 3 (most warmed) |
+| business.chiefaiofficer.com | Cold outreach | Stage 1 |
+| chiefaiofficer.com | Cold outreach (original) | Warming |
+| getchiefai.com | Cold outreach | Warming |
+| chiefaitrends.com | Cold outreach | Warming |
+
+### Warmup Ramp Schedule
+
+| Week | Daily Emails/Mailbox | Total Capacity (20 accounts) |
+|------|---------------------|------------------------------|
+| Week 1 (Feb 12-18) | 5 | ~100/day |
+| Week 2 (Feb 19-25) | 10 | ~200/day |
+| Week 3 (Feb 26-Mar 4) | 15 | ~300/day |
+| Week 4+ (Mar 5+) | 25 | ~500/day |
+
+### Accounts Per Campaign
+
+Config: `sending_accounts.accounts_per_campaign: 3`
+Rotation: `round_robin`
+
+---
+
+## Webhook Configuration
+
+### V2 Programmatic Webhook CRUD
+
+V2 provides full webhook API — no manual Instantly dashboard config needed.
+
+```python
+# Register all webhooks programmatically
+result = await client.setup_webhooks(
+    "https://caio-swarm-dashboard-production.up.railway.app"
+)
+```
+
+### Webhook Events
+
+| Event | Webhook URL | Handler |
 |-------|-------------|---------|
-| Reply Received | `{BASE_URL}/webhooks/instantly/reply` | Trigger response handling |
-| Email Opened | `{BASE_URL}/webhooks/instantly/open` | Track engagement |
-| Link Clicked | `{BASE_URL}/webhooks/instantly/click` | Track interest |
-| Email Bounced | `{BASE_URL}/webhooks/instantly/bounce` | Update GHL status |
-| Unsubscribe | `{BASE_URL}/webhooks/instantly/unsubscribe` | Compliance |
-| Lead Completed | `{BASE_URL}/webhooks/instantly/completed` | Sequence finished |
+| reply_received | `/webhooks/instantly/reply` | Route to RESPONDER, update GHL tag |
+| email_bounced | `/webhooks/instantly/bounce` | Remove from list, update GHL |
+| email_opened | `/webhooks/instantly/open` | Track engagement |
+| lead_unsubscribed | `/webhooks/instantly/unsubscribe` | Add to suppression JSONL, update GHL |
 
-### Webhook Payload Examples
+### Webhook Handler Location
 
-**Reply Received:**
-```json
-{
-  "event": "reply",
-  "timestamp": "2026-01-15T14:30:00Z",
-  "data": {
-    "campaign_id": "camp_abc123",
-    "lead_email": "john@company.com",
-    "reply_text": "Thanks for reaching out. I'd love to learn more...",
-    "sentiment": "positive",
-    "sequence_step": 1,
-    "email_account": "chris@chiefaiofficer.com"
-  }
-}
+**File**: `webhooks/instantly_webhook.py`
+
+Handlers registered in `dashboard/health_app.py` via FastAPI router.
+
+---
+
+## Suppression List
+
+### Append-Only JSONL Format
+
+**File**: `.hive-mind/unsubscribes.jsonl`
+
+```jsonl
+{"email": "john@example.com", "at": "2026-02-15T10:00:00+00:00"}
+{"email": "jane@example.com", "at": "2026-02-15T11:30:00+00:00"}
 ```
 
-**Bounce:**
-```json
-{
-  "event": "bounce",
-  "timestamp": "2026-01-15T14:30:00Z",
-  "data": {
-    "campaign_id": "camp_abc123",
-    "lead_email": "invalid@company.com",
-    "bounce_type": "hard",
-    "reason": "mailbox_not_found"
-  }
-}
-```
+- Append-only (no read-modify-write race condition)
+- Checked before lead dispatch via `_is_suppressed()`
+- Fed by: unsubscribe webhooks, bounce webhooks, GHL sync
 
-### Webhook Handler Example
+---
 
-```python
-# execution/instantly_webhooks.py
+## Dispatcher
 
-@app.post("/webhooks/instantly/reply")
-async def handle_reply(payload: dict):
-    lead_email = payload["data"]["lead_email"]
-    reply_text = payload["data"]["reply_text"]
-    sentiment = classify_sentiment(reply_text)
-    
-    # Update GHL
-    contact = ghl_api.contacts.find(email=lead_email)
-    ghl_api.contacts.update(contact.id, {
-        "tags": ["status-replied", f"replied-{sentiment}"]
-    })
-    
-    # Move pipeline stage
-    ghl_api.opportunities.update_stage(
-        contact.opportunity_id, 
-        "stage_replied"
-    )
-    
-    # Check escalation rules
-    if should_escalate(sentiment, contact):
-        trigger_ae_notification(contact, reply_text)
-    
-    return {"status": "processed"}
+### File: `execution/instantly_dispatcher.py`
+
+**Workflow**:
+1. Scan `.hive-mind/shadow_mode_emails/` for `status="approved"`
+2. Filter out already-dispatched (have `instantly_campaign_id`)
+3. Check daily ceiling (defense in depth)
+4. Check EMERGENCY_STOP
+5. Group by ICP tier → campaign naming convention
+6. Create DRAFTED Instantly campaigns via V2 API
+7. Add leads with custom_variables + sending accounts (email_list)
+8. Record dispatch state in each shadow email file
+9. Log to `.hive-mind/instantly_dispatch_log.jsonl`
+
+**Safety**: If `add_leads` fails, orphaned campaign is auto-deleted (rollback).
+
+### CLI Usage
+
+```bash
+# Dry run (default)
+python execution/instantly_dispatcher.py --dry-run
+
+# Live dispatch with specific from-email
+python execution/instantly_dispatcher.py --live --from-email chris@b2b.chiefaiofficer.com
+
+# Filter by tier, override limit
+python execution/instantly_dispatcher.py --live --tier tier_1 --limit 10
+
+# JSON output
+python execution/instantly_dispatcher.py --dry-run --json
 ```
 
 ---
 
-## Suppression List Management
+## MCP Server
 
-### Global Suppression Lists
+### File: `mcp-servers/instantly-mcp/server.py`
 
-| List Type | Purpose | Update Frequency |
-|-----------|---------|------------------|
-| Unsubscribes | GDPR/CAN-SPAM compliance | Real-time |
-| Bounces | Email hygiene | Real-time |
-| Competitors | Never contact | Weekly |
-| Existing Customers | Route to CSM | Daily |
-| Blacklist Domains | spam traps, etc. | Monthly |
+### Available Tools
 
-### Adding to Suppression
-
-```python
-def add_to_suppression(email: str, reason: str):
-    instantly_api.suppression.add({
-        "email": email,
-        "reason": reason,
-        "added_at": datetime.now().isoformat(),
-        "added_by": "alpha-swarm"
-    })
-```
-
-### Suppression Check Before Send
-
-```python
-def is_suppressed(email: str) -> bool:
-    result = instantly_api.suppression.check(email)
-    return result.get("suppressed", False)
-
-def validate_lead_for_campaign(lead: dict) -> bool:
-    if is_suppressed(lead["email"]):
-        return False
-    if is_competitor_domain(lead["email"]):
-        return False
-    if is_existing_customer(lead["email"]):
-        return False
-    return True
-```
-
-### Sync Suppression Lists
-
-```python
-# Run daily to sync GHL unsubscribes to Instantly
-def sync_suppression_from_ghl():
-    unsubscribed = ghl_api.contacts.list(
-        tags=["status-unsubscribed"]
-    )
-    for contact in unsubscribed:
-        instantly_api.suppression.add({
-            "email": contact.email,
-            "reason": "ghl_unsubscribe"
-        })
-```
+| Tool | Description |
+|------|-------------|
+| `instantly_create_campaign` | Create campaign (idempotent, starts DRAFTED) |
+| `instantly_update_campaign` | Update campaign settings |
+| `instantly_add_leads` | Add leads to campaign (bulk, dedup) |
+| `instantly_get_analytics` | Campaign metrics |
+| `instantly_pause_campaign` | Pause/resume campaign |
+| `instantly_activate_campaign` | Activate DRAFTED campaign (only way to go live) |
+| `instantly_list_campaigns` | List all campaigns (cursor pagination) |
+| `instantly_delete_campaign` | Delete campaign permanently |
+| `instantly_create_sequence` | Multi-step sequence with A/B variants |
+| `instantly_get_lead_status` | Check lead email status |
+| `instantly_export_replies` | Export interested leads |
+| `instantly_setup_webhooks` | Register all webhook subscriptions |
 
 ---
 
-## Rate Limits and Best Practices
+## Rate Limits
 
 ### API Rate Limits
 
@@ -313,45 +378,34 @@ def sync_suppression_from_ghl():
 | Analytics | 500/hour | Per API key |
 | Bulk operations | 10/minute | Per API key |
 
-### Sending Limits (Deliverability)
+### Daily Ceiling (Defense in Depth)
 
-| Mailbox Age | Daily Limit | Warmup Required |
-|-------------|-------------|-----------------|
-| 0-2 weeks | 10-20 | Yes |
-| 2-4 weeks | 20-40 | Yes |
-| 1-2 months | 40-75 | Optional |
-| 2+ months | 75-100 | No |
+**Config**: `guardrails.email_limits.daily_limit: 25`
+**State file**: `.hive-mind/instantly_dispatch_state.json`
 
-### Best Practices
+The dispatcher enforces its own daily ceiling independently of Instantly's campaign limits.
 
-1. **Domain Setup**
-   - SPF, DKIM, DMARC configured
-   - Custom tracking domain
-   - Separate domain for cold outreach
-   
-2. **Mailbox Rotation**
-   - 3-5 mailboxes per campaign
-   - Rotate sending accounts
-   - Monitor per-mailbox reputation
+---
 
-3. **Content Guidelines**
-   - No spam trigger words
-   - Plain text preferred over HTML
-   - Max 2 links per email
-   - No attachments
-   - Personalization tokens ≥3 per email
+## Error Handling
 
-4. **Timing**
-   - Tuesday-Thursday best days
-   - 9-11am and 2-4pm best times
-   - Respect recipient timezone
-   - No holiday sending
+### V2 API Error Codes
 
-5. **List Hygiene**
-   - Verify emails before adding
-   - Remove bounces immediately
-   - Re-verify aged leads (>30 days)
-   - Segment by engagement
+| Code | Meaning | Action |
+|------|---------|--------|
+| 401 | Invalid/expired V2 API key | Regenerate V2 key in Instantly dashboard |
+| 400 | Invalid request | Check V2 payload format |
+| 404 | Campaign/lead not found | Skip or recreate |
+| 429 | Rate limited | Exponential backoff (built into client) |
+| 500 | Server error | Retry with backoff (3 attempts) |
+
+### V2 Gotchas
+
+- V1 keys do NOT work with V2 — must generate new key
+- Campaign status is integer: 0=DRAFTED, 1=ACTIVE, 2=PAUSED, 3=COMPLETED
+- Leads bulk uses `campaign` key at top level (not `campaign_id`)
+- Lead list is POST (not GET), lead delete is DELETE (not POST)
+- Pagination is cursor-based (`starting_after`, not `skip`)
 
 ---
 
@@ -361,171 +415,30 @@ def sync_suppression_from_ghl():
 
 | Instantly Status | GHL Tag | GHL Pipeline Stage |
 |------------------|---------|-------------------|
-| Pending | `status-in-sequence` | In Sequence |
-| Active | `status-in-sequence` | In Sequence |
-| Paused | `status-in-sequence` | In Sequence |
+| DRAFTED | `status-in-sequence` | In Sequence |
+| ACTIVE | `status-in-sequence` | In Sequence |
+| PAUSED | `status-in-sequence` | In Sequence |
 | Replied | `status-replied` | Replied |
-| Completed | `status-sequence-completed` | Nurture |
+| COMPLETED | `status-sequence-completed` | Nurture |
 | Bounced | `status-bounced` | Disqualified |
 | Unsubscribed | `status-unsubscribed` | Disqualified |
 
-### Sync Script
+---
 
-```python
-# execution/sync_instantly_ghl.py
+## Agent Ownership
 
-def sync_campaign_status():
-    campaigns = instantly_api.campaigns.list()
-    
-    for campaign in campaigns:
-        leads = instantly_api.leads.list(campaign_id=campaign.id)
-        
-        for lead in leads:
-            contact = ghl_api.contacts.find(email=lead.email)
-            if not contact:
-                continue
-            
-            new_tags = map_status_to_tags(lead.status)
-            new_stage = map_status_to_stage(lead.status)
-            
-            ghl_api.contacts.update(contact.id, {
-                "tags": new_tags
-            })
-            
-            if new_stage:
-                ghl_api.opportunities.update_stage(
-                    contact.opportunity_id,
-                    new_stage
-                )
-```
+| Responsibility | Agent |
+|----------------|-------|
+| Campaign dispatch | OPERATOR |
+| Lead management | OPERATOR |
+| Campaign lifecycle | OPERATOR |
+| Reply/webhook processing | RESPONDER |
+| Channel routing (email vs LinkedIn) | QUEEN |
+| Approval gate | GATEKEEPER |
+| Analytics/reporting | COACH |
 
 ---
 
-## Analytics Integration
-
-### Metrics to Track
-
-| Metric | Calculation | Alert Threshold |
-|--------|-------------|-----------------|
-| Delivery Rate | (Sent - Bounces) / Sent | <95% |
-| Open Rate | Opens / Delivered | <40% |
-| Reply Rate | Replies / Delivered | <5% |
-| Positive Reply Rate | Positive / Total Replies | <40% |
-| Unsubscribe Rate | Unsubscribes / Delivered | >1% |
-| Spam Report Rate | Spam Reports / Delivered | >0.1% |
-
-### Daily Analytics Pull
-
-```python
-def pull_daily_analytics():
-    campaigns = instantly_api.campaigns.list(active=True)
-    
-    metrics = []
-    for campaign in campaigns:
-        stats = instantly_api.analytics.get(
-            campaign_id=campaign.id,
-            date_from=yesterday(),
-            date_to=today()
-        )
-        
-        metrics.append({
-            "campaign": campaign.name,
-            "sent": stats.sent,
-            "delivered": stats.delivered,
-            "opens": stats.opens,
-            "replies": stats.replies,
-            "bounces": stats.bounces,
-            "unsubscribes": stats.unsubscribes
-        })
-    
-    return metrics
-```
-
----
-
-## Error Handling
-
-### API Error Codes
-
-| Code | Meaning | Action |
-|------|---------|--------|
-| 401 | Invalid API key | Refresh credentials |
-| 400 | Invalid request | Check payload format |
-| 404 | Campaign/lead not found | Skip or recreate |
-| 409 | Duplicate lead | Skip (already added) |
-| 429 | Rate limited | Exponential backoff |
-| 500 | Server error | Retry with backoff |
-
-### Retry Strategy
-
-```python
-import time
-from functools import wraps
-
-def with_retry(max_retries=3, base_delay=1):
-    def decorator(func):
-        @wraps(func)
-        def wrapper(*args, **kwargs):
-            for attempt in range(max_retries):
-                try:
-                    return func(*args, **kwargs)
-                except RateLimitError:
-                    delay = base_delay * (2 ** attempt)
-                    time.sleep(delay)
-                except ServerError:
-                    if attempt == max_retries - 1:
-                        raise
-                    time.sleep(base_delay)
-            return func(*args, **kwargs)
-        return wrapper
-    return decorator
-
-@with_retry(max_retries=3)
-def add_lead_to_campaign(campaign_id: str, lead: dict):
-    return instantly_api.leads.add(campaign_id, lead)
-```
-
----
-
-## Campaign Templates
-
-### Template: Competitor Follower
-
-```
-Subject: {{firstName}}, noticed you follow {{sourceName}}
-
-Hi {{firstName}},
-
-I saw you're following {{sourceName}} – sounds like {{painPoint}} might be on your radar.
-
-We just helped {{caseStudy}} tackle this exact challenge.
-
-Worth a quick chat to see if we could help {{companyName}}?
-
-Best,
-Chris
-
-P.S. {{mutualConnections}} – small world!
-```
-
-### Template: Event Attendee
-
-```
-Subject: {{eventName}} follow-up
-
-{{firstName}},
-
-Great seeing {{companyName}} represented at {{eventName}}.
-
-The session on {{engagementContent}} really resonated – it's exactly what we're solving for teams like yours.
-
-Any chance you're exploring solutions in this space?
-
-Chris
-```
-
----
-
-*Document Version: 1.0*
-*Last Updated: 2026-01-15*
+*Document Version: 2.0 (V2 API)*
+*Last Updated: 2026-02-15*
 *Owner: Alpha Swarm Integration Team*

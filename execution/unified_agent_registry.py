@@ -19,7 +19,6 @@ Revenue Swarm Agents:
 - COACH: Self-annealing (future)
 """
 
-import os
 import sys
 from pathlib import Path
 from typing import Optional, Dict, Any, List
@@ -139,9 +138,9 @@ class UnifiedAgentRegistry:
         self.agents["operator"] = AgentInfo(
             name="OPERATOR",
             swarm=AgentSwarm.REVENUE,
-            description="Outbound execution (GHL integration)",
-            module_path="execution.revenue_operator_outbound",
-            status=AgentStatus.NOT_INITIALIZED  # Future implementation
+            description="Unified outbound execution (Instantly email + HeyReach LinkedIn + GHL nurture)",
+            module_path="execution.operator_outbound",
+            status=AgentStatus.NOT_INITIALIZED
         )
         
         self.agents["piper"] = AgentInfo(
