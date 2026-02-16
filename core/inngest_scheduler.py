@@ -181,6 +181,88 @@ async def meeting_prep_trigger(ctx: inngest.Context, step: inngest.Step) -> Dict
     return result
 
 
+@inngest_client.create_function(
+    fn_id="daily-decay-detection",
+    trigger=inngest.TriggerCron(cron="0 10 * * *"),  # Daily at 10 AM UTC
+)
+async def daily_decay_detection(ctx: inngest.Context, step: inngest.Step) -> Dict[str, Any]:
+    """
+    Run ghosting/stall detection on all tracked leads daily.
+
+    Detects:
+    - Ghosted: sent 72h+ ago, never opened
+    - Stalled: opened 7d+ ago, never replied
+    - Engaged-not-replied: 2+ opens, no reply (needs human review)
+
+    Also expires stale OPERATOR batches (>24h pending).
+    """
+    # Step 1: Detect engagement decay
+    decay_result = await step.run("detect-decay", _run_decay_detection)
+
+    # Step 2: Expire stale operator batches
+    expired = await step.run("expire-batches", _expire_stale_batches)
+
+    # Step 3: Sync cadence signals
+    sync_result = await step.run("sync-cadence", _sync_cadence_signals)
+
+    result = {
+        "status": "completed",
+        "decay_detected": decay_result,
+        "batches_expired": expired,
+        "cadence_synced": sync_result,
+    }
+    _emit_scheduler_summary_trace("daily_decay_detection", result)
+    return result
+
+
+async def _run_decay_detection() -> Dict[str, Any]:
+    """Run decay detection via LeadStatusManager."""
+    try:
+        from core.lead_signals import LeadStatusManager
+        mgr = LeadStatusManager()
+        result = mgr.detect_engagement_decay()
+        count = len(result) if isinstance(result, list) else result
+        logger.info("Decay detection: %s leads flagged", count)
+
+        # Slack alert if significant decay
+        if isinstance(result, list) and len(result) > 0:
+            try:
+                from core.alerts import send_warning
+                summary = ", ".join(f"{r.get('email', '?')}: {r.get('new_status', '?')}" for r in result[:5])
+                send_warning(f"Decay detection flagged {len(result)} leads: {summary}")
+            except Exception:
+                pass
+
+        return {"flagged": count if isinstance(count, int) else len(result)}
+    except Exception as e:
+        logger.error("Decay detection error: %s", e)
+        return {"error": str(e)}
+
+
+async def _expire_stale_batches() -> int:
+    """Expire pending OPERATOR batches older than 24 hours."""
+    try:
+        from execution.operator_outbound import OperatorOutbound
+        op = OperatorOutbound()
+        op.expire_stale_batches(max_age_hours=24)
+        return 0
+    except Exception as e:
+        logger.error("Batch expiry error: %s", e)
+        return -1
+
+
+async def _sync_cadence_signals() -> Dict[str, Any]:
+    """Sync cadence engine with signal loop."""
+    try:
+        from execution.cadence_engine import CadenceEngine
+        cadence = CadenceEngine()
+        result = cadence.sync_signals()
+        return result if isinstance(result, dict) else {"synced": True}
+    except Exception as e:
+        logger.error("Cadence sync error: %s", e)
+        return {"error": str(e)}
+
+
 # =============================================================================
 # HELPER FUNCTIONS
 # =============================================================================
@@ -545,7 +627,8 @@ def get_inngest_serve(app):
             pipeline_scan,
             daily_health_check,
             weekly_icp_analysis,
-            meeting_prep_trigger
+            meeting_prep_trigger,
+            daily_decay_detection,
         ],
         serve_origin=os.getenv("INNGEST_SERVE_ORIGIN"),
         serve_path="/inngest",

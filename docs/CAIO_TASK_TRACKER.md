@@ -136,15 +136,15 @@ Production pipeline validated with real Apollo data. All critical blockers resol
 
 ### ◄◄◄ YOU ARE HERE ◄◄◄
 
-**Overall Phase 4 Progress**: 85% — 4A+4C+4F complete, 4B campaigns+sync active, 4D cadence engine built
+**Overall Phase 4 Progress**: 95% — 4A+4C+4D+4F COMPLETE, 4B awaiting LinkedIn warmup, GATEKEEPER gate BUILT
 
 ```
 4A: Domain & Instantly Go-Live      [##########] 100%  COMPLETE
 4B: HeyReach LinkedIn Integration   [########--]  80%  API VERIFIED, CAMPAIGNS CREATED, WEBHOOKS REGISTERED
-4C: OPERATOR Agent Activation       [##########] 100%  COMPLETE (unified dispatch + revival scanner)
-4D: Multi-Channel Cadence           [########--]  80%  CADENCE ENGINE BUILT (Email + LinkedIn, no phone)
+4C: OPERATOR Agent Activation       [##########] 100%  COMPLETE (unified dispatch + revival + GATEKEEPER gate)
+4D: Multi-Channel Cadence           [##########] 100%  COMPLETE (Engine + CRAFTER + Auto-Enroll)
 4E: Supervised Live Sends           [----------]   0%  TODO (THE GOAL — actually_send: true)
-4F: Monaco Signal Loop              [##########] 100%  COMPLETE (all webhook wiring done)
+4F: Monaco Signal Loop              [##########] 100%  COMPLETE (signal loop + decay cron + bootstrap done)
 ```
 
 ---
@@ -260,8 +260,8 @@ All Instantly V2 infrastructure is live and verified.
 
 #### Remaining (TODO)
 
-- [ ] **Bootstrap lead data** — visit `/leads` dashboard → click "Bootstrap Leads"
-- [ ] **Schedule decay detection** — add `detect_engagement_decay()` to Inngest as daily cron (after live sends)
+- [x] **Bootstrap lead data** — 15 leads bootstrapped into signal loop from shadow emails
+- [x] **Schedule decay detection** — `daily_decay_detection` Inngest cron (10 AM UTC): decay scan + batch expiry + cadence sync
 
 </details>
 
@@ -296,7 +296,7 @@ Unified dispatch layer orchestrating Instantly + HeyReach + GHL Revival under wa
 - [x] Operator config in `config/production.json` (warmup schedule, tier routing, revival config)
 - [x] ICP tier → channel routing logic (tier_1/2: email+LinkedIn, tier_3: email only)
 - [x] Update agent registry + permissions
-- [ ] GATEKEEPER approval gate — single choke point before dispatch (deferred to 4E)
+- [x] GATEKEEPER approval gate — batch approval before live dispatch (`create_batch` → `approve_batch` → execute). 3 new dashboard endpoints: `pending-batch`, `approve-batch`, `reject-batch`. Slack alert on batch creation.
 
 </details>
 
@@ -367,7 +367,7 @@ This is where `actually_send` flips to `true` and real outreach begins.
 - [x] Cadence engine built (4D)
 - [ ] LinkedIn account warm-up complete (4 weeks) — requires 4B
 - [ ] Shadow test via HeyReach completed (5 profiles) — requires 4B
-- [ ] GATEKEEPER approval gate for OPERATOR dispatch
+- [x] GATEKEEPER approval gate for OPERATOR dispatch (batch approval flow)
 
 #### Go-Live Checklist
 - [ ] Enable `actually_send: true` for tier_1 only in `config/production.json`

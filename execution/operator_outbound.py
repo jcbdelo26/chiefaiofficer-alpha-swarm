@@ -93,6 +93,34 @@ class OperatorReport:
     cadence_auto_enrolled: int = 0
     warmup_schedule: Optional[Dict] = None
     errors: List[str] = field(default_factory=list)
+    # Gatekeeper batch approval fields
+    pending_approval: bool = False
+    batch_id: Optional[str] = None
+
+
+@dataclass
+class DispatchBatch:
+    """
+    Gatekeeper approval batch — created when gatekeeper_required=true and
+    OPERATOR is triggered in live mode. Must be approved before execution.
+    """
+    batch_id: str
+    created_at: str
+    motion: str               # "outbound", "cadence", "revival", "all"
+    status: str = "pending"   # "pending", "approved", "rejected", "executed", "expired"
+    warmup_schedule: Optional[Dict] = None
+    leads_preview: List[Dict] = field(default_factory=list)
+    total_email_leads: int = 0
+    total_linkedin_leads: int = 0
+    total_revival_candidates: int = 0
+    total_cadence_due: int = 0
+    tier_breakdown: Dict[str, int] = field(default_factory=dict)
+    approved_at: Optional[str] = None
+    approved_by: Optional[str] = None
+    rejected_at: Optional[str] = None
+    rejected_reason: Optional[str] = None
+    executed_at: Optional[str] = None
+    execution_report: Optional[Dict] = None
 
 
 # =============================================================================
@@ -121,7 +149,9 @@ class OperatorOutbound:
 
         self.state_file = PROJECT_ROOT / ".hive-mind" / "operator_state.json"
         self.dispatch_log = PROJECT_ROOT / ".hive-mind" / "operator_dispatch_log.jsonl"
+        self.batch_dir = PROJECT_ROOT / ".hive-mind" / "operator_batches"
         self.state_file.parent.mkdir(parents=True, exist_ok=True)
+        self.batch_dir.mkdir(parents=True, exist_ok=True)
 
         self._load_config()
 
@@ -267,6 +297,240 @@ class OperatorOutbound:
         load_dotenv(override=True)
         return os.getenv("EMERGENCY_STOP", "false").lower().strip() in ("true", "1", "yes", "on")
 
+    @property
+    def gatekeeper_required(self) -> bool:
+        return self._operator_config.get("gatekeeper_required", True)
+
+    # -------------------------------------------------------------------------
+    # GATEKEEPER batch approval
+    # -------------------------------------------------------------------------
+
+    def _build_batch_preview(self, motion: str) -> DispatchBatch:
+        """
+        Build a preview of what OPERATOR would dispatch, for GATEKEEPER review.
+
+        Scans approved shadow emails + cadence due actions + revival candidates
+        without actually dispatching. Returns a DispatchBatch with lead previews.
+        """
+        batch_id = f"batch_{uuid.uuid4().hex[:8]}"
+        batch = DispatchBatch(
+            batch_id=batch_id,
+            created_at=datetime.now(timezone.utc).isoformat(),
+            motion=motion,
+            warmup_schedule=asdict(self.get_warmup_schedule()),
+        )
+
+        state = self._load_daily_state()
+        schedule = self.get_warmup_schedule()
+
+        # Preview outbound email leads (from approved shadow emails)
+        if motion in ("outbound", "all"):
+            shadow_dir = PROJECT_ROOT / ".hive-mind" / "shadow_mode_emails"
+            if shadow_dir.exists():
+                tier_counts: Dict[str, int] = {}
+                email_count = 0
+                linkedin_count = 0
+                email_remaining = max(0, schedule.email_daily_limit - state.outbound_email_dispatched)
+
+                for ef in sorted(shadow_dir.glob("*.json")):
+                    try:
+                        with open(ef, "r", encoding="utf-8") as f:
+                            data = json.load(f)
+                        if data.get("status") != "approved":
+                            continue
+                        if not self._is_lead_eligible(data.get("to", ""), state):
+                            continue
+
+                        tier = data.get("tier", "tier_2")
+                        recipient = data.get("recipient_data", {})
+                        tier_counts[tier] = tier_counts.get(tier, 0) + 1
+
+                        if email_count < email_remaining:
+                            batch.leads_preview.append({
+                                "email": data.get("to", ""),
+                                "name": recipient.get("name", ""),
+                                "company": recipient.get("company", ""),
+                                "tier": tier,
+                                "channel": "email",
+                            })
+                            email_count += 1
+
+                        # Check if also eligible for LinkedIn
+                        routing = self._operator_config.get("outbound", {}).get("tier_channel_routing", {})
+                        if "heyreach" in routing.get(tier, []) and recipient.get("linkedin_url"):
+                            linkedin_count += 1
+                    except (json.JSONDecodeError, IOError):
+                        continue
+
+                batch.total_email_leads = email_count
+                batch.total_linkedin_leads = min(
+                    linkedin_count,
+                    max(0, schedule.linkedin_daily_limit - state.outbound_linkedin_dispatched),
+                )
+                batch.tier_breakdown = tier_counts
+
+        # Preview cadence actions due
+        if motion in ("cadence", "all"):
+            try:
+                cadence = self._get_cadence_engine()
+                due_actions = cadence.get_due_actions()
+                batch.total_cadence_due = len(due_actions)
+            except Exception:
+                pass
+
+        # Preview revival candidates
+        if motion in ("revival", "all"):
+            try:
+                scanner = self._get_revival_scanner()
+                candidates = scanner.scan(limit=schedule.revival_daily_limit)
+                batch.total_revival_candidates = len(candidates)
+            except Exception:
+                pass
+
+        return batch
+
+    def create_batch(self, motion: str = "all") -> DispatchBatch:
+        """
+        Create a dispatch batch for GATEKEEPER approval.
+
+        Called when gatekeeper_required=true and live dispatch is requested.
+        Saves batch to .hive-mind/operator_batches/ for dashboard review.
+        """
+        batch = self._build_batch_preview(motion)
+
+        filepath = self.batch_dir / f"{batch.batch_id}.json"
+        with open(filepath, "w", encoding="utf-8") as f:
+            json.dump(asdict(batch), f, indent=2, ensure_ascii=False)
+
+        logger.info("Created dispatch batch %s for GATEKEEPER review (%d email, %d linkedin, %d revival, %d cadence)",
+                     batch.batch_id, batch.total_email_leads, batch.total_linkedin_leads,
+                     batch.total_revival_candidates, batch.total_cadence_due)
+
+        # Slack alert
+        try:
+            from core.alerts import send_warning
+            send_warning(
+                f"OPERATOR batch ready for review: {batch.batch_id}\n"
+                f"Email: {batch.total_email_leads}, LinkedIn: {batch.total_linkedin_leads}, "
+                f"Revival: {batch.total_revival_candidates}, Cadence: {batch.total_cadence_due}\n"
+                f"Approve via: POST /api/operator/approve-batch/{batch.batch_id}"
+            )
+        except Exception:
+            pass
+
+        return batch
+
+    def approve_batch(self, batch_id: str, approved_by: str = "dashboard") -> DispatchBatch:
+        """Mark a batch as approved for execution."""
+        filepath = self.batch_dir / f"{batch_id}.json"
+        if not filepath.exists():
+            raise FileNotFoundError(f"Batch {batch_id} not found")
+
+        with open(filepath, "r", encoding="utf-8") as f:
+            data = json.load(f)
+
+        if data["status"] != "pending":
+            raise ValueError(f"Batch {batch_id} is '{data['status']}', not pending")
+
+        data["status"] = "approved"
+        data["approved_at"] = datetime.now(timezone.utc).isoformat()
+        data["approved_by"] = approved_by
+
+        with open(filepath, "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=2, ensure_ascii=False)
+
+        logger.info("Batch %s approved by %s", batch_id, approved_by)
+        return DispatchBatch(**{k: v for k, v in data.items() if k in DispatchBatch.__dataclass_fields__})
+
+    def reject_batch(self, batch_id: str, reason: str = "", rejected_by: str = "dashboard") -> DispatchBatch:
+        """Reject a dispatch batch."""
+        filepath = self.batch_dir / f"{batch_id}.json"
+        if not filepath.exists():
+            raise FileNotFoundError(f"Batch {batch_id} not found")
+
+        with open(filepath, "r", encoding="utf-8") as f:
+            data = json.load(f)
+
+        data["status"] = "rejected"
+        data["rejected_at"] = datetime.now(timezone.utc).isoformat()
+        data["rejected_reason"] = reason or f"Rejected by {rejected_by}"
+
+        with open(filepath, "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=2, ensure_ascii=False)
+
+        logger.info("Batch %s rejected: %s", batch_id, reason)
+        return DispatchBatch(**{k: v for k, v in data.items() if k in DispatchBatch.__dataclass_fields__})
+
+    def get_pending_batch(self) -> Optional[DispatchBatch]:
+        """Get the most recent pending batch, if any."""
+        batches = []
+        for bf in self.batch_dir.glob("batch_*.json"):
+            try:
+                with open(bf, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                if data.get("status") == "pending":
+                    batches.append(data)
+            except (json.JSONDecodeError, IOError):
+                continue
+
+        if not batches:
+            return None
+
+        # Most recent first
+        batches.sort(key=lambda b: b.get("created_at", ""), reverse=True)
+        data = batches[0]
+        return DispatchBatch(**{k: v for k, v in data.items() if k in DispatchBatch.__dataclass_fields__})
+
+    def get_approved_batch(self) -> Optional[DispatchBatch]:
+        """Get an approved batch waiting for execution."""
+        for bf in sorted(self.batch_dir.glob("batch_*.json"), reverse=True):
+            try:
+                with open(bf, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                if data.get("status") == "approved":
+                    return DispatchBatch(**{k: v for k, v in data.items() if k in DispatchBatch.__dataclass_fields__})
+            except (json.JSONDecodeError, IOError):
+                continue
+        return None
+
+    def _mark_batch_executed(self, batch_id: str, report: OperatorReport):
+        """Mark batch as executed after successful dispatch."""
+        filepath = self.batch_dir / f"{batch_id}.json"
+        if not filepath.exists():
+            return
+
+        with open(filepath, "r", encoding="utf-8") as f:
+            data = json.load(f)
+
+        data["status"] = "executed"
+        data["executed_at"] = datetime.now(timezone.utc).isoformat()
+        data["execution_report"] = {
+            "run_id": report.run_id,
+            "motion": report.motion,
+            "errors": report.errors,
+        }
+
+        with open(filepath, "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=2, ensure_ascii=False)
+
+    def expire_stale_batches(self, max_age_hours: int = 24):
+        """Expire pending batches older than max_age_hours."""
+        cutoff = datetime.now(timezone.utc) - timedelta(hours=max_age_hours)
+        for bf in self.batch_dir.glob("batch_*.json"):
+            try:
+                with open(bf, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                if data.get("status") != "pending":
+                    continue
+                created = datetime.fromisoformat(data["created_at"].replace("Z", "+00:00"))
+                if created < cutoff:
+                    data["status"] = "expired"
+                    with open(bf, "w", encoding="utf-8") as f:
+                        json.dump(data, f, indent=2, ensure_ascii=False)
+                    logger.info("Expired stale batch: %s", bf.name)
+            except (json.JSONDecodeError, IOError, ValueError):
+                continue
+
     # -------------------------------------------------------------------------
     # dispatch_outbound
     # -------------------------------------------------------------------------
@@ -301,6 +565,31 @@ class OperatorOutbound:
             report.errors.append("OPERATOR disabled in config/production.json")
             report.completed_at = datetime.now(timezone.utc).isoformat()
             return report
+
+        # --- Gatekeeper batch approval gate ---
+        if not dry_run and self.gatekeeper_required:
+            approved_batch = self.get_approved_batch()
+            if approved_batch and approved_batch.motion in ("outbound", "all"):
+                logger.info("Executing approved batch: %s", approved_batch.batch_id)
+                report.batch_id = approved_batch.batch_id
+                # Continue to dispatch — batch is approved
+            else:
+                # No approved batch → create one for review
+                batch = self.create_batch(motion="outbound")
+                report.pending_approval = True
+                report.batch_id = batch.batch_id
+                report.errors.append(
+                    f"GATEKEEPER: Batch {batch.batch_id} created for review. "
+                    f"Approve via POST /api/operator/approve-batch/{batch.batch_id}"
+                )
+                console.print(
+                    f"[yellow]GATEKEEPER GATE:[/yellow] Batch {batch.batch_id} requires approval.\n"
+                    f"  Email leads: {batch.total_email_leads}, LinkedIn: {batch.total_linkedin_leads}\n"
+                    f"  Approve: POST /api/operator/approve-batch/{batch.batch_id}"
+                )
+                report.completed_at = datetime.now(timezone.utc).isoformat()
+                self._log_dispatch(report)
+                return report
 
         schedule = self.get_warmup_schedule()
         report.warmup_schedule = asdict(schedule)
@@ -384,6 +673,10 @@ class OperatorOutbound:
 
         report.completed_at = datetime.now(timezone.utc).isoformat()
         self._log_dispatch(report)
+
+        # Mark batch as executed if we were processing an approved batch
+        if report.batch_id and not report.pending_approval:
+            self._mark_batch_executed(report.batch_id, report)
 
         return report
 
@@ -786,6 +1079,30 @@ class OperatorOutbound:
             motion="all",
         )
 
+        # --- Gatekeeper batch approval gate (combined for all motions) ---
+        if not dry_run and self.gatekeeper_required:
+            approved_batch = self.get_approved_batch()
+            if approved_batch and approved_batch.motion == "all":
+                logger.info("Executing approved 'all' batch: %s", approved_batch.batch_id)
+                report.batch_id = approved_batch.batch_id
+            else:
+                batch = self.create_batch(motion="all")
+                report.pending_approval = True
+                report.batch_id = batch.batch_id
+                report.errors.append(
+                    f"GATEKEEPER: Batch {batch.batch_id} created for review. "
+                    f"Approve via POST /api/operator/approve-batch/{batch.batch_id}"
+                )
+                console.print(
+                    f"[yellow]GATEKEEPER GATE:[/yellow] Batch {batch.batch_id} requires approval.\n"
+                    f"  Email: {batch.total_email_leads}, LinkedIn: {batch.total_linkedin_leads}\n"
+                    f"  Cadence due: {batch.total_cadence_due}, Revival: {batch.total_revival_candidates}\n"
+                    f"  Approve: POST /api/operator/approve-batch/{batch.batch_id}"
+                )
+                report.completed_at = datetime.now(timezone.utc).isoformat()
+                self._log_dispatch(report)
+                return report
+
         # 1. Outbound (new leads)
         outbound_report = await self.dispatch_outbound(dry_run=dry_run)
         report.instantly_report = outbound_report.instantly_report
@@ -807,6 +1124,10 @@ class OperatorOutbound:
 
         report.warmup_schedule = outbound_report.warmup_schedule
         report.completed_at = datetime.now(timezone.utc).isoformat()
+
+        # Mark batch as executed if we were processing an approved batch
+        if report.batch_id and not report.pending_approval:
+            self._mark_batch_executed(report.batch_id, report)
 
         return report
 
@@ -847,6 +1168,10 @@ class OperatorOutbound:
                 "revival_remaining": max(0, schedule.revival_daily_limit - state.revival_dispatched),
             },
             "cadence": cadence_summary,
+            "gatekeeper": {
+                "required": self.gatekeeper_required,
+                "pending_batch": asdict(pending) if (pending := self.get_pending_batch()) else None,
+            },
             "config": {
                 "tier_routing": self._operator_config.get("outbound", {}).get("tier_channel_routing", {}),
                 "revival_enabled": self._operator_config.get("revival", {}).get("enabled", False),

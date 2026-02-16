@@ -1499,7 +1499,51 @@ try:
         """Get recent OPERATOR dispatch history."""
         return _operator.get_dispatch_history(limit=limit)
 
-    logger.info("✓ OPERATOR Agent endpoints mounted")
+    @app.get("/api/operator/pending-batch")
+    async def operator_pending_batch():
+        """Get the current pending dispatch batch (if any)."""
+        from dataclasses import asdict as _batch_asdict
+        batch = _operator.get_pending_batch()
+        if not batch:
+            return {"status": "no_pending_batch", "message": "No dispatch batch awaiting approval"}
+        return _batch_asdict(batch)
+
+    @app.post("/api/operator/approve-batch/{batch_id}")
+    async def operator_approve_batch(batch_id: str, request: Request):
+        """Approve a dispatch batch for execution."""
+        try:
+            body = await request.json()
+        except Exception:
+            body = {}
+        approved_by = body.get("approved_by", "dashboard")
+        try:
+            from dataclasses import asdict as _batch_asdict
+            batch = _operator.approve_batch(batch_id, approved_by=approved_by)
+            return {"status": "approved", "batch": _batch_asdict(batch)}
+        except FileNotFoundError:
+            from fastapi.responses import JSONResponse
+            return JSONResponse(status_code=404, content={"error": f"Batch {batch_id} not found"})
+        except ValueError as e:
+            from fastapi.responses import JSONResponse
+            return JSONResponse(status_code=400, content={"error": str(e)})
+
+    @app.post("/api/operator/reject-batch/{batch_id}")
+    async def operator_reject_batch(batch_id: str, request: Request):
+        """Reject a dispatch batch."""
+        try:
+            body = await request.json()
+        except Exception:
+            body = {}
+        reason = body.get("reason", "")
+        try:
+            from dataclasses import asdict as _batch_asdict
+            batch = _operator.reject_batch(batch_id, reason=reason)
+            return {"status": "rejected", "batch": _batch_asdict(batch)}
+        except FileNotFoundError:
+            from fastapi.responses import JSONResponse
+            return JSONResponse(status_code=404, content={"error": f"Batch {batch_id} not found"})
+
+    logger.info("✓ OPERATOR Agent endpoints mounted (incl. GATEKEEPER batch approval)")
 except Exception as e:
     logger.warning("OPERATOR endpoints could not be mounted: %s", e)
 

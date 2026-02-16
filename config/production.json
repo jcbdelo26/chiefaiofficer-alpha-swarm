@@ -401,6 +401,8 @@
     "operator": {
         "enabled": true,
         "description": "Unified outbound execution — Instantly email + HeyReach LinkedIn + GHL revival",
+        "gatekeeper_required": true,
+        "gatekeeper_note": "When true, live dispatch (dry_run=False) creates a batch for human approval before executing. Disable after 3 days of clean supervised sends.",
         "outbound": {
             "email_daily_limit": 25,
             "linkedin_warmup_start": "2026-02-16",
