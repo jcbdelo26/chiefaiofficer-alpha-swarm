@@ -33,6 +33,18 @@ sys.path.insert(0, str(PROJECT_ROOT))
 # Lazy Instantly client
 _instantly_client = None
 
+# Lazy signal manager (Monaco signal loop)
+_signal_manager = None
+
+
+def _get_signal_manager():
+    """Lazy-initialize the LeadStatusManager for engagement tracking."""
+    global _signal_manager
+    if _signal_manager is None:
+        from core.lead_signals import LeadStatusManager
+        _signal_manager = LeadStatusManager(hive_dir=PROJECT_ROOT / ".hive-mind")
+    return _signal_manager
+
 
 async def _get_client():
     """Lazy-initialize the AsyncInstantlyClient."""
@@ -419,6 +431,12 @@ async def _process_reply(payload: Dict[str, Any]):
     # Log event
     _log_event("reply", payload)
 
+    # Signal loop: update lead engagement status
+    try:
+        _get_signal_manager().handle_email_replied(lead_email, reply_text, campaign_id)
+    except Exception as e:
+        logger.error("Signal loop error (reply): %s", e)
+
 
 async def _process_bounce(payload: Dict[str, Any]):
     """Background: process bounce webhook."""
@@ -445,6 +463,12 @@ async def _process_bounce(payload: Dict[str, Any]):
     # Log event
     _log_event("bounce", payload)
 
+    # Signal loop: update lead engagement status
+    try:
+        _get_signal_manager().handle_email_bounced(lead_email, bounce_type)
+    except Exception as e:
+        logger.error("Signal loop error (bounce): %s", e)
+
 
 async def _process_unsubscribe(payload: Dict[str, Any]):
     """Background: process unsubscribe webhook (compliance-critical)."""
@@ -469,6 +493,12 @@ async def _process_unsubscribe(payload: Dict[str, Any]):
 
     # Log event
     _log_event("unsubscribe", payload)
+
+    # Signal loop: update lead engagement status
+    try:
+        _get_signal_manager().handle_email_unsubscribed(lead_email)
+    except Exception as e:
+        logger.error("Signal loop error (unsubscribe): %s", e)
 
 
 # =============================================================================
@@ -514,6 +544,16 @@ async def handle_instantly_open(request: Request):
 
     payload = await request.json()
     _log_event("open", payload)
+
+    # Signal loop: update lead engagement status
+    lead_email = payload.get("data", {}).get("lead_email", "")
+    campaign_id = payload.get("data", {}).get("campaign_id", "")
+    if lead_email:
+        try:
+            _get_signal_manager().handle_email_opened(lead_email, campaign_id)
+        except Exception as e:
+            logger.error("Signal loop error (open): %s", e)
+
     return {"status": "received", "event": "open"}
 
 

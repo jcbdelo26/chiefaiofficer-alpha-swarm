@@ -40,6 +40,19 @@ sys.path.insert(0, str(PROJECT_ROOT))
 
 router = APIRouter()
 
+# Lazy signal manager (Monaco signal loop)
+_signal_manager = None
+
+
+def _get_signal_manager():
+    """Lazy-initialize the LeadStatusManager for engagement tracking."""
+    global _signal_manager
+    if _signal_manager is None:
+        from core.lead_signals import LeadStatusManager
+        _signal_manager = LeadStatusManager(hive_dir=PROJECT_ROOT / ".hive-mind")
+    return _signal_manager
+
+
 # Event log (append-only JSONL)
 EVENT_LOG = PROJECT_ROOT / ".hive-mind" / "heyreach_events.jsonl"
 
@@ -138,6 +151,15 @@ async def heyreach_webhook(request: Request):
 async def _handle_connection_request_sent(event_type: str, payload: Dict, lead: Dict) -> Dict:
     """Track outreach progress."""
     logger.info("LinkedIn connection request sent to %s", lead.get("linkedin_url"))
+
+    # Signal loop: update lead engagement status
+    try:
+        _get_signal_manager().handle_linkedin_connection_sent(
+            lead.get("linkedin_url", ""), lead.get("email", "")
+        )
+    except Exception as e:
+        logger.error("Signal loop error (connection_sent): %s", e)
+
     return {"action": "logged"}
 
 
@@ -166,6 +188,14 @@ async def _handle_connection_accepted(event_type: str, payload: Dict, lead: Dict
 
     # Flag for warm follow-up — dispatcher can pick this up
     _flag_for_followup(lead, "connection_accepted")
+
+    # Signal loop: update lead engagement status
+    try:
+        _get_signal_manager().handle_linkedin_connection_accepted(
+            lead.get("linkedin_url", ""), lead.get("email", "")
+        )
+    except Exception as e:
+        logger.error("Signal loop error (connection_accepted): %s", e)
 
     return {"action": "flagged_for_followup"}
 
@@ -196,8 +226,15 @@ async def _handle_reply_received(event_type: str, payload: Dict, lead: Dict) -> 
         metadata={**lead, "reply_text": reply_text},
     )
 
+    # Signal loop: update lead engagement status
+    try:
+        _get_signal_manager().handle_linkedin_reply(
+            lead.get("linkedin_url", ""), reply_text, lead.get("email", "")
+        )
+    except Exception as e:
+        logger.error("Signal loop error (linkedin_reply): %s", e)
+
     # TODO: Route to RESPONDER agent for classification
-    # For now, just log and alert
 
     return {"action": "reply_logged", "needs_classification": True}
 
@@ -244,6 +281,17 @@ async def _handle_campaign_completed(event_type: str, payload: Dict, lead: Dict)
         f"Campaign {campaign_id} has finished all sequence steps.",
         metadata={"campaign_id": campaign_id},
     )
+
+    # Signal loop: mark lead as linkedin_exhausted
+    email = lead.get("email", "")
+    if email:
+        try:
+            _get_signal_manager().update_lead_status(
+                email, "linkedin_exhausted", "heyreach_webhook:campaign_completed",
+                {"campaign_id": campaign_id},
+            )
+        except Exception as e:
+            logger.error("Signal loop error (campaign_completed): %s", e)
 
     return {"action": "campaign_exhausted"}
 

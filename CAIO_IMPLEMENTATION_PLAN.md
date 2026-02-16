@@ -1,6 +1,6 @@
 # CAIO Alpha Swarm — Unified Implementation Plan
 
-**Last Updated**: 2026-02-16 (v3.6 — Monaco-inspired signal loop + dashboard)
+**Last Updated**: 2026-02-16 (v3.7 — HeyReach API verified, webhooks registered, signal loop wired into both channels)
 **Owner**: ChiefAIOfficer Production Team
 **AI**: Claude Opus 4.6
 
@@ -20,7 +20,7 @@ Phase 0: Foundation Lock          [##########] 100%  COMPLETE
 Phase 1: Live Pipeline Validation [##########] 100%  COMPLETE
 Phase 2: Supervised Burn-In       [##########] 100%  COMPLETE
 Phase 3: Expand & Harden          [##########] 100%  COMPLETE
-Phase 4: Autonomy Graduation      [#######---]  65%  IN PROGRESS (4A COMPLETE, 4B code built, 4F signal loop + dashboard live)
+Phase 4: Autonomy Graduation      [########--]  75%  IN PROGRESS (4A COMPLETE, 4B API+webhooks verified, 4F signal loop wired into both channels)
 ```
 
 ---
@@ -261,22 +261,30 @@ Day 21: Email #5 (graceful close)
 
 ### 4B: HeyReach LinkedIn Integration
 
-**Status**: Code infrastructure BUILT. Awaiting HeyReach subscription + LinkedIn warm-up for activation.
+**Status**: API verified, 4 webhooks registered in HeyReach UI, signal loop wired. Awaiting: campaign template creation + LinkedIn warm-up for live sends.
 
 | Task | Status | Notes |
 |------|--------|-------|
-| Subscribe to HeyReach Growth ($79/mo, 1 sender) | TODO | API included on all plans — USER ACTION |
+| Subscribe to HeyReach Growth ($79/mo, 1 sender) | DONE | API key generated, 19 existing campaigns visible |
 | Connect LinkedIn account + warm-up (4 weeks) | TODO | 20-25 connections/day ramp — USER ACTION |
-| Build 3 campaign templates in HeyReach UI | TODO | tier_1, tier_2, tier_3 sequences — USER ACTION |
-| Set `HEYREACH_API_KEY` in Railway | TODO | Dashboard → Settings → Integrations — USER ACTION |
+| Build 3 campaign templates in HeyReach UI | TODO | tier_1, tier_2, tier_3 sequences — USER ACTION (or map existing campaigns) |
+| Set `HEYREACH_API_KEY` in Railway + .env | DONE | Verified via `CheckApiKey` (HTTP 200). Health endpoint confirms `api_key_configured: true` |
 | Create `execution/heyreach_dispatcher.py` | DONE | API client + lead-list-first safety, daily ceiling (20/day), CLI with --dry-run |
 | Create `webhooks/heyreach_webhook.py` | DONE | 11 event handlers, JSONL logging, follow-up flags, Slack alerts |
 | Mount HeyReach webhook in dashboard | DONE | `dashboard/health_app.py` — router included after Instantly |
-| Create `scripts/register_heyreach_webhooks.py` | DONE | CRUD: --list, --delete-all, --check-auth (same pattern as Instantly) |
-| Register HeyReach webhooks (11 events → `/webhooks/heyreach`) | TODO | Run script after HEYREACH_API_KEY is set |
+| Create `scripts/register_heyreach_webhooks.py` | DONE | Rewritten to utility: --check-auth, --list-campaigns, --list-accounts, --print-guide (webhook CRUD is UI-only) |
+| Register HeyReach webhooks → `/webhooks/heyreach` | DONE | 4 webhooks created in HeyReach UI: Connection Sent, Connection Accepted, Reply Received, Campaign Completed |
+| Wire signal loop into HeyReach webhook handlers | DONE | `LeadStatusManager` calls in connection_sent, connection_accepted, reply, campaign_completed handlers |
 | Configure native HeyReach ↔ Instantly bidirectional sync | TODO | Paste API keys in both dashboards — USER ACTION |
 | Wire CONNECTION_REQUEST_ACCEPTED → Instantly warm follow-up | DONE | Webhook handler writes flag file, dispatcher reads it |
+| Map campaign IDs to `config/production.json` | TODO | 19 existing campaigns — identify tier_1/tier_2/tier_3 for config |
 | Shadow test with 5 internal LinkedIn profiles | TODO | Validate before real outreach — USER ACTION |
+
+**HeyReach API Discoveries**:
+- Webhook CRUD is **UI-only** — no API endpoints exist (all paths return 404)
+- `/linkedinaccount/GetAll` returns 404 — not available on all plans
+- `aiohttp` requires `content_type=None` on all `.json()` calls (HeyReach omits Content-Type header)
+- 19 existing campaigns visible, including "HeyReach to GHL CAIO ABM High ICP" (ID: 291587)
 
 **HeyReach API Reference**:
 - Base URL: `https://api.heyreach.io/api/public`
@@ -366,8 +374,8 @@ QUEEN (orchestrator)
 | **Pipeline Funnel Visualization** | DONE | 5-stage flow on `/leads` dashboard (Pipeline→Outreach→Engaged→At Risk→Terminal) |
 | **Lead Dashboard** | DONE | `dashboard/leads_dashboard.html` — filterable lead list + click-to-expand timeline |
 | **API Endpoints** | DONE | `/api/leads`, `/api/leads/funnel`, `/api/leads/{email}/timeline`, `/api/leads/detect-decay` |
-| Wire signal loop INTO Instantly webhook handlers | TODO | On real webhook events, call `LeadStatusManager.handle_*()` |
-| Wire signal loop INTO HeyReach webhook handlers | TODO | Requires HeyReach subscription first |
+| Wire signal loop INTO Instantly webhook handlers | DONE | reply→`handle_email_replied`, bounce→`handle_email_bounced`, open→`handle_email_opened`, unsub→`handle_email_unsubscribed` |
+| Wire signal loop INTO HeyReach webhook handlers | DONE | connection_sent/accepted→`handle_linkedin_*`, reply→`handle_linkedin_reply`, campaign_completed→`linkedin_exhausted` |
 | CRO Copilot ("Ask" chat interface) | DEFERRED | Low priority at current volume (<100 leads) |
 | Meeting Intelligence (auto note-taking) | DEFERRED | Phone outreach not live yet (Phase 4D) |
 
@@ -439,7 +447,7 @@ QUEEN (orchestrator)
 | **Redis (Upstash)** | WORKING | 62ms from Railway |
 | **Inngest** | WORKING | 4 functions mounted |
 | **Instantly.ai** | V2 LIVE | Bearer auth, DRAFTED-by-default, 6 domains warmed (100% health), 4/4 webhooks registered, test campaign sent. Phase 4A COMPLETE. |
-| **HeyReach** | RESEARCHED | API compatible ($79/mo Growth). No campaign creation via API. Needs subscription + LinkedIn warm-up. |
+| **HeyReach** | ACTIVE | API key verified, 4 webhooks registered (UI), signal loop wired. 19 campaigns exist. Webhook CRUD is UI-only. |
 | **Railway** | DEPLOYED | Auto-deploy on push |
 | **Proxycurl** | REMOVED | Shutting down Jul 2026 (sued by LinkedIn) |
 | **Clay API v1** | DEPRECATED | Returns 404, replaced by webhook pattern |
@@ -503,11 +511,10 @@ QUEEN (orchestrator)
 | Upstash Redis | Free tier | 10K commands/day | ACTIVE |
 | Inngest | Free tier | 25K events/mo | ACTIVE |
 | Instantly.ai | ~$30/mo | Email sending (Growth plan) | V2 MIGRATED |
-| HeyReach | $79/mo (planned) | LinkedIn automation (1 sender) | RESEARCHED |
+| HeyReach | $79/mo | LinkedIn automation (1 sender, 19 campaigns) | ACTIVE |
 | BetterContact | $0 (not subscribed) | Code ready | DEFERRED |
 
-**Total Current Spend**: ~$583/mo (Clay + Apollo + Railway + Instantly)
-**Projected with HeyReach**: ~$662/mo
+**Total Current Spend**: ~$662/mo (Clay + Apollo + Railway + Instantly + HeyReach)
 
 ---
 
@@ -538,9 +545,12 @@ QUEEN (orchestrator)
 | 2026-02-15 | Multi-account rotation via `email_list` | Fixed silent V2 bug where sending accounts were never included in campaign payload. Added `sending_accounts` config block with 6 primary from-emails for round-robin rotation. |
 | 2026-02-15 | 6 dedicated cold outreach domains (NOT outbound.chiefai.ai) | User already has 6 warmed domains in Instantly: chiefaiofficerai.com, chiefaiofficerconsulting.com, chiefaiofficerguide.com, chiefaiofficerlabs.com, chiefaiofficerresources.com, chiefaiofficersolutions.com. This is BETTER than a single subdomain — more rotation diversity, better deliverability. Replaced placeholder domains in production.json. |
 | 2026-02-15 | Deploy Instantly routes to Railway | Commit `53ab1c1` deployed. Routes were local-only (never committed from previous session). Verified: `/api/instantly/campaigns`, `/webhooks/instantly/health`, `/api/instantly/dispatch-status` all responding. |
+| 2026-02-16 | HeyReach webhook CRUD is UI-only | Discovered via API probing (9 endpoint variations, all 404). Rewrote `register_heyreach_webhooks.py` to utility script. 4 webhooks created manually in HeyReach UI. |
+| 2026-02-16 | Wire Monaco signal loop into both webhook handlers | `LeadStatusManager` calls added to Instantly (reply/bounce/open/unsubscribe) and HeyReach (connection_sent/accepted, reply, campaign_completed). Engagement-driven lead status now flows from real webhook events. |
+| 2026-02-16 | HeyReach enabled in production.json | API key verified (HTTP 200), health endpoint confirms `api_key_configured: true`. 4/4 webhooks registered. `enabled: true` in config. |
 
 ---
 
-*Plan Version: 3.5*
+*Plan Version: 3.7*
 *Created: 2026-02-13*
-*Supersedes: v3.4, Modernization Roadmap (implementation_plan.md.resolved), Original Path to Full Autonomy (f34646b2/task.md.resolved)*
+*Supersedes: v3.6, Modernization Roadmap (implementation_plan.md.resolved), Original Path to Full Autonomy (f34646b2/task.md.resolved)*

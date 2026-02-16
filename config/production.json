@@ -119,8 +119,8 @@
             }
         },
         "heyreach": {
-            "enabled": false,
-            "note": "LinkedIn automation. Campaigns must be pre-built in UI. API for lead routing + pause/resume only.",
+            "enabled": true,
+            "note": "LinkedIn automation. API key verified. 4 webhooks registered in UI. Campaigns must be pre-built in HeyReach UI. API for lead routing + pause/resume only.",
             "base_url": "https://api.heyreach.io/api/public",
             "api_key_env": "HEYREACH_API_KEY",
             "timeout_seconds": 20,
