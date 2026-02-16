@@ -261,13 +261,13 @@ Day 21: Email #5 (graceful close)
 
 ### 4B: HeyReach LinkedIn Integration
 
-**Status**: API verified, 4 webhooks registered in HeyReach UI, signal loop wired. Awaiting: campaign template creation + LinkedIn warm-up for live sends.
+**Status**: API verified, 4 webhooks registered, signal loop wired, 3 campaign templates created (Drafted). Awaiting: LinkedIn warm-up + bidirectional sync for live sends.
 
 | Task | Status | Notes |
 |------|--------|-------|
 | Subscribe to HeyReach Growth ($79/mo, 1 sender) | DONE | API key generated, 19 existing campaigns visible |
 | Connect LinkedIn account + warm-up (4 weeks) | TODO | 20-25 connections/day ramp — USER ACTION |
-| Build 3 campaign templates in HeyReach UI | TODO | tier_1, tier_2, tier_3 sequences — USER ACTION (or map existing campaigns) |
+| Build 3 campaign templates in HeyReach UI | DONE | Tier 1 (334314): Connection→Message(1d)→Follow-up(7d). Tier 2 (334364): Connection→Message(1d)→End. Tier 3 (334381): Connection only→End. All saved as Draft. |
 | Set `HEYREACH_API_KEY` in Railway + .env | DONE | Verified via `CheckApiKey` (HTTP 200). Health endpoint confirms `api_key_configured: true` |
 | Create `execution/heyreach_dispatcher.py` | DONE | API client + lead-list-first safety, daily ceiling (20/day), CLI with --dry-run |
 | Create `webhooks/heyreach_webhook.py` | DONE | 11 event handlers, JSONL logging, follow-up flags, Slack alerts |
@@ -277,7 +277,7 @@ Day 21: Email #5 (graceful close)
 | Wire signal loop into HeyReach webhook handlers | DONE | `LeadStatusManager` calls in connection_sent, connection_accepted, reply, campaign_completed handlers |
 | Configure native HeyReach ↔ Instantly bidirectional sync | TODO | Paste API keys in both dashboards — USER ACTION |
 | Wire CONNECTION_REQUEST_ACCEPTED → Instantly warm follow-up | DONE | Webhook handler writes flag file, dispatcher reads it |
-| Map campaign IDs to `config/production.json` | TODO | 19 existing campaigns — identify tier_1/tier_2/tier_3 for config |
+| Map campaign IDs to `config/production.json` | DONE | tier_1: 334314, tier_2: 334364, tier_3: 334381 — mapped in config with sequence descriptions |
 | Shadow test with 5 internal LinkedIn profiles | TODO | Validate before real outreach — USER ACTION |
 
 **HeyReach API Discoveries**:

@@ -130,10 +130,22 @@
                 "burst_limit": 30
             },
             "campaign_templates": {
-                "note": "Campaign IDs must be pre-created in HeyReach UI and mapped here",
-                "tier_1": null,
-                "tier_2": null,
-                "tier_3": null
+                "note": "Campaign IDs pre-created in HeyReach UI (2026-02-16). Saved as Draft — DO NOT activate until LinkedIn warm-up complete.",
+                "tier_1": {
+                    "campaign_id": 334314,
+                    "name": "CAIO Tier 1 — VP+ Decision Makers",
+                    "sequence": "Connection → Message (1d) → Follow-up (7d)"
+                },
+                "tier_2": {
+                    "campaign_id": 334364,
+                    "name": "CAIO Tier 2 — Directors & Managers",
+                    "sequence": "Connection → Message (1d) → End"
+                },
+                "tier_3": {
+                    "campaign_id": 334381,
+                    "name": "CAIO Tier 3 — Connection Only",
+                    "sequence": "Connection only → End"
+                }
             },
             "safety": {
                 "add_to_list_first": true,
