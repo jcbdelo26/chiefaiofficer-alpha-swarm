@@ -769,6 +769,18 @@ async def sales_dashboard():
     raise HTTPException(status_code=404, detail="Sales dashboard not found")
 
 
+@app.get("/leads")
+async def leads_dashboard():
+    """
+    Serve the Lead Signal Loop & Activity Timeline dashboard.
+    Monaco-inspired unified lead view with pipeline flow visualization.
+    """
+    leads_html = Path(__file__).parent / "leads_dashboard.html"
+    if leads_html.exists():
+        return FileResponse(str(leads_html))
+    raise HTTPException(status_code=404, detail="Leads dashboard not found")
+
+
 @app.get("/api/pending-emails")
 async def get_pending_emails(response: Response, auth: bool = Depends(require_auth)):
     """
@@ -1376,6 +1388,65 @@ async def clay_enrichment_callback_legacy(request: Request):
     logger.info("Legacy clay-callback received: %s", json.dumps(data)[:120])
     return {"status": "received", "note": "Pipeline no longer uses Clay for enrichment. Use /webhooks/clay for RB2B visitors."}
 
+
+# =============================================================================
+# LEAD SIGNAL LOOP & ACTIVITY TIMELINE (Monaco-inspired)
+# =============================================================================
+
+try:
+    from core.lead_signals import LeadStatusManager
+    from core.activity_timeline import ActivityTimeline
+
+    _lead_status_mgr = LeadStatusManager()
+    _activity_timeline = ActivityTimeline()
+
+    @app.get("/api/leads")
+    async def get_leads():
+        """Get all tracked leads with current status and engagement data."""
+        return _activity_timeline.get_all_leads_summary()
+
+    @app.get("/api/leads/funnel")
+    async def get_leads_funnel():
+        """Get pipeline funnel counts for visualization."""
+        return _activity_timeline.get_funnel_summary()
+
+    @app.get("/api/leads/status-summary")
+    async def get_leads_status_summary():
+        """Get count of leads by engagement status."""
+        return _lead_status_mgr.get_status_summary()
+
+    @app.get("/api/leads/{email}/timeline")
+    async def get_lead_timeline(email: str):
+        """Get unified activity timeline for a specific lead."""
+        timeline = _activity_timeline.get_lead_timeline(email)
+        status = _lead_status_mgr.get_lead_status(email)
+        return {
+            "email": email,
+            "current_status": status,
+            "timeline": timeline,
+            "event_count": len(timeline),
+        }
+
+    @app.post("/api/leads/detect-decay")
+    async def detect_engagement_decay():
+        """Run ghosting/stall detection across all leads."""
+        results = _lead_status_mgr.detect_engagement_decay()
+        return {
+            "ghosted": len(results["ghosted"]),
+            "stalled": len(results["stalled"]),
+            "engaged_not_replied": len(results["engaged_not_replied"]),
+            "details": results,
+        }
+
+    @app.post("/api/leads/bootstrap")
+    async def bootstrap_lead_statuses():
+        """Seed lead status records from existing shadow emails."""
+        count = _lead_status_mgr.bootstrap_from_shadow_emails()
+        return {"created": count, "message": f"Bootstrapped {count} lead status records"}
+
+    logger.info("✓ Lead Signal Loop & Activity Timeline endpoints mounted")
+except Exception as e:
+    logger.warning("Lead Signal Loop could not be mounted: %s", e)
 
 # =============================================================================
 # WEBHOOKS INTEGRATION

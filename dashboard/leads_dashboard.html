@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CAIO Lead Signal Loop — Pipeline & Activity</title>
+    <style>
+        :root {
+            --bg-primary: #0d1117;
+            --bg-secondary: #161b22;
+            --bg-card: #1c2128;
+            --border: #30363d;
+            --text-primary: #e6edf3;
+            --text-secondary: #8b949e;
+            --text-muted: #6e7681;
+            --accent-blue: #58a6ff;
+            --accent-green: #3fb950;
+            --accent-orange: #d29922;
+            --accent-red: #f85149;
+            --accent-purple: #bc8cff;
+            --accent-cyan: #39d2c0;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.5;
+        }
+        /* Header */
+        .header {
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            padding: 16px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .header h1 { font-size: 20px; font-weight: 600; }
+        .header .nav { display: flex; gap: 12px; }
+        .header .nav a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 13px;
+        }
+        .header .nav a:hover, .header .nav a.active {
+            color: var(--text-primary);
+            background: var(--bg-card);
+        }
+        .container { max-width: 1400px; margin: 0 auto; padding: 24px; }
+
+        /* Pipeline Flow Visualization */
+        .pipeline-flow {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 32px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            overflow-x: auto;
+        }
+        .flow-stage {
+            flex: 1;
+            min-width: 120px;
+            text-align: center;
+            position: relative;
+        }
+        .flow-stage .stage-num {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        .flow-stage .stage-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+        .flow-stage .stage-count {
+            font-size: 22px;
+            font-weight: 700;
+            margin-bottom: 2px;
+        }
+        .flow-stage .stage-desc {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+        .flow-arrow {
+            display: flex;
+            align-items: center;
+            color: var(--text-muted);
+            font-size: 18px;
+            padding: 0 2px;
+        }
+        /* Stage colors */
+        .stage-pipeline .stage-num { background: var(--accent-blue); color: #fff; }
+        .stage-pipeline .stage-count { color: var(--accent-blue); }
+        .stage-outreach .stage-num { background: var(--accent-purple); color: #fff; }
+        .stage-outreach .stage-count { color: var(--accent-purple); }
+        .stage-engaged .stage-num { background: var(--accent-green); color: #fff; }
+        .stage-engaged .stage-count { color: var(--accent-green); }
+        .stage-decay .stage-num { background: var(--accent-orange); color: #000; }
+        .stage-decay .stage-count { color: var(--accent-orange); }
+        .stage-terminal .stage-num { background: var(--accent-red); color: #fff; }
+        .stage-terminal .stage-count { color: var(--accent-red); }
+
+        /* Status Summary Row */
+        .status-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+        .status-badge {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 12px 16px;
+            text-align: center;
+        }
+        .status-badge .badge-count {
+            font-size: 28px;
+            font-weight: 700;
+        }
+        .status-badge .badge-label {
+            font-size: 11px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Controls */
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .controls .filter-group { display: flex; gap: 6px; flex-wrap: wrap; }
+        .filter-btn {
+            padding: 6px 12px;
+            border: 1px solid var(--border);
+            background: var(--bg-secondary);
+            color: var(--text-secondary);
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .filter-btn:hover, .filter-btn.active {
+            background: var(--accent-blue);
+            color: #fff;
+            border-color: var(--accent-blue);
+        }
+        .action-btn {
+            padding: 8px 16px;
+            border: none;
+            background: var(--accent-blue);
+            color: #fff;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+        }
+        .action-btn:hover { opacity: 0.9; }
+        .action-btn.secondary {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+        }
+
+        /* Lead Cards */
+        .lead-list { display: flex; flex-direction: column; gap: 8px; }
+        .lead-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px 20px;
+            cursor: pointer;
+            transition: border-color 0.15s;
+            display: grid;
+            grid-template-columns: 1fr 120px 100px 80px 140px;
+            align-items: center;
+            gap: 16px;
+        }
+        .lead-card:hover { border-color: var(--accent-blue); }
+        .lead-card .lead-info h3 {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+        .lead-card .lead-info .meta {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+        .lead-card .lead-tier {
+            font-size: 12px;
+            font-weight: 600;
+            padding: 3px 8px;
+            border-radius: 12px;
+            text-align: center;
+        }
+        .tier-1 { background: rgba(63,185,80,0.15); color: var(--accent-green); }
+        .tier-2 { background: rgba(88,166,255,0.15); color: var(--accent-blue); }
+        .tier-3 { background: rgba(210,153,34,0.15); color: var(--accent-orange); }
+        .tier-4 { background: rgba(139,148,158,0.15); color: var(--text-secondary); }
+        .lead-card .lead-score {
+            font-size: 14px;
+            font-weight: 600;
+            text-align: center;
+        }
+        .lead-card .lead-engagement {
+            font-size: 12px;
+            color: var(--text-secondary);
+            text-align: center;
+        }
+        .lead-card .lead-status {
+            font-size: 11px;
+            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: 12px;
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+        /* Status colors */
+        .status-pending { background: rgba(139,148,158,0.15); color: var(--text-secondary); }
+        .status-approved { background: rgba(88,166,255,0.15); color: var(--accent-blue); }
+        .status-dispatched, .status-sent { background: rgba(188,140,255,0.15); color: var(--accent-purple); }
+        .status-opened { background: rgba(57,210,192,0.15); color: var(--accent-cyan); }
+        .status-replied, .status-meeting_booked { background: rgba(63,185,80,0.15); color: var(--accent-green); }
+        .status-ghosted, .status-stalled { background: rgba(210,153,34,0.15); color: var(--accent-orange); }
+        .status-engaged_not_replied { background: rgba(210,153,34,0.15); color: var(--accent-orange); }
+        .status-bounced, .status-unsubscribed { background: rgba(248,81,73,0.15); color: var(--accent-red); }
+
+        /* Timeline Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.7);
+            z-index: 1000;
+            justify-content: center;
+            align-items: flex-start;
+            padding-top: 40px;
+        }
+        .modal-overlay.active { display: flex; }
+        .modal {
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            width: 720px;
+            max-height: 80vh;
+            overflow-y: auto;
+            padding: 24px;
+        }
+        .modal h2 { font-size: 18px; margin-bottom: 4px; }
+        .modal .modal-meta { font-size: 13px; color: var(--text-secondary); margin-bottom: 20px; }
+        .modal .close-btn {
+            float: right;
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 20px;
+            cursor: pointer;
+        }
+        /* Scoring reasons */
+        .scoring-section { margin-bottom: 20px; }
+        .scoring-section h3 {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .reason-list { list-style: none; }
+        .reason-list li {
+            font-size: 13px;
+            padding: 4px 0;
+            font-family: 'SF Mono', Consolas, monospace;
+        }
+        .reason-list li.positive { color: var(--accent-green); }
+        .reason-list li.zero { color: var(--text-muted); }
+        .reason-list li.negative { color: var(--accent-red); }
+        .reason-list li.total { color: var(--text-primary); font-weight: 700; border-top: 1px solid var(--border); margin-top: 4px; padding-top: 8px; }
+        /* Timeline events */
+        .timeline { border-left: 2px solid var(--border); padding-left: 20px; margin-left: 12px; }
+        .timeline-event {
+            position: relative;
+            padding-bottom: 16px;
+        }
+        .timeline-event::before {
+            content: '';
+            position: absolute;
+            left: -25px;
+            top: 4px;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--border);
+        }
+        .timeline-event.channel-pipeline::before { background: var(--accent-blue); }
+        .timeline-event.channel-instantly::before { background: var(--accent-purple); }
+        .timeline-event.channel-heyreach::before { background: var(--accent-cyan); }
+        .timeline-event.channel-gatekeeper::before { background: var(--accent-green); }
+        .timeline-event .event-time {
+            font-size: 11px;
+            color: var(--text-muted);
+            font-family: 'SF Mono', Consolas, monospace;
+        }
+        .timeline-event .event-summary { font-size: 13px; margin-top: 2px; }
+        .timeline-event .event-channel {
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 2px;
+        }
+        .timeline-event .event-channel.ch-pipeline { color: var(--accent-blue); }
+        .timeline-event .event-channel.ch-instantly { color: var(--accent-purple); }
+        .timeline-event .event-channel.ch-heyreach { color: var(--accent-cyan); }
+
+        /* Loading */
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-muted);
+        }
+        .empty-state {
+            text-align: center;
+            padding: 60px;
+            color: var(--text-muted);
+        }
+        .empty-state p { margin-top: 8px; font-size: 14px; }
+
+        /* List header */
+        .list-header {
+            display: grid;
+            grid-template-columns: 1fr 120px 100px 80px 140px;
+            gap: 16px;
+            padding: 8px 20px;
+            font-size: 11px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Lead Signal Loop</h1>
+        <div class="nav">
+            <a href="/">Health</a>
+            <a href="/scorecard">Scorecard</a>
+            <a href="/sales">Approvals</a>
+            <a href="/leads" class="active">Leads</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Pipeline Flow Visualization -->
+        <div class="pipeline-flow" id="pipelineFlow">
+            <div class="flow-stage stage-pipeline">
+                <div class="stage-num">1</div>
+                <div class="stage-label">Pipeline</div>
+                <div class="stage-count" id="f-pipeline">-</div>
+                <div class="stage-desc">Pending + Approved</div>
+            </div>
+            <div class="flow-arrow">&#8594;</div>
+            <div class="flow-stage stage-outreach">
+                <div class="stage-num">2</div>
+                <div class="stage-label">Outreach</div>
+                <div class="stage-count" id="f-outreach">-</div>
+                <div class="stage-desc">Dispatched + Sent</div>
+            </div>
+            <div class="flow-arrow">&#8594;</div>
+            <div class="flow-stage stage-engaged">
+                <div class="stage-num">3</div>
+                <div class="stage-label">Engaged</div>
+                <div class="stage-count" id="f-engaged">-</div>
+                <div class="stage-desc">Opened + Replied + Booked</div>
+            </div>
+            <div class="flow-arrow">&#8594;</div>
+            <div class="flow-stage stage-decay">
+                <div class="stage-num">4</div>
+                <div class="stage-label">At Risk</div>
+                <div class="stage-count" id="f-decay">-</div>
+                <div class="stage-desc">Ghosted + Stalled</div>
+            </div>
+            <div class="flow-arrow">&#8594;</div>
+            <div class="flow-stage stage-terminal">
+                <div class="stage-num">5</div>
+                <div class="stage-label">Terminal</div>
+                <div class="stage-count" id="f-terminal">-</div>
+                <div class="stage-desc">Bounced + Unsub</div>
+            </div>
+        </div>
+
+        <!-- Controls -->
+        <div class="controls">
+            <div class="filter-group">
+                <button class="filter-btn active" onclick="filterLeads('all')">All</button>
+                <button class="filter-btn" onclick="filterLeads('replied')">Replied</button>
+                <button class="filter-btn" onclick="filterLeads('opened')">Opened</button>
+                <button class="filter-btn" onclick="filterLeads('ghosted')">Ghosted</button>
+                <button class="filter-btn" onclick="filterLeads('stalled')">Stalled</button>
+                <button class="filter-btn" onclick="filterLeads('tier_1')">Tier 1</button>
+                <button class="filter-btn" onclick="filterLeads('tier_2')">Tier 2</button>
+            </div>
+            <div>
+                <button class="action-btn secondary" onclick="detectDecay()">Run Decay Scan</button>
+                <button class="action-btn secondary" onclick="bootstrapLeads()">Bootstrap Leads</button>
+                <button class="action-btn" onclick="refreshData()">Refresh</button>
+            </div>
+        </div>
+
+        <!-- Lead List -->
+        <div class="list-header">
+            <span>Lead</span>
+            <span>Tier</span>
+            <span>ICP Score</span>
+            <span>Signals</span>
+            <span>Status</span>
+        </div>
+        <div class="lead-list" id="leadList">
+            <div class="loading">Loading leads...</div>
+        </div>
+    </div>
+
+    <!-- Timeline Modal -->
+    <div class="modal-overlay" id="timelineModal">
+        <div class="modal">
+            <button class="close-btn" onclick="closeModal()">&times;</button>
+            <h2 id="modalName">Lead Name</h2>
+            <div class="modal-meta" id="modalMeta">Title at Company</div>
+
+            <div class="scoring-section" id="scoringSection">
+                <h3>Why This Score</h3>
+                <ul class="reason-list" id="scoringReasons"></ul>
+            </div>
+
+            <div class="scoring-section">
+                <h3>Activity Timeline</h3>
+                <div class="timeline" id="timelineEvents">
+                    <div class="loading">Loading timeline...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let allLeads = [];
+        let currentFilter = 'all';
+
+        async function fetchJSON(url) {
+            const resp = await fetch(url);
+            if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+            return resp.json();
+        }
+
+        async function refreshData() {
+            try {
+                const [leads, funnel] = await Promise.all([
+                    fetchJSON('/api/leads'),
+                    fetchJSON('/api/leads/funnel'),
+                ]);
+                allLeads = leads;
+                renderFunnel(funnel);
+                renderLeads(leads);
+            } catch (e) {
+                document.getElementById('leadList').innerHTML =
+                    '<div class="empty-state"><p>Could not load lead data. Run "Bootstrap Leads" to initialize.</p></div>';
+            }
+        }
+
+        function renderFunnel(funnel) {
+            const p = funnel.pipeline || {};
+            const o = funnel.outreach || {};
+            const e = funnel.engagement || {};
+            const d = funnel.decay || {};
+            const t = funnel.terminal || {};
+
+            document.getElementById('f-pipeline').textContent = (p.pending || 0) + (p.approved || 0);
+            document.getElementById('f-outreach').textContent = (o.dispatched || 0) + (o.sent || 0);
+            document.getElementById('f-engaged').textContent = (e.opened || 0) + (e.replied || 0) + (e.meeting_booked || 0);
+            document.getElementById('f-decay').textContent = (d.ghosted || 0) + (d.stalled || 0) + (d.engaged_not_replied || 0);
+            document.getElementById('f-terminal').textContent = (t.bounced || 0) + (t.unsubscribed || 0);
+        }
+
+        function renderLeads(leads) {
+            const list = document.getElementById('leadList');
+            const filtered = currentFilter === 'all' ? leads : leads.filter(l => {
+                if (currentFilter.startsWith('tier_')) return l.icp_tier === currentFilter;
+                return l.status === currentFilter;
+            });
+
+            if (filtered.length === 0) {
+                list.innerHTML = '<div class="empty-state"><p>No leads match this filter. Run "Bootstrap Leads" to seed from shadow emails.</p></div>';
+                return;
+            }
+
+            list.innerHTML = filtered.map(lead => {
+                const tierClass = (lead.icp_tier || '').replace('_', '-');
+                const statusClass = 'status-' + (lead.status || 'pending').replace(/ /g, '_');
+                return `
+                    <div class="lead-card" onclick="openTimeline('${lead.email}')">
+                        <div class="lead-info">
+                            <h3>${esc(lead.name || lead.email)}</h3>
+                            <div class="meta">${esc(lead.title || '')}${lead.company ? ' at ' + esc(lead.company) : ''}</div>
+                        </div>
+                        <div><span class="lead-tier ${tierClass}">${esc(lead.icp_tier || 'unscored')}</span></div>
+                        <div class="lead-score">${lead.icp_score || 0}/100</div>
+                        <div class="lead-engagement">${lead.open_count || 0} opens<br>${lead.reply_count || 0} replies</div>
+                        <div><span class="lead-status ${statusClass}">${esc(lead.status || 'pending')}</span></div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function filterLeads(filter) {
+            currentFilter = filter;
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.textContent.toLowerCase().replace(' ', '_') === filter || (filter === 'all' && btn.textContent === 'All'));
+            });
+            renderLeads(allLeads);
+        }
+
+        async function openTimeline(email) {
+            document.getElementById('timelineModal').classList.add('active');
+            document.getElementById('timelineEvents').innerHTML = '<div class="loading">Loading timeline...</div>';
+            document.getElementById('scoringReasons').innerHTML = '';
+
+            try {
+                const data = await fetchJSON('/api/leads/' + encodeURIComponent(email) + '/timeline');
+                const status = data.current_status || {};
+
+                document.getElementById('modalName').textContent = status.name || email;
+                document.getElementById('modalMeta').textContent =
+                    (status.title || '') + (status.company ? ' at ' + status.company : '') +
+                    ' | ICP: ' + (status.icp_score || 0) + '/100 | ' + (status.icp_tier || 'unscored');
+
+                // Render scoring reasons if available
+                const reasons = status.scoring_reasons || [];
+                if (reasons.length > 0) {
+                    document.getElementById('scoringSection').style.display = 'block';
+                    document.getElementById('scoringReasons').innerHTML = reasons.map(r => {
+                        let cls = 'zero';
+                        if (r.startsWith('+') && !r.startsWith('+0')) cls = 'positive';
+                        else if (r.startsWith('DISQ') || r.startsWith('-')) cls = 'negative';
+                        else if (r.startsWith('=')) cls = 'total';
+                        return `<li class="${cls}">${esc(r)}</li>`;
+                    }).join('');
+                } else {
+                    document.getElementById('scoringSection').style.display = 'none';
+                }
+
+                // Render timeline
+                const events = data.timeline || [];
+                if (events.length === 0) {
+                    document.getElementById('timelineEvents').innerHTML = '<div class="empty-state"><p>No activity recorded yet.</p></div>';
+                    return;
+                }
+
+                document.getElementById('timelineEvents').innerHTML = events.map(ev => {
+                    const channel = ev.channel || 'system';
+                    const time = ev.timestamp ? new Date(ev.timestamp).toLocaleString() : '';
+                    return `
+                        <div class="timeline-event channel-${channel}">
+                            <div class="event-time">${esc(time)}</div>
+                            <div class="event-summary">${esc(ev.summary || ev.type)}</div>
+                            <div class="event-channel ch-${channel}">${esc(channel)}</div>
+                        </div>
+                    `;
+                }).join('');
+            } catch (e) {
+                document.getElementById('timelineEvents').innerHTML = '<div class="empty-state"><p>Error loading timeline.</p></div>';
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('timelineModal').classList.remove('active');
+        }
+
+        async function detectDecay() {
+            try {
+                const result = await fetchJSON('/api/leads/detect-decay');
+                alert(`Decay scan complete:\n- Ghosted: ${result.ghosted}\n- Stalled: ${result.stalled}\n- Engaged (no reply): ${result.engaged_not_replied}`);
+                refreshData();
+            } catch (e) {
+                alert('Decay scan failed: ' + e.message);
+            }
+        }
+
+        async function bootstrapLeads() {
+            try {
+                const resp = await fetch('/api/leads/bootstrap', { method: 'POST' });
+                const result = await resp.json();
+                alert(`Bootstrap complete: ${result.created} lead records created.`);
+                refreshData();
+            } catch (e) {
+                alert('Bootstrap failed: ' + e.message);
+            }
+        }
+
+        function esc(str) {
+            const d = document.createElement('div');
+            d.textContent = str;
+            return d.innerHTML;
+        }
+
+        // Close modal on overlay click
+        document.getElementById('timelineModal').addEventListener('click', function(e) {
+            if (e.target === this) closeModal();
+        });
+
+        // Close modal on Escape
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') closeModal();
+        });
+
+        // Initial load
+        refreshData();
+        // Auto-refresh every 30s
+        setInterval(refreshData, 30000);
+    </script>
+</body>
+</html>

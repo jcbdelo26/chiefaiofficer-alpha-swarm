@@ -132,7 +132,8 @@ class SegmentedLead:
     
     # ICP breakdown
     score_breakdown: Dict[str, int] = field(default_factory=dict)
-    
+    scoring_reasons: List[str] = field(default_factory=list)  # Human-readable "why this score"
+
     # Flags
     disqualification_reason: Optional[str] = None
     needs_review: bool = False
@@ -235,12 +236,13 @@ class LeadSegmentor:
         - Technology stack: 15 points (using CRM = positive signal)
         - Intent signals: 20 points (website visits, content downloads)
         
-        Returns: (score, breakdown, disqualification_reason)
+        Returns: (score, breakdown, disqualification_reason, scoring_reasons)
         """
         score = 0
         breakdown = {}
+        reasons = []
         dq_reason = None
-        
+
         # === COMPANY SIZE (20 points max) ===
         employee_count = lead.get("company", {}).get("employee_count") or 0
         if isinstance(employee_count, str):
@@ -248,55 +250,75 @@ class LeadSegmentor:
                 employee_count = int(employee_count.replace(',', '').replace('+', ''))
             except ValueError:
                 employee_count = 0
-        
+
         if employee_count < 10:
             dq_reason = "Company too small (<10 employees)"
+            reasons.append(f"DISQUALIFIED: Company has <10 employees ({employee_count})")
         elif 51 <= employee_count <= 500:
             breakdown["company_size"] = 20
             score += 20
+            reasons.append(f"+20: Company size {employee_count} employees (ideal 51-500 sweet spot)")
         elif 501 <= employee_count <= 1000:
             breakdown["company_size"] = 15
             score += 15
+            reasons.append(f"+15: Company size {employee_count} employees (mid-market)")
         elif 20 <= employee_count <= 50:
             breakdown["company_size"] = 12
             score += 12
+            reasons.append(f"+12: Company size {employee_count} employees (growth-stage)")
         elif 10 <= employee_count <= 19:
             breakdown["company_size"] = 5
             score += 5
+            reasons.append(f"+5: Company size {employee_count} employees (early-stage)")
         elif employee_count > 1000:
             breakdown["company_size"] = 10
             score += 10
-        
+            reasons.append(f"+10: Company size {employee_count} employees (enterprise — slower sales cycle)")
+
         # === TITLE SENIORITY (25 points max) ===
         title = (lead.get("title") or "").lower()
+        raw_title = lead.get("title") or "Unknown"
         if any(kw in title for kw in self.C_LEVEL_TITLES):
             breakdown["title_seniority"] = 25
             score += 25
+            reasons.append(f"+25: C-Level/Founder title \"{raw_title}\" (budget owner)")
         elif any(kw in title for kw in self.VP_TITLES):
             breakdown["title_seniority"] = 22
             score += 22
+            reasons.append(f"+22: VP-level title \"{raw_title}\" (budget influencer)")
         elif any(kw in title for kw in self.DIRECTOR_TITLES):
             breakdown["title_seniority"] = 15
             score += 15
+            reasons.append(f"+15: Director-level title \"{raw_title}\" (tactical decision-maker)")
         elif any(kw in title for kw in self.MANAGER_TITLES):
             breakdown["title_seniority"] = 8
             score += 8
+            reasons.append(f"+8: Manager-level title \"{raw_title}\" (operational)")
         else:
             breakdown["title_seniority"] = 0
-        
+            reasons.append(f"+0: Title \"{raw_title}\" does not match decision-maker patterns")
+
         # === INDUSTRY FIT (20 points max) ===
         industry = (lead.get("company", {}).get("industry") or "").lower()
+        raw_industry = lead.get("company", {}).get("industry") or "Unknown"
         if any(kw in industry for kw in self.TIER1_INDUSTRIES):
             breakdown["industry_fit"] = 20
             score += 20
+            reasons.append(f"+20: Industry \"{raw_industry}\" is core ICP (B2B SaaS/Software)")
         elif any(kw in industry for kw in self.TIER2_INDUSTRIES):
             breakdown["industry_fit"] = 15
             score += 15
+            reasons.append(f"+15: Industry \"{raw_industry}\" is adjacent ICP (Tech/IT)")
         elif any(kw in industry for kw in self.TIER3_INDUSTRIES):
             breakdown["industry_fit"] = 10
             score += 10
+            reasons.append(f"+10: Industry \"{raw_industry}\" is secondary ICP")
         else:
             breakdown["industry_fit"] = 0
+            if raw_industry != "Unknown":
+                reasons.append(f"+0: Industry \"{raw_industry}\" outside ICP target industries")
+            else:
+                reasons.append("+0: Industry unknown — no data from enrichment")
         
         # === TECHNOLOGY STACK (15 points max) ===
         technologies = lead.get("company", {}).get("technologies", [])
@@ -323,38 +345,49 @@ class LeadSegmentor:
         score += min(tech_score, 15)
         if tech_signals:
             breakdown["tech_signals"] = list(set(tech_signals))
-        
+            unique_signals = list(set(tech_signals))
+            reasons.append(f"+{min(tech_score, 15)}: Tech stack signals — {', '.join(unique_signals)} (sales maturity indicator)")
+        else:
+            reasons.append("+0: No CRM/sales/marketing tech detected in stack")
+
         # === INTENT SIGNALS (20 points max) ===
         intent_data = lead.get("intent", {})
         intent_score = 0
         intent_signals = []
-        
+        intent_reasons = []
+
         website_visits = intent_data.get("website_visits", 0)
         if website_visits >= 5:
             intent_score += 8
             intent_signals.append("high_web_engagement")
+            intent_reasons.append(f"{website_visits} website visits (high engagement)")
         elif website_visits >= 2:
             intent_score += 4
             intent_signals.append("web_engagement")
-        
+            intent_reasons.append(f"{website_visits} website visits")
+
         content_downloads = intent_data.get("content_downloads", 0)
         if content_downloads >= 3:
             intent_score += 8
             intent_signals.append("content_engaged")
+            intent_reasons.append(f"{content_downloads} content downloads (highly engaged)")
         elif content_downloads >= 1:
             intent_score += 4
             intent_signals.append("content_downloaded")
-        
+            intent_reasons.append(f"{content_downloads} content download(s)")
+
         pricing_page = intent_data.get("pricing_page_visits", 0)
         if pricing_page >= 1:
             intent_score += 6
             intent_signals.append("pricing_interest")
-        
+            intent_reasons.append("visited pricing page (strong buy signal)")
+
         demo_request = intent_data.get("demo_requested", False)
         if demo_request:
             intent_score += 10
             intent_signals.append("demo_requested")
-        
+            intent_reasons.append("requested a demo (strongest buy signal)")
+
         source_type = lead.get("source_type", "")
         if source_type == "website_visitor":
             intent_score += 4
@@ -368,24 +401,35 @@ class LeadSegmentor:
         elif source_type == "webinar_registrant":
             intent_score += 5
             intent_signals.append("webinar_source")
-        
-        breakdown["intent_signals"] = min(intent_score, 20)
-        score += min(intent_score, 20)
+
+        capped_intent = min(intent_score, 20)
+        breakdown["intent_signals"] = capped_intent
+        score += capped_intent
         if intent_signals:
             breakdown["intent_types"] = intent_signals
+        if intent_reasons:
+            reasons.append(f"+{capped_intent}: Intent signals — {'; '.join(intent_reasons)}")
+        else:
+            reasons.append("+0: No behavioral intent signals detected")
         
         # === SOURCE ENGAGEMENT BONUS (implicit in intent) ===
         if source_type == "post_commenter":
             score += 5
             breakdown["engagement_bonus"] = 5
+            reasons.append("+5: Social engagement bonus (commented on post)")
         elif source_type == "event_attendee":
             score += 4
             breakdown["engagement_bonus"] = 4
+            reasons.append("+4: Social engagement bonus (event attendee)")
         elif source_type == "competitor_follower":
             score += 3
             breakdown["engagement_bonus"] = 3
-        
-        return min(score, 100), breakdown, dq_reason
+            reasons.append("+3: Social engagement bonus (competitor follower — displacement opportunity)")
+
+        final_score = min(score, 100)
+        reasons.append(f"= {final_score}/100 total ICP score")
+
+        return final_score, breakdown, dq_reason, reasons
     
     def get_tier(self, score: int) -> str:
         """
@@ -569,7 +613,7 @@ class LeadSegmentor:
         """Segment and score a single lead."""
         
         # Calculate ICP score
-        icp_score, breakdown, dq_reason = self.calculate_icp_score(lead)
+        icp_score, breakdown, dq_reason, scoring_reasons = self.calculate_icp_score(lead)
         tier = self.get_tier(icp_score)
         
         # Get intent score from enrichment
@@ -600,6 +644,7 @@ class LeadSegmentor:
             source_name=lead.get("source_name", ""),
             segment_tags=tags,
             score_breakdown=breakdown,
+            scoring_reasons=scoring_reasons,
             disqualification_reason=dq_reason,
             needs_review=icp_score >= 70 and icp_score <= 85,  # Review borderline Tier 1
             email=(lead.get("contact", {}).get("work_email")

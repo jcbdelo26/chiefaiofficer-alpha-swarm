@@ -1,6 +1,6 @@
 # CAIO Alpha Swarm — Unified Implementation Plan
 
-**Last Updated**: 2026-02-16 (v3.5)
+**Last Updated**: 2026-02-16 (v3.6 — Monaco-inspired signal loop + dashboard)
 **Owner**: ChiefAIOfficer Production Team
 **AI**: Claude Opus 4.6
 
@@ -20,7 +20,7 @@ Phase 0: Foundation Lock          [##########] 100%  COMPLETE
 Phase 1: Live Pipeline Validation [##########] 100%  COMPLETE
 Phase 2: Supervised Burn-In       [##########] 100%  COMPLETE
 Phase 3: Expand & Harden          [##########] 100%  COMPLETE
-Phase 4: Autonomy Graduation      [######----]  55%  IN PROGRESS (4A COMPLETE, 4B code built — awaiting HeyReach subscription)
+Phase 4: Autonomy Graduation      [#######---]  65%  IN PROGRESS (4A COMPLETE, 4B code built, 4F signal loop + dashboard live)
 ```
 
 ---
@@ -349,6 +349,40 @@ QUEEN (orchestrator)
 | LinkedIn Accept Rate | ≥ 30% | HeyReach stats |
 | Autonomous Days | 3 consecutive | No manual intervention needed |
 
+### 4F: Monaco-Inspired Intelligence Layer
+
+**Inspiration**: [Monaco.com](https://www.monaco.com) — AI-native revenue engine ($35M Series A, Feb 2026). Key lesson: pipelines should be feedback LOOPS, not lines. Leads generate engagement signals that feed back into scoring and next-action decisions.
+
+**Status**: HIGH-IMPACT items BUILT. Dashboard live at `/leads`.
+
+| Task | Status | Notes |
+|------|--------|-------|
+| **Signal Loop**: Webhook events update lead status | DONE | `core/lead_signals.py` — LeadStatusManager with 18 statuses |
+| **Ghosting Detection**: 72h no open → "ghosted" | DONE | `detect_engagement_decay()` — time-based rules |
+| **Stall Detection**: 7d opened, no reply → "stalled" | DONE | Runs on demand via `POST /api/leads/detect-decay` |
+| **Engaged-Not-Replied**: 2+ opens, 0 replies → "hesitant" | DONE | Automatic pattern detection |
+| **"Why This Score" Explainability** | DONE | `scoring_reasons` field in segmentor output (human-readable) |
+| **Unified Activity Timeline** | DONE | `core/activity_timeline.py` — aggregates all channels per lead |
+| **Pipeline Funnel Visualization** | DONE | 5-stage flow on `/leads` dashboard (Pipeline→Outreach→Engaged→At Risk→Terminal) |
+| **Lead Dashboard** | DONE | `dashboard/leads_dashboard.html` — filterable lead list + click-to-expand timeline |
+| **API Endpoints** | DONE | `/api/leads`, `/api/leads/funnel`, `/api/leads/{email}/timeline`, `/api/leads/detect-decay` |
+| Wire signal loop INTO Instantly webhook handlers | TODO | On real webhook events, call `LeadStatusManager.handle_*()` |
+| Wire signal loop INTO HeyReach webhook handlers | TODO | Requires HeyReach subscription first |
+| CRO Copilot ("Ask" chat interface) | DEFERRED | Low priority at current volume (<100 leads) |
+| Meeting Intelligence (auto note-taking) | DEFERRED | Phone outreach not live yet (Phase 4D) |
+
+**Monaco Concepts Adopted**:
+- Signal-based pipeline progression (engagement drives status, not rep hygiene)
+- Self-maintaining lead records (webhooks auto-update, no manual data entry)
+- Explainable scoring ("why this account" reasoning per lead)
+- Unified activity capture (email + LinkedIn + pipeline events in one timeline)
+- Human-guided agents (Gatekeeper approval gate = Monaco's human review layer)
+
+**Monaco Concepts Rejected**:
+- Proprietary prospect database (we rent Apollo — correct at our scale)
+- CRO Copilot (unnecessary at <100 leads)
+- Replace CRM (GHL works, "Rent the Pipes")
+
 ---
 
 ## Phase 5: Optimize & Scale (Post-Autonomy)
@@ -437,6 +471,9 @@ QUEEN (orchestrator)
 | HeyReach dispatcher | `execution/heyreach_dispatcher.py` |
 | HeyReach webhooks | `webhooks/heyreach_webhook.py` |
 | HeyReach webhook registration | `scripts/register_heyreach_webhooks.py` |
+| Lead Signal Loop (engagement tracking) | `core/lead_signals.py` |
+| Activity Timeline (per-lead aggregation) | `core/activity_timeline.py` |
+| Leads Dashboard (pipeline visualization) | `dashboard/leads_dashboard.html` |
 | Agent permissions | `core/agent_action_permissions.json` |
 | Agent registry | `execution/unified_agent_registry.py` |
 | This plan | `CAIO_IMPLEMENTATION_PLAN.md` |
