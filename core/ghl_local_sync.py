@@ -258,6 +258,122 @@ class GHLLocalSync:
         return matches
     
     # =========================================================================
+    # SEARCH / FILTER (Local cache, instant)
+    # =========================================================================
+
+    def search_by_tags(self, tags: List[str], match_all: bool = False) -> List[Dict]:
+        """
+        Search cached contacts by GHL tags.
+
+        Args:
+            tags: List of tag names to match
+            match_all: If True, contact must have ALL tags. If False, ANY tag matches.
+
+        Returns:
+            List of matching contacts
+        """
+        self.stats.local_reads += 1
+        tags_lower = [t.lower() for t in tags]
+        matches = []
+
+        for contact in self._contacts.values():
+            contact_tags = [t.lower() for t in (contact.get("tags") or [])]
+            if match_all:
+                if all(t in contact_tags for t in tags_lower):
+                    matches.append(contact)
+            else:
+                if any(t in contact_tags for t in tags_lower):
+                    matches.append(contact)
+
+        return matches
+
+    def search_by_pipeline_stage(self, stages: List[str]) -> List[Dict]:
+        """
+        Search cached contacts by pipeline stage name.
+
+        GHL contacts may have pipeline/stage info in opportunities or custom fields.
+        Checks: pipelineStage, customField.pipeline_stage, and tags containing stage names.
+        """
+        self.stats.local_reads += 1
+        stages_lower = [s.lower() for s in stages]
+        matches = []
+
+        for contact in self._contacts.values():
+            # Check direct pipeline stage field
+            stage = (contact.get("pipelineStage") or "").lower()
+            if stage and stage in stages_lower:
+                matches.append(contact)
+                continue
+
+            # Check custom fields
+            custom_fields = contact.get("customField") or contact.get("customFields") or {}
+            if isinstance(custom_fields, dict):
+                ps = (custom_fields.get("pipeline_stage") or "").lower()
+                if ps and ps in stages_lower:
+                    matches.append(contact)
+                    continue
+            elif isinstance(custom_fields, list):
+                for cf in custom_fields:
+                    if (cf.get("key") or cf.get("name", "")).lower() == "pipeline_stage":
+                        if (cf.get("value") or "").lower() in stages_lower:
+                            matches.append(contact)
+                            break
+
+            # Check tags containing stage names
+            contact_tags = [t.lower() for t in (contact.get("tags") or [])]
+            if any(s in contact_tags for s in stages_lower):
+                matches.append(contact)
+
+        return matches
+
+    def get_stale_contacts(self, inactive_days: int = 30) -> List[Dict]:
+        """
+        Get contacts with no activity in N days.
+
+        Uses dateLastActivity (GHL field) or _synced_at as fallback.
+        Returns contacts sorted by staleness (most stale first).
+        """
+        self.stats.local_reads += 1
+        now = datetime.now(timezone.utc)
+        cutoff = now - timedelta(days=inactive_days)
+        stale = []
+
+        for contact in self._contacts.values():
+            # Skip contacts without email
+            if not contact.get("email"):
+                continue
+
+            # Determine last activity date
+            last_activity_str = (
+                contact.get("dateLastActivity")
+                or contact.get("lastActivity")
+                or contact.get("dateUpdated")
+                or contact.get("_synced_at")
+            )
+
+            if not last_activity_str:
+                # No activity date at all — consider stale
+                stale.append((contact, inactive_days + 999))
+                continue
+
+            try:
+                last_activity = datetime.fromisoformat(
+                    last_activity_str.replace("Z", "+00:00")
+                )
+                if last_activity.tzinfo is None:
+                    last_activity = last_activity.replace(tzinfo=timezone.utc)
+
+                if last_activity < cutoff:
+                    days_inactive = (now - last_activity).days
+                    stale.append((contact, days_inactive))
+            except (ValueError, TypeError):
+                continue
+
+        # Sort by staleness (most inactive first)
+        stale.sort(key=lambda x: x[1], reverse=True)
+        return [contact for contact, _ in stale]
+
+    # =========================================================================
     # GHL API OPERATIONS (When cache miss)
     # =========================================================================
     

@@ -54,6 +54,10 @@ LEAD_STATUSES = {
     "linkedin_connected": "Connection accepted — warm follow-up eligible",
     "linkedin_replied": "Replied to LinkedIn message",
     "linkedin_exhausted": "HeyReach campaign completed, no response",
+    # Revival states
+    "revival_candidate": "Flagged by revival scanner for re-engagement",
+    "revival_queued": "Approved for re-engagement, awaiting dispatch",
+    "revival_sent": "Re-engagement email dispatched via warm domain",
 }
 
 # Time thresholds for engagement decay
@@ -233,6 +237,28 @@ class LeadStatusManager:
             email, "linkedin_replied", "heyreach_webhook:message_reply",
             {"linkedin_url": linkedin_url, "message_preview": message_text[:200]},
         )
+
+    # ─── Revival Eligibility ─────────────────────────────────────────────
+
+    def is_revivable(self, email: str) -> bool:
+        """
+        Check if a lead can be revived (not terminal, not in active outbound).
+
+        A lead is revivable if:
+          - No status record exists (unknown GHL contact = potentially revivable)
+          - Status is NOT terminal (bounced, unsubscribed, rejected, disqualified)
+          - Status is NOT actively in pipeline (pending, approved, dispatched, etc.)
+        """
+        status = self.get_lead_status(email)
+        if not status:
+            return True
+        terminal = {"bounced", "unsubscribed", "rejected", "disqualified"}
+        active = {
+            "pending", "approved", "dispatched", "sent", "opened",
+            "linkedin_sent", "linkedin_connected",
+            "revival_queued", "revival_sent",
+        }
+        return status.get("status") not in (terminal | active)
 
     # ─── Engagement Decay Detection (Ghosting / Stalling) ──────────────
 

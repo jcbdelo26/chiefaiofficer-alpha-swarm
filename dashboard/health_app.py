@@ -1449,6 +1449,107 @@ except Exception as e:
     logger.warning("Lead Signal Loop could not be mounted: %s", e)
 
 # =============================================================================
+# OPERATOR AGENT ENDPOINTS
+# =============================================================================
+
+try:
+    from execution.operator_outbound import OperatorOutbound
+    from execution.operator_revival_scanner import RevivalScanner
+    from dataclasses import asdict as _op_asdict
+
+    _operator = OperatorOutbound()
+    _revival_scanner = RevivalScanner()
+
+    @app.get("/api/operator/status")
+    async def operator_status():
+        """Get current OPERATOR status: warmup schedule, today's counts, limits."""
+        return _operator.get_status()
+
+    @app.get("/api/operator/revival-candidates")
+    async def operator_revival_candidates(limit: int = Query(default=20, le=50)):
+        """Preview revival candidates without dispatching."""
+        candidates = _revival_scanner.scan(limit=limit)
+        return {
+            "candidates": [_op_asdict(c) for c in candidates],
+            "count": len(candidates),
+        }
+
+    @app.post("/api/operator/trigger")
+    async def operator_trigger(request: Request):
+        """Trigger OPERATOR dispatch (outbound + revival)."""
+        try:
+            body = await request.json()
+        except Exception:
+            body = {}
+
+        dry_run = body.get("dry_run", True)
+        motion = body.get("motion", "all")
+
+        if motion == "outbound":
+            report = await _operator.dispatch_outbound(dry_run=dry_run)
+        elif motion == "revival":
+            report = await _operator.dispatch_revival(dry_run=dry_run)
+        else:
+            report = await _operator.dispatch_all(dry_run=dry_run)
+
+        return _op_asdict(report)
+
+    @app.get("/api/operator/history")
+    async def operator_history(limit: int = Query(default=50, le=200)):
+        """Get recent OPERATOR dispatch history."""
+        return _operator.get_dispatch_history(limit=limit)
+
+    logger.info("✓ OPERATOR Agent endpoints mounted")
+except Exception as e:
+    logger.warning("OPERATOR endpoints could not be mounted: %s", e)
+
+# =============================================================================
+# CADENCE ENGINE ENDPOINTS
+# =============================================================================
+
+try:
+    from execution.cadence_engine import CadenceEngine
+    _cadence = CadenceEngine()
+
+    @app.get("/api/cadence/summary")
+    async def cadence_summary():
+        """Cadence engine summary: enrolled, active, completed, due today."""
+        return _cadence.get_cadence_summary()
+
+    @app.get("/api/cadence/due")
+    async def cadence_due_actions():
+        """List cadence actions due today."""
+        from dataclasses import asdict
+        actions = _cadence.get_due_actions()
+        return [{
+            "email": a.email,
+            "step": a.step.step,
+            "day": a.step.day,
+            "channel": a.step.channel,
+            "action": a.step.action,
+            "description": a.step.description,
+            "tier": a.tier,
+        } for a in actions]
+
+    @app.get("/api/cadence/leads")
+    async def cadence_lead_list(status: str = None):
+        """List all cadence states, optionally filtered by status."""
+        from dataclasses import asdict
+        states = _cadence.get_all_cadence_states()
+        if status:
+            states = [s for s in states if s.status == status]
+        return [asdict(s) for s in states]
+
+    @app.post("/api/cadence/sync")
+    async def cadence_sync_signals():
+        """Sync cadence with signal loop (auto-exit replied/bounced leads)."""
+        return _cadence.sync_signals()
+
+    logger.info("✓ Cadence Engine endpoints mounted")
+except Exception as e:
+    logger.warning("Cadence endpoints could not be mounted: %s", e)
+
+# =============================================================================
 # WEBHOOKS INTEGRATION
 # =============================================================================
 

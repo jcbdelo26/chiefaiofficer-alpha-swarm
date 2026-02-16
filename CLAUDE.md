@@ -13,23 +13,50 @@
 ## Project Context
 
 **Project**: Chief AI Officer Alpha Swarm
-**Purpose**: LinkedIn intelligence & lead generation system
+**Purpose**: Autonomous SDR pipeline — lead discovery, enrichment, multi-channel outreach
 **Founder**: Chris Daigle (https://www.linkedin.com/in/doctordaigle/)
 **Company**: Chiefaiofficer.com
+**Platform**: Railway (production) at `caio-swarm-dashboard-production.up.railway.app`
+
+### Current Status (Phase 4: Autonomy Graduation — 90%)
+
+```
+Phase 0-3: Foundation → Burn-In → Harden    COMPLETE (33+ pipeline runs, 10 consecutive 6/6 PASS)
+Phase 4A: Instantly V2 Go-Live               COMPLETE (6 domains warmed, 100% health)
+Phase 4B: HeyReach LinkedIn Integration      80% (API verified, 3 campaigns, 4 webhooks — awaiting LinkedIn warmup)
+Phase 4C: OPERATOR Agent                     COMPLETE (unified dispatch + revival scanner + 3-layer dedup)
+Phase 4D: Multi-Channel Cadence              COMPLETE (8-step 21-day sequence + CRAFTER follow-ups + auto-enroll)
+Phase 4E: Supervised Live Sends              TODO (THE GOAL — actually_send: true)
+Phase 4F: Monaco Signal Loop                 COMPLETE (lead_signals + activity_timeline + leads dashboard)
+```
+
+**Safety**: `actually_send: false`, `shadow_mode: true` — all emails go to `.hive-mind/shadow_mode_emails/` for review.
+
+See `docs/CAIO_TASK_TRACKER.md` for detailed progress and next steps.
 
 ---
 
 ## Agent Architecture
 
-### Alpha Swarm Agents
-| Agent | Role | Location |
-|-------|------|----------|
-| 👑 ALPHA QUEEN | Master Orchestrator | `mcp-servers/orchestrator-mcp/` |
-| 🕵️ HUNTER | LinkedIn Scraper | `mcp-servers/hunter-mcp/` |
-| 💎 ENRICHER | Data Enrichment | `mcp-servers/enricher-mcp/` |
-| 📊 SEGMENTOR | Lead Classification | `execution/segmentor_*.py` |
-| ✍️ CRAFTER | Campaign Generation | `execution/crafter_*.py` |
-| 🚪 GATEKEEPER | AE Approval | `execution/gatekeeper_*.py` |
+### Alpha Swarm Agents (12 Agents + Queen)
+
+| Agent | Role | Key Files |
+|-------|------|-----------|
+| ALPHA QUEEN | Master Orchestrator | `execution/unified_queen_orchestrator.py` |
+| HUNTER | Lead Discovery (Apollo) | `execution/hunter_scrape_followers.py` |
+| ENRICHER | Data Enrichment (Apollo + BetterContact) | `execution/enricher_clay_waterfall.py` |
+| SEGMENTOR | ICP Scoring + Tier Assignment | `execution/segmentor_classify.py` |
+| CRAFTER | Campaign Copy + Cadence Follow-ups | `execution/crafter_campaign.py` |
+| GATEKEEPER | AE Approval Gate | `execution/gatekeeper_queue.py` |
+| OPERATOR | Unified Outbound Execution (3 motions) | `execution/operator_outbound.py` |
+| | - `dispatch_outbound()`: Instantly email + HeyReach LinkedIn | |
+| | - `dispatch_cadence()`: 21-day follow-up sequence | `execution/cadence_engine.py` |
+| | - `dispatch_revival()`: GHL stale contact re-engagement | `execution/operator_revival_scanner.py` |
+| SCOUT | Pipeline Intelligence | `execution/revenue_scout_intent_detection.py` |
+| COACH | Pipeline Coaching | `core/call_coach.py` |
+| PIPER | Pipeline Management | `execution/ingest_ghl_deals.py` |
+| SCHEDULER | Calendar + Scheduling | `core/scheduler_service.py` |
+| RESEARCHER | Read-Only Research | `execution/researcher_agent.py` |
 
 ---
 
@@ -68,17 +95,63 @@
 
 ```
 chiefaiofficer-alpha-swarm/
-├── .agent/workflows/       # Agent workflow definitions
-├── .claude/                # Claude-specific config
-├── .hive-mind/             # Persistent memory
-│   ├── knowledge/          # Vector DB
-│   ├── scraped/            # Raw scraped data
-│   ├── enriched/           # Enriched leads
-│   └── campaigns/          # Generated campaigns
-├── directives/             # SOPs (Layer 1)
-├── execution/              # Python scripts (Layer 3)
-├── mcp-servers/            # MCP tools
-└── .tmp/                   # Temporary files
+├── .hive-mind/                    # Persistent memory & state
+│   ├── knowledge/                 # Vector DB, product context
+│   ├── scraped/                   # Raw scraped data (Apollo)
+│   ├── enriched/                  # Enriched leads
+│   ├── campaigns/                 # Generated campaigns
+│   ├── shadow_mode_emails/        # Shadow email queue (review before sending)
+│   ├── lead_status/               # Signal loop state per lead (JSONL)
+│   ├── cadence_state/             # Cadence engine state per lead
+│   ├── audit/                     # Gatekeeper approval/rejection logs
+│   ├── operator_state.json        # OPERATOR daily state (dedup, counts)
+│   └── unsubscribes.jsonl         # Suppression list (append-only)
+├── config/
+│   └── production.json            # Master config (shadow_mode, actually_send, domains, cadence)
+├── core/                          # Shared libraries
+│   ├── lead_signals.py            # Lead signal loop (21 statuses, decay detection)
+│   ├── activity_timeline.py       # Per-lead event aggregation
+│   ├── alerts.py                  # Slack alerting (WARNING, CRITICAL, INFO)
+│   ├── circuit_breaker.py         # Failure protection (3-trip, 5min reset)
+│   ├── ghl_local_sync.py          # GHL contact cache + search
+│   ├── unified_guardrails.py      # Main guardrails system
+│   └── ...                        # 60+ modules
+├── dashboard/
+│   ├── health_app.py              # FastAPI app (50+ endpoints, port 8080)
+│   ├── leads_dashboard.html       # Lead Signal Loop UI (/leads)
+│   ├── hos_dashboard.html         # Head of Sales email queue (/sales)
+│   └── scorecard.html             # Precision Scorecard (/scorecard)
+├── execution/                     # Agent execution scripts
+│   ├── run_pipeline.py            # 6-stage pipeline runner
+│   ├── operator_outbound.py       # OPERATOR agent (3 motions: outbound/cadence/revival)
+│   ├── operator_revival_scanner.py # GHL stale contact mining + scoring
+│   ├── cadence_engine.py          # 21-day Email+LinkedIn cadence scheduler
+│   ├── instantly_dispatcher.py    # Shadow → Instantly campaigns
+│   ├── heyreach_dispatcher.py     # Lead-list-first LinkedIn dispatch
+│   ├── hunter_scrape_followers.py # Apollo People Search + Match
+│   ├── enricher_clay_waterfall.py # Apollo (primary) + BetterContact (fallback)
+│   ├── segmentor_classify.py      # ICP scoring + "Why This Score"
+│   ├── crafter_campaign.py        # Campaign copy + cadence follow-up templates
+│   ├── gatekeeper_queue.py        # Approval queue management
+│   └── ...                        # 70+ scripts
+├── webhooks/
+│   ├── instantly_webhook.py       # Email open/reply/bounce/unsub handlers
+│   ├── heyreach_webhook.py        # 11 LinkedIn event handlers
+│   └── rb2b_webhook.py            # RB2B visitor enrichment
+├── scripts/
+│   ├── register_instantly_webhooks.py  # Instantly webhook CRUD
+│   ├── register_heyreach_webhooks.py   # HeyReach webhook CRUD
+│   └── ...                        # Deploy, test, validate scripts
+├── mcp-servers/
+│   ├── ghl-mcp/                   # GHL CRM + Calendar MCP server
+│   ├── instantly-mcp/             # Instantly V2 MCP server
+│   ├── hunter-mcp/                # Hunter MCP server
+│   └── enricher-mcp/              # Enricher MCP server
+├── directives/                    # SOPs
+├── docs/                          # Documentation
+│   ├── CAIO_TASK_TRACKER.md       # Single source of truth for progress
+│   └── research/                  # Provider research docs
+└── CAIO_IMPLEMENTATION_PLAN.md    # Full implementation plan (v4.0)
 ```
 
 ---
@@ -126,21 +199,29 @@ Message 3: TodoWrite
 
 | Platform | API Key Variable | Purpose |
 |----------|-----------------|---------|
-| GoHighLevel | `GHL_API_KEY` | CRM + Nurture Email (chiefai.ai domain) |
-| Instantly | `INSTANTLY_API_KEY` | Cold Outreach Email (V2 API, multi-mailbox rotation) |
-| Apollo.io | `APOLLO_API_KEY` | Lead Discovery + Enrichment |
-| Clay | `CLAY_API_KEY` | RB2B Visitor Enrichment only |
-| RB2B | `RB2B_API_KEY` | Visitor ID |
-| LinkedIn | `LINKEDIN_COOKIE` | Scraping |
+| GoHighLevel | `GHL_API_KEY` | CRM + Nurture Email (chiefai.ai domain) + Calendar |
+| Instantly | `INSTANTLY_API_KEY` | Cold Outreach Email (V2 API, 6 domains, round-robin) |
+| HeyReach | `HEYREACH_API_KEY` | LinkedIn Outreach (connection requests, DMs, InMails) |
+| Apollo.io | `APOLLO_API_KEY` | Lead Discovery (People Search) + Enrichment (People Match) |
+| Clay | `CLAY_API_KEY` | RB2B Visitor Enrichment only (NOT pipeline leads) |
+| RB2B | `RB2B_WEBHOOK_SECRET` | Visitor ID (webhook-based) |
 | Supabase | `SUPABASE_URL`, `SUPABASE_KEY` | Data Layer |
 | Slack | `SLACK_WEBHOOK_URL` | Alerts (WARNING, CRITICAL, INFO) |
+| Twilio | `TWILIO_ACCOUNT_SID` | SMS/Voice (future) |
+| SendGrid | `SENDGRID_API_KEY` | Transactional email (future) |
+| Redis (Upstash) | `CONTEXT_REDIS_PREFIX` | Context caching, rate limiting |
 
-### Email Platform Strategy (Dual-Platform)
+### Email + LinkedIn Platform Strategy (Multi-Channel)
 
-| Channel | Platform | Domains | Purpose |
-|---------|----------|---------|---------|
-| Cold outreach | Instantly (V2) | chiefaiofficerai.com, chiefaiofficerconsulting.com, chiefaiofficerguide.com, chiefaiofficerlabs.com, chiefaiofficerresources.com, chiefaiofficersolutions.com | Cold emails (6 accounts, chris.d@ sender, round-robin) |
-| Nurture/warm | GHL (LC Email) | chiefai.ai | Warm leads, follow-ups, booking confirmations |
+| Channel | Platform | Domains/Accounts | Daily Limit | Purpose |
+|---------|----------|------------------|-------------|---------|
+| Cold email | Instantly (V2) | 6 domains, chris.d@ sender | 25/day (warmed) | Cold outreach, round-robin rotation |
+| LinkedIn | HeyReach | 3 CAIO campaigns (tier 1/2/3) | 5/day (warmup) → 20/day | Connection requests + DMs |
+| Nurture/warm | GHL (LC Email) | chiefai.ai | N/A | Warm leads, follow-ups, booking confirmations |
+| Revival | Instantly (warm) | GHL nurture domains | 5/day | Re-engagement of stale GHL contacts |
+
+**Instantly Cold Domains (all 100% health)**:
+`chiefaiofficerai.com`, `chiefaiofficerconsulting.com`, `chiefaiofficerguide.com`, `chiefaiofficerlabs.com`, `chiefaiofficerresources.com`, `chiefaiofficersolutions.com`
 
 > **NEVER send cold outreach through GHL. NEVER send nurture through Instantly. Domain reputation isolation is non-negotiable.**
 
@@ -149,17 +230,42 @@ Message 3: TodoWrite
 ## Commands
 
 ```bash
-# Initialize project
-npx claude-flow@alpha swarm init --topology mesh
+# --- Pipeline ---
+echo yes | python execution/run_pipeline.py                    # Full 6-stage pipeline (non-interactive)
+python execution/run_pipeline.py --mode sandbox                # Sandbox mode with test data
 
-# Test connections
-python execution/test_connections.py
+# --- OPERATOR Agent (unified dispatch) ---
+python -m execution.operator_outbound --status                 # Today's state + warmup schedule
+python -m execution.operator_outbound --motion outbound --dry-run   # Dry-run email + LinkedIn dispatch
+python -m execution.operator_outbound --motion cadence --dry-run    # Dry-run cadence follow-ups
+python -m execution.operator_outbound --motion revival --dry-run    # Dry-run GHL revival
+python -m execution.operator_outbound --motion all --dry-run        # All 3 motions (dry-run)
+python -m execution.operator_outbound --history                # Last 50 dispatch logs
 
-# Run scraping workflow
+# --- Cadence Engine ---
+python -m execution.cadence_engine --due                       # Actions due today
+python -m execution.cadence_engine --status                    # Cadence summary stats
+python -m execution.cadence_engine --list                      # All enrolled leads
+python -m execution.cadence_engine --enroll user@example.com   # Manually enroll lead
+python -m execution.cadence_engine --sync                      # Sync signals (exit replied/bounced)
+
+# --- Revival Scanner ---
+python -m execution.operator_revival_scanner --scan --limit 10 # Preview revival candidates
+
+# --- Dispatchers (standalone) ---
+python -m execution.instantly_dispatcher --dry-run             # Preview Instantly dispatch
+python -m execution.heyreach_dispatcher --dry-run              # Preview HeyReach dispatch
+
+# --- Webhook Registration ---
+python scripts/register_instantly_webhooks.py --list           # List registered webhooks
+python scripts/register_heyreach_webhooks.py --list            # List registered webhooks
+
+# --- Dashboard ---
+uvicorn dashboard.health_app:app --host 0.0.0.0 --port 8080   # Start dashboard
+
+# --- Lead Discovery + Enrichment ---
 python execution/hunter_scrape_followers.py --url "linkedin_url"
-
-# Generate campaign
-python execution/crafter_campaign.py --segment "tier1"
+python execution/test_connections.py                           # Test API connections
 ```
 
 ---
@@ -340,20 +446,27 @@ The Unified Guardrails System provides enterprise-grade protection for all 12 ag
 | CRAFTER | Lead Gen | ❌ | get_templates, create_task |
 | GATEKEEPER | Approval | ✅ (weight: 2) | send_email, bulk_send |
 | SCOUT | Pipeline | ❌ | read_pipeline, search |
-| OPERATOR | Outbound Execution | ❌ | instantly_*, heyreach_*, trigger_workflow |
+| OPERATOR | Unified Outbound (3 motions) | ❌ | dispatch_outbound, dispatch_cadence, dispatch_revival, instantly_*, heyreach_* |
 | COACH | Pipeline | ❌ | update_contact |
 | PIPER | Pipeline | ❌ | update_opportunity |
 | SCHEDULER | Scheduling | ❌ | calendar_ops |
 | RESEARCHER | Research | ❌ | read-only |
 
-### Email Limits (NEVER EXCEED)
-| Limit | Value | Reset |
-|-------|-------|-------|
-| Monthly | 3,000 | 1st of month |
-| Daily | 150 | Midnight |
-| Hourly | 20 | Top of hour |
-| Per Domain/Hour | 5 | Top of hour |
-| Min Delay | 30 sec | Between sends |
+### Outbound Volume Limits (Warmup-Aware)
+
+Managed by OPERATOR via `WarmupSchedule` in `execution/operator_outbound.py`.
+
+| Channel | Daily Limit | Platform | Notes |
+|---------|------------|----------|-------|
+| Cold Email (Instantly) | 25/day | Instantly V2 | 6 warmed domains, round-robin |
+| LinkedIn (HeyReach) | 5/day (warmup) → 20/day | HeyReach | 4-week warmup, then full volume |
+| Revival Email | 5/day | Instantly (warm domains) | GHL nurture domains, separate budget |
+| **Total** | **35/day** (warmup) → **50/day** | | |
+
+**Three-Layer Dedup** (prevents double-dispatch):
+1. `OperatorDailyState.leads_dispatched` — same lead not dispatched twice/day
+2. `LeadStatusManager` terminal check — no re-engaging bounced/unsubscribed
+3. Shadow email `dispatched_to_*` flags — no cross-channel double-dispatch
 
 ### Risk Levels & Grounding Requirements
 | Risk Level | Requires Grounding | Requires Approval |
@@ -397,7 +510,7 @@ result = await guardrails.execute_with_guardrails(
 
 ---
 
-## 🛡️ GHL Guardrails (Legacy Reference)
+## GHL Guardrails (Nurture Email Only — Legacy Reference)
 
 ### Before ANY Email Send
 ```
@@ -436,11 +549,11 @@ Centralized API management for ALL external integrations.
 ┌──────────────────────────────────────────────────────────────────┐
 │                 UNIFIED INTEGRATION GATEWAY                       │
 │  ┌────────────┐  ┌────────────┐  ┌────────────┐  ┌────────────┐  │
-│  │    GHL     │  │  Google    │  │   Gmail    │  │   Clay     │  │
-│  │   Adapter  │  │  Calendar  │  │  Adapter   │  │  Adapter   │  │
+│  │    GHL     │  │  Instantly │  │  HeyReach  │  │   Clay     │  │
+│  │   Adapter  │  │  V2 API   │  │  LinkedIn  │  │  Adapter   │  │
 │  └────────────┘  └────────────┘  └────────────┘  └────────────┘  │
 │  ┌────────────┐  ┌────────────┐  ┌────────────┐  ┌────────────┐  │
-│  │  LinkedIn  │  │  Supabase  │  │   Zoom     │  │  Webhook   │  │
+│  │  Apollo    │  │  Supabase  │  │   RB2B     │  │  Webhook   │  │
 │  │   Adapter  │  │  Adapter   │  │  Adapter   │  │  Ingress   │  │
 │  └────────────┘  └────────────┘  └────────────┘  └────────────┘  │
 └──────────────────────────────────────────────────────────────────┘
@@ -473,17 +586,19 @@ result = await gateway.execute(
 ### Supported Integrations
 | Integration | Rate Limit | Key Actions |
 |-------------|------------|-------------|
-| ghl | 150/day | send_email, create_contact, trigger_workflow |
-| google_calendar | 100/hour | create_event, get_availability, find_slots |
-| gmail | 500/hour | send_email, parse_thread, extract_intent |
-| clay | 500/hour | enrich_contact, enrich_company |
-| linkedin | 10/min | get_profile, search_people |
+| ghl | 150/day | send_email, create_contact, trigger_workflow, calendar_ops |
+| instantly | 25/day (warmup-aware) | create_campaign, add_leads, activate, pause |
+| heyreach | 300/min API, 5-20/day sends | add_leads_to_campaign, get_campaigns |
+| apollo | 200/hour | people_search, people_match |
+| clay | 500/hour | enrich_contact (RB2B visitors only) |
 | supabase | 5000/hour | query, insert, update |
-| zoom | 200/hour | create_meeting, get_meeting |
+| rb2b | webhook-based | visitor_id (inbound only) |
 
 ---
 
-## 📅 Google Calendar MCP Server
+## Calendar (GHL-backed, replaced Google Calendar)
+
+Calendar operations use GHL Calendar API via `mcp-servers/ghl-mcp/calendar_client.py` (drop-in replacement for Google Calendar MCP). Guardrails in `mcp-servers/google-calendar-mcp/guardrails.py` (shared, backend-agnostic).
 
 ### Tools Available
 | Tool | Description | Guardrails |
@@ -500,6 +615,7 @@ result = await gateway.execute(
 - Max duration: 2 hours
 - No weekend booking (unless explicitly allowed)
 - No double-booking (mutex lock)
+- GHL Calendar ID: `2tqUa6LBhhrT7Y99YVyD`
 
 ---
 
@@ -511,19 +627,67 @@ cd chiefaiofficer-alpha-swarm
 uvicorn dashboard.health_app:app --host 0.0.0.0 --port 8080
 ```
 
-### Endpoints
+### Endpoints (50+)
+
+**Pages**:
+| Route | Page |
+|-------|------|
+| `GET /` | System Health dashboard |
+| `GET /scorecard` | Precision Scorecard (12 metrics) |
+| `GET /sales` | Head of Sales email approval queue |
+| `GET /leads` | Lead Signal Loop + Activity Timeline |
+
+**Health & System**:
 | Endpoint | Description |
 |----------|-------------|
-| `GET /api/health` | Current health status |
-| `GET /api/agents` | Agent status (12 agents) |
+| `GET /api/health` | Full health status + runtime deps |
+| `GET /api/health/ready` | Kubernetes readiness probe |
+| `GET /api/agents` | All 12 agent statuses |
 | `GET /api/integrations` | Integration status |
 | `GET /api/guardrails` | Rate limits & circuit breakers |
+| `GET /api/scorecard` | Precision Scorecard summary |
 | `WS /ws` | Real-time WebSocket updates |
 
-### Health Status Colors
-- 🟢 HEALTHY: <5% error rate
-- 🟡 DEGRADED: 5-20% error rate
-- 🔴 UNHEALTHY: >20% error rate
+**Email Queue (Head of Sales)**:
+| Endpoint | Description |
+|----------|-------------|
+| `GET /api/pending-emails` | Pending emails awaiting approval |
+| `POST /api/emails/{id}/approve` | Approve email (optional edits) |
+| `POST /api/emails/{id}/reject` | Reject email with reason |
+
+**Lead Signal Loop**:
+| Endpoint | Description |
+|----------|-------------|
+| `GET /api/leads` | All tracked leads with status |
+| `GET /api/leads/funnel` | Pipeline funnel counts |
+| `GET /api/leads/status-summary` | Leads by engagement status |
+| `GET /api/leads/{email}/timeline` | Unified activity timeline |
+| `POST /api/leads/detect-decay` | Run ghosting/stall detection |
+| `POST /api/leads/bootstrap` | Seed lead status from shadow emails |
+
+**OPERATOR Agent**:
+| Endpoint | Description |
+|----------|-------------|
+| `GET /api/operator/status` | Today's state + warmup schedule |
+| `GET /api/operator/revival-candidates` | Preview revival candidates |
+| `POST /api/operator/trigger` | Trigger dispatch (dry_run, motion) |
+| `GET /api/operator/history` | Last 50 dispatch logs |
+
+**Cadence Engine**:
+| Endpoint | Description |
+|----------|-------------|
+| `GET /api/cadence/summary` | Enrolled, active, completed, due today |
+| `GET /api/cadence/due` | Actions due today |
+| `GET /api/cadence/leads` | All cadence states (filter by status) |
+| `POST /api/cadence/sync` | Sync with signal loop (auto-exit) |
+
+**Webhooks (Mounted)**:
+| Endpoint | Source |
+|----------|--------|
+| `POST /webhooks/clay` | RB2B visitor enrichment |
+| `POST /webhooks/instantly/*` | Instantly campaign events |
+| `POST /webhooks/heyreach/*` | HeyReach LinkedIn events |
+| `POST /inngest` | Inngest task scheduler |
 
 ---
 

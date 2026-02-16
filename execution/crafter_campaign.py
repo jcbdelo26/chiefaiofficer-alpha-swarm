@@ -210,6 +210,76 @@ Feel free to reach out anytime.
         }
     ]
     
+    # Cadence follow-up templates (keyed by cadence action type)
+    # Used by dispatch_cadence() in OPERATOR agent for Steps 3/5/7/8
+    CADENCE_TEMPLATES = {
+        "value_followup": {
+            "subject": "{{lead.first_name}}, quick case study for {{lead.company}}",
+            "body": """Hi {{lead.first_name}},
+
+Following up on my earlier note. Wanted to share something relevant for {{lead.company}}.
+
+We recently helped a {{lead.title}}-level leader at a similar company cut their forecast variance by 40% using AI-driven revenue intelligence.
+
+The key insight: most teams are drowning in data but starving for actionable signals. That's exactly what we fix.
+
+Would a 15-min walkthrough be useful? {{sender.calendar_link}}
+
+Best,
+{{sender.name}}
+{{sender.title}}, {{sender.company}}"""
+        },
+        "social_proof": {
+            "subject": "How companies like {{lead.company}} are winning with AI",
+            "body": """{{lead.first_name}},
+
+Thought you'd find this interesting - here's what we're seeing across companies in your space:
+
+- 3x faster pipeline velocity with AI-prioritized leads
+- 40% improvement in forecast accuracy
+- 60% reduction in manual CRM data entry
+
+The common thread? Teams that move from reactive reporting to predictive intelligence.
+
+I'd love to show you exactly how this would look for {{lead.company}}.
+
+15 minutes? {{sender.calendar_link}}
+
+{{sender.name}}"""
+        },
+        "breakup": {
+            "subject": "Should I close the loop, {{lead.first_name}}?",
+            "body": """{{lead.first_name}},
+
+I've reached out a few times and haven't heard back, so I want to be respectful of your time.
+
+I'll assume the timing isn't right for {{lead.company}} right now. Totally get it.
+
+If things change or you'd like to revisit, I'm always here: {{sender.calendar_link}}
+
+Wishing you and the team all the best.
+
+{{sender.name}}
+{{sender.title}}, {{sender.company}}"""
+        },
+        "close": {
+            "subject": "Last note from me, {{lead.first_name}}",
+            "body": """{{lead.first_name}},
+
+This is my last follow-up. I don't want to be that person who keeps emailing.
+
+If AI-driven revenue intelligence ever becomes a priority for {{lead.company}}, you know where to find me.
+
+Until then, I'll be cheering from the sidelines.
+
+All the best,
+{{sender.name}}
+{{sender.title}}, {{sender.company}}
+
+P.S. - Feel free to connect on LinkedIn anytime. No pitch, just good conversation."""
+        },
+    }
+
     def __init__(self):
         self.sender_info = {
             "name": "Chris Daigle",
@@ -283,6 +353,42 @@ Feel free to reach out anytime.
             "sender": self.sender_info
         }
     
+    def craft_cadence_followup(
+        self,
+        action_type: str,
+        lead_data: Dict[str, Any],
+        step_num: int = 0,
+        day_num: int = 0,
+    ) -> Optional[Dict[str, str]]:
+        """
+        Generate follow-up email for a cadence step.
+
+        Args:
+            action_type: Cadence action (value_followup, social_proof, breakup, close)
+            lead_data: Lead info (first_name, last_name, company, title, email, etc.)
+            step_num: Cadence step number (for logging)
+            day_num: Cadence day number (for logging)
+
+        Returns:
+            Dict with "subject" and "body" keys, or None if template not found.
+        """
+        template = self.CADENCE_TEMPLATES.get(action_type)
+        if not template:
+            return None
+
+        variables = self._build_template_variables(lead_data)
+
+        subject = self._render_template(template["subject"], variables)
+        body = self._render_template(template["body"], variables)
+
+        return {
+            "subject": subject,
+            "body": body,
+            "action_type": action_type,
+            "step": step_num,
+            "day": day_num,
+        }
+
     def generate_email(self, lead: Dict[str, Any], template_name: str = None) -> Dict[str, Any]:
         """Generate a personalized email for a single lead."""
         

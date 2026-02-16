@@ -158,6 +158,7 @@ class ActivityTimeline:
             "decay": {"ghosted": 0, "stalled": 0, "engaged_not_replied": 0},
             "terminal": {"bounced": 0, "unsubscribed": 0, "disqualified": 0},
             "linkedin": {"linkedin_sent": 0, "linkedin_connected": 0, "linkedin_replied": 0, "linkedin_exhausted": 0},
+            "revival": {"revival_candidate": 0, "revival_queued": 0, "revival_sent": 0},
             "total_leads": 0,
         }
 
@@ -186,6 +187,64 @@ class ActivityTimeline:
                 continue
 
         return funnel
+
+    # ─── Revival Context ─────────────────────────────────────────────────
+
+    def get_revival_context(self, email: str) -> Dict[str, Any]:
+        """
+        Build rich context for revival re-engagement copy.
+
+        Used by OPERATOR's dispatch_revival() to give CRAFTER enough context
+        to write a relevant re-engagement email.
+        """
+        timeline = self.get_lead_timeline(email)
+        now = datetime.now(timezone.utc)
+
+        last_touch = timeline[-1]["timestamp"] if timeline else None
+        days_since = 0
+        if last_touch:
+            try:
+                last_dt = datetime.fromisoformat(last_touch.replace("Z", "+00:00"))
+                if last_dt.tzinfo is None:
+                    last_dt = last_dt.replace(tzinfo=timezone.utc)
+                days_since = (now - last_dt).days
+            except (ValueError, TypeError):
+                pass
+
+        channels_used = list(set(e.get("channel", "unknown") for e in timeline))
+        emails_sent = [e for e in timeline if e.get("type") in ("email_crafted", "email_dispatched")]
+        emails_opened = [e for e in timeline if e.get("type") == "opened"]
+        replies = [e for e in timeline if "reply" in e.get("type", "").lower() or "replied" in e.get("type", "").lower()]
+
+        # Last email subject from shadow email events
+        last_subject = ""
+        for event in reversed(timeline):
+            subj = event.get("data", {}).get("subject", "")
+            if subj:
+                last_subject = subj
+                break
+
+        # Conversation summary: last 3 meaningful events
+        meaningful_types = {"opened", "replied", "linkedin_connected", "linkedin_replied",
+                           "email_dispatched", "email_crafted", "meeting_booked"}
+        meaningful = [e for e in timeline if e.get("type") in meaningful_types]
+        summary_events = meaningful[-3:] if meaningful else timeline[-3:]
+        conversation_summary = "; ".join(
+            f"{e.get('type', '?')} ({e.get('timestamp', '')[:10]})" for e in summary_events
+        )
+
+        return {
+            "total_touchpoints": len(timeline),
+            "last_touch_date": last_touch,
+            "days_since_last_touch": days_since,
+            "channels_used": channels_used,
+            "emails_sent": len(emails_sent),
+            "emails_opened": len(emails_opened),
+            "replies_received": len(replies),
+            "linkedin_connected": any(e.get("type") == "linkedin_connected" for e in timeline),
+            "last_email_subject": last_subject,
+            "conversation_summary": conversation_summary,
+        }
 
     # ─── Private helpers ───────────────────────────────────────────────
 

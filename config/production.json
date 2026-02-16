@@ -398,6 +398,55 @@
         "ANTHROPIC_API_KEY",
         "OPENAI_API_KEY"
     ],
+    "operator": {
+        "enabled": true,
+        "description": "Unified outbound execution — Instantly email + HeyReach LinkedIn + GHL revival",
+        "outbound": {
+            "email_daily_limit": 25,
+            "linkedin_warmup_start": "2026-02-16",
+            "linkedin_warmup_daily_limit": 5,
+            "linkedin_full_daily_limit": 20,
+            "linkedin_warmup_weeks": 4,
+            "dispatch_order": ["instantly", "heyreach"],
+            "tier_channel_routing": {
+                "tier_1": ["instantly", "heyreach"],
+                "tier_2": ["instantly", "heyreach"],
+                "tier_3": ["instantly"]
+            }
+        },
+        "revival": {
+            "enabled": true,
+            "daily_limit": 5,
+            "min_inactive_days": 30,
+            "max_inactive_days": 120,
+            "scan_pipeline_stages": ["Cold", "Lost", "Nurture"],
+            "exclude_tags": ["do-not-contact", "competitor", "unsubscribed"],
+            "use_warm_domains": true,
+            "note": "Revival uses GHL nurture domains (chiefai.ai), NOT cold outreach domains"
+        },
+        "state_file": ".hive-mind/operator_state.json"
+    },
+    "cadence": {
+        "default_21day": {
+            "name": "Email + LinkedIn 21-Day (Warmup Safe)",
+            "description": "Simplified multi-channel cadence: email + LinkedIn only, no phone. Aligned to LinkedIn warmup period (4 weeks).",
+            "channels": ["email", "linkedin"],
+            "steps": [
+                {"step": 1, "day": 1, "channel": "email", "action": "intro", "description": "Personalized intro email", "condition": "always"},
+                {"step": 2, "day": 2, "channel": "linkedin", "action": "connect", "description": "Connection request", "condition": "has_linkedin_url"},
+                {"step": 3, "day": 5, "channel": "email", "action": "value_followup", "description": "Value/case study follow-up", "condition": "not_replied"},
+                {"step": 4, "day": 7, "channel": "linkedin", "action": "message", "description": "Direct message (if connected)", "condition": "linkedin_connected"},
+                {"step": 5, "day": 10, "channel": "email", "action": "social_proof", "description": "Social proof/testimonial", "condition": "not_replied"},
+                {"step": 6, "day": 14, "channel": "linkedin", "action": "followup_message", "description": "Follow-up message (if connected)", "condition": "linkedin_connected"},
+                {"step": 7, "day": 17, "channel": "email", "action": "breakup", "description": "Break-up email", "condition": "not_replied"},
+                {"step": 8, "day": 21, "channel": "email", "action": "close", "description": "Graceful close", "condition": "not_replied"}
+            ],
+            "exit_on": ["replied", "meeting_booked", "bounced", "unsubscribed", "linkedin_replied", "rejected"],
+            "pause_on": ["engaged_not_replied"],
+            "skip_linkedin_if_not_connected": true,
+            "state_dir": ".hive-mind/cadence_state"
+        }
+    },
     "llm_fallback": {
         "enabled": true,
         "description": "LLM Provider Fallback Chain: Claude -> GPT-4o -> GPT-4o-mini -> Human",
