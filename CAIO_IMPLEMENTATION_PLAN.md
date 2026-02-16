@@ -1,6 +1,6 @@
 # CAIO Alpha Swarm — Unified Implementation Plan
 
-**Last Updated**: 2026-02-17 (v4.0 — Phase 4D COMPLETE: CRAFTER follow-up templates + auto-enroll wired into cadence)
+**Last Updated**: 2026-02-17 (v4.1 — GATEKEEPER approval gate + daily decay detection cron deployed)
 **Owner**: ChiefAIOfficer Production Team
 **AI**: Claude Opus 4.6
 
@@ -20,7 +20,7 @@ Phase 0: Foundation Lock          [##########] 100%  COMPLETE
 Phase 1: Live Pipeline Validation [##########] 100%  COMPLETE
 Phase 2: Supervised Burn-In       [##########] 100%  COMPLETE
 Phase 3: Expand & Harden          [##########] 100%  COMPLETE
-Phase 4: Autonomy Graduation      [#########-]  90%  IN PROGRESS (4A+4C+4D+4F COMPLETE, 4B INFRA DONE, 4E TODO)
+Phase 4: Autonomy Graduation      [#########.]  95%  IN PROGRESS (4A+4C+4D+4F COMPLETE, GATEKEEPER BUILT, 4B INFRA DONE, 4E TODO)
 ```
 
 ---
@@ -35,7 +35,7 @@ All core infrastructure deployed and validated.
 | 6-stage pipeline (scrape/enrich/segment/craft/approve/send) | DONE | `execution/run_pipeline.py` |
 | FastAPI dashboard on port 8080 | DONE | `dashboard/health_app.py` |
 | Redis (Upstash) integration | DONE | 62ms from Railway, 1392ms local |
-| Inngest event-driven functions | DONE | 4 functions mounted |
+| Inngest event-driven functions | DONE | 5 functions mounted (incl. daily_decay_detection cron) |
 | Railway deployment | DONE | Auto-deploy on git push |
 | Safety controls (shadow mode, EMERGENCY_STOP) | DONE | `config/production.json` |
 | Gatekeeper approve/reject/edit flows | DONE | Full audit trail in `.hive-mind/audit/` |
@@ -324,7 +324,7 @@ QUEEN (orchestrator)
 | Add operator config to production.json | DONE | Warmup dates, tier routing, revival config (30-120 day window) |
 | Add /api/operator/* dashboard endpoints | DONE | status, revival-candidates, trigger, history |
 | Three-layer deduplication | DONE | OperatorDailyState + LeadStatusManager + shadow email flags |
-| GATEKEEPER approval gate for both channels | TODO | Single choke point before OPERATOR dispatches |
+| GATEKEEPER approval gate for both channels | DONE | Batch approval flow: create_batch → approve/reject → execute. 3 dashboard endpoints. Slack alert on creation. |
 
 ### 4D: Multi-Channel Cadence — COMPLETE (Engine + CRAFTER + Auto-Enroll)
 
@@ -364,7 +364,7 @@ QUEEN (orchestrator)
 - [x] Cadence engine built and tested
 - [ ] LinkedIn account warm-up complete (4 weeks) — requires 4B
 - [ ] Shadow test via HeyReach completed (5 profiles) — requires 4B
-- [ ] GATEKEEPER approval gate for OPERATOR dispatch
+- [x] GATEKEEPER approval gate for OPERATOR dispatch — batch approval + 3 endpoints (commit `bcd3815`)
 
 | Task | Status | Notes |
 |------|--------|-------|
@@ -389,13 +389,13 @@ QUEEN (orchestrator)
 
 **Inspiration**: [Monaco.com](https://www.monaco.com) — AI-native revenue engine ($35M Series A, Feb 2026). Key lesson: pipelines should be feedback LOOPS, not lines. Leads generate engagement signals that feed back into scoring and next-action decisions.
 
-**Status**: HIGH-IMPACT items BUILT. Dashboard live at `/leads`.
+**Status**: COMPLETE. Dashboard live at `/leads`. Daily decay cron running via Inngest.
 
 | Task | Status | Notes |
 |------|--------|-------|
-| **Signal Loop**: Webhook events update lead status | DONE | `core/lead_signals.py` — LeadStatusManager with 18 statuses |
+| **Signal Loop**: Webhook events update lead status | DONE | `core/lead_signals.py` — LeadStatusManager with 21 statuses (incl. revival) |
 | **Ghosting Detection**: 72h no open → "ghosted" | DONE | `detect_engagement_decay()` — time-based rules |
-| **Stall Detection**: 7d opened, no reply → "stalled" | DONE | Runs on demand via `POST /api/leads/detect-decay` |
+| **Stall Detection**: 7d opened, no reply → "stalled" | DONE | On demand via `POST /api/leads/detect-decay` + daily Inngest cron (10 AM UTC) |
 | **Engaged-Not-Replied**: 2+ opens, 0 replies → "hesitant" | DONE | Automatic pattern detection |
 | **"Why This Score" Explainability** | DONE | `scoring_reasons` field in segmentor output (human-readable) |
 | **Unified Activity Timeline** | DONE | `core/activity_timeline.py` — aggregates all channels per lead |

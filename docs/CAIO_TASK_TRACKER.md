@@ -13,7 +13,7 @@ Phase 0: Foundation Lock          [##########] 100%  COMPLETE
 Phase 1: Live Pipeline Validation [##########] 100%  COMPLETE
 Phase 2: Supervised Burn-In       [##########] 100%  COMPLETE
 Phase 3: Expand & Harden          [##########] 100%  COMPLETE
-Phase 4: Autonomy Graduation      [#########-]  90%  ◄◄◄ YOU ARE HERE
+Phase 4: Autonomy Graduation      [#########.]  95%  ◄◄◄ YOU ARE HERE
 Phase 5: Optimize & Scale         [----------]   0%  FUTURE
 ```
 
@@ -391,16 +391,18 @@ This is where `actually_send` flips to `true` and real outreach begins.
 
 ## Recommended Next Steps (In Priority Order)
 
-Based on current state (Phase 4, 90% complete), the critical path to live sends is short:
+Based on current state (Phase 4, 95% complete), all code is built. Only user decisions remain.
 
-### Can Do RIGHT NOW (No Dependencies)
+### Recently Completed
 
-| # | Task | Effort | Impact |
-|---|------|--------|--------|
-| 1 | **Bootstrap lead data** from `/leads` dashboard | 2 min (click button) | Seed existing shadow email leads into signal loop |
-| 2 | **Deploy latest to Railway** (OPERATOR + cadence + CRAFTER + auto-enroll) | 5 min (git push) | All new endpoints + full cadence engine available in production |
-| ~~3~~ | ~~CRAFTER follow-up templates~~ | ~~DONE~~ | 4 templates (value_followup, social_proof, breakup, close) wired into dispatch_cadence |
-| ~~4~~ | ~~Auto-enroll pipeline leads~~ | ~~DONE~~ | Leads auto-enrolled into cadence after Instantly dispatch |
+| # | Task | Status |
+|---|------|--------|
+| ~~1~~ | Bootstrap lead data → signal loop | DONE — 15 leads bootstrapped |
+| ~~2~~ | Deploy OPERATOR + cadence + CRAFTER to Railway | DONE — commit `bcf7c02` |
+| ~~3~~ | GATEKEEPER approval gate | DONE — batch approval + 3 endpoints (commit `bcd3815`) |
+| ~~4~~ | Daily decay detection cron | DONE — Inngest `daily_decay_detection` (10 AM UTC) |
+| ~~5~~ | CRAFTER follow-up templates | DONE — 4 templates wired into `dispatch_cadence` |
+| ~~6~~ | Auto-enroll pipeline leads | DONE — dispatched leads auto-enrolled into cadence |
 
 ### Requires Decision Before Proceeding
 
