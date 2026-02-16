@@ -7,7 +7,7 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <title>ChiefAIOfficer - Sales Dashboard v2.3</title>
+    <title>ChiefAIOfficer - Sales Dashboard v2.4</title>
     <style>
         :root {
             --bg-dark: #0a0f1a;
@@ -116,6 +116,66 @@
         }
 
         /* CONSTRAINT BANNER */
+        .ramp-banner {
+            background: linear-gradient(135deg, var(--blue-bg), transparent);
+            border: 1px solid var(--blue);
+            border-radius: 12px;
+            padding: 16px 24px;
+            margin-bottom: 20px;
+            display: none;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .ramp-banner.active {
+            display: flex;
+        }
+
+        .ramp-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex: 1;
+        }
+
+        .ramp-info .ramp-icon {
+            font-size: 24px;
+        }
+
+        .ramp-info .ramp-text {
+            font-size: 14px;
+        }
+
+        .ramp-info .ramp-text strong {
+            color: var(--blue);
+        }
+
+        .ramp-stats {
+            display: flex;
+            gap: 24px;
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .ramp-stat {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .ramp-stat .stat-value {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .ramp-stat .stat-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
         .constraint-banner {
             background: linear-gradient(135deg, var(--red-bg), transparent);
             border: 1px solid var(--red);
@@ -783,7 +843,7 @@
         <div class="nav-brand">
             <span>📊</span>
             <span>ChiefAIOfficer Sales Dashboard <small
-                    style="font-size:11px; color:#666; margin-left:8px;">v2.3</small></span>
+                    style="font-size:11px; color:#666; margin-left:8px;">v2.4</small></span>
         </div>
         <div class="nav-tabs">
             <button class="nav-tab active" onclick="showTab('overview')">Overview</button>
@@ -802,6 +862,35 @@
 
     <!-- MAIN CONTENT -->
     <main class="main">
+        <!-- RAMP MODE BANNER (fetched from /api/operator/status) -->
+        <div class="ramp-banner" id="rampBanner">
+            <div class="ramp-info">
+                <span class="ramp-icon">🚀</span>
+                <div class="ramp-text">
+                    <strong>RAMP MODE</strong> — Supervised go-live in progress.
+                    <span id="rampDetail">Loading...</span>
+                </div>
+            </div>
+            <div class="ramp-stats">
+                <div class="ramp-stat">
+                    <span class="stat-value" id="rampDay">-</span>
+                    <span class="stat-label">Day</span>
+                </div>
+                <div class="ramp-stat">
+                    <span class="stat-value" id="rampLimit">-</span>
+                    <span class="stat-label">Daily Limit</span>
+                </div>
+                <div class="ramp-stat">
+                    <span class="stat-value" id="rampTier">-</span>
+                    <span class="stat-label">Tier Filter</span>
+                </div>
+                <div class="ramp-stat">
+                    <span class="stat-value" id="rampSent">-</span>
+                    <span class="stat-label">Sent Today</span>
+                </div>
+            </div>
+        </div>
+
         <div class="constraint-banner" id="constraintBanner">
             <div class="constraint-left">
                 <span class="constraint-icon">⚠️</span>
@@ -1059,7 +1148,7 @@
                         <div class="activity-icon sent">📧</div>
                         <div class="activity-text">
                             <p>Swarm is running. Waiting for activity...</p>
-                            <span>Live Mode (Limit 25/day)</span>
+                            <span id="activityModeLabel">Live Mode</span>
                         </div>
                     </div>
                 `;
@@ -1312,9 +1401,47 @@
             }
         }
 
+        async function fetchOperatorStatus() {
+            try {
+                const token = getToken();
+                const params = new URLSearchParams();
+                if (token) params.set('token', token);
+                const response = await fetch(`/api/operator/status?${params.toString()}`);
+                if (!response.ok) return;
+                const data = await response.json();
+
+                const ramp = data.ramp || {};
+                const banner = document.getElementById('rampBanner');
+
+                if (ramp.active) {
+                    banner.classList.add('active');
+                    const dayText = ramp.day || 0;
+                    const totalDays = ramp.remaining_days ? (dayText + ramp.remaining_days - 1) : 3;
+                    document.getElementById('rampDay').textContent = `${dayText}/${totalDays}`;
+                    document.getElementById('rampLimit').textContent = ramp.email_limit_override || '-';
+                    document.getElementById('rampTier').textContent = (ramp.tier_filter || 'all').toUpperCase().replace('_', ' ');
+                    document.getElementById('rampDetail').textContent =
+                        `Day ${dayText} of ${totalDays} supervised days. Only ${(ramp.tier_filter || 'all').toUpperCase().replace('_', ' ')} leads at ${ramp.email_limit_override || '?'}/day.`;
+
+                    // Update sent today from warmup schedule
+                    const emailSchedule = data.warmup_schedule?.email || {};
+                    const used = emailSchedule.used_today || 0;
+                    const limit = emailSchedule.daily_limit || ramp.email_limit_override || 5;
+                    document.getElementById('rampSent').textContent = `${used}/${limit}`;
+                } else if (ramp.enabled === false) {
+                    banner.classList.remove('active');
+                }
+            } catch (e) {
+                console.warn('Failed to fetch operator status:', e);
+            }
+        }
+
         renderPendingEmails();
         renderActivityFeed();
+        fetchOperatorStatus();
         startAutoRefresh();
+        // Refresh operator status every 30s
+        setInterval(fetchOperatorStatus, 30000);
     </script>
 </body>
 

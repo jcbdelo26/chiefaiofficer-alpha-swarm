@@ -374,9 +374,12 @@ class UnifiedPipeline:
                     company, limit=limit
                 )
             else:
+                # Default: Apollo.io (mid-market SaaS, 51-500 employees)
+                # scores higher on company_size for tier_1 eligibility
+                default_company = source or "apollo.io"
                 results = scraper.fetch_followers(
-                    "https://www.linkedin.com/company/gong",
-                    "gong", limit=limit
+                    f"https://www.linkedin.com/company/{default_company}",
+                    default_company, limit=limit
                 )
             
             # Convert dataclass to dict if needed
@@ -657,16 +660,16 @@ class UnifiedPipeline:
 
         for campaign in approved_campaigns:
             leads = campaign.get("leads", [])
-            sequence = campaign.get("sequence", [])
+            campaign_sequence = campaign.get("sequence", [])
 
-            # Extract first email step content (production has full sequence)
-            if sequence:
-                step = sequence[0] if isinstance(sequence[0], dict) else {}
-                subject = step.get("subject_a", campaign.get("subject_line", "Outreach"))
-                body = step.get("body_a", "")
+            # Campaign-level fallback subject/body
+            if campaign_sequence:
+                step = campaign_sequence[0] if isinstance(campaign_sequence[0], dict) else {}
+                campaign_subject = step.get("subject_a", campaign.get("subject_line", "Outreach"))
+                campaign_body = step.get("body_a", "")
             else:
-                subject = campaign.get("subject_line", "Personalized outreach")
-                body = ""
+                campaign_subject = campaign.get("subject_line", "Personalized outreach")
+                campaign_body = ""
 
             for lead in leads:
                 # Resolve email from multiple possible locations
@@ -681,6 +684,17 @@ class UnifiedPipeline:
                     errors.append(f"No email for lead {lead.get('name', 'unknown')}")
                     continue
 
+                # Extract subject/body from per-lead sequence (production mode)
+                # CampaignCrafter stores sequences on each lead, not campaign
+                lead_sequence = lead.get("sequence", [])
+                if lead_sequence:
+                    step0 = lead_sequence[0] if isinstance(lead_sequence[0], dict) else {}
+                    subject = step0.get("subject_a", campaign_subject)
+                    body = step0.get("body_a", campaign_body)
+                else:
+                    subject = campaign_subject
+                    body = campaign_body
+
                 lead_slug = (lead.get("name", "unknown")
                              .replace(" ", "_").lower()[:30])
                 email_id = (f"pipeline_{campaign['campaign_id']}"
@@ -691,6 +705,13 @@ class UnifiedPipeline:
                 company_name = (company_raw if isinstance(company_raw, str)
                                 else company_raw.get("name", "")
                                 if isinstance(company_raw, dict) else "")
+
+                # Extract enriched data for dashboard display
+                location = (lead.get("location")
+                            or lead.get("city", "")
+                            or lead.get("state", ""))
+                employees = lead.get("employee_count") or lead.get("employees") or ""
+                industry = lead.get("industry", "")
 
                 shadow_email = {
                     "email_id": email_id,
@@ -706,6 +727,9 @@ class UnifiedPipeline:
                         "company": company_name,
                         "title": lead.get("title", ""),
                         "linkedin_url": lead.get("linkedin_url"),
+                        "location": location,
+                        "employees": str(employees) if employees else "",
+                        "industry": industry,
                     },
                     "context": {
                         "intent_score": lead.get("intent_score", 0),

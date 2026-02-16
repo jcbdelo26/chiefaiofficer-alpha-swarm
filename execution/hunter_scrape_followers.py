@@ -114,7 +114,8 @@ class LinkedInFollowerScraper:
     3. If neither available -> raise ScraperUnavailableError (pipeline uses test data)
     """
 
-    # Pre-defined competitors
+    # Pre-defined competitors / target companies
+    # Mid-market SaaS (51-500 employees) score highest on company_size for tier_1
     COMPETITORS = {
         "gong": {
             "url": "https://linkedin.com/company/gabordi",
@@ -135,7 +136,28 @@ class LinkedInFollowerScraper:
         "outreach": {
             "url": "https://linkedin.com/company/outabordi",
             "name": "Outreach"
-        }
+        },
+        # Mid-market targets (tier_1 eligible: 51-500 employees + SaaS)
+        "regie.ai": {
+            "url": "https://linkedin.com/company/regieai",
+            "name": "Regie.ai"
+        },
+        "lavender": {
+            "url": "https://linkedin.com/company/lavabordi",
+            "name": "Lavender"
+        },
+        "orum": {
+            "url": "https://linkedin.com/company/abordi",
+            "name": "Orum"
+        },
+        "seamless.ai": {
+            "url": "https://linkedin.com/company/seamlessai",
+            "name": "Seamless.AI"
+        },
+        "apollo.io": {
+            "url": "https://linkedin.com/company/apolloio",
+            "name": "Apollo.io"
+        },
     }
 
     def __init__(self):
