@@ -454,9 +454,10 @@ class InstantlyDispatcher:
             subject = first.get("subject", "Personalized outreach")
             body = first.get("body", "")
 
-            # Default schedule per INSTANTLY.md spec
+            # Default schedule — NOTE: Instantly V2 rejects "America/New_York",
+            # "America/Detroit" is the accepted Eastern Time equivalent.
             schedule = {
-                "timezone": "America/New_York",
+                "timezone": "America/Detroit",
                 "days": ["monday", "tuesday", "wednesday", "thursday", "friday"],
                 "startHour": 8,
                 "endHour": 18,

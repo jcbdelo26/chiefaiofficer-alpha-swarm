@@ -624,7 +624,7 @@ def main():
                 color = "cyan" if a.step.channel == "email" else "blue"
                 console.print(
                     f"  Step {a.step.step} (Day {a.step.day}) "
-                    f"[{color}]{a.step.channel}[/{color}] → {a.email} "
+                    f"[{color}]{a.step.channel}[/{color}] -> {a.email} "
                     f"| {a.step.description} | tier={a.tier}"
                 )
         return

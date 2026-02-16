@@ -274,7 +274,9 @@ class AsyncInstantlyClient:
             })
 
         # Build V2 schedule
-        tz = "America/New_York"
+        # NOTE: Instantly V2 has a quirky timezone whitelist — "America/New_York" is NOT accepted.
+        # "America/Detroit" is the same Eastern Time zone and IS accepted.
+        tz = "America/Detroit"
         days_list = ["monday", "tuesday", "wednesday", "thursday", "friday"]
         start_hour = 9
         end_hour = 17
@@ -666,7 +668,7 @@ TOOLS = [
                 "schedule": {
                     "type": "object",
                     "properties": {
-                        "timezone": {"type": "string", "default": "America/New_York"},
+                        "timezone": {"type": "string", "default": "America/Detroit"},
                         "days": {"type": "array", "items": {"type": "string"}},
                         "startHour": {"type": "integer", "default": 9},
                         "endHour": {"type": "integer", "default": 17}

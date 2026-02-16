@@ -203,6 +203,61 @@ class OperatorOutbound:
         return self._cadence_engine
 
     # -------------------------------------------------------------------------
+    # Ramp configuration (supervised go-live)
+    # -------------------------------------------------------------------------
+
+    def _get_ramp_status(self) -> Dict[str, Any]:
+        """
+        Check if ramp mode is active.
+
+        Ramp mode enforces reduced volume and tier restrictions during the
+        first N supervised days of live sends (configured in production.json).
+
+        Returns dict with: active (bool), day (int), remaining_days (int),
+        email_limit_override (int), tier_filter (str).
+        """
+        ramp_cfg = self._operator_config.get("ramp", {})
+        result = {
+            "enabled": ramp_cfg.get("enabled", False),
+            "active": False,
+            "day": 0,
+            "remaining_days": 0,
+            "email_limit_override": None,
+            "tier_filter": None,
+        }
+
+        if not ramp_cfg.get("enabled", False):
+            return result
+
+        start_str = ramp_cfg.get("start_date", "")
+        ramp_days = ramp_cfg.get("ramp_days", 3)
+
+        if not start_str:
+            return result
+
+        try:
+            start = datetime.strptime(start_str, "%Y-%m-%d").date()
+            days_since = (date.today() - start).days
+
+            if 0 <= days_since < ramp_days:
+                result["active"] = True
+                result["day"] = days_since + 1  # 1-indexed for display
+                result["remaining_days"] = ramp_days - days_since
+                result["email_limit_override"] = ramp_cfg.get("email_daily_limit_override", 5)
+                result["tier_filter"] = ramp_cfg.get("tier_filter", "tier_1")
+            elif days_since < 0:
+                # Ramp hasn't started yet — still apply restrictions
+                result["active"] = True
+                result["day"] = 0
+                result["remaining_days"] = ramp_days
+                result["email_limit_override"] = ramp_cfg.get("email_daily_limit_override", 5)
+                result["tier_filter"] = ramp_cfg.get("tier_filter", "tier_1")
+        except ValueError:
+            logger.warning("Invalid ramp start_date: %s", start_str)
+
+        return result
+
+    # -------------------------------------------------------------------------
     # Warmup schedule
     # -------------------------------------------------------------------------
 
@@ -217,6 +272,13 @@ class OperatorOutbound:
         linkedin_full_limit = outbound_cfg.get("linkedin_full_daily_limit", 20)
         warmup_weeks = outbound_cfg.get("linkedin_warmup_weeks", 4)
         revival_limit = revival_cfg.get("daily_limit", 5)
+
+        # Ramp override — reduce email limit during supervised go-live
+        ramp = self._get_ramp_status()
+        if ramp["active"] and ramp["email_limit_override"] is not None:
+            email_limit = ramp["email_limit_override"]
+            logger.info("Ramp active (day %d/%d): email limit overridden to %d/day",
+                        ramp["day"], ramp["remaining_days"] + ramp["day"] - 1, email_limit)
 
         # Calculate LinkedIn warmup week
         is_warmup = True
@@ -323,6 +385,10 @@ class OperatorOutbound:
         state = self._load_daily_state()
         schedule = self.get_warmup_schedule()
 
+        # Ramp mode: auto-apply tier filter for batch preview
+        ramp = self._get_ramp_status()
+        ramp_tier_filter = ramp.get("tier_filter") if ramp["active"] else None
+
         # Preview outbound email leads (from approved shadow emails)
         if motion in ("outbound", "all"):
             shadow_dir = PROJECT_ROOT / ".hive-mind" / "shadow_mode_emails"
@@ -342,6 +408,10 @@ class OperatorOutbound:
                             continue
 
                         tier = data.get("tier", "tier_2")
+
+                        # Ramp tier filter — skip non-matching tiers
+                        if ramp_tier_filter and tier != ramp_tier_filter:
+                            continue
                         recipient = data.get("recipient_data", {})
                         tier_counts[tier] = tier_counts.get(tier, 0) + 1
 
@@ -565,6 +635,16 @@ class OperatorOutbound:
             report.errors.append("OPERATOR disabled in config/production.json")
             report.completed_at = datetime.now(timezone.utc).isoformat()
             return report
+
+        # --- Ramp mode: enforce tier filter + reduced limits ---
+        ramp = self._get_ramp_status()
+        if ramp["active"]:
+            if ramp["tier_filter"] and not tier_filter:
+                tier_filter = ramp["tier_filter"]
+                console.print(
+                    f"[cyan]RAMP MODE[/cyan] Day {ramp['day']}: "
+                    f"tier_filter={tier_filter}, email_limit={ramp['email_limit_override']}/day"
+                )
 
         # --- Gatekeeper batch approval gate ---
         if not dry_run and self.gatekeeper_required:
@@ -1148,11 +1228,14 @@ class OperatorOutbound:
         except Exception:
             pass
 
+        ramp = self._get_ramp_status()
+
         return {
             "enabled": self._operator_config.get("enabled", False),
             "emergency_stop": self._check_emergency_stop(),
             "date": state.date,
             "warmup_schedule": asdict(schedule),
+            "ramp": ramp,
             "today": {
                 "outbound_email": state.outbound_email_dispatched,
                 "outbound_linkedin": state.outbound_linkedin_dispatched,
@@ -1250,6 +1333,16 @@ def main():
             console.print(f"  Enabled:        {status['enabled']}")
             console.print(f"  Emergency Stop: {status['emergency_stop']}")
             console.print(f"  Date:           {status['date']}")
+
+            ramp = status.get("ramp", {})
+            if ramp.get("active"):
+                console.print(f"\n[bold yellow]RAMP MODE (Supervised Go-Live)[/bold yellow]")
+                console.print(f"  Day:            {ramp['day']} of {ramp['day'] + ramp['remaining_days'] - 1}")
+                console.print(f"  Email limit:    {ramp['email_limit_override']}/day (override)")
+                console.print(f"  Tier filter:    {ramp['tier_filter']} only")
+                console.print(f"  Remaining days: {ramp['remaining_days']}")
+            elif ramp.get("enabled"):
+                console.print(f"\n  Ramp:           configured but not active")
 
             console.print(f"\n[bold]Warmup Schedule[/bold]")
             console.print(f"  Email limit:    {schedule['email_daily_limit']}/day")
