@@ -18,19 +18,20 @@
 **Company**: Chiefaiofficer.com
 **Platform**: Railway (production) at `caio-swarm-dashboard-production.up.railway.app`
 
-### Current Status (Phase 4: Autonomy Graduation — 90%)
+### Current Status (Phase 4: Autonomy Graduation — 98%)
 
 ```
 Phase 0-3: Foundation → Burn-In → Harden    COMPLETE (33+ pipeline runs, 10 consecutive 6/6 PASS)
 Phase 4A: Instantly V2 Go-Live               COMPLETE (6 domains warmed, 100% health)
 Phase 4B: HeyReach LinkedIn Integration      80% (API verified, 3 campaigns, 4 webhooks — awaiting LinkedIn warmup)
-Phase 4C: OPERATOR Agent                     COMPLETE (unified dispatch + revival scanner + 3-layer dedup)
+Phase 4C: OPERATOR Agent                     COMPLETE (unified dispatch + revival scanner + GATEKEEPER gate)
 Phase 4D: Multi-Channel Cadence              COMPLETE (8-step 21-day sequence + CRAFTER follow-ups + auto-enroll)
-Phase 4E: Supervised Live Sends              TODO (THE GOAL — actually_send: true)
-Phase 4F: Monaco Signal Loop                 COMPLETE (lead_signals + activity_timeline + leads dashboard)
+Phase 4E: Supervised Live Sends              RAMP MODE ACTIVE (5/day, tier_1, 3 supervised days)
+Phase 4F: Monaco Signal Loop                 COMPLETE (lead_signals + activity_timeline + leads dashboard + decay cron)
 ```
 
-**Safety**: `actually_send: false`, `shadow_mode: true` — all emails go to `.hive-mind/shadow_mode_emails/` for review.
+**Safety**: `actually_send: true` (informational), real control: `--live` CLI flag + `EMERGENCY_STOP` env var + `gatekeeper_required: true`.
+**Ramp Mode**: 5 emails/day, tier_1 only, 3 supervised days starting 2026-02-17. Set `operator.ramp.enabled: false` to graduate to 25/day.
 
 See `docs/CAIO_TASK_TRACKER.md` for detailed progress and next steps.
 
@@ -151,7 +152,7 @@ chiefaiofficer-alpha-swarm/
 ├── docs/                          # Documentation
 │   ├── CAIO_TASK_TRACKER.md       # Single source of truth for progress
 │   └── research/                  # Provider research docs
-└── CAIO_IMPLEMENTATION_PLAN.md    # Full implementation plan (v4.0)
+└── CAIO_IMPLEMENTATION_PLAN.md    # Full implementation plan (v4.2)
 ```
 
 ---
