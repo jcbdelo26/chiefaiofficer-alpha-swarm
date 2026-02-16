@@ -275,7 +275,7 @@ Day 21: Email #5 (graceful close)
 | Create `scripts/register_heyreach_webhooks.py` | DONE | Rewritten to utility: --check-auth, --list-campaigns, --list-accounts, --print-guide (webhook CRUD is UI-only) |
 | Register HeyReach webhooks → `/webhooks/heyreach` | DONE | 4 webhooks created in HeyReach UI: Connection Sent, Connection Accepted, Reply Received, Campaign Completed |
 | Wire signal loop into HeyReach webhook handlers | DONE | `LeadStatusManager` calls in connection_sent, connection_accepted, reply, campaign_completed handlers |
-| Configure native HeyReach ↔ Instantly bidirectional sync | TODO | Paste API keys in both dashboards — USER ACTION |
+| Configure native HeyReach ↔ Instantly bidirectional sync | DONE | Instantly API key in HeyReach + HeyReach connected in Instantly ("My Connection", 2/16/2026) |
 | Wire CONNECTION_REQUEST_ACCEPTED → Instantly warm follow-up | DONE | Webhook handler writes flag file, dispatcher reads it |
 | Map campaign IDs to `config/production.json` | DONE | tier_1: 334314, tier_2: 334364, tier_3: 334381 — mapped in config with sequence descriptions |
 | Shadow test with 5 internal LinkedIn profiles | TODO | Validate before real outreach — USER ACTION |
