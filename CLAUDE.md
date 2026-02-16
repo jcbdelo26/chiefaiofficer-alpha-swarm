@@ -17,6 +17,7 @@
 **Founder**: Chris Daigle (https://www.linkedin.com/in/doctordaigle/)
 **Company**: Chiefaiofficer.com
 **Platform**: Railway (production) at `caio-swarm-dashboard-production.up.railway.app`
+**Dashboard**: v2.4 — deployed commit `b8dfc0f` (2026-02-17)
 
 ### Current Status (Phase 4: Autonomy Graduation — 98%)
 
@@ -35,6 +36,42 @@ Phase 4F: Monaco Signal Loop                 COMPLETE (lead_signals + activity_t
 
 See `docs/CAIO_TASK_TRACKER.md` for detailed progress and next steps.
 
+### Dashboard Pipeline Improvements (commit `b8dfc0f`)
+
+- **HoS Dashboard v2.4** (`/sales`): Live RAMP MODE banner fetches from `/api/operator/status` every 30s — shows day/total, daily limit, tier filter, sent count
+- **Email bodies fixed**: Pipeline send stage now extracts subject/body from per-lead sequences (CRAFTER stores sequences on each lead, not campaign level)
+- **Enriched lead insights**: Shadow emails now include location, employees, industry in `recipient_data` for dashboard display
+- **Mid-market scrape targets**: Default source changed from "gong" (enterprise, tier_2) to "apollo.io" (mid-market SaaS, tier_1 eligible). Added: Regie.ai, Lavender, Orum, Seamless.AI
+- **Tier_1 scoring**: Requires 80+ ICP points. Mid-market (51-500 employees) = 20pts company_size + 25pts C-level title + 20pts SaaS industry = 65+ base. Intent signals add up to 20 more.
+
+### Autonomy Graduation Path (Ramp → Full Autonomy)
+
+**Current state**: RAMP MODE — 5 emails/day, tier_1 only, GATEKEEPER batch approval required.
+
+**Phase 4E Completion Checklist**:
+1. Run pipeline with mid-market source: `echo yes | python execution/run_pipeline.py --mode production`
+2. Approve tier_1 leads in HoS dashboard (`/sales`)
+3. First live dispatch: `python -m execution.operator_outbound --motion outbound --live`
+4. Review GATEKEEPER batch at `/api/operator/pending-batch` → approve → re-run dispatch
+5. Activate DRAFTED campaigns in Instantly (dashboard UI or API)
+6. Monitor 3 days: open rate >=50%, reply rate >=8%, bounce <5%
+
+**Graduation to Full Autonomy** (after 3 clean supervised days):
+```json
+// config/production.json changes:
+"operator.ramp.enabled": false,          // Unlocks 25 emails/day + all tiers
+"operator.gatekeeper_required": false,   // Optional: skip batch approval
+// HeyReach LinkedIn: enable after 4-week warmup
+```
+
+**KPI Red Flags** (trigger `EMERGENCY_STOP`):
+| Metric | Target | Red Flag |
+|--------|--------|----------|
+| Open rate | >=50% | <30% (deliverability) |
+| Reply rate | >=8% | 0 replies after 15 sends |
+| Bounce rate | <5% | >10% (email quality) |
+| Unsubscribe | <2% | >5% (spam risk) |
+
 ---
 
 ## Agent Architecture
@@ -44,7 +81,7 @@ See `docs/CAIO_TASK_TRACKER.md` for detailed progress and next steps.
 | Agent | Role | Key Files |
 |-------|------|-----------|
 | ALPHA QUEEN | Master Orchestrator | `execution/unified_queen_orchestrator.py` |
-| HUNTER | Lead Discovery (Apollo) | `execution/hunter_scrape_followers.py` |
+| HUNTER | Lead Discovery (Apollo — default source: apollo.io for tier_1 mid-market) | `execution/hunter_scrape_followers.py` |
 | ENRICHER | Data Enrichment (Apollo + BetterContact) | `execution/enricher_clay_waterfall.py` |
 | SEGMENTOR | ICP Scoring + Tier Assignment | `execution/segmentor_classify.py` |
 | CRAFTER | Campaign Copy + Cadence Follow-ups | `execution/crafter_campaign.py` |
@@ -120,10 +157,10 @@ chiefaiofficer-alpha-swarm/
 ├── dashboard/
 │   ├── health_app.py              # FastAPI app (50+ endpoints, port 8080)
 │   ├── leads_dashboard.html       # Lead Signal Loop UI (/leads)
-│   ├── hos_dashboard.html         # Head of Sales email queue (/sales)
+│   ├── hos_dashboard.html         # Head of Sales email queue (/sales) — v2.4, RAMP MODE banner
 │   └── scorecard.html             # Precision Scorecard (/scorecard)
 ├── execution/                     # Agent execution scripts
-│   ├── run_pipeline.py            # 6-stage pipeline runner
+│   ├── run_pipeline.py            # 6-stage pipeline runner (send stage extracts per-lead sequences for email body)
 │   ├── operator_outbound.py       # OPERATOR agent (3 motions: outbound/cadence/revival)
 │   ├── operator_revival_scanner.py # GHL stale contact mining + scoring
 │   ├── cadence_engine.py          # 21-day Email+LinkedIn cadence scheduler
@@ -162,7 +199,7 @@ chiefaiofficer-alpha-swarm/
 ### ✅ CORRECT: Single message, multiple parallel operations
 ```javascript
 [Single Message - Parallel Execution]:
-  Task("Hunter Agent", "Scrape followers from Gong.io", "researcher")
+  Task("Hunter Agent", "Scrape leads from apollo.io", "researcher")
   Task("Enricher Agent", "Enrich pending leads via Clay", "enricher")
   Task("Segmentor Agent", "Score and segment new leads", "analyst")
   
@@ -635,7 +672,7 @@ uvicorn dashboard.health_app:app --host 0.0.0.0 --port 8080
 |-------|------|
 | `GET /` | System Health dashboard |
 | `GET /scorecard` | Precision Scorecard (12 metrics) |
-| `GET /sales` | Head of Sales email approval queue |
+| `GET /sales` | Head of Sales email approval queue (v2.4 — live RAMP MODE banner from `/api/operator/status`) |
 | `GET /leads` | Lead Signal Loop + Activity Timeline |
 
 **Health & System**:
