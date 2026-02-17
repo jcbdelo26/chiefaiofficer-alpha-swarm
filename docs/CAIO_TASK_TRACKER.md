@@ -1,7 +1,7 @@
 # CAIO Alpha Swarm — Unified Task Tracker
 
 **Last Updated**: 2026-02-17
-**Source**: Merged from `CAIO_IMPLEMENTATION_PLAN.md` (v3.9) + `docs/MONACO_SIGNAL_LOOP_GUIDE.md`
+**Source**: Merged from `CAIO_IMPLEMENTATION_PLAN.md` (v4.3) + `docs/MONACO_SIGNAL_LOOP_GUIDE.md`
 **Quick Nav**: [Phase 0](#phase-0-foundation-lock--complete) | [Phase 1](#phase-1-live-pipeline-validation--complete) | [Phase 2](#phase-2-supervised-burn-in--complete) | [Phase 3](#phase-3-expand--harden--complete) | **[Phase 4 (YOU ARE HERE)](#phase-4-autonomy-graduation--in-progress)** | [Phase 5](#phase-5-optimize--scale-post-autonomy)
 
 ---
@@ -369,7 +369,7 @@ Infrastructure deployed and ramp mode activated. Awaiting first live dispatch vi
 - [ ] Shadow test via HeyReach completed (5 profiles) — requires 4B
 - [x] GATEKEEPER approval gate for OPERATOR dispatch (batch approval flow)
 
-#### Deployed (DONE — commit `87225fa`)
+#### Deployed (commits `87225fa` → `b8dfc0f` → `af12208`)
 - [x] **Instantly V2 timezone fix** — `America/New_York` rejected by API whitelist, fixed to `America/Detroit` (same Eastern Time)
 - [x] **Cadence engine encoding fix** — Unicode `->` arrow replaced with ASCII for Windows cp1252
 - [x] **Ramp configuration** — `config/production.json` → `operator.ramp`:
@@ -377,18 +377,28 @@ Infrastructure deployed and ramp mode activated. Awaiting first live dispatch vi
   - `start_date: 2026-02-17`, `ramp_days: 3`
 - [x] **Ramp wired into OPERATOR** — `get_warmup_schedule()` applies limit override, `dispatch_outbound()` auto-applies tier filter, `_build_batch_preview()` respects ramp, `get_status()` shows ramp info
 - [x] **`actually_send: true`** flipped in config (informational — real control is `--live` CLI flag)
-- [x] **Deployed to Railway** — ramp active in production (`/api/operator/status` confirms 5/day, tier_1)
+- [x] **Pipeline body extraction fix** — Send stage now extracts subject/body from per-lead sequences (CampaignCrafter stores sequences on each lead, not campaign level)
+- [x] **Enriched recipient data** — Shadow emails now include location, employees, industry in `recipient_data` for dashboard display
+- [x] **Mid-market scrape targets** — Default source changed from "gong" (enterprise, tier_2) to "apollo.io" (mid-market SaaS, tier_1 eligible). Added: Regie.ai, Lavender, Orum, Seamless.AI
+- [x] **HoS Dashboard v2.4** — Live RAMP MODE banner from `/api/operator/status` (auto-refresh 30s). Shows day/total, daily limit, tier filter, sent count
+- [x] **CLAUDE.md autonomy graduation path** — KPI red flags, graduation config, completion checklist
+- [x] **Deployed to Railway** — ramp active, dashboard v2.4, body extraction live (`/api/operator/status` confirms 5/day, tier_1)
 
-#### Go-Live Checklist (Operational — Requires User Action)
-- [ ] Run pipeline with ICP-fit scrape targets to generate tier_1 leads with email bodies
-- [ ] Approve tier_1 leads in HoS dashboard (`/sales`)
-- [ ] First live dispatch: `python -m execution.operator_outbound --motion outbound --live`
-- [ ] Review GATEKEEPER batch → approve → re-run dispatch
-- [ ] Activate DRAFTED campaigns in Instantly (UI or API)
-- [ ] 3 days supervised operation (5 emails/day)
-- [ ] Monitor KPIs: open rate >=50%, reply rate >=8%, bounce <5%
-- [ ] Graduate: set `ramp.enabled: false` in config → 25/day + all tiers
-- [ ] Enable HeyReach LinkedIn sends (5 connections/day during warmup)
+#### Go-Live Checklist (Operational — Ready for First Dispatch)
+
+**Pipeline body fix + mid-market targets deployed.** Dashboard v2.4 live with ramp banner.
+
+| # | Step | Command / Action | Status |
+|---|------|-----------------|--------|
+| 1 | Run pipeline (mid-market) | `echo yes \| python execution/run_pipeline.py --mode production` | READY — default source is now `apollo.io` (tier_1 eligible) |
+| 2 | Review leads in HoS dashboard | Open `/sales` → review tier_1 leads with real email bodies | READY — dashboard shows ramp banner + enriched lead insights |
+| 3 | Approve tier_1 leads | Click "Edit & Preview" → "Approve & Send" for each | WAITING for Step 1 |
+| 4 | First live dispatch | `python -m execution.operator_outbound --motion outbound --live` | WAITING for Step 3 |
+| 5 | Approve GATEKEEPER batch | `/api/operator/pending-batch` → review → `/api/operator/approve-batch/{id}` | WAITING for Step 4 |
+| 6 | Activate DRAFTED campaigns | Instantly dashboard → find campaign → Activate | WAITING for Step 5 |
+| 7 | 3 supervised days | Monitor 5 emails/day, tier_1 only, check KPIs daily | WAITING for Step 6 |
+| 8 | Graduate to full autonomy | Set `ramp.enabled: false` in `config/production.json` → 25/day + all tiers | WAITING for Step 7 KPIs |
+| 9 | Enable LinkedIn sends | Start HeyReach warmup (5 connections/day, 4 weeks) | Can start NOW (parallel) |
 
 #### KPI Targets
 
@@ -405,28 +415,68 @@ Infrastructure deployed and ramp mode activated. Awaiting first live dispatch vi
 
 ## Recommended Next Steps (In Priority Order)
 
-Based on current state (Phase 4, 95% complete), all code is built. Only user decisions remain.
+Based on deep audit (Phase 4, 98% complete — 12/12 code claims verified, production healthy, ramp active). **All code is built and deployed. Only operational steps remain for full autonomy.**
 
 ### Recently Completed
 
 | # | Task | Status |
 |---|------|--------|
 | ~~1~~ | GATEKEEPER approval gate | DONE — batch approval + 3 endpoints (commit `bcd3815`) |
-| ~~2~~ | Daily decay detection cron | DONE — Inngest `daily_decay_detection` (10 AM UTC) |
+| ~~2~~ | Daily decay detection cron | DONE — Inngest `daily_decay_detection` (10 AM UTC) in `core/inngest_scheduler.py` |
 | ~~3~~ | Instantly V2 timezone fix | DONE — `America/Detroit` accepted by API whitelist |
 | ~~4~~ | Cadence engine encoding fix | DONE — Unicode arrow → ASCII for Windows |
-| ~~5~~ | Ramp mode config + wiring | DONE — 5/day, tier_1 only, 3 supervised days |
-| ~~6~~ | `actually_send: true` + deploy | DONE — commit `87225fa`, ramp active in Railway production |
+| ~~5~~ | Ramp mode config + wiring | DONE — 5/day, tier_1 only, 3 supervised days (commit `87225fa`) |
+| ~~6~~ | Pipeline body extraction fix | DONE — per-lead sequence extraction in send stage (commit `b8dfc0f`) |
+| ~~7~~ | Enriched recipient data | DONE — location/employees/industry passed to dashboard |
+| ~~8~~ | Mid-market scrape targets | DONE — default "apollo.io", 5 new mid-market companies |
+| ~~9~~ | HoS Dashboard v2.4 ramp banner | DONE — live operator status, auto-refresh 30s (commit `b8dfc0f`) |
+| ~~10~~ | CLAUDE.md graduation path | DONE — KPI red flags, config changes, checklist (commit `af12208`) |
 
-### Ready for Execution (User Action Required)
+### IMMEDIATE: First Live Dispatch (Steps 1-3 can happen TODAY)
+
+| # | Task | How | Time |
+|---|------|-----|------|
+| 1 | **Run fresh pipeline** | `echo yes \| python execution/run_pipeline.py --mode production` | 30-60s |
+| 2 | **Approve tier_1 leads** | HoS dashboard at `/sales` → review emails with real bodies → Approve | 5 min |
+| 3 | **First live dispatch** | `python -m execution.operator_outbound --motion outbound --live` | 1 min |
+| 4 | **Approve GATEKEEPER batch** | Call `/api/operator/approve-batch/{id}` (Slack alert will notify) | 1 min |
+| 5 | **Activate Instantly campaign** | Instantly dashboard → find DRAFTED campaign → Activate | 1 min |
+
+### SHORT-TERM: 3-Day Supervised Ramp (Days 1-3)
+
+| # | Task | How | When |
+|---|------|-----|------|
+| 6 | **Monitor Day 1 KPIs** | Instantly analytics + `/leads` dashboard → check opens/replies | Day 1 EOD |
+| 7 | **Repeat dispatch Day 2** | Same Steps 1-5, review KPIs | Day 2 |
+| 8 | **Repeat dispatch Day 3** | Same Steps 1-5, review KPIs | Day 3 |
+| 9 | **Graduate: disable ramp** | `config/production.json` → `operator.ramp.enabled: false` → push | Day 3 EOD (if KPIs pass) |
+
+### PARALLEL: LinkedIn Warmup (Can start NOW, runs 4 weeks)
+
+| # | Task | How | When |
+|---|------|-----|------|
+| 10 | **Connect LinkedIn in HeyReach** | HeyReach → Accounts → Add LinkedIn account | NOW |
+| 11 | **Start LinkedIn warmup** | HeyReach auto-warms: 5 connections/day, gradual ramp | 4 weeks |
+| 12 | **Shadow test (5 profiles)** | Add 5 internal LinkedIn profiles → verify webhook events | After warmup starts |
+| 13 | **Enable LinkedIn in cadence** | Steps 2/4/6 in cadence become active (connection + messages) | After 4 weeks |
+
+### POST-GRADUATION: Full Autonomy Configuration
+
+```json
+// config/production.json changes after 3 clean supervised days:
+"operator.ramp.enabled": false,          // Unlocks 25 emails/day + all tiers
+"operator.gatekeeper_required": false,   // Optional: skip batch approval for auto-dispatch
+// After LinkedIn warmup (4 weeks):
+// HeyReach LinkedIn sends become active in cadence steps 2/4/6
+```
+
+### OPTIONAL: Quality Improvements
 
 | # | Task | How | Impact |
 |---|------|-----|--------|
-| 1 | **Run pipeline with ICP-fit targets** | `echo yes \| python execution/run_pipeline.py --mode production --source <target>` | Generate tier_1 leads with email bodies |
-| 2 | **Approve tier_1 leads** | HoS dashboard at `/sales` | Queue leads for dispatch |
-| 3 | **First live dispatch** | `python -m execution.operator_outbound --motion outbound --live` | GATEKEEPER creates batch → approve → dispatch |
-| 4 | **LinkedIn warm-up start** | HeyReach → Accounts → Add LinkedIn → warm 4 weeks | Unblocks LinkedIn cadence steps |
-| 5 | **Activate BetterContact** | Approve $15/mo subscription | Improves data quality on Apollo misses |
+| 14 | **Activate BetterContact** | Approve $15/mo subscription | Improves email quality on Apollo misses |
+| 15 | **Add ZeroBounce verification** | Pre-verify emails before dispatch | Reduces bounce rate |
+| 16 | **Custom scrape targets** | Run pipeline with `--source competitor_<company>` per ICP vertical | Better lead quality per niche |
 
 ### Future (Phase 5 Triggers)
 
@@ -443,15 +493,23 @@ Based on current state (Phase 4, 95% complete), all code is built. Only user dec
 
 ## Key Decisions & Questions Per Phase
 
-### Before Starting Phase 4E (Live Sends)
+### Phase 4E Decisions (ANSWERED — Ramp Mode Active)
 
-> These must be answered before `actually_send: true`:
+| Question | Decision | Config |
+|----------|----------|--------|
+| Daily send volume | 5/day ramp → 25/day after 3 days | `operator.ramp.email_daily_limit_override: 5` |
+| Tier restriction | tier_1 only during ramp | `operator.ramp.tier_filter: "tier_1"` |
+| Approval workflow | GATEKEEPER batch approval required | `gatekeeper_required: true` |
+| Bounce handling | Auto-suppress via `.hive-mind/unsubscribes.jsonl` | Instantly bounce webhook → JSONL append |
+| Reply routing | Instantly webhook → Signal Loop → Slack alert | `handle_email_replied()` → `LeadStatusManager` |
 
-1. **Daily send volume**: Start at 5/day for 3 days, then ramp to 25/day? Or different ramp?
-2. **Tier restriction**: Start with tier_1 only (highest ICP fit)? Or include tier_2?
-3. **Approval workflow**: Keep Gatekeeper manual approval for first 3 days? Or auto-approve tier_1?
-4. **Bounce handling**: Auto-suppress bounced emails from future campaigns? (Currently appends to `.hive-mind/unsubscribes.jsonl`)
-5. **Reply routing**: Where do replies go? Currently logged via Instantly webhook + Slack notification. RESPONDER classification available.
+### Phase 5 Decisions (FUTURE — After Graduation)
+
+1. **Auto-approve threshold**: Skip GATEKEEPER for tier_1 ICP score >=85? Or keep manual?
+2. **Multi-channel cadence timing**: Adjust 21-day sequence based on reply rate data?
+3. **Revival aggressiveness**: How soon to re-engage ghosted leads (currently 30-120 day window)?
+4. **A/B testing**: Test subject lines first, or body copy first?
+5. **Phone outreach**: Add Twilio calls to cadence? Which step?
 
 ---
 
@@ -488,7 +546,7 @@ Based on current state (Phase 4, 95% complete), all code is built. Only user dec
          ┌───────────▼────────────────┐  ◄── Phase 4F (BUILT)
          │   LEAD SIGNAL LOOP          │
          │   core/lead_signals.py      │
-         │   18 statuses, decay scan   │
+         │   21 statuses, decay scan   │
          └───────────┬────────────────┘
                      │
          ┌───────────▼────────────────┐  ◄── Phase 4F (BUILT)
@@ -549,9 +607,10 @@ Based on current state (Phase 4, 95% complete), all code is built. Only user dec
 
 | Control | Setting | Location | What It Does |
 |---------|---------|----------|-------------|
-| `actually_send` | **true** | `config/production.json` | Informational flag (real control: `--live` CLI flag) |
+| `actually_send` | **true** | `config/production.json` | Informational only — real control is `--live` CLI flag |
 | `shadow_mode` | **true** | `config/production.json` | Emails go to `.hive-mind/shadow_mode_emails/` |
-| `max_daily_sends` | **0** | `config/production.json` | Daily ceiling (0 = unlimited in shadow) |
+| `gatekeeper_required` | **true** | `config/production.json` | Live dispatch creates batch for human approval before execution |
+| `operator.ramp.enabled` | **true** | `config/production.json` | 5/day, tier_1 only, 3 supervised days from 2026-02-17 |
 | `EMERGENCY_STOP` | env var | Railway | Kill switch — blocks ALL outbound |
 | Shadow emails | `.hive-mind/shadow_mode_emails/` | Local/Railway | Review queue before enabling real sends |
 | Audit trail | `.hive-mind/audit/` | Local/Railway | All Gatekeeper decisions logged |
@@ -577,5 +636,5 @@ Based on current state (Phase 4, 95% complete), all code is built. Only user dec
 ---
 
 *This tracker is the single source of truth for CAIO Alpha Swarm development status.*
-*For full implementation details, see `CAIO_IMPLEMENTATION_PLAN.md` (v4.2).*
+*For full implementation details, see `CAIO_IMPLEMENTATION_PLAN.md` (v4.3).*
 *For signal loop activation steps, see `docs/MONACO_SIGNAL_LOOP_GUIDE.md`.*
