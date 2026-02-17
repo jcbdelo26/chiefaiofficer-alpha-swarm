@@ -32,7 +32,7 @@ Phase 4F: Monaco Signal Loop                 COMPLETE (lead_signals + activity_t
 ```
 
 **Safety**: `actually_send: true` (informational), real control: `--live` CLI flag + `EMERGENCY_STOP` env var + `gatekeeper_required: true`.
-**Ramp Mode**: 5 emails/day, tier_1 only, 3 supervised days starting 2026-02-17. Set `operator.ramp.enabled: false` to graduate to 25/day.
+**Ramp Mode**: 5 emails/day, tier_1 only (C-Suite at agencies/consulting/law), 3 supervised days starting 2026-02-18. Set `operator.ramp.enabled: false` to graduate to 25/day.
 
 See `docs/CAIO_TASK_TRACKER.md` for detailed progress and next steps.
 
@@ -41,8 +41,9 @@ See `docs/CAIO_TASK_TRACKER.md` for detailed progress and next steps.
 - **HoS Dashboard v2.4** (`/sales`): Live RAMP MODE banner fetches from `/api/operator/status` every 30s — shows day/total, daily limit, tier filter, sent count
 - **Email bodies fixed**: Pipeline send stage now extracts subject/body from per-lead sequences (CRAFTER stores sequences on each lead, not campaign level)
 - **Enriched lead insights**: Shadow emails now include location, employees, industry in `recipient_data` for dashboard display
-- **Mid-market scrape targets**: Default source changed from "gong" (enterprise, tier_2) to "apollo.io" (mid-market SaaS, tier_1 eligible). Added: Regie.ai, Lavender, Orum, Seamless.AI
-- **Tier_1 scoring**: Requires 80+ ICP points. Mid-market (51-500 employees) = 20pts company_size + 25pts C-level title + 20pts SaaS industry = 65+ base. Intent signals add up to 20 more.
+- **HoS-aligned scrape targets**: TARGET_COMPANIES aligned to HoS Tier 1 ICP: Wpromote, Tinuiti, Power Digital (agencies), Insight Global, Kforce (staffing), Slalom, West Monroe (consulting), ShipBob (e-commerce), Chili Piper (Tier 2 test). Old SaaS targets removed.
+- **Deliverability guards (2026-02-18)**: 4-layer defense in `instantly_dispatcher.py` — Guard 1: email format (RFC 5322), Guard 2: excluded domains (12 competitors + 7 customer domains), Guard 3: domain concentration (max 3/domain/batch), Guard 4: individual email exclusion (27 customer emails from HoS Section 1.4). Config in `production.json` under `guardrails.deliverability`.
+- **Tier_1 scoring**: Requires 80+ ICP points (with HoS multipliers). C-Suite at agency/consulting: 20pts size + 25pts title + 20pts industry = 65 x 1.5 = 97 → tier_1. VP at SaaS: 20 + 22 + 15 = 57 x 1.2 = 68 → tier_2.
 
 ### Autonomy Graduation Path (Ramp → Full Autonomy)
 
@@ -81,7 +82,7 @@ See `docs/CAIO_TASK_TRACKER.md` for detailed progress and next steps.
 | Agent | Role | Key Files |
 |-------|------|-----------|
 | ALPHA QUEEN | Master Orchestrator | `execution/unified_queen_orchestrator.py` |
-| HUNTER | Lead Discovery (Apollo — default source: apollo.io for tier_1 mid-market) | `execution/hunter_scrape_followers.py` |
+| HUNTER | Lead Discovery (Apollo — default source: vidyard, non-competitor) | `execution/hunter_scrape_followers.py` |
 | ENRICHER | Data Enrichment (Apollo + BetterContact) | `execution/enricher_clay_waterfall.py` |
 | SEGMENTOR | ICP Scoring + Tier Assignment | `execution/segmentor_classify.py` |
 | CRAFTER | Campaign Copy + Cadence Follow-ups | `execution/crafter_campaign.py` |
@@ -422,18 +423,88 @@ See `docs/CONTEXT_ENGINEERING_ANALYSIS.md` for full methodology.
 
 ---
 
-## ICP Quick Reference
+## HoS Email Crafting Reference (Canonical — Source: HEAD_OF_SALES_REQUIREMENTS 01.26.2026)
 
-**Target**:
-- 51-500 employees
-- B2B SaaS / Technology
-- VP Sales, CRO, RevOps
-- Using CRM + seeking AI
+This section is the **authoritative reference** for all outbound email copy, ICP definitions, and messaging. Every session uses this as the canonical basis for crafting emails.
 
-**Disqualify**:
-- < 20 employees
-- Agency (unless enterprise)
-- Already customer
+### Offer & Positioning
+
+- **Offer**: Fractional Chief AI Officer embedding into mid-market firms
+- **Buyer**: Execs under pressure, skeptical, but open to AI transformation
+- **KPI**: Booked calls with qualified buyers
+- **Pain Points**: Stalled AI pilots, no AI lead, leadership pressure, CTO buried in legacy tech
+- **Mechanism**: M.A.P.™ Framework — Measure → Automate → Prove (90-day cycles)
+- **Proof**: 1,000+ hrs clawed back, 27% productivity boost, 300+ hrs saved in 30 days, AI handles work of 20+ staff
+- **Offer Stack**: Embedded exec + Day 1 Bootcamp + support layers + risk-free guarantee
+- **Key Line**: "Measurable ROI, or you don't pay the next phase"
+
+### ICP Tier Definitions
+
+| Tier | Titles | Ideal Industries | Company Size | Revenue | Multiplier |
+|------|--------|-----------------|--------------|---------|------------|
+| **1** | CEO, Founder, President, COO, Owner, Managing Partner | Agencies, Staffing, Consulting, Law/CPA, Real Estate, E-commerce | 51-500 (sweet: 101-250) | $5-100M | 1.5x |
+| **2** | CTO, CIO, CSO, Chief of Staff, VP Ops/Strategy, Head of Innovation, Managing Director | B2B SaaS, IT Services, Healthcare, Financial Services | 51-500 | $5-100M | 1.2x |
+| **3** | Director Ops/IT/Strategy, VP Engineering, Head of AI/Data | Manufacturing, Logistics, Construction, Home Services | 10-1000 | $1-250M | 1.0x |
+
+**Disqualify (NEVER Contact)**: <10 employees, >1000 employees, <$1M revenue, Government, Non-profit, Education, Academic, Current customers, Competitors.
+
+### 11 Email Angles Summary
+
+**Tier 1 (C-Suite / Founders — 4 angles)**:
+- **A: Executive Buy-In** — "Fractional CAIO" gap, M.A.P.™ 90-day pitch, Day 1 Bootcamp CTA
+- **B: Industry-Specific** — YPO/Construction/Manufacturing pain, back-office automation, 300+ hrs saved
+- **C: Hiring Trigger** — Company hiring AI roles, "bridge strategy" pitch, set roadmap before hire starts
+- **D: Value-First** — 2-minute AI Readiness audit, soft CTA ("Mind if I send the link over?")
+
+**Tier 2 (CTO, CIO, VP Ops, Head of Innovation — 3 angles)**:
+- **A: Tech Stack Integration** — AI integration playbook for their specific stack, lead enrichment/doc processing/support triage
+- **B: Operations Efficiency** — 40-60% time savings, M.A.P. framework, "open to a brief sync?"
+- **C: Innovation Champion** — 75% of AI pilots stall, AI Council inside company, 90-day bootcamp→co-pilot→handoff
+
+**Tier 3 (Directors, Managers, Smaller Companies — 4 angles)**:
+- **A: Quick Win** — One workflow to automate, 8 hrs/month back, "Reply yes" CTA
+- **B: Time Savings** — 10 hrs/week back, AI agents not chatbots, "send a quick video?"
+- **C: Competitor FOMO** — Others already automating, 40-60% time savings, "reply show me"
+- **D: DIY Resource** — Free 1-page checklist, tools <$100/mo, softest CTA
+
+### Follow-Up Sequences
+
+- **Follow-Up 1 (Day 3-4)**: Two variants:
+  - *Value-First*: AI Readiness audit, no pitch, 3 biggest automation wins
+  - *Case Study*: 27% productivity boost, 300+ hours saved, "Want me to share the one-pager?"
+- **Follow-Up 2 (Day 7 — Break-Up)**: Three variants:
+  - *Permission to Close*: "I'll take this off my follow-up list"
+  - *Last Value Drop*: Quick win automations + real metrics + "book call or reply not now"
+  - *Direct Yes/No/Not Yet*: Three-option close (one word is all I need)
+
+### Objection Handling Playbook
+
+1. **"We already have CRM/Apollo/ZoomInfo"** → Complementary, not competitive. We automate the "what" and "how"
+2. **"Already have a solution"** → Acknowledge, plant seeds of doubt (forecasting, pipeline visibility, rep productivity)
+3. **"What's the pricing?"** → Lead with ROI, pivot to call ("most teams see ROI within 90 days")
+4. **"Not interested"** → Graceful exit, remove from sequence immediately
+5. **"Need to talk to my team"** → Schedule specific follow-up ("reach back out next quarter?")
+
+### Email Signature & CAN-SPAM Footer
+
+- **Sender**: Dani Apgar, Chief AI Officer
+- **Booking Link**: `https://caio.cx/ai-exec-briefing-call`
+- **Opt-out**: "Reply STOP to unsubscribe."
+- **Physical Address**: 5700 Harper Dr, Suite 210, Albuquerque, NM 87109
+- **Support**: support@chiefaiofficer.com
+
+Footer block (appended to every email):
+```
+---
+Reply STOP to unsubscribe.
+Chief AI Officer Inc. | 5700 Harper Dr, Suite 210, Albuquerque, NM 87109
+```
+
+### Customer Exclusion List (27 emails, 7 domains — from GHL export)
+
+**Domains (block ALL emails)**: jbcco.com, frazerbilt.com, immatics.com, debconstruction.com, credegroup.com, verifiedcredentials.com, exitmomentum.com
+
+**Individual emails**: chudziak@jbcco.com, hkephart@frazerbilt.com, jmusil@jbcco.com, imorris@jbcco.com, mdabler@jbcco.com, maria.martinezcisnado@immatics.com, mm@immatics.com, slee@debconstruction.com, bzupan@jbcco.com, mfolsom@jbcco.com, kelsey.irvin@credegroup.com, michael.loveridge@credegroup.com, amejia@debconstruction.com, kjacinto@debconstruction.com, lagriffin@frazerbilt.com, aneblett@verifiedcredentials.com, tek@debconstruction.com, wmitchell@frazerbilt.com, cole@exitmomentum.com, alex.wagas@credegroup.com, avali@debconstruction.com, jnavarro@jbcco.com, kvale@frazerbilt.com, phirve@frazerbilt.com, mkcole@frazerbilt.com, tschaaf@jbcco.com, sharrell@frazerbilt.com
 
 ---
 

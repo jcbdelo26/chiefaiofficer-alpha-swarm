@@ -6,7 +6,7 @@ Generates hyper-personalized email campaigns from segmented leads.
 
 Usage:
     python execution/crafter_campaign.py --input .hive-mind/segmented/leads.json
-    python execution/crafter_campaign.py --segment tier1_gong --template competitor_displacement
+    python execution/crafter_campaign.py --segment tier1_gong --template t1_executive_buyin
 """
 
 import os
@@ -34,8 +34,8 @@ from core.event_log import log_event, EventType
 from core.retry import retry, schedule_retry
 from core.alerts import send_warning, send_critical
 from core.context import (
-    compact_lead_batch, 
-    get_context_zone, 
+    compact_lead_batch,
+    get_context_zone,
     ContextZone,
     estimate_tokens
 )
@@ -80,235 +80,490 @@ class Campaign:
 
 class CampaignCrafter:
     """Generates hyper-personalized email campaigns."""
-    
-    # Email templates
+
+    # =========================================================================
+    # 11 HoS-Approved Email Angles (Fractional Chief AI Officer + M.A.P. Framework)
+    # =========================================================================
     TEMPLATES = {
-        "competitor_displacement": {
-            "subject_a": "{{lead.first_name}}, what {{context.competitor}} isn't showing you",
-            "subject_b": "Beyond {{context.competitor}} for {{lead.company}}",
+        "t1_executive_buyin": {
+            "subject_a": "AI Roadmap for {{lead.company}}",
+            "subject_b": "Quick question regarding {{lead.company}}'s AI strategy",
             "body": """Hi {{lead.first_name}},
 
-I noticed you follow {{source.name}}'s updates on LinkedIn - smart move staying current on {{context.topics[0] if context.topics else 'revenue intelligence'}}.
+Seeing a lot of {{lead.industry}} firms stuck in "AI research mode" without moving to implementation.
 
-Here's what I've been hearing from {{lead.title}}s like yourself at companies your size:
+Usually, it's because the CTO is buried in legacy tech and there's no dedicated AI lead to drive the strategy forward.
 
-"{{source.name}} shows us what happened... but we still can't predict what's going to happen next quarter."
+We act as your Fractional Chief AI Officer to move {{lead.company}} from curiosity to ROI—typically in 90 days.
 
-At Chiefaiofficer.com, we're building the layer ABOVE traditional tools - connecting insights to predictions to coaching in one AI-native system.
+What that looks like:
+- Day 1: One-day M.A.P. Bootcamp (your team leaves with an AI-ready action plan)
+- Days 2-90: We embed with your team, build the workflows, and measure results
+- Guarantee: Measurable ROI, or you don't pay the next phase
 
-Worth a 15-min look? {{sender.calendar_link}}
+Worth a brief chat on how we're doing this for similar {{lead.industry}} companies?
 
 Best,
 {{sender.name}}
-{{sender.title}}, {{sender.company}}
+{{sender.title}}
+{{sender.calendar_link}}
 
-P.S. - No generic demo. I'll show you exactly how this would work for {{lead.company}}."""
+---
+Reply STOP to unsubscribe.
+Chief AI Officer Inc. | 5700 Harper Dr, Suite 210, Albuquerque, NM 87109"""
         },
-        "event_followup": {
-            "subject_a": "Quick follow-up from {{source.name}}",
-            "subject_b": "{{lead.first_name}}, loved the {{source.name}} discussion",
+        "t1_industry_specific": {
+            "subject_a": "AI in {{lead.industry}} / {{lead.company}}",
+            "subject_b": "Automating {{lead.company}}'s back-office?",
             "body": """Hi {{lead.first_name}},
 
-I saw you attended {{source.name}} - great session on {{context.topics[0] if context.topics else 'revenue operations'}}.
+Many {{lead.industry}} CEOs I speak with are frustrated by thin margins and operational inefficiency.
 
-The discussion around {{context.topics[0] if context.topics else 'AI in RevOps'}} is exactly where we focus at Chiefaiofficer.com.
+The fix we're seeing work: AI automating the back-office "drudge work"—project estimation, invoicing, scheduling, reporting—so your team can focus on revenue.
 
-Would love to share how {{lead.company}} could apply some of these concepts.
+Example: A 150-person {{lead.industry}} firm saved 300+ hours in 30 days and saw a 27% productivity boost after our 90-day AI pilot.
 
-15 minutes this week? {{sender.calendar_link}}
+Are you open to seeing a quick breakdown of the workflow we built for them?
 
-{{sender.name}}"""
-        },
-        "thought_leadership": {
-            "subject_a": "Your take on {{context.topics[0] if context.topics else 'RevOps'}}",
-            "subject_b": "{{lead.first_name}}, re: your LinkedIn comment",
-            "body": """{{lead.first_name}},
-
-I came across your comment on LinkedIn about {{context.topics[0] if context.topics else 'revenue operations'}}:
-
-"{{engagement.content[:100] if engagement.content else 'Your thoughtful perspective on the industry'}}..."
-
-Couldn't agree more. The challenges you're describing are exactly what we're solving at Chiefaiofficer.com.
-
-We're working with companies like {{lead.company}} addressing exactly this. Curious if you'd find our approach interesting?
-
-Quick 15-min chat? {{sender.calendar_link}}
-
+Best,
 {{sender.name}}
-P.S. - Would love to compare notes on your experience."""
+{{sender.title}}
+{{sender.calendar_link}}
+
+---
+Reply STOP to unsubscribe.
+Chief AI Officer Inc. | 5700 Harper Dr, Suite 210, Albuquerque, NM 87109"""
         },
-        "community_outreach": {
-            "subject_a": "Fellow {{source.name}} member",
-            "subject_b": "{{lead.first_name}}, connecting from {{source.name}}",
+        "t1_hiring_trigger": {
+            "subject_a": "Re: {{lead.company}}'s AI hiring",
+            "subject_b": "Bridge strategy for {{lead.company}}",
             "body": """Hi {{lead.first_name}},
 
-I noticed we're both members of {{source.name}} - great community for {{context.topics[0] if context.topics else 'revenue operations'}} professionals.
+Noticed you're hiring for AI/data roles at {{lead.company}}. Great move.
 
-Given your role as {{lead.title}} at {{lead.company}}, thought you might be interested in what we're building at Chiefaiofficer.com.
+But here's what we usually see: it takes 4-6 months to get that person productive—finding the right hire, onboarding, learning your systems.
 
-We're helping {{lead.company}}-sized companies transform their revenue operations with AI.
+We provide the fractional AI leadership to set the strategy *now* so your new hire hits the ground running on Day 1.
 
-Open to a quick 15-min call to explore? {{sender.calendar_link}}
+What we do in 90 days:
+- Define your AI roadmap before the hire starts
+- Train your current team on AI fundamentals
+- Build your first automated workflows
+- Hand off a documented playbook to your new AI lead
 
-{{sender.name}}"""
+Open to a "bridge strategy" call? Just 15 minutes.
+
+Best,
+{{sender.name}}
+{{sender.title}}
+{{sender.calendar_link}}
+
+---
+Reply STOP to unsubscribe.
+Chief AI Officer Inc. | 5700 Harper Dr, Suite 210, Albuquerque, NM 87109"""
         },
-        "website_visitor": {
-            "subject_a": "You were on our site earlier",
-            "subject_b": "Following up on your visit, {{lead.first_name}}",
-            "body": """{{lead.first_name}},
+        "t1_value_first": {
+            "subject_a": "2-minute AI readiness check for {{lead.company}}",
+            "subject_b": "{{lead.first_name}} - quick resource for {{lead.industry}} leaders",
+            "body": """Hi {{lead.first_name}},
 
-I noticed you were exploring Chiefaiofficer.com earlier.
+I put together a 2-minute "AI Readiness" audit for {{lead.industry}} leaders.
 
-Based on your role as {{lead.title}} at {{lead.company}}, I'd love to give you a personalized walkthrough of how we can help.
+It covers the 3 biggest low-hanging fruit automation wins we're seeing right now—ones that typically save 10-20 hours per week per team member.
 
-Worth 15 minutes? {{sender.calendar_link}}
+Mind if I send the link over?
 
-{{sender.name}}"""
+(No pitch, no 30-minute demo request—just a quick self-assessment.)
+
+Best,
+{{sender.name}}
+{{sender.title}}
+ChiefAIOfficer.com
+
+---
+Reply STOP to unsubscribe.
+Chief AI Officer Inc. | 5700 Harper Dr, Suite 210, Albuquerque, NM 87109"""
+        },
+        "t2_tech_stack": {
+            "subject_a": "{{lead.first_name}} - AI for {{lead.company}}'s tech stack",
+            "subject_b": "AI integration for {{lead.industry}} teams",
+            "body": """Hi {{lead.first_name}},
+
+I noticed {{lead.company}} is in the {{lead.industry}} space—we actually have a specific AI integration playbook for that stack.
+
+Most {{lead.title}} roles I talk to are seeing two blockers:
+1. The CTO is buried in legacy tech maintenance
+2. No dedicated AI strategy lead to drive implementation
+
+We bridge that gap as your Fractional Chief AI Officer—moving from "AI pilot" to production workflows in 90 days.
+
+What teams like yours are automating:
+- Lead enrichment and qualification (from raw data to booked meetings)
+- Document processing and extraction (invoices, contracts, reports)
+- Customer support triage (route, respond, escalate)
+
+Would it be helpful if I shared the AI playbook we're seeing work best for {{lead.industry}}?
+
+Cheers,
+{{sender.name}}
+{{sender.title}}
+{{sender.calendar_link}}
+
+---
+Reply STOP to unsubscribe.
+Chief AI Officer Inc. | 5700 Harper Dr, Suite 210, Albuquerque, NM 87109"""
+        },
+        "t2_ops_efficiency": {
+            "subject_a": "{{lead.company}}'s operational efficiency",
+            "subject_b": "{{lead.first_name}} - cutting {{lead.company}}'s overhead",
+            "body": """Hi {{lead.first_name}},
+
+The teams we work with are seeing 40-60% time savings on operational tasks using AI automation.
+
+Specifically:
+- One 150-person firm saved 300+ hours in 30 days on administrative work
+- A 7-person pilot team saw 27% productivity boost in the first month
+- AI now handles the work of 20+ staff in Operations at one of our clients
+
+The pattern: start with high-volume, low-complexity tasks (data entry, scheduling, reporting), prove ROI in 30 days, then expand.
+
+We call it the M.A.P. framework: Measure, Automate, Prove.
+
+Open to a brief sync, or should I just send over a one-pager for now?
+
+Cheers,
+{{sender.name}}
+{{sender.title}}
+{{sender.calendar_link}}
+
+---
+Reply STOP to unsubscribe.
+Chief AI Officer Inc. | 5700 Harper Dr, Suite 210, Albuquerque, NM 87109"""
+        },
+        "t2_innovation_champion": {
+            "subject_a": "AI transformation at {{lead.company}}",
+            "subject_b": "{{lead.first_name}} - building the AI Council",
+            "body": """Hi {{lead.first_name}},
+
+75%+ of AI pilots stall before ROI is proven.
+
+The root cause we see: insufficient governance and process integration. CFOs see spend but not savings. Teams focus on "AI chatbots" instead of operational transformation.
+
+We fix this by building an AI Council inside your company—internal champions from every department who drive adoption from within.
+
+Our 90-day approach:
+1. Day 1: Executive bootcamp (your team leaves AI-ready)
+2. Weeks 2-8: We co-pilot with your AI Council, build the workflows
+3. Weeks 9-12: Measure ROI, hand off the playbook
+
+If the M.A.P. cycle doesn't deliver tangible savings, you don't pay the next phase.
+
+Mind if I send over a 2-minute video on how we do this?
+
+Cheers,
+{{sender.name}}
+{{sender.title}}
+ChiefAIOfficer.com
+
+---
+Reply STOP to unsubscribe.
+Chief AI Officer Inc. | 5700 Harper Dr, Suite 210, Albuquerque, NM 87109"""
+        },
+        "t3_quick_win": {
+            "subject_a": "Quick idea for {{lead.company}}",
+            "subject_b": "{{lead.first_name}} - one workflow to automate",
+            "body": """Hi {{lead.first_name}},
+
+Most {{lead.industry}} teams I talk to have one workflow that eats up way too much time—usually something like data entry, reporting, or lead research.
+
+We help companies like {{lead.company}} automate that one thing first. No 6-month project. Just pick the biggest time-waster and fix it.
+
+Example: A 25-person {{lead.industry}} company automated their weekly reporting and got 8 hours back per person, per month.
+
+Worth a quick look?
+
+Reply "yes" and I'll send a 2-minute breakdown of how we do it.
+
+Best,
+{{sender.name}}
+{{sender.title}}
+ChiefAIOfficer.com
+
+---
+Reply STOP to unsubscribe.
+Chief AI Officer Inc. | 5700 Harper Dr, Suite 210, Albuquerque, NM 87109"""
+        },
+        "t3_time_savings": {
+            "subject_a": "{{lead.first_name}} - 10 hours back per week",
+            "subject_b": "What if {{lead.company}}'s admin work did itself?",
+            "body": """Hi {{lead.first_name}},
+
+The teams I work with typically waste 10-15 hours per week on tasks that should be automated: data entry, status updates, scheduling, and reporting.
+
+We use AI agents to handle that—not a "chatbot" but actual workflow automation that runs 24/7.
+
+Quick wins we see for {{lead.industry}} teams:
+- Auto-updating spreadsheets and dashboards
+- Lead research done overnight (you wake up to qualified lists)
+- Follow-up emails sent at the right time, automatically
+
+No huge IT project. Start with one workflow, prove it works, expand from there.
+
+Should I send over a quick video showing how this works for teams your size?
+
+Best,
+{{sender.name}}
+{{sender.title}}
+ChiefAIOfficer.com
+
+---
+Reply STOP to unsubscribe.
+Chief AI Officer Inc. | 5700 Harper Dr, Suite 210, Albuquerque, NM 87109"""
+        },
+        "t3_competitor_fomo": {
+            "subject_a": "What {{lead.industry}} teams are automating",
+            "subject_b": "{{lead.first_name}} - how competitors are scaling",
+            "body": """Hi {{lead.first_name}},
+
+I've been working with a few {{lead.industry}} companies lately, and there's a pattern:
+
+The ones pulling ahead are automating the "invisible work"—the research, the data entry, the follow-ups that eat up 40-60% of everyone's week.
+
+What they're automating:
+- Lead research and scoring (AI does it overnight)
+- Proposal drafts and first-pass content
+- Client onboarding workflows
+- Reporting and status updates
+
+Not asking you to rip out your tech stack. Just add a layer of AI that handles the repetitive stuff.
+
+Curious if {{lead.company}} has looked into this yet?
+
+Just reply "show me"—I'll send a quick breakdown of what we're seeing work.
+
+Best,
+{{sender.name}}
+{{sender.title}}
+ChiefAIOfficer.com
+
+---
+Reply STOP to unsubscribe.
+Chief AI Officer Inc. | 5700 Harper Dr, Suite 210, Albuquerque, NM 87109"""
+        },
+        "t3_diy_resource": {
+            "subject_a": "Free AI checklist for {{lead.industry}}",
+            "subject_b": "{{lead.first_name}} - quick resource for small teams",
+            "body": """Hi {{lead.first_name}},
+
+I put together a 1-page checklist of the 5 "quick win" AI automations that work best for {{lead.industry}} teams under 50 people.
+
+No fluff, no 30-minute demo required—just actionable stuff you can implement yourself or hand to your ops person.
+
+Includes:
+- Top 5 workflows to automate first (and why)
+- Tools that work for small budgets (under $100/month)
+- Common mistakes to avoid
+
+Mind if I send it over?
+
+(No strings attached—it's genuinely useful even if we never talk.)
+
+Best,
+{{sender.name}}
+{{sender.title}}
+ChiefAIOfficer.com
+
+---
+Reply STOP to unsubscribe.
+Chief AI Officer Inc. | 5700 Harper Dr, Suite 210, Albuquerque, NM 87109"""
         }
     }
-    
-    # Follow-up sequence templates
+
+    # =========================================================================
+    # HoS-Approved Follow-Up Sequence (2 steps: value-first + breakup)
+    # =========================================================================
     FOLLOWUP_TEMPLATES = [
         {
             "delay_days": 3,
-            "subject": "Quick follow-up, {{lead.first_name}}",
-            "body": """{{lead.first_name}},
-
-Just bumping this up. Thought this might be relevant given your focus on {{context.topics[0] if context.topics else 'revenue operations'}}.
-
-Here's a quick case study of how we helped a similar company: [Case Study Link]
-
-Still open to that 15-min conversation? {{sender.calendar_link}}
-
-{{sender.name}}"""
-        },
-        {
-            "delay_days": 7,
-            "subject": "{{lead.company}} + Chiefaiofficer.com",
-            "body": """{{lead.first_name}},
-
-Companies like {{lead.company}} are seeing 40% improvement in forecast accuracy.
-
-I know you're busy, but I think you'd find real value in a quick conversation.
-
-Last ask: {{sender.calendar_link}}
-
-{{sender.name}}"""
-        },
-        {
-            "delay_days": 14,
-            "subject": "Should I close the loop?",
-            "body": """{{lead.first_name}},
-
-I haven't heard back, so I'm guessing timing isn't right.
-
-Totally understand - I'll close out this thread but happy to reconnect whenever makes sense for {{lead.company}}.
-
-Feel free to reach out anytime.
-
-{{sender.name}}"""
-        }
-    ]
-    
-    # Cadence follow-up templates (keyed by cadence action type)
-    # Used by dispatch_cadence() in OPERATOR agent for Steps 3/5/7/8
-    CADENCE_TEMPLATES = {
-        "value_followup": {
-            "subject": "{{lead.first_name}}, quick case study for {{lead.company}}",
+            "subject": "Re: {{original_subject}}",
             "body": """Hi {{lead.first_name}},
 
-Following up on my earlier note. Wanted to share something relevant for {{lead.company}}.
+Following up on my note from earlier this week.
 
-We recently helped a {{lead.title}}-level leader at a similar company cut their forecast variance by 40% using AI-driven revenue intelligence.
+I put together a 2-minute "AI Readiness" audit specifically for {{lead.industry}} leaders.
 
-The key insight: most teams are drowning in data but starving for actionable signals. That's exactly what we fix.
+It covers the 3 biggest low-hanging fruit automation wins we're seeing right now—ones that typically save 10-20 hours per week per team member.
 
-Would a 15-min walkthrough be useful? {{sender.calendar_link}}
+Mind if I send the link over?
+
+(No pitch, no 30-minute demo request—just a quick self-assessment you can complete in under 3 minutes.)
 
 Best,
 {{sender.name}}
-{{sender.title}}, {{sender.company}}"""
+{{sender.title}}
+ChiefAIOfficer.com
+
+---
+Reply STOP to unsubscribe.
+Chief AI Officer Inc. | 5700 Harper Dr, Suite 210, Albuquerque, NM 87109"""
+        },
+        {
+            "delay_days": 7,
+            "subject": "Closing the loop / {{lead.company}}",
+            "body": """Hi {{lead.first_name}},
+
+I haven't heard back, so I'm assuming AI implementation isn't a top-three priority for {{lead.company}} this quarter.
+
+I'll take this off my follow-up list.
+
+If things change down the road—whether it's a new budget cycle, a strategic shift, or just curiosity—you know where to find me.
+
+Wishing you and the {{lead.company}} team continued success.
+
+Best,
+{{sender.name}}
+{{sender.title}}
+ChiefAIOfficer.com
+
+---
+Reply STOP to unsubscribe.
+Chief AI Officer Inc. | 5700 Harper Dr, Suite 210, Albuquerque, NM 87109"""
+        }
+    ]
+
+    # =========================================================================
+    # HoS-Aligned Cadence Templates (keyed by cadence action type)
+    # Used by dispatch_cadence() in OPERATOR agent for Steps 3/5/7/8
+    # =========================================================================
+    CADENCE_TEMPLATES = {
+        "value_followup": {
+            "subject": "{{lead.first_name}} - quick resource",
+            "body": """Hi {{lead.first_name}},
+
+Following up on my note from earlier this week.
+
+I put together a 2-minute "AI Readiness" audit specifically for {{lead.industry}} leaders.
+
+It covers the 3 biggest low-hanging fruit automation wins we're seeing right now—ones that typically save 10-20 hours per week per team member.
+
+Mind if I send the link over?
+
+(No pitch, no 30-minute demo request—just a quick self-assessment you can complete in under 3 minutes.)
+
+Best,
+{{sender.name}}
+{{sender.title}}
+ChiefAIOfficer.com
+
+---
+Reply STOP to unsubscribe.
+Chief AI Officer Inc. | 5700 Harper Dr, Suite 210, Albuquerque, NM 87109"""
         },
         "social_proof": {
-            "subject": "How companies like {{lead.company}} are winning with AI",
-            "body": """{{lead.first_name}},
+            "subject": "Case study for {{lead.company}}",
+            "body": """Hi {{lead.first_name}},
 
-Thought you'd find this interesting - here's what we're seeing across companies in your space:
+Following up—I thought you'd like to see how we helped a similar {{lead.industry}} company.
 
-- 3x faster pipeline velocity with AI-prioritized leads
-- 40% improvement in forecast accuracy
-- 60% reduction in manual CRM data entry
+Quick stats:
+- 27% productivity boost in 30 days
+- 300+ hours saved from a 7-person pilot team
+- Now expanding AI-powered workflows company-wide
 
-The common thread? Teams that move from reactive reporting to predictive intelligence.
+The playbook we used might be directly applicable to {{lead.company}}.
 
-I'd love to show you exactly how this would look for {{lead.company}}.
+Want me to share the one-pager?
 
-15 minutes? {{sender.calendar_link}}
+Best,
+{{sender.name}}
+{{sender.title}}
+{{sender.calendar_link}}
 
-{{sender.name}}"""
+---
+Reply STOP to unsubscribe.
+Chief AI Officer Inc. | 5700 Harper Dr, Suite 210, Albuquerque, NM 87109"""
         },
         "breakup": {
-            "subject": "Should I close the loop, {{lead.first_name}}?",
-            "body": """{{lead.first_name}},
+            "subject": "Closing the loop / {{lead.company}}",
+            "body": """Hi {{lead.first_name}},
 
-I've reached out a few times and haven't heard back, so I want to be respectful of your time.
+I haven't heard back, so I'm assuming AI implementation isn't a top-three priority for {{lead.company}} this quarter.
 
-I'll assume the timing isn't right for {{lead.company}} right now. Totally get it.
+I'll take this off my follow-up list.
 
-If things change or you'd like to revisit, I'm always here: {{sender.calendar_link}}
+If things change down the road—whether it's a new budget cycle, a strategic shift, or just curiosity—you know where to find me.
 
-Wishing you and the team all the best.
+Wishing you and the {{lead.company}} team continued success.
 
+Best,
 {{sender.name}}
-{{sender.title}}, {{sender.company}}"""
+{{sender.title}}
+ChiefAIOfficer.com
+
+---
+Reply STOP to unsubscribe.
+Chief AI Officer Inc. | 5700 Harper Dr, Suite 210, Albuquerque, NM 87109"""
         },
         "close": {
             "subject": "Last note from me, {{lead.first_name}}",
-            "body": """{{lead.first_name}},
+            "body": """Hi {{lead.first_name}},
 
-This is my last follow-up. I don't want to be that person who keeps emailing.
+I've reached out a couple of times about AI automation for {{lead.company}}.
 
-If AI-driven revenue intelligence ever becomes a priority for {{lead.company}}, you know where to find me.
+Not trying to be a pest—just want to know where you stand:
 
-Until then, I'll be cheering from the sidelines.
+- Yes: Let's talk—reply and I'll send a calendar link
+- No: Not a fit—I'll remove you from my list
+- Not yet: Bad timing—tell me when to check back
 
-All the best,
+One word is all I need.
+
+Best,
 {{sender.name}}
-{{sender.title}}, {{sender.company}}
+{{sender.title}}
 
-P.S. - Feel free to connect on LinkedIn anytime. No pitch, just good conversation."""
+---
+Reply STOP to unsubscribe.
+Chief AI Officer Inc. | 5700 Harper Dr, Suite 210, Albuquerque, NM 87109"""
         },
     }
 
     def __init__(self):
         self.sender_info = {
-            "name": "Chris Daigle",
-            "title": "CEO",
-            "company": "Chiefaiofficer.com",
-            "calendar_link": "https://calendly.com/chiefaiofficer/intro"
+            "name": "Dani Apgar",
+            "title": "Chief AI Officer",
+            "company": "ChiefAIOfficer.com",
+            "calendar_link": "https://caio.cx/ai-exec-briefing-call"
         }
-    
+
     def _select_template(self, lead: Dict[str, Any]) -> str:
-        """Select appropriate template based on lead source."""
+        """Select appropriate template based on lead ICP tier and source."""
         source_type = lead.get("source_type", "")
         recommended = lead.get("recommended_campaign", "")
-        
-        # Use recommended campaign if available
+
+        # Use recommended campaign if it matches a valid template
         if recommended and recommended in self.TEMPLATES:
             return recommended
-        
-        # Map source type to template
-        source_to_template = {
-            "competitor_follower": "competitor_displacement",
-            "event_attendee": "event_followup",
-            "post_commenter": "thought_leadership",
-            "group_member": "community_outreach",
-            "post_liker": "competitor_displacement",
-            "website_visitor": "website_visitor"
+
+        # Website visitors keep their template
+        if source_type == "website_visitor":
+            return "t1_value_first"
+
+        # Hiring trigger detection
+        if lead.get("hiring_signal"):
+            return "t1_hiring_trigger"
+
+        # Route by ICP tier
+        tier = lead.get("icp_tier", "tier_3")
+        TIER_TEMPLATES = {
+            "tier_1": ["t1_executive_buyin", "t1_industry_specific", "t1_value_first"],
+            "tier_2": ["t2_tech_stack", "t2_ops_efficiency", "t2_innovation_champion"],
+            "tier_3": ["t3_quick_win", "t3_time_savings", "t3_competitor_fomo", "t3_diy_resource"],
         }
-        
-        return source_to_template.get(source_type, "competitor_displacement")
-    
+        templates = TIER_TEMPLATES.get(tier, TIER_TEMPLATES["tier_3"])
+        idx = hash(lead.get("email", "")) % len(templates)
+        return templates[idx]
+
     def _render_template(self, template_str: str, variables: Dict[str, Any]) -> str:
         """Render a Jinja2 template with variables."""
         try:
@@ -317,7 +572,7 @@ P.S. - Feel free to connect on LinkedIn anytime. No pitch, just good conversatio
         except Exception as e:
             console.print(f"[yellow]Template rendering warning: {e}[/yellow]")
             return template_str
-    
+
     def _build_template_variables(self, lead: Dict[str, Any]) -> Dict[str, Any]:
         """Build template variables from lead data."""
         return {
@@ -327,7 +582,8 @@ P.S. - Feel free to connect on LinkedIn anytime. No pitch, just good conversatio
                 "name": lead.get("name", ""),
                 "title": lead.get("title", ""),
                 "company": lead.get("company", "your company"),
-                "location": lead.get("location", "")
+                "location": lead.get("location", ""),
+                "industry": lead.get("industry", lead.get("company", {}).get("industry", "") if isinstance(lead.get("company"), dict) else ""),
             },
             "source": {
                 "type": lead.get("source_type", ""),
@@ -343,8 +599,10 @@ P.S. - Feel free to connect on LinkedIn anytime. No pitch, just good conversatio
                 "competitor": lead.get("source_name", "competitors"),
                 "topics": lead.get("personalization_hooks", []),
                 "pain_points": [],
-                "angle": lead.get("recommended_campaign", "")
+                "angle": lead.get("recommended_campaign", ""),
+                "original_subject": lead.get("original_subject", "my earlier note"),
             },
+            "original_subject": lead.get("original_subject", "my earlier note"),
             "company": {
                 "size": lead.get("company_size", 0),
                 "industry": lead.get("industry", ""),
@@ -352,7 +610,7 @@ P.S. - Feel free to connect on LinkedIn anytime. No pitch, just good conversatio
             },
             "sender": self.sender_info
         }
-    
+
     def craft_cadence_followup(
         self,
         action_type: str,
@@ -391,18 +649,18 @@ P.S. - Feel free to connect on LinkedIn anytime. No pitch, just good conversatio
 
     def generate_email(self, lead: Dict[str, Any], template_name: str = None) -> Dict[str, Any]:
         """Generate a personalized email for a single lead."""
-        
+
         if not template_name:
             template_name = self._select_template(lead)
-        
-        template = self.TEMPLATES.get(template_name, self.TEMPLATES["competitor_displacement"])
+
+        template = self.TEMPLATES.get(template_name, self.TEMPLATES["t1_executive_buyin"])
         variables = self._build_template_variables(lead)
-        
+
         # Render both A/B variants
         subject_a = self._render_template(template["subject_a"], variables)
         subject_b = self._render_template(template["subject_b"], variables)
         body = self._render_template(template["body"], variables)
-        
+
         return {
             "lead_id": lead.get("lead_id", ""),
             "email": lead.get("email", ""),
@@ -412,18 +670,18 @@ P.S. - Feel free to connect on LinkedIn anytime. No pitch, just good conversatio
             "body": body,
             "personalization_level": 3 if lead.get("icp_tier") == "tier_1" else 2
         }
-    
+
     def generate_sequence(self, lead: Dict[str, Any], template_name: str = None) -> List[EmailStep]:
         """Generate a full email sequence for a lead."""
-        
+
         if not template_name:
             template_name = self._select_template(lead)
-        
-        template = self.TEMPLATES.get(template_name, self.TEMPLATES["competitor_displacement"])
+
+        template = self.TEMPLATES.get(template_name, self.TEMPLATES["t1_executive_buyin"])
         variables = self._build_template_variables(lead)
-        
+
         sequence = []
-        
+
         # Step 1: Initial email
         sequence.append(EmailStep(
             step=1,
@@ -435,7 +693,7 @@ P.S. - Feel free to connect on LinkedIn anytime. No pitch, just good conversatio
             body_b=self._render_template(template["body"], variables),
             personalization_level=3
         ))
-        
+
         # Follow-up steps
         for i, followup in enumerate(self.FOLLOWUP_TEMPLATES, start=2):
             sequence.append(EmailStep(
@@ -448,32 +706,32 @@ P.S. - Feel free to connect on LinkedIn anytime. No pitch, just good conversatio
                 body_b=self._render_template(followup["body"], variables),
                 personalization_level=2
             ))
-        
+
         return sequence
-    
+
     def create_campaign(
-        self, 
-        leads: List[Dict[str, Any]], 
+        self,
+        leads: List[Dict[str, Any]],
         segment: str,
         campaign_type: str = None
     ) -> Campaign:
         """Create a full campaign from a list of leads."""
         if not leads:
             return None
-        
+
         # Calculate campaign metadata
         avg_icp_score = sum(l.get("icp_score", 0) for l in leads) / len(leads)
         avg_intent_score = sum(l.get("intent", {}).get("score", 0) for l in leads) / len(leads)
-        
+
         # Determine campaign type if not provided
         if not campaign_type:
-            campaign_type = "competitor_displacement" if any(l.get("competitor") for l in leads) else "standard_outreach"
-            
+            campaign_type = "t1_executive_buyin"
+
         print(f"Creating {campaign_type} campaign for {len(leads)} leads (Segment: {segment})")
-        
+
         processed_leads = []
         skipped_leads = []
-        
+
         with Progress(
             SpinnerColumn(),
             TextColumn("[progress.description]{task.description}"),
@@ -481,14 +739,14 @@ P.S. - Feel free to connect on LinkedIn anytime. No pitch, just good conversatio
             console=console
         ) as progress:
             task = progress.add_task("[cyan]Generating emails...", total=len(leads))
-            
+
             for lead in leads:
                 # Validation: Check critical fields
                 critical_missing = []
                 if not lead.get("email"): critical_missing.append("email")
                 if not lead.get("first_name"): critical_missing.append("first_name")
                 if not lead.get("company_name") and not lead.get("company"): critical_missing.append("company")
-                
+
                 if critical_missing:
                     reason = f"Missing critical fields: {', '.join(critical_missing)}"
                     skipped_leads.append({"email": lead.get("email", "unknown"), "reason": reason})
@@ -500,12 +758,12 @@ P.S. - Feel free to connect on LinkedIn anytime. No pitch, just good conversatio
                 if sequence:
                     lead["sequence"] = sequence
                     processed_leads.append(lead)
-                
+
                 progress.advance(task)
-        
+
         if skipped_leads:
-            print(f"⚠️ Skipped {len(skipped_leads)} leads due to missing data.")
-            
+            print(f"Skipped {len(skipped_leads)} leads due to missing data.")
+
         return Campaign(
             campaign_id=f"camp_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
             name=f"{segment.title()} Campaign - {datetime.now().strftime('%B %d')}",
@@ -523,82 +781,82 @@ P.S. - Feel free to connect on LinkedIn anytime. No pitch, just good conversatio
                 "skipped_reasons": skipped_leads
             }
         )
-    
+
     def process_segmented_file(self, input_file: Path, segment_filter: str = None) -> List[Campaign]:
         """
         Process a segmented leads file and create campaigns.
-        
+
         Implements Dumb Zone protection via Frequent Intentional Compaction (FIC).
         Large batches are automatically processed in chunks to keep context <40%.
         """
-        
-        console.print(f"\n[bold blue]✍️ CRAFTER: Generating campaigns[/bold blue]")
-        
+
+        console.print(f"\n[bold blue]CRAFTER: Generating campaigns[/bold blue]")
+
         with open(input_file) as f:
             data = json.load(f)
-        
+
         leads = data.get("leads", [])
-        
+
         if segment_filter:
             leads = [l for l in leads if segment_filter in l.get("segment_tags", [])]
-        
+
         # === DUMB ZONE PROTECTION ===
         # Check context zone before processing
         token_estimate = estimate_tokens(leads)
         context_zone = get_context_zone(token_estimate)
-        
+
         if context_zone == ContextZone.SMART:
             console.print(f"[dim]Context zone: SMART ({token_estimate:,} tokens) - optimal processing[/dim]")
         elif context_zone == ContextZone.CAUTION:
-            console.print(f"[yellow]⚠️ Context zone: CAUTION ({token_estimate:,} tokens) - enabling batch mode[/yellow]")
+            console.print(f"[yellow]Context zone: CAUTION ({token_estimate:,} tokens) - enabling batch mode[/yellow]")
         elif context_zone in [ContextZone.DUMB, ContextZone.CRITICAL]:
-            console.print(f"[red]🚨 Context zone: {context_zone.value.upper()} ({token_estimate:,} tokens)[/red]")
+            console.print(f"[red]Context zone: {context_zone.value.upper()} ({token_estimate:,} tokens)[/red]")
             console.print(f"[yellow]   Large batch detected. Compacting and batching to stay in Smart Zone.[/yellow]")
-            
+
             # Compact the lead batch for overview
             compacted = compact_lead_batch(leads, max_leads=20)
             if compacted['compacted']:
                 console.print(f"[dim]   Compacted {compacted['total_count']} leads to {compacted['sample_count']} for analysis[/dim]")
                 console.print(f"[dim]   Tier distribution: {compacted['tier_distribution']}[/dim]")
-        
+
         # Group leads by tier and campaign type
         groups = {}
         for lead in leads:
             tier = lead.get("icp_tier", "tier_4")
-            campaign_type = lead.get("recommended_campaign", "competitor_displacement")
+            campaign_type = lead.get("recommended_campaign", "t1_executive_buyin")
             key = f"{tier}_{campaign_type}"
-            
+
             if key not in groups:
                 groups[key] = []
             groups[key].append(lead)
-        
+
         campaigns = []
         failed_segments = []
-        
+
         with Progress() as progress:
             task = progress.add_task("Creating campaigns...", total=len(groups))
-            
+
             for segment, segment_leads in groups.items():
                 if "disqualified" in segment:
                     progress.update(task, advance=1)
                     continue
-                
+
                 try:
-                    campaign_type = segment.split("_", 1)[1] if "_" in segment else "competitor_displacement"
-                    
+                    campaign_type = segment.split("_", 1)[1] if "_" in segment else "t1_executive_buyin"
+
                     # === BATCH PROCESSING FOR DUMB ZONE PROTECTION ===
                     # If segment is large, process in batches to stay in Smart Zone
                     if len(segment_leads) > SMART_ZONE_BATCH_SIZE:
                         console.print(f"[dim]   Batching {len(segment_leads)} leads in {segment} (batch size: {SMART_ZONE_BATCH_SIZE})[/dim]")
-                        
+
                         for batch_idx in range(0, len(segment_leads), SMART_ZONE_BATCH_SIZE):
                             batch = segment_leads[batch_idx:batch_idx + SMART_ZONE_BATCH_SIZE]
                             batch_num = batch_idx // SMART_ZONE_BATCH_SIZE + 1
                             batch_segment = f"{segment}_batch{batch_num}"
-                            
+
                             campaign = self.create_campaign(batch, batch_segment, campaign_type)
                             campaigns.append(campaign)
-                            
+
                             log_event(EventType.CAMPAIGN_CREATED, {
                                 "campaign_id": campaign.campaign_id,
                                 "campaign_name": campaign.name,
@@ -612,7 +870,7 @@ P.S. - Feel free to connect on LinkedIn anytime. No pitch, just good conversatio
                         # Normal processing for smaller segments
                         campaign = self.create_campaign(segment_leads, segment, campaign_type)
                         campaigns.append(campaign)
-                        
+
                         log_event(EventType.CAMPAIGN_CREATED, {
                             "campaign_id": campaign.campaign_id,
                             "campaign_name": campaign.name,
@@ -620,7 +878,7 @@ P.S. - Feel free to connect on LinkedIn anytime. No pitch, just good conversatio
                             "segment": segment,
                             "campaign_type": campaign_type
                         })
-                        
+
                 except Exception as e:
                     failed_segments.append(segment)
                     schedule_retry(
@@ -635,37 +893,37 @@ P.S. - Feel free to connect on LinkedIn anytime. No pitch, just good conversatio
                         metadata={"segment": segment}
                     )
                     console.print(f"[yellow]Failed to create campaign for {segment}: {e}[/yellow]")
-                
+
                 progress.update(task, advance=1)
-        
+
         if failed_segments:
             send_warning(
                 "Campaign Creation Partially Failed",
                 f"{len(failed_segments)} campaign segments failed and have been queued for retry.",
                 {"failed_segments": failed_segments, "success_count": len(campaigns)}
             )
-        
-        console.print(f"[green]✅ Created {len(campaigns)} campaigns[/green]")
-        
+
+        console.print(f"[green]Created {len(campaigns)} campaigns[/green]")
+
         return campaigns
-    
+
     def save_campaigns(self, campaigns: List[Campaign], output_dir: Optional[Path] = None) -> Path:
         """Save campaigns to JSON file."""
-        
+
         if output_dir is None:
             output_dir = Path(__file__).parent.parent / ".hive-mind" / "campaigns"
-        
+
         output_dir.mkdir(parents=True, exist_ok=True)
-        
+
         timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
         filename = f"campaigns_{timestamp}.json"
         output_path = output_dir / filename
-        
+
         campaigns_data = [asdict(c) for c in campaigns]
-        
+
         # Calculate totals
         total_leads = sum(c.lead_count for c in campaigns)
-        
+
         with open(output_path, "w") as f:
             json.dump({
                 "created_at": datetime.now(timezone.utc).isoformat(),
@@ -674,21 +932,21 @@ P.S. - Feel free to connect on LinkedIn anytime. No pitch, just good conversatio
                 "status": "pending_review",
                 "campaigns": campaigns_data
             }, f, indent=2)
-        
-        console.print(f"[green]✅ Saved campaigns to {output_path}[/green]")
-        
+
+        console.print(f"[green]Saved campaigns to {output_path}[/green]")
+
         return output_path
-    
+
     def print_summary(self, campaigns: List[Campaign]):
         """Print campaign summary."""
-        
+
         table = Table(title="Campaign Summary")
         table.add_column("Campaign", style="cyan")
         table.add_column("Type", style="green")
         table.add_column("Leads", style="yellow")
         table.add_column("Avg ICP", style="magenta")
         table.add_column("Status", style="blue")
-        
+
         for campaign in campaigns:
             table.add_row(
                 campaign.name[:40],
@@ -697,9 +955,9 @@ P.S. - Feel free to connect on LinkedIn anytime. No pitch, just good conversatio
                 f"{campaign.avg_icp_score:.0f}",
                 campaign.status
             )
-        
+
         console.print(table)
-        
+
         total_leads = sum(c.lead_count for c in campaigns)
         console.print(f"\n[bold]Total: {len(campaigns)} campaigns, {total_leads} leads[/bold]")
 
@@ -710,9 +968,9 @@ def main():
     parser.add_argument("--segment", help="Filter by segment tag")
     parser.add_argument("--template", choices=list(CampaignCrafter.TEMPLATES.keys()),
                         help="Force specific template")
-    
+
     args = parser.parse_args()
-    
+
     if not args.input:
         # Find latest segmented file
         segmented_dir = Path(__file__).parent.parent / ".hive-mind" / "segmented"
@@ -720,27 +978,27 @@ def main():
             files = sorted(segmented_dir.glob("*.json"), reverse=True)
             if files:
                 args.input = files[0]
-    
+
     if not args.input or not args.input.exists():
         console.print("[red]No input file specified and no segmented files found.[/red]")
         console.print("Run: python execution/segmentor_classify.py first")
         sys.exit(1)
-    
+
     try:
         crafter = CampaignCrafter()
         campaigns = crafter.process_segmented_file(args.input, args.segment)
-        
+
         if campaigns:
             crafter.print_summary(campaigns)
             output_path = crafter.save_campaigns(campaigns)
-            
-            console.print(f"\n[bold green]✅ Campaign generation complete![/bold green]")
+
+            console.print(f"\n[bold green]Campaign generation complete![/bold green]")
             console.print(f"Campaigns are [yellow]pending_review[/yellow]")
             console.print(f"\nNext step: Submit for AE review via GATEKEEPER")
             console.print(f"  python execution/gatekeeper_queue.py --input {output_path}")
-            
+
     except Exception as e:
-        console.print(f"[red]❌ Campaign generation failed: {e}[/red]")
+        console.print(f"[red]Campaign generation failed: {e}[/red]")
         import traceback
         traceback.print_exc()
         sys.exit(1)

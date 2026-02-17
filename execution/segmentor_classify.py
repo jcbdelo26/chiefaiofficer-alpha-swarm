@@ -91,11 +91,11 @@ console = Console()
 
 
 class ICPTier(Enum):
-    """ICP tier classification based on score thresholds."""
-    TIER_1 = "tier_1"  # >= 80
-    TIER_2 = "tier_2"  # >= 60
-    TIER_3 = "tier_3"  # >= 40
-    TIER_4 = "tier_4"  # < 40
+    """ICP tier classification based on score thresholds (with HoS multipliers)."""
+    TIER_1 = "tier_1"  # >= 80 (C-Suite at agencies/consulting: 65 base x 1.5 = 97)
+    TIER_2 = "tier_2"  # >= 60 (VP at SaaS/IT: 57 base x 1.2 = 68)
+    TIER_3 = "tier_3"  # >= 40 (Directors at manufacturing: 55 base x 1.0 = 55)
+    TIER_4 = "tier_4"  # < 40 (low-fit leads)
 
 
 class SourceType(Enum):
@@ -155,32 +155,53 @@ class SegmentedLead:
 
 class LeadSegmentor:
     """
-    Classify and score leads according to ICP criteria.
-    
-    Scoring breakdown (100 points max):
+    Classify and score leads according to HoS-defined ICP criteria.
+
+    Scoring breakdown (100 points max, before multiplier):
     - Company size: 20 points (51-500 employees = highest)
-    - Title seniority: 25 points (VP/C-level = highest)
-    - Industry fit: 20 points (B2B SaaS/Technology = highest)
+    - Title seniority: 25 points (C-level/Founder = highest)
+    - Industry fit: 20 points (Agency/Consulting/Law = Tier 1 highest)
     - Technology stack: 15 points (using CRM = positive signal)
     - Intent signals: 20 points (website visits, content downloads)
-    
-    Tier thresholds:
+
+    HoS Multipliers: 1.5x (C-Suite+T1), 1.3x (C-Suite), 1.2x (VP+T2), 1.1x (VP)
+
+    Tier thresholds (with multiplier applied):
     - tier_1: ICP score >= 80
     - tier_2: ICP score >= 60
     - tier_3: ICP score >= 40
     - tier_4: ICP score < 40
     """
     
-    # Title keywords for scoring (seniority tiers)
-    C_LEVEL_TITLES = ['ceo', 'cfo', 'coo', 'cto', 'cmo', 'cro', 'chief', 'founder', 'co-founder']
-    VP_TITLES = ['vp', 'vice president', 'svp', 'evp', 'head of']
-    DIRECTOR_TITLES = ['director', 'sr director', 'senior director']
+    # HoS Tier 1 titles (C-Suite / Founders — multiplier 1.5x)
+    C_LEVEL_TITLES = ['ceo', 'founder', 'co-founder', 'president', 'coo', 'owner', 'managing partner']
+    # HoS Tier 2 titles (Strategic Influencers — multiplier 1.2x)
+    VP_TITLES = ['cto', 'cio', 'cso', 'chief of staff', 'vp of operations', 'vp of strategy',
+                 'head of innovation', 'head of transformation', 'head of digital',
+                 'managing director', 'chief', 'vp', 'vice president', 'svp', 'evp',
+                 'cfo', 'cmo', 'cro']
+    # HoS Tier 3 titles (Secondary Contacts — multiplier 1.0x)
+    DIRECTOR_TITLES = ['director of operations', 'director of it', 'director of strategy',
+                       'vp engineering', 'vp of technology', 'head of ai', 'head of data',
+                       'director', 'sr director', 'senior director']
     MANAGER_TITLES = ['manager', 'lead', 'senior manager', 'principal']
     
-    # Industry keywords (fit tiers)
-    TIER1_INDUSTRIES = ['saas', 'software as a service', 'b2b software', 'enterprise software']
-    TIER2_INDUSTRIES = ['technology', 'tech', 'information technology', 'it services']
-    TIER3_INDUSTRIES = ['professional services', 'consulting', 'fintech', 'healthtech']
+    # HoS Tier 1 industries (Agencies, Staffing, Consulting, Law, Real Estate, E-commerce)
+    TIER1_INDUSTRIES = ['marketing', 'advertising', 'agency', 'media agency', 'creative agency',
+                        'recruitment', 'staffing', 'talent', 'hr services',
+                        'consulting', 'management consulting', 'strategy consulting',
+                        'law', 'legal', 'attorney', 'cpa', 'accounting', 'tax',
+                        'real estate', 'brokerage', 'property management', 'commercial real estate',
+                        'e-commerce', 'ecommerce', 'dtc', 'direct to consumer', 'retail tech']
+    # HoS Tier 2 industries (B2B SaaS, IT Services, Healthcare, Financial Services)
+    TIER2_INDUSTRIES = ['saas', 'software', 'technology', 'tech', 'information technology',
+                        'it services', 'managed services', 'cloud', 'b2b software',
+                        'healthcare', 'medical', 'health tech', 'healthtech', 'biotech',
+                        'financial services', 'insurance', 'fintech', 'banking', 'wealth management']
+    # HoS Tier 3 industries (Manufacturing, Logistics, Construction, Home Services)
+    TIER3_INDUSTRIES = ['manufacturing', 'logistics', 'supply chain', 'distribution', 'warehousing',
+                        'construction', 'home services', 'field services', 'trades',
+                        'professional services', 'engineering services']
     
     # Technology stack signals (CRM/sales tools = positive)
     CRM_TECHNOLOGIES = ['salesforce', 'hubspot', 'pipedrive', 'zoho crm', 'dynamics 365', 'freshsales']
@@ -189,7 +210,7 @@ class LeadSegmentor:
     
     # Tier thresholds (adjustable via self-annealing)
     DEFAULT_TIER_THRESHOLDS = {
-        'tier_1': 80,
+        'tier_1': 80,  # With HoS multipliers (1.5x C-Suite, 1.2x VP), effective reach is lower
         'tier_2': 60,
         'tier_3': 40,
     }
@@ -227,15 +248,22 @@ class LeadSegmentor:
     
     def calculate_icp_score(self, lead: Dict[str, Any]) -> Tuple[int, Dict[str, int], Optional[str]]:
         """
-        Calculate ICP score based on comprehensive criteria.
-        
-        Scoring breakdown (100 points max):
+        Calculate ICP score based on HoS-defined criteria.
+
+        Scoring breakdown (100 points max, before multiplier):
         - Company size: 20 points (51-500 employees = highest)
-        - Title seniority: 25 points (VP/C-level = highest)
-        - Industry fit: 20 points (B2B SaaS/Technology = highest)
+        - Title seniority: 25 points (C-level/Founder = highest)
+        - Industry fit: 20 points (Agency/Consulting/Law = Tier 1 highest)
         - Technology stack: 15 points (using CRM = positive signal)
         - Intent signals: 20 points (website visits, content downloads)
-        
+
+        HoS Multipliers (applied after base score):
+        - C-Suite + Tier 1 industry: 1.5x
+        - C-Suite + other industry: 1.3x
+        - VP-level + Tier 2 industry: 1.2x
+        - VP-level + other industry: 1.1x
+        - All others: 1.0x
+
         Returns: (score, breakdown, disqualification_reason, scoring_reasons)
         """
         score = 0
@@ -425,6 +453,39 @@ class LeadSegmentor:
             score += 3
             breakdown["engagement_bonus"] = 3
             reasons.append("+3: Social engagement bonus (competitor follower — displacement opportunity)")
+
+        # === HoS SCORE MULTIPLIER (by title tier + industry fit) ===
+        title = (lead.get("title") or "").lower()
+        industry = (lead.get("company", {}).get("industry") or "").lower()
+        multiplier = 1.0
+        multiplier_reason = ""
+
+        # C-Suite/Founder at Tier 1 industry → 1.5x
+        if any(kw in title for kw in self.C_LEVEL_TITLES):
+            if any(kw in industry for kw in self.TIER1_INDUSTRIES):
+                multiplier = 1.5
+                multiplier_reason = "1.5x (C-Suite + Tier 1 industry)"
+            else:
+                multiplier = 1.3
+                multiplier_reason = "1.3x (C-Suite, non-Tier-1 industry)"
+        # VP-level at Tier 1 industry → 1.3x (strong combo: decision influencer at ideal industry)
+        # VP-level at Tier 2 industry → 1.2x
+        elif any(kw in title for kw in self.VP_TITLES):
+            if any(kw in industry for kw in self.TIER1_INDUSTRIES):
+                multiplier = 1.3
+                multiplier_reason = "1.3x (VP-level + Tier 1 industry)"
+            elif any(kw in industry for kw in self.TIER2_INDUSTRIES):
+                multiplier = 1.2
+                multiplier_reason = "1.2x (VP-level + Tier 2 industry)"
+            else:
+                multiplier = 1.1
+                multiplier_reason = "1.1x (VP-level, non-target industry)"
+
+        if multiplier > 1.0:
+            pre_multiplier = score
+            score = int(score * multiplier)
+            breakdown["multiplier"] = multiplier
+            reasons.append(f"x{multiplier}: HoS multiplier {multiplier_reason} ({pre_multiplier} -> {score})")
 
         final_score = min(score, 100)
         reasons.append(f"= {final_score}/100 total ICP score")

@@ -190,6 +190,30 @@ class InstantlyDispatcher:
         return self._client
 
     # -------------------------------------------------------------------------
+    # Deliverability guards
+    # -------------------------------------------------------------------------
+
+    def _get_excluded_domains(self) -> set:
+        """Load excluded recipient domains from config (competitors + own domains)."""
+        domains = self.config.get("guardrails", {}).get("deliverability", {}).get(
+            "excluded_recipient_domains", []
+        )
+        return {d.lower().strip() for d in domains if d}
+
+    def _get_max_leads_per_domain(self) -> int:
+        """Max leads from the same recipient domain in a single dispatch batch."""
+        return self.config.get("guardrails", {}).get("deliverability", {}).get(
+            "max_leads_per_domain_per_batch", 3
+        )
+
+    @staticmethod
+    def _validate_email_format(email: str) -> bool:
+        """RFC 5322 simplified email format check."""
+        import re
+        pattern = r'^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$'
+        return bool(re.match(pattern, email))
+
+    # -------------------------------------------------------------------------
     # Shadow email loading
     # -------------------------------------------------------------------------
 
@@ -198,7 +222,7 @@ class InstantlyDispatcher:
         tier_filter: Optional[str] = None,
         approved_shadow_email_ids: Optional[List[str]] = None,
     ) -> List[Dict[str, Any]]:
-        """Load approved, not-yet-dispatched shadow emails."""
+        """Load approved, not-yet-dispatched shadow emails with deliverability guards."""
         approved: List[Dict[str, Any]] = []
         scope_enforced = approved_shadow_email_ids is not None
         approved_scope = {
@@ -209,6 +233,25 @@ class InstantlyDispatcher:
 
         if not self.shadow_dir.exists():
             return approved
+
+        # Deliverability guards from config
+        excluded_domains = self._get_excluded_domains()
+        excluded_emails = {
+            e.lower().strip()
+            for e in self.config.get("guardrails", {}).get("deliverability", {}).get(
+                "excluded_recipient_emails", []
+            )
+            if e
+        }
+        max_per_domain = self._get_max_leads_per_domain()
+        require_valid_format = self.config.get("guardrails", {}).get(
+            "deliverability", {}
+        ).get("require_valid_email_format", True)
+        domain_counts: Dict[str, int] = {}
+        rejected_excluded = 0
+        rejected_email_exclusion = 0
+        rejected_concentration = 0
+        rejected_format = 0
 
         for email_file in sorted(self.shadow_dir.glob("*.json")):
             try:
@@ -233,11 +276,62 @@ class InstantlyDispatcher:
                 if tier_filter and data.get("tier") != tier_filter:
                     continue
 
+                to_email = (data.get("to") or "").strip().lower()
+
+                # Guard 1: Email format validation
+                if require_valid_format and not self._validate_email_format(to_email):
+                    rejected_format += 1
+                    logger.warning(
+                        "REJECTED (bad format): %s in %s", to_email, email_file.name
+                    )
+                    continue
+
+                # Guard 2: Excluded domain check (competitors + own domains + customers)
+                email_domain = to_email.split("@")[-1] if "@" in to_email else ""
+                if email_domain in excluded_domains:
+                    rejected_excluded += 1
+                    logger.warning(
+                        "REJECTED (excluded domain): %s -> %s in %s",
+                        to_email, email_domain, email_file.name,
+                    )
+                    continue
+
+                # Guard 4: Individual email exclusion (customer contacts from HoS 1.4)
+                if to_email in excluded_emails:
+                    rejected_email_exclusion += 1
+                    logger.warning(
+                        "REJECTED (excluded email): %s in %s",
+                        to_email, email_file.name,
+                    )
+                    continue
+
+                # Guard 3: Domain concentration cap
+                domain_counts[email_domain] = domain_counts.get(email_domain, 0) + 1
+                if domain_counts[email_domain] > max_per_domain:
+                    rejected_concentration += 1
+                    logger.warning(
+                        "REJECTED (domain concentration %d/%d): %s in %s",
+                        domain_counts[email_domain], max_per_domain,
+                        to_email, email_file.name,
+                    )
+                    continue
+
                 data["_file_path"] = str(email_file)
                 data["_shadow_email_id"] = shadow_email_id
                 approved.append(data)
             except Exception as e:
                 logger.warning("Failed to read %s: %s", email_file.name, e)
+
+        # Log deliverability guard summary
+        total_rejected = rejected_excluded + rejected_email_exclusion + rejected_concentration + rejected_format
+        if total_rejected > 0:
+            console.print(
+                f"[yellow]Deliverability guards rejected {total_rejected} leads: "
+                f"{rejected_excluded} excluded domain, "
+                f"{rejected_email_exclusion} excluded email, "
+                f"{rejected_concentration} domain concentration, "
+                f"{rejected_format} bad format[/yellow]"
+            )
 
         return approved
 
@@ -532,6 +626,7 @@ class InstantlyDispatcher:
 
                     if not add_result.get("success"):
                         # Rollback: delete orphaned empty campaign
+                        error_detail = add_result.get("errors") or add_result.get("error") or "unknown"
                         logger.error(
                             "Lead add failed for %s — deleting orphaned campaign %s",
                             campaign_name, campaign_id,
@@ -541,10 +636,10 @@ class InstantlyDispatcher:
                         except Exception as del_err:
                             logger.error("Orphan cleanup also failed: %s", del_err)
                         raise Exception(
-                            f"Lead add failed (campaign rolled back): {add_result.get('error')}"
+                            f"Lead add failed (campaign rolled back): {error_detail}"
                         )
 
-                    dispatch_result.leads_added = len(leads)
+                    dispatch_result.leads_added = add_result.get("added", len(leads))
                     dispatch_result.status = "dispatched"
                     report.total_dispatched += len(leads)
 

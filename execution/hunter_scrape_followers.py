@@ -114,51 +114,68 @@ class LinkedInFollowerScraper:
     3. If neither available -> raise ScraperUnavailableError (pipeline uses test data)
     """
 
-    # Pre-defined competitors / target companies
-    # Mid-market SaaS (51-500 employees) score highest on company_size for tier_1
-    COMPETITORS = {
-        "gong": {
-            "url": "https://linkedin.com/company/gabordi",
-            "name": "Gong"
+    # Target companies for lead discovery via Apollo People Search.
+    # Aligned to HoS ICP Tier 1: Agencies, Staffing, Consulting, Law/CPA, Real Estate, E-commerce.
+    # Mid-market (51-500 employees) score highest on company_size.
+    # "domain" is used by Apollo q_organization_domains for precise matching
+    # (q_organization_name alone does fuzzy matching → wrong companies).
+    # DO NOT add competitors or customer domains here — they're excluded
+    # at dispatch time (see config/production.json guardrails.deliverability).
+    TARGET_COMPANIES = {
+        # --- Marketing / Advertising Agencies (HoS Tier 1) ---
+        "wpromote": {
+            "url": "https://linkedin.com/company/wpromote",
+            "name": "Wpromote",
+            "domain": "wpromote.com"
         },
-        "clari": {
-            "url": "https://linkedin.com/company/clari",
-            "name": "Clari"
+        "tinuiti": {
+            "url": "https://linkedin.com/company/tinuiti",
+            "name": "Tinuiti",
+            "domain": "tinuiti.com"
         },
-        "chorus": {
-            "url": "https://linkedin.com/company/chorus-ai",
-            "name": "Chorus.ai"
+        "power-digital": {
+            "url": "https://linkedin.com/company/power-digital-marketing",
+            "name": "Power Digital Marketing",
+            "domain": "powerdigitalmarketing.com"
         },
-        "people.ai": {
-            "url": "https://linkedin.com/company/people-ai",
-            "name": "People.ai"
+        # --- Recruitment / Staffing (HoS Tier 1) ---
+        "insight-global": {
+            "url": "https://linkedin.com/company/insight-global",
+            "name": "Insight Global",
+            "domain": "insightglobal.com"
         },
-        "outreach": {
-            "url": "https://linkedin.com/company/outabordi",
-            "name": "Outreach"
+        "kforce": {
+            "url": "https://linkedin.com/company/kforce-inc",
+            "name": "Kforce",
+            "domain": "kforce.com"
         },
-        # Mid-market targets (tier_1 eligible: 51-500 employees + SaaS)
-        "regie.ai": {
-            "url": "https://linkedin.com/company/regieai",
-            "name": "Regie.ai"
+        # --- Consulting (HoS Tier 1) ---
+        "slalom": {
+            "url": "https://linkedin.com/company/slalom-consulting",
+            "name": "Slalom",
+            "domain": "slalom.com"
         },
-        "lavender": {
-            "url": "https://linkedin.com/company/lavabordi",
-            "name": "Lavender"
+        "west-monroe": {
+            "url": "https://linkedin.com/company/west-monroe-partners",
+            "name": "West Monroe",
+            "domain": "westmonroe.com"
         },
-        "orum": {
-            "url": "https://linkedin.com/company/abordi",
-            "name": "Orum"
+        # --- E-commerce / DTC (HoS Tier 1) ---
+        "shipbob": {
+            "url": "https://linkedin.com/company/shipbob",
+            "name": "ShipBob",
+            "domain": "shipbob.com"
         },
-        "seamless.ai": {
-            "url": "https://linkedin.com/company/seamlessai",
-            "name": "Seamless.AI"
-        },
-        "apollo.io": {
-            "url": "https://linkedin.com/company/apolloio",
-            "name": "Apollo.io"
+        # --- B2B SaaS (HoS Tier 2 — kept for testing) ---
+        "chili-piper": {
+            "url": "https://linkedin.com/company/chili-piper",
+            "name": "Chili Piper",
+            "domain": "chilipiper.com"
         },
     }
+
+    # Backward compat alias
+    COMPETITORS = TARGET_COMPANIES
 
     def __init__(self):
         self.cookie = os.getenv("LINKEDIN_COOKIE")
@@ -278,7 +295,7 @@ class LinkedInFollowerScraper:
         stop=stop_after_attempt(MAX_RETRY_ATTEMPTS),
         wait=wait_exponential(multiplier=1, min=2, max=RETRY_MAX_WAIT_SECONDS)
     )
-    def fetch_followers(self, company_url: str, company_name: str, limit: int = 100) -> List[ScrapedLead]:
+    def fetch_followers(self, company_url: str, company_name: str, limit: int = 100, company_domain: str = "") -> List[ScrapedLead]:
         """
         Discover ICP-matching leads at a target company.
 
@@ -286,6 +303,7 @@ class LinkedInFollowerScraper:
             company_url: LinkedIn company URL (kept for backward compat, unused by Apollo)
             company_name: Company name for Apollo search
             limit: Max leads to return
+            company_domain: Company domain for precise Apollo matching (e.g. "chilipiper.com")
 
         Routes to the best available provider:
         1. Apollo.io People Search + Match -- if APOLLO_API_KEY set
@@ -299,7 +317,7 @@ class LinkedInFollowerScraper:
         # If API fallback is active, use Apollo API instead of cookie scraping
         if self._use_api_fallback:
             if self.apollo_key:
-                return self._fetch_via_apollo(company_name, limit)
+                return self._fetch_via_apollo(company_name, limit, company_domain=company_domain)
 
         # Cookie-based LinkedIn Voyager scraping (scaffold)
         console.print(f"[dim]Cookie-based scrape of {company_name} (scaffold -- returns 0 leads)[/dim]")
@@ -308,7 +326,7 @@ class LinkedInFollowerScraper:
             "Pipeline will use test data fallback."
         )
 
-    def _fetch_via_apollo(self, company_name: str, limit: int) -> List[ScrapedLead]:
+    def _fetch_via_apollo(self, company_name: str, limit: int, company_domain: str = "") -> List[ScrapedLead]:
         """Fetch leads via Apollo.io two-step flow: Search (free) -> Match (1 credit/lead).
 
         Step 1: api_search returns anonymized results with Apollo person IDs,
@@ -318,7 +336,8 @@ class LinkedInFollowerScraper:
         """
         import requests
 
-        console.print(f"[dim]Apollo.io: searching people at {company_name}...[/dim]")
+        domain_hint = f" (domain: {company_domain})" if company_domain else ""
+        console.print(f"[dim]Apollo.io: searching people at {company_name}{domain_hint}...[/dim]")
 
         headers = {
             "x-api-key": self.apollo_key,
@@ -326,8 +345,9 @@ class LinkedInFollowerScraper:
         }
 
         # Step 1: Free search — find ICP-matching people at target company
+        # Use q_organization_domains for precise matching when domain is known,
+        # q_organization_name alone does fuzzy matching (e.g. "drift" → "Driftwood Capital")
         search_payload = {
-            "q_organization_name": company_name,
             "per_page": min(limit, 25),
             "person_seniorities": ["vp", "c_suite", "director"],
             "person_titles": [
@@ -336,6 +356,10 @@ class LinkedInFollowerScraper:
                 "VP Marketing", "CMO", "Head of Growth",
             ],
         }
+        if company_domain:
+            search_payload["q_organization_domains"] = company_domain
+        else:
+            search_payload["q_organization_name"] = company_name
 
         try:
             search_resp = requests.post(
@@ -512,15 +536,17 @@ def main():
     scraper = LinkedInFollowerScraper()
     
     if args.company:
-        competitor = scraper.COMPETITORS[args.company]
-        company_url = competitor["url"]
-        company_name = competitor["name"]
+        target = scraper.TARGET_COMPANIES[args.company]
+        company_url = target["url"]
+        company_name = target["name"]
+        company_domain = target.get("domain", "")
     else:
         company_url = args.url
         company_name = company_url.split("/")[-1]
-    
+        company_domain = ""
+
     try:
-        leads = scraper.fetch_followers(company_url, company_name, args.limit)
+        leads = scraper.fetch_followers(company_url, company_name, args.limit, company_domain=company_domain)
         
         if leads:
             output_path = scraper.save_leads(leads)

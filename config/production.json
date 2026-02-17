@@ -314,7 +314,64 @@
             "bulk_delete",
             "export_all_contacts",
             "mass_unsubscribe"
-        ]
+        ],
+        "deliverability": {
+            "excluded_recipient_domains": [
+                "apollo.io",
+                "gong.io",
+                "outreach.io",
+                "salesloft.com",
+                "chorus.ai",
+                "people.ai",
+                "seamless.ai",
+                "zoominfo.com",
+                "lusha.com",
+                "cognism.com",
+                "chiefaiofficer.com",
+                "chiefai.ai",
+                "jbcco.com",
+                "frazerbilt.com",
+                "immatics.com",
+                "debconstruction.com",
+                "credegroup.com",
+                "verifiedcredentials.com",
+                "exitmomentum.com"
+            ],
+            "excluded_recipient_domains_note": "Never send cold email to these domains. Competitors + own domains + customer domains (HoS Section 1.4). Leads at these companies are auto-rejected at dispatch time.",
+            "excluded_recipient_emails": [
+                "chudziak@jbcco.com",
+                "hkephart@frazerbilt.com",
+                "jmusil@jbcco.com",
+                "imorris@jbcco.com",
+                "mdabler@jbcco.com",
+                "maria.martinezcisnado@immatics.com",
+                "mm@immatics.com",
+                "slee@debconstruction.com",
+                "bzupan@jbcco.com",
+                "mfolsom@jbcco.com",
+                "kelsey.irvin@credegroup.com",
+                "michael.loveridge@credegroup.com",
+                "amejia@debconstruction.com",
+                "kjacinto@debconstruction.com",
+                "lagriffin@frazerbilt.com",
+                "aneblett@verifiedcredentials.com",
+                "tek@debconstruction.com",
+                "wmitchell@frazerbilt.com",
+                "cole@exitmomentum.com",
+                "alex.wagas@credegroup.com",
+                "avali@debconstruction.com",
+                "jnavarro@jbcco.com",
+                "kvale@frazerbilt.com",
+                "phirve@frazerbilt.com",
+                "mkcole@frazerbilt.com",
+                "tschaaf@jbcco.com",
+                "sharrell@frazerbilt.com"
+            ],
+            "excluded_recipient_emails_note": "Individual customer emails from GHL export (HoS Section 1.4). Guard 4 checks exact email match.",
+            "max_leads_per_domain_per_batch": 3,
+            "max_leads_per_domain_note": "Single-domain concentration >3 is a spam signal. Forces diversity across recipient companies.",
+            "require_valid_email_format": true
+        }
     },
     "logging": {
         "level": "INFO",
@@ -431,9 +488,9 @@
             "enabled": true,
             "email_daily_limit_override": 5,
             "tier_filter": "tier_1",
-            "start_date": "2026-02-17",
+            "start_date": "2026-02-18",
             "ramp_days": 3,
-            "note": "Supervised ramp-up: 5 emails/day, tier_1 only. After 3 clean days, set enabled=false to unlock 25/day + all tiers."
+            "note": "Supervised ramp-up: 5 emails/day, tier_1 only (C-Suite at agencies/consulting/law). After 3 clean days, set enabled=false to unlock 25/day + all tiers."
         }
     },
     "cadence": {

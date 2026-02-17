@@ -1,6 +1,6 @@
 # CAIO Alpha Swarm — Unified Implementation Plan
 
-**Last Updated**: 2026-02-17 (v4.4 — P0 hardening patch train complete: strict auth, immutable Gatekeeper snapshots, dedup/send-path fixes, Redis cutover, strict gate pass)
+**Last Updated**: 2026-02-17 (v4.5 — Production cutover complete + deep review hardening follow-up: constant-time token checks, CORS preflight auth fix, token-redaction cleanup)
 **Owner**: ChiefAIOfficer Production Team
 **AI**: Claude Opus 4.6
 
@@ -377,11 +377,25 @@ QUEEN (orchestrator)
 | `actually_send` semantics clarified | DONE | Governs dashboard direct GHL send behavior only; OPERATOR path is controlled by `--live` + Gatekeeper + OPERATOR config |
 | Deploy to Railway | DONE | Ramp active, verified via `/api/operator/status` |
 
+### HoS Requirements Integration (2026-02-18)
+
+| Task | Status | Notes |
+|------|--------|-------|
+| Ingest HoS requirements document | DONE | `docs/google_drive_docs/HEAD_OF_SALES_REQUIREMENTS 01.26.2026 (1).docx` — full text extracted |
+| Update CLAUDE.md with HoS Email Crafting Reference | DONE | 11 angles, ICP tiers, follow-ups, objections, signature, exclusions |
+| Rewrite CRAFTER templates (11 HoS angles) | DONE | `crafter_campaign.py` — Fractional CAIO positioning, M.A.P.™ Framework, CAN-SPAM footer |
+| Update segmentor ICP scoring | DONE | HoS title/industry lists, multipliers (1.5x/1.2x), threshold 80 |
+| Add customer exclusion lists | DONE | 7 domains + 27 emails from HoS Section 1.4 in `production.json` |
+| Add dispatcher Guard 4 | DONE | Individual email exclusion in `instantly_dispatcher.py` |
+| Update TARGET_COMPANIES | DONE | HoS Tier 1 ICP: agencies, staffing, consulting, e-commerce |
+| Update ramp config | DONE | tier_filter: tier_1, start_date: 2026-02-18 |
+| Update sender info | DONE | Dani Apgar, Chief AI Officer, caio.cx booking link |
+
 ### Remaining (Operational — User Action Required)
 
 | Task | Status | Notes |
 |------|--------|-------|
-| Run pipeline with ICP-fit targets for tier_1 leads | TODO | Need VP+ decision makers with email bodies |
+| Run pipeline with HoS Tier 1 targets | TODO | Agency/consulting/staffing companies (51-500 employees) |
 | Approve tier_1 leads in HoS dashboard | TODO | `/sales` → review + approve |
 | First live dispatch via OPERATOR | TODO | `--motion outbound --live` → GATEKEEPER → approve → dispatch |
 | 3 days supervised operation (5 emails/day) | TODO | Monitor delivery, opens, bounces |
@@ -472,16 +486,53 @@ QUEEN (orchestrator)
 - **Inngest function count**: canonical count is **5** functions (includes `daily-decay-detection`).
 - **`actually_send` semantics**: this flag applies to dashboard approval path (direct GHL send behavior). OPERATOR execution path is governed by `--live`, Gatekeeper approval, and OPERATOR config/ramp controls.
 
-#### Remaining Immediate Next Steps (Post-P0)
+#### Post-P0 Cutover Steps — REVALIDATION REQUIRED (post deep review)
 
 - [x] Add deterministic deployed auth smoke gate utility:
   - `python scripts/endpoint_auth_smoke.py --base-url "https://<env-domain>" --token "<DASHBOARD_AUTH_TOKEN>"`
-- [ ] Set production/staging `CORS_ALLOWED_ORIGINS` explicit allowlist (remove wildcard behavior in deployed env).
-- [ ] Run production endpoint auth smoke with real deployed URL/token:
-  - `python scripts/endpoint_auth_smoke.py --base-url "https://<prod>" --token "<DASHBOARD_AUTH_TOKEN>"`
-- [ ] Run one-time state migration in deployed environment:
+- [x] Set production/staging `CORS_ALLOWED_ORIGINS` explicit allowlist (Railway domains only, wildcard removed).
+- [ ] Rotate staging+production `DASHBOARD_AUTH_TOKEN` (prior token appeared in docs history) and redeploy.
+- [ ] Re-run deployed endpoint auth smoke with rotated tokens:
+  - `python scripts/endpoint_auth_smoke.py --base-url "https://<prod-domain>" --token "<new-token>"`
+- [x] Run one-time state migration in deployed environment — **ok: true** (2 items migrated):
   - `python scripts/migrate_file_state_to_redis.py --hive-dir .hive-mind`
+- [x] Replay harness — **50/50 PASS** (100%, avg score 4.54/5, `block_build: false`)
 - [ ] Keep conservative ramp policy active until 3 clean supervised live days are completed.
+
+### 4H: Deep Review Hardening Follow-Up (v4.5) — IN PROGRESS
+
+**Objective**: Validate cutover claims against code, close residual security hardening gaps, and lock final PTO inputs before rigorous autonomy testing.
+
+#### Implemented in this follow-up
+
+| Item | Status | Outcome | Files |
+|------|--------|---------|-------|
+| Constant-time token validation | DONE | Replaced string `==` token comparison with `hmac.compare_digest` in dashboard and Instantly control auth paths | `dashboard/health_app.py`, `webhooks/instantly_webhook.py` |
+| CORS preflight auth behavior | DONE | `OPTIONS` requests now bypass API auth middleware, preventing false 401s on browser preflight | `dashboard/health_app.py`, `tests/test_runtime_reliability.py` |
+| Instantly control auth regression tests | DONE | Added strict auth tests: query/header token success, strict fail-closed without token, legacy bypass rejection | `tests/test_instantly_webhook_auth.py` |
+| Secret leakage cleanup in handoff docs | DONE | Redacted exposed dashboard token values and replaced with placeholders | `docs/CODEX_HANDOFF.md` |
+
+#### Deep review findings requiring PTO action before rigorous testing
+
+| Finding | Severity | Required Input/Action |
+|---------|----------|-----------------------|
+| Dashboard token appeared in docs history | HIGH | Rotate staging+production `DASHBOARD_AUTH_TOKEN` immediately and redeploy |
+| Deployed auth smoke must be re-run after token rotation | HIGH | Provide final deployed URLs + new tokens for deterministic auth smoke gate rerun |
+| Ramp to first supervised live dispatch still pending | HIGH | Execute first live dispatch ritual and hold 3 clean supervised days before autonomy graduation |
+
+#### Go/No-Go Inputs Needed (PTO)
+
+- [ ] New staging `DASHBOARD_AUTH_TOKEN` rotated and deployed
+- [ ] New production `DASHBOARD_AUTH_TOKEN` rotated and deployed
+- [ ] Re-run: `python scripts/endpoint_auth_smoke.py --base-url "https://<staging-domain>" --token "<new-staging-token>"`
+- [ ] Re-run: `python scripts/endpoint_auth_smoke.py --base-url "https://<prod-domain>" --token "<new-prod-token>"`
+- [ ] Confirm strict runtime flags remain enforced (`DASHBOARD_AUTH_STRICT=true`, `REDIS_REQUIRED=true`, `INNGEST_REQUIRED=true`)
+
+#### Remaining Recommended Engineering Next Steps (v4.5)
+
+- [ ] Add strict webhook authentication policy for non-API webhook routes (`/webhooks/heyreach`, `/webhooks/clay`, `/webhooks/rb2b`) with provider-supported signatures or shared-secret headers.
+- [ ] Add readiness hard-fail when required webhook secrets are missing in strict production mode.
+- [ ] After 1 week stable Redis operations, disable file fallback (`STATE_DUAL_READ_ENABLED=false`) and remove file-write fallback in production.
 
 ---
 
@@ -643,10 +694,11 @@ QUEEN (orchestrator)
 | 2026-02-16 | HeyReach webhook CRUD is UI-only | Discovered via API probing (9 endpoint variations, all 404). Rewrote `register_heyreach_webhooks.py` to utility script. 4 webhooks created manually in HeyReach UI. |
 | 2026-02-16 | Wire Monaco signal loop into both webhook handlers | `LeadStatusManager` calls added to Instantly (reply/bounce/open/unsubscribe) and HeyReach (connection_sent/accepted, reply, campaign_completed). Engagement-driven lead status now flows from real webhook events. |
 | 2026-02-16 | HeyReach enabled in production.json | API key verified (HTTP 200), health endpoint confirms `api_key_configured: true`. 4/4 webhooks registered. `enabled: true` in config. |
+| 2026-02-18 | HoS Requirements Integration | Complete email system rewrite: 11 HoS-approved angles (4 T1, 3 T2, 4 T3), Fractional CAIO positioning, M.A.P.™ Framework, CAN-SPAM footer (5700 Harper Dr, Albuquerque), sender=Dani Apgar/Chief AI Officer, booking=caio.cx, ICP scoring multipliers (1.5x/1.2x), customer exclusion (7 domains + 27 emails), Guard 4 in dispatcher, Tier 1 target companies (agencies/consulting/staffing). |
 
 ---
 
-*Plan Version: 4.4*
+*Plan Version: 4.5*
 *Created: 2026-02-13*
-*Latest Patch Train Release: 2026-02-17 (P0-A..P0-E complete)*
+*Latest Patch Train Release: 2026-02-17 (P0-A..P0-E complete, production cutover deployed commit `746d347`, v4.5 deep-review hardening follow-up applied)*
 *Supersedes: v3.7, v3.6, Modernization Roadmap (implementation_plan.md.resolved), Original Path to Full Autonomy (f34646b2/task.md.resolved)*
