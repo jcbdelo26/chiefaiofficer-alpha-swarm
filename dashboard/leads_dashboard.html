@@ -463,8 +463,69 @@
         let allLeads = [];
         let currentFilter = 'all';
 
-        async function fetchJSON(url) {
-            const resp = await fetch(url);
+        let tokenPrompted = false;
+
+        function getToken({ promptFallback = false } = {}) {
+            const urlParams = new URLSearchParams(window.location.search);
+            const tokenFromQuery = urlParams.get('token');
+            if (tokenFromQuery) {
+                localStorage.setItem('caio_dashboard_token', tokenFromQuery);
+                return tokenFromQuery;
+            }
+            const tokenFromStorage = localStorage.getItem('caio_dashboard_token');
+            if (tokenFromStorage) {
+                return tokenFromStorage;
+            }
+            if (promptFallback && !tokenPrompted) {
+                tokenPrompted = true;
+                const tokenFromPrompt = window.prompt('Enter dashboard token for protected API access:');
+                if (tokenFromPrompt && tokenFromPrompt.trim()) {
+                    const normalized = tokenFromPrompt.trim();
+                    localStorage.setItem('caio_dashboard_token', normalized);
+                    return normalized;
+                }
+            }
+            return '';
+        }
+
+        function buildAuthedUrl(url, token = '') {
+            const parsed = new URL(url, window.location.origin);
+            if (token && !parsed.searchParams.has('token')) {
+                parsed.searchParams.set('token', token);
+            }
+            return `${parsed.pathname}${parsed.search}`;
+        }
+
+        function buildAuthHeaders(baseHeaders = {}, token = '') {
+            const headers = { ...baseHeaders };
+            if (token) {
+                headers['X-Dashboard-Token'] = token;
+            }
+            return headers;
+        }
+
+        async function fetchJSON(url, options = {}) {
+            const method = options.method || 'GET';
+            const body = options.body;
+            const promptFallback = options.promptFallback !== false;
+            const baseHeaders = options.headers || {};
+
+            let token = getToken({ promptFallback });
+            let resp = await fetch(buildAuthedUrl(url, token), {
+                method,
+                headers: buildAuthHeaders(baseHeaders, token),
+                body
+            });
+
+            if (resp.status === 401 && !token) {
+                token = getToken({ promptFallback: true });
+                resp = await fetch(buildAuthedUrl(url, token), {
+                    method,
+                    headers: buildAuthHeaders(baseHeaders, token),
+                    body
+                });
+            }
+
             if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
             return resp.json();
         }
@@ -594,7 +655,7 @@
 
         async function detectDecay() {
             try {
-                const result = await fetchJSON('/api/leads/detect-decay');
+                const result = await fetchJSON('/api/leads/detect-decay', { method: 'POST' });
                 alert(`Decay scan complete:\n- Ghosted: ${result.ghosted}\n- Stalled: ${result.stalled}\n- Engaged (no reply): ${result.engaged_not_replied}`);
                 refreshData();
             } catch (e) {
@@ -604,8 +665,7 @@
 
         async function bootstrapLeads() {
             try {
-                const resp = await fetch('/api/leads/bootstrap', { method: 'POST' });
-                const result = await resp.json();
+                const result = await fetchJSON('/api/leads/bootstrap', { method: 'POST' });
                 alert(`Bootstrap complete: ${result.created} lead records created.`);
                 refreshData();
             } catch (e) {

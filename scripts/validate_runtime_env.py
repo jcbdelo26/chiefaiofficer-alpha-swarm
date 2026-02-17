@@ -63,6 +63,10 @@ def _recommended_keys() -> List[str]:
     return [
         "REDIS_URL",
         "REDIS_MAX_CONNECTIONS",
+        "STATE_BACKEND",
+        "STATE_REDIS_PREFIX",
+        "STATE_DUAL_READ_ENABLED",
+        "STATE_FILE_FALLBACK_WRITE",
         "RATE_LIMIT_REDIS_NAMESPACE",
         "CONTEXT_REDIS_PREFIX",
         "CONTEXT_STATE_TTL_SECONDS",
@@ -77,6 +81,9 @@ def _recommended_keys() -> List[str]:
         "TRACE_RETENTION_DAYS",
         "TRACE_CLEANUP_ENABLED",
         "DASHBOARD_AUTH_TOKEN",
+        "DASHBOARD_AUTH_STRICT",
+        "DASHBOARD_AUTH_ALLOWLIST",
+        "CORS_ALLOWED_ORIGINS",
     ]
 
 

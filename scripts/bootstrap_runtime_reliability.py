@@ -47,6 +47,10 @@ def _collect_overrides(args: argparse.Namespace) -> Dict[str, str]:
     overrides: Dict[str, str] = {}
     if args.redis_url is not None:
         overrides["REDIS_URL"] = args.redis_url
+    if args.state_backend is not None:
+        overrides["STATE_BACKEND"] = args.state_backend
+    if args.state_redis_prefix is not None:
+        overrides["STATE_REDIS_PREFIX"] = args.state_redis_prefix
     if args.inngest_signing_key is not None:
         overrides["INNGEST_SIGNING_KEY"] = args.inngest_signing_key
     if args.inngest_event_key is not None:
@@ -95,6 +99,13 @@ def main() -> int:
         help="Target runtime mode (defaults to existing ENVIRONMENT or development).",
     )
     parser.add_argument("--redis-url", default=None, help="Redis URL override.")
+    parser.add_argument(
+        "--state-backend",
+        choices=["file", "redis"],
+        default=None,
+        help="State backend override (file|redis).",
+    )
+    parser.add_argument("--state-redis-prefix", default=None, help="State Redis prefix override.")
     parser.add_argument("--inngest-signing-key", default=None, help="Inngest signing key override.")
     parser.add_argument("--inngest-event-key", default=None, help="Inngest event key override.")
     parser.add_argument("--inngest-app-id", default=None, help="Inngest app id override.")

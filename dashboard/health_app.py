@@ -23,11 +23,11 @@ import logging
 from uuid import uuid4
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Dict, List, Any, Optional
+from typing import Dict, List, Any, Optional, Set
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, Query, Depends, Body, Request, Response
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import HTMLResponse, FileResponse
+from fastapi.responses import HTMLResponse, FileResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
 import uvicorn
@@ -54,6 +54,9 @@ load_dotenv()
 
 logger = logging.getLogger("health_app")
 INNGEST_ROUTE_MOUNTED = False
+DASHBOARD_TOKEN_QUERY_PARAM = "token"
+DASHBOARD_TOKEN_HEADER = "X-Dashboard-Token"
+_AUTH_WARNING_EMITTED = False
 
 
 def _categorize_rejection(reason: str) -> str:
@@ -188,27 +191,122 @@ class CorrelationIDMiddleware(BaseHTTPMiddleware):
 # AUTHENTICATION
 # =============================================================================
 
-DASHBOARD_AUTH_TOKEN = os.getenv("DASHBOARD_AUTH_TOKEN", "")
-LEGACY_TOKEN = "caio-swarm-secret-2026"
+_DEFAULT_UNAUTHENTICATED_API_ALLOWLIST: Set[str] = {
+    "/api/health",
+    "/api/health/ready",
+    "/api/health/live",
+}
 
-def require_auth(token: str = Query(None, alias="token")):
-    """
-    Simple token-based authentication for sensitive endpoints.
-    Requires ?token=xxx query parameter matching DASHBOARD_AUTH_TOKEN.
-    """
-    if not DASHBOARD_AUTH_TOKEN:
-        # If no token configured, allow access (dev mode) but warn (unless legacy token works)
-        if token == LEGACY_TOKEN:
-             return True
-        print("WARNING: DASHBOARD_AUTH_TOKEN not set - endpoints are unprotected!")
+
+def _normalize_path(path: str) -> str:
+    normalized = (path or "/").strip()
+    if not normalized.startswith("/"):
+        normalized = f"/{normalized}"
+    if normalized != "/":
+        normalized = normalized.rstrip("/")
+    return normalized
+
+
+def _load_api_auth_allowlist() -> Set[str]:
+    allowlist = set(_DEFAULT_UNAUTHENTICATED_API_ALLOWLIST)
+    raw = (os.getenv("DASHBOARD_AUTH_ALLOWLIST") or "").strip()
+    if not raw:
+        return allowlist
+    for value in raw.split(","):
+        token = value.strip()
+        if token:
+            allowlist.add(_normalize_path(token))
+    return allowlist
+
+
+API_AUTH_ALLOWLIST = _load_api_auth_allowlist()
+
+
+def _is_token_strict_mode() -> bool:
+    strict_raw = (os.getenv("DASHBOARD_AUTH_STRICT") or "").strip().lower()
+    if strict_raw in {"1", "true", "yes", "on"}:
         return True
-    
-    if not token or (token != DASHBOARD_AUTH_TOKEN and token != LEGACY_TOKEN):
+    if strict_raw in {"0", "false", "no", "off"}:
+        return False
+    environment = (os.getenv("ENVIRONMENT") or "").strip().lower()
+    return environment in {"production", "staging"}
+
+
+def _extract_dashboard_token(request: Request) -> Optional[str]:
+    query_token = request.query_params.get(DASHBOARD_TOKEN_QUERY_PARAM)
+    if query_token:
+        return query_token
+    header_token = (
+        request.headers.get(DASHBOARD_TOKEN_HEADER)
+        or request.headers.get(DASHBOARD_TOKEN_HEADER.lower())
+    )
+    if header_token:
+        return header_token
+    return None
+
+
+def _token_is_valid(token: Optional[str]) -> bool:
+    global _AUTH_WARNING_EMITTED
+    configured_token = (os.getenv("DASHBOARD_AUTH_TOKEN") or "").strip()
+    if not configured_token:
+        if _is_token_strict_mode():
+            return False
+        if not _AUTH_WARNING_EMITTED:
+            logger.warning("DASHBOARD_AUTH_TOKEN not configured; protected API routes are in non-strict mode.")
+            _AUTH_WARNING_EMITTED = True
+        return True
+    return bool(token and token == configured_token)
+
+
+def _is_auth_exempt_path(path: str) -> bool:
+    normalized_path = _normalize_path(path)
+    return normalized_path in API_AUTH_ALLOWLIST
+
+
+def require_auth(request: Request) -> bool:
+    token = _extract_dashboard_token(request)
+    if not _token_is_valid(token):
         raise HTTPException(
             status_code=401,
-            detail="Unauthorized. Please provide valid ?token= parameter."
+            detail=(
+                "Unauthorized. Provide dashboard token via "
+                f"?{DASHBOARD_TOKEN_QUERY_PARAM}=... or {DASHBOARD_TOKEN_HEADER} header."
+            ),
         )
     return True
+
+
+class APIAuthMiddleware(BaseHTTPMiddleware):
+    """Enforce token auth for protected /api routes."""
+
+    async def dispatch(self, request: Request, call_next):
+        path = _normalize_path(request.url.path)
+        if path.startswith("/api/") and not _is_auth_exempt_path(path):
+            token = _extract_dashboard_token(request)
+            if not _token_is_valid(token):
+                return JSONResponse(
+                    status_code=401,
+                    content={
+                        "detail": (
+                            "Unauthorized. Provide dashboard token via "
+                            f"?{DASHBOARD_TOKEN_QUERY_PARAM}=... or {DASHBOARD_TOKEN_HEADER} header."
+                        )
+                    },
+                )
+        return await call_next(request)
+
+
+def _get_cors_allowed_origins() -> List[str]:
+    raw = (os.getenv("CORS_ALLOWED_ORIGINS") or "").strip()
+    if not raw:
+        return [
+            "http://localhost:8080",
+            "http://127.0.0.1:8080",
+            "http://localhost:3000",
+            "http://127.0.0.1:3000",
+        ]
+    origins = [origin.strip() for origin in raw.split(",") if origin.strip()]
+    return origins or ["http://localhost:8080"]
 
 # =============================================================================
 # APP SETUP
@@ -222,11 +320,14 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=_get_cors_allowed_origins(),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Enforce dashboard token for protected /api routes
+app.add_middleware(APIAuthMiddleware)
 
 # Add correlation ID middleware for request tracing
 app.add_middleware(CorrelationIDMiddleware)
@@ -329,13 +430,11 @@ async def root():
 # =============================================================================
 
 @app.post("/api/admin/regenerate_queue")
-async def regenerate_queue(token: str = Query(None)):
+async def regenerate_queue(auth: bool = Depends(require_auth)):
     """
     Trigger regeneration of all pending emails in the queue.
     Uses new MessagingStrategy templates.
     """
-    require_auth(token)
-    
     try:
         updated_count = 0
         shadow_dir = PROJECT_ROOT / ".hive-mind" / "shadow_mode_emails"
@@ -427,9 +526,8 @@ async def regenerate_queue(token: str = Query(None)):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/health")
-async def health_check(token: str = Query(None)):
+async def health_check():
     """Get current health status of all components."""
-    require_auth(token)
     monitor = get_health_monitor()
     status = monitor.get_health_status()
     status["runtime_dependencies"] = get_runtime_dependency_health(
@@ -909,6 +1007,7 @@ async def approve_email(
     actually_send = project_config.get("email_behavior", {}).get("actually_send", False)
     
     formatted_response = "Email approved (simulated)"
+    final_status = "approved"
     
     if actually_send:
         contact_id = email_data.get("contact_id")
@@ -950,6 +1049,7 @@ async def approve_email(
                     if result.get("success"):
                         email_data["sent_via_ghl"] = True
                         email_data["ghl_message_id"] = result.get("message_id")
+                        final_status = "sent_via_ghl"
                         formatted_response = "Email sent via GHL"
                     else:
                         error_msg = result.get("error", "Unknown error")
@@ -977,7 +1077,7 @@ async def approve_email(
     # =========================================================================
     
     # Update status
-    email_data["status"] = "approved"
+    email_data["status"] = final_status
     email_data["approved_at"] = datetime.now().isoformat()
     email_data["approved_by"] = approver
     email_data["feedback"] = feedback

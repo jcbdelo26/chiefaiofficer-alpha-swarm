@@ -44,6 +44,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from rich.console import Console
+from core.state_store import StateStore
 
 _is_windows = platform.system() == "Windows"
 console = Console(force_terminal=not _is_windows)
@@ -115,6 +116,7 @@ class CadenceEngine:
         self._config: Dict = {}
         self._cadence_configs: Dict = {}
         self._signal_mgr = None
+        self._state_store = StateStore(hive_dir=self.hive_dir)
 
         self._load_config()
 
@@ -176,27 +178,24 @@ class CadenceEngine:
         return email.lower().replace("@", "_at_").replace(".", "_") + ".json"
 
     def _load_lead_state(self, email: str) -> Optional[LeadCadenceState]:
-        filepath = self.state_dir / self._email_to_filename(email)
-        if filepath.exists():
+        data = self._state_store.get_cadence_lead_state(email)
+        if data:
             try:
-                data = json.loads(filepath.read_text(encoding="utf-8"))
                 return LeadCadenceState(**data)
-            except (json.JSONDecodeError, TypeError, OSError):
+            except TypeError:
                 return None
         return None
 
     def _save_lead_state(self, state: LeadCadenceState):
-        filepath = self.state_dir / self._email_to_filename(state.email)
-        filepath.write_text(json.dumps(asdict(state), indent=2, default=str), encoding="utf-8")
+        self._state_store.save_cadence_lead_state(state.email, asdict(state))
 
     def get_all_cadence_states(self) -> List[LeadCadenceState]:
         """Load all lead cadence states."""
         states = []
-        for filepath in sorted(self.state_dir.glob("*.json")):
+        for data in self._state_store.list_cadence_lead_states():
             try:
-                data = json.loads(filepath.read_text(encoding="utf-8"))
                 states.append(LeadCadenceState(**data))
-            except (json.JSONDecodeError, TypeError, OSError):
+            except TypeError:
                 continue
         return states
 

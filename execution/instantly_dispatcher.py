@@ -54,6 +54,7 @@ class DispatchResult:
     leads_added: int
     shadow_email_ids: List[str]
     status: str  # "dispatched", "dry_run", "error"
+    recipient_emails: List[str] = field(default_factory=list)
     error: Optional[str] = None
 
 
@@ -178,7 +179,6 @@ class InstantlyDispatcher:
         return self.config.get("guardrails", {}).get("email_limits", {}).get("daily_limit", 25)
 
     def _check_emergency_stop(self) -> bool:
-        load_dotenv(override=True)
         return os.getenv("EMERGENCY_STOP", "false").lower().strip() in ("true", "1", "yes", "on")
 
     async def _get_client(self):
@@ -193,9 +193,19 @@ class InstantlyDispatcher:
     # Shadow email loading
     # -------------------------------------------------------------------------
 
-    def _load_approved_emails(self, tier_filter: Optional[str] = None) -> List[Dict[str, Any]]:
+    def _load_approved_emails(
+        self,
+        tier_filter: Optional[str] = None,
+        approved_shadow_email_ids: Optional[List[str]] = None,
+    ) -> List[Dict[str, Any]]:
         """Load approved, not-yet-dispatched shadow emails."""
         approved: List[Dict[str, Any]] = []
+        scope_enforced = approved_shadow_email_ids is not None
+        approved_scope = {
+            str(item).strip()
+            for item in (approved_shadow_email_ids or [])
+            if str(item).strip()
+        }
 
         if not self.shadow_dir.exists():
             return approved
@@ -208,9 +218,15 @@ class InstantlyDispatcher:
                 # Only approved, not yet dispatched, not synthetic
                 if data.get("status") != "approved":
                     continue
+                if data.get("sent_via_ghl"):
+                    continue
                 if data.get("instantly_campaign_id"):
                     continue
                 if data.get("synthetic"):
+                    continue
+
+                shadow_email_id = str(data.get("email_id") or email_file.stem)
+                if scope_enforced and shadow_email_id not in approved_scope:
                     continue
 
                 # Tier filter
@@ -218,6 +234,7 @@ class InstantlyDispatcher:
                     continue
 
                 data["_file_path"] = str(email_file)
+                data["_shadow_email_id"] = shadow_email_id
                 approved.append(data)
             except Exception as e:
                 logger.warning("Failed to read %s: %s", email_file.name, e)
@@ -329,6 +346,7 @@ class InstantlyDispatcher:
         limit: Optional[int] = None,
         dry_run: bool = True,
         from_email: str = "",
+        approved_shadow_email_ids: Optional[List[str]] = None,
     ) -> DispatchReport:
         """
         Main dispatch method.
@@ -406,7 +424,10 @@ class InstantlyDispatcher:
 
         # --- LOAD & GROUP ---
 
-        approved_emails = self._load_approved_emails(tier_filter)
+        approved_emails = self._load_approved_emails(
+            tier_filter=tier_filter,
+            approved_shadow_email_ids=approved_shadow_email_ids,
+        )
         report.total_approved = len(approved_emails)
 
         if not approved_emails:
@@ -467,7 +488,8 @@ class InstantlyDispatcher:
                 campaign_name=campaign_name,
                 campaign_id=None,
                 leads_added=0,
-                shadow_email_ids=[e.get("email_id", "") for e in emails],
+                shadow_email_ids=[e.get("_shadow_email_id", e.get("email_id", "")) for e in emails],
+                recipient_emails=[e.get("to", "") for e in emails if e.get("to")],
                 status="pending",
             )
 
@@ -533,7 +555,7 @@ class InstantlyDispatcher:
                     # Record in daily ceiling
                     self.ceiling.record_dispatch(
                         len(leads),
-                        [e.get("email_id", "") for e in emails],
+                        [e.get("_shadow_email_id", e.get("email_id", "")) for e in emails],
                         campaign_name,
                     )
 

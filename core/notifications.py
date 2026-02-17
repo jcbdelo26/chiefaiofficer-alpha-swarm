@@ -8,8 +8,8 @@ Handles Slack (Block Kit), SMS (Twilio), and Email (SMTP).
 
 Escalation levels:
 1. Slack notification
-2. SMS alert (for urgent items)
-3. Email + Phone (for critical items)
+2. Slack + SMS alert (for urgent items)
+3. Slack + SMS + Email (for critical items)
 
 Production Features:
 - Retry logic with exponential backoff
@@ -241,7 +241,7 @@ class NotificationManager:
             "level2": [
                 {
                     "name": "Dani Apgar",
-                    "email": dani_email,
+                    "phone": dani_phone,
                     "slack_user_id": dani_slack_user_id
                 }
             ],
@@ -600,15 +600,17 @@ To approve/reject, visit the dashboard or reply to this email.
         Escalate notification based on level - ALL notifications go to Dani Apgar.
         Never raises exceptions - all errors are logged.
         
-        Level 1: Slack DM to @dani + #approvals channel
-        Level 2: Email to dani@chiefaiofficer.com
-        Level 3: SMS to +1 505-799-5035
+        Level 1: Slack
+        Level 2: Slack + SMS
+        Level 3: Slack + SMS + Email
         """
         results = {"slack": False, "sms": False, "email": False}
         
         dani_config = self.escalation_contacts.get("dani", {})
         dani_email = dani_config.get("email", "dani@chiefaiofficer.com")
         dani_phone = dani_config.get("phone", "+15057995035")
+        level2_contacts = self.escalation_contacts.get("level2", [])
+        level3_contacts = self.escalation_contacts.get("level3", [])
         
         try:
             results["slack"] = await self.send_slack_notification(
@@ -618,21 +620,37 @@ To approve/reject, visit the dashboard or reply to this email.
             
             if level >= 2:
                 try:
-                    results["email"] = await self.send_email_fallback(dani_email, item)
-                except Exception as e:
-                    logger.error(f"Email escalation to Dani failed: {e}")
-            
-            if level >= 3:
-                try:
+                    sms_phone = dani_phone
+                    for contact in level2_contacts:
+                        candidate_phone = (contact or {}).get("phone")
+                        if candidate_phone:
+                            sms_phone = candidate_phone
+                            break
+
                     campaign_name = getattr(item, 'campaign_name', 'Unknown') if item else 'Unknown'
                     lead_count = getattr(item, 'lead_count', 0) if item else 0
                     avg_icp_score = getattr(item, 'avg_icp_score', 0) if item else 0
                     review_id = getattr(item, 'review_id', 'unknown') if item else 'unknown'
-
-                    msg = f"CRITICAL: Campaign '{campaign_name}' needs approval. {lead_count} leads, ICP {avg_icp_score:.0f}. Review ID: {review_id[:8]}"
-                    results["sms"] = await self.send_sms_alert(dani_phone, msg)
+                    msg = (
+                        f"Approval escalation: '{campaign_name}'. "
+                        f"{lead_count} leads, ICP {avg_icp_score:.0f}. "
+                        f"Review ID: {review_id[:8]}"
+                    )
+                    results["sms"] = await self.send_sms_alert(sms_phone, msg)
                 except Exception as e:
                     logger.error(f"SMS escalation to Dani failed: {e}")
+            
+            if level >= 3:
+                try:
+                    email_target = dani_email
+                    for contact in level3_contacts:
+                        candidate_email = (contact or {}).get("email")
+                        if candidate_email:
+                            email_target = candidate_email
+                            break
+                    results["email"] = await self.send_email_fallback(email_target, item)
+                except Exception as e:
+                    logger.error(f"Email escalation to Dani failed: {e}")
         except asyncio.CancelledError:
             raise
         except Exception as e:

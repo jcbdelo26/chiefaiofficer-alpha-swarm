@@ -213,6 +213,7 @@ class HeyReachDispatchResult:
     tier: str
     shadow_email_ids: List[str]
     status: str  # "dispatched", "dry_run", "error"
+    recipient_emails: List[str] = field(default_factory=list)
     error: Optional[str] = None
 
 
@@ -328,7 +329,6 @@ class HeyReachDispatcher:
         return self.DEFAULT_DAILY_LIMIT
 
     def _check_emergency_stop(self) -> bool:
-        load_dotenv(override=True)
         return os.getenv("EMERGENCY_STOP", "false").lower().strip() in ("true", "1", "yes", "on")
 
     async def _get_client(self) -> HeyReachClient:
@@ -340,9 +340,19 @@ class HeyReachDispatcher:
     # Lead loading — only leads with LinkedIn URLs
     # -------------------------------------------------------------------------
 
-    def _load_linkedin_eligible(self, tier_filter: Optional[str] = None) -> List[Dict[str, Any]]:
+    def _load_linkedin_eligible(
+        self,
+        tier_filter: Optional[str] = None,
+        approved_shadow_email_ids: Optional[List[str]] = None,
+    ) -> List[Dict[str, Any]]:
         """Load approved leads that have LinkedIn URLs and haven't been sent to HeyReach."""
         eligible: List[Dict[str, Any]] = []
+        scope_enforced = approved_shadow_email_ids is not None
+        approved_scope = {
+            str(item).strip()
+            for item in (approved_shadow_email_ids or [])
+            if str(item).strip()
+        }
 
         if not self.shadow_dir.exists():
             return eligible
@@ -355,9 +365,15 @@ class HeyReachDispatcher:
                 # Must be approved and not already sent to HeyReach
                 if data.get("status") not in ("approved", "dispatched_to_instantly"):
                     continue
+                if data.get("sent_via_ghl"):
+                    continue
                 if data.get("heyreach_list_id"):
                     continue
                 if data.get("synthetic"):
+                    continue
+
+                shadow_email_id = str(data.get("email_id") or email_file.stem)
+                if scope_enforced and shadow_email_id not in approved_scope:
                     continue
 
                 # Must have a LinkedIn URL
@@ -371,6 +387,7 @@ class HeyReachDispatcher:
                     continue
 
                 data["_file_path"] = str(email_file)
+                data["_shadow_email_id"] = shadow_email_id
                 eligible.append(data)
             except Exception as e:
                 logger.warning("Failed to read %s: %s", email_file.name, e)
@@ -456,6 +473,7 @@ class HeyReachDispatcher:
         tier_filter: Optional[str] = None,
         limit: Optional[int] = None,
         dry_run: bool = True,
+        approved_shadow_email_ids: Optional[List[str]] = None,
     ) -> HeyReachDispatchReport:
         """
         Main dispatch: routes LinkedIn-eligible leads to HeyReach lead lists.
@@ -503,7 +521,10 @@ class HeyReachDispatcher:
 
         # --- LOAD LEADS ---
 
-        eligible = self._load_linkedin_eligible(tier_filter)
+        eligible = self._load_linkedin_eligible(
+            tier_filter=tier_filter,
+            approved_shadow_email_ids=approved_shadow_email_ids,
+        )
         report.total_approved = len(eligible)
 
         if not eligible:
@@ -532,8 +553,9 @@ class HeyReachDispatcher:
                 list_id=None,
                 leads_added=0,
                 tier=tier,
-                shadow_email_ids=[l.get("email_id", "") for l in leads],
+                shadow_email_ids=[l.get("_shadow_email_id", l.get("email_id", "")) for l in leads],
                 status="pending",
+                recipient_emails=[l.get("to", "") for l in leads if l.get("to")],
             )
 
             if dry_run:
@@ -579,7 +601,7 @@ class HeyReachDispatcher:
 
                     self.ceiling.record_dispatch(
                         len(heyreach_leads),
-                        [l.get("email_id", "") for l in leads],
+                        [l.get("_shadow_email_id", l.get("email_id", "")) for l in leads],
                         list_name,
                     )
 

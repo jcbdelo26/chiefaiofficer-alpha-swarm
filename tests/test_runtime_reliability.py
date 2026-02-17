@@ -11,6 +11,7 @@ from pathlib import Path
 
 import pytest
 from fastapi import HTTPException
+from fastapi.testclient import TestClient
 
 from core.runtime_reliability import (
     apply_env_updates,
@@ -158,3 +159,27 @@ async def test_runtime_dependencies_endpoint_contract(monkeypatch):
     assert "dependencies" in payload
     assert "redis" in payload["dependencies"]
     assert "inngest" in payload["dependencies"]
+
+
+def test_protected_api_endpoints_require_dashboard_token(monkeypatch):
+    from dashboard import health_app
+
+    monkeypatch.setenv("DASHBOARD_AUTH_TOKEN", "unit-test-token")
+    monkeypatch.setenv("DASHBOARD_AUTH_STRICT", "true")
+
+    client = TestClient(health_app.app)
+
+    unauth_status = client.get("/api/operator/status")
+    unauth_trigger = client.post("/api/operator/trigger", json={"dry_run": True})
+    health_ready = client.get("/api/health/ready")
+    auth_status = client.get("/api/operator/status?token=unit-test-token")
+    header_auth_status = client.get(
+        "/api/operator/status",
+        headers={"X-Dashboard-Token": "unit-test-token"},
+    )
+
+    assert unauth_status.status_code == 401
+    assert unauth_trigger.status_code == 401
+    assert health_ready.status_code != 401
+    assert auth_status.status_code != 401
+    assert header_auth_status.status_code != 401

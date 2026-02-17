@@ -49,6 +49,10 @@ def get_runtime_env_defaults(mode: str) -> Dict[str, str]:
         "REDIS_URL": "redis://localhost:6379/0",
         "REDIS_REQUIRED": required_default,
         "REDIS_MAX_CONNECTIONS": "50",
+        "STATE_BACKEND": "redis" if normalized_mode in {"staging", "production"} else "file",
+        "STATE_REDIS_PREFIX": "caio",
+        "STATE_DUAL_READ_ENABLED": "true",
+        "STATE_FILE_FALLBACK_WRITE": "true",
         "RATE_LIMIT_REDIS_NAMESPACE": f"caio:{normalized_mode}:ratelimit",
         "CONTEXT_REDIS_PREFIX": f"caio:{normalized_mode}:context",
         "CONTEXT_STATE_TTL_SECONDS": ttl_default,
@@ -62,6 +66,10 @@ def get_runtime_env_defaults(mode: str) -> Dict[str, str]:
         "TRACE_ENVELOPE_ENABLED": "true",
         "TRACE_RETENTION_DAYS": "30",
         "TRACE_CLEANUP_ENABLED": "true",
+        "DASHBOARD_AUTH_TOKEN": "",
+        "DASHBOARD_AUTH_STRICT": required_default,
+        "DASHBOARD_AUTH_ALLOWLIST": "/api/health,/api/health/ready,/api/health/live",
+        "CORS_ALLOWED_ORIGINS": "http://localhost:8080,http://127.0.0.1:8080",
     }
 
 

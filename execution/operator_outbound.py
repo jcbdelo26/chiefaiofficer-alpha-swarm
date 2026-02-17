@@ -27,9 +27,10 @@ import asyncio
 import argparse
 import platform
 import logging
+import hashlib
 from datetime import datetime, date, timezone, timedelta
 from pathlib import Path
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List, Optional, Set
 from dataclasses import dataclass, asdict, field
 
 PROJECT_ROOT = Path(__file__).parent.parent
@@ -39,6 +40,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from rich.console import Console
+from core.state_store import StateStore, normalize_email
 
 _is_windows = platform.system() == "Windows"
 console = Console(force_terminal=not _is_windows)
@@ -115,6 +117,12 @@ class DispatchBatch:
     total_revival_candidates: int = 0
     total_cadence_due: int = 0
     tier_breakdown: Dict[str, int] = field(default_factory=dict)
+    approved_shadow_email_ids: List[str] = field(default_factory=list)
+    approved_linkedin_shadow_ids: List[str] = field(default_factory=list)
+    approved_revival_emails: List[str] = field(default_factory=list)
+    approved_cadence_actions: List[Dict[str, Any]] = field(default_factory=list)
+    preview_hash: str = ""
+    expires_at: Optional[str] = None
     approved_at: Optional[str] = None
     approved_by: Optional[str] = None
     rejected_at: Optional[str] = None
@@ -146,10 +154,11 @@ class OperatorOutbound:
         self._cadence_engine = None
         self._config: Dict = {}
         self._operator_config: Dict = {}
-
-        self.state_file = PROJECT_ROOT / ".hive-mind" / "operator_state.json"
-        self.dispatch_log = PROJECT_ROOT / ".hive-mind" / "operator_dispatch_log.jsonl"
-        self.batch_dir = PROJECT_ROOT / ".hive-mind" / "operator_batches"
+        self.hive_dir = PROJECT_ROOT / ".hive-mind"
+        self._state_store = StateStore(hive_dir=self.hive_dir)
+        self.state_file = self._state_store.operator_state_file
+        self.dispatch_log = self.hive_dir / "operator_dispatch_log.jsonl"
+        self.batch_dir = self._state_store.batch_dir
         self.state_file.parent.mkdir(parents=True, exist_ok=True)
         self.batch_dir.mkdir(parents=True, exist_ok=True)
 
@@ -311,38 +320,108 @@ class OperatorOutbound:
     def _load_daily_state(self) -> OperatorDailyState:
         """Load today's state, reset if date changed."""
         today = date.today().isoformat()
-
-        if self.state_file.exists():
+        data = self._state_store.get_operator_daily_state(today)
+        if data:
             try:
-                with open(self.state_file, "r", encoding="utf-8") as f:
-                    data = json.load(f)
-                if data.get("date") == today:
-                    return OperatorDailyState(**data)
-            except (json.JSONDecodeError, IOError, TypeError):
-                pass
-
+                allowed = {
+                    key: data.get(key)
+                    for key in OperatorDailyState.__dataclass_fields__.keys()
+                    if key in data
+                }
+                state = OperatorDailyState(**allowed)
+                if self._migrate_legacy_dedup_entries(state):
+                    self._save_daily_state(state)
+                return state
+            except TypeError:
+                logger.warning("Invalid operator daily state payload found; resetting for %s", today)
         return OperatorDailyState(date=today)
 
     def _save_daily_state(self, state: OperatorDailyState):
-        with open(self.state_file, "w", encoding="utf-8") as f:
-            json.dump(asdict(state), f, indent=2)
+        self._state_store.save_operator_daily_state(state.date, asdict(state))
 
     # -------------------------------------------------------------------------
     # Deduplication
     # -------------------------------------------------------------------------
 
+    def _dedup_email_key(self, email: str) -> str:
+        normalized = normalize_email(email)
+        return f"email:{normalized}" if normalized else ""
+
+    def _resolve_recipient_email_from_shadow_id(self, shadow_email_id: str) -> Optional[str]:
+        shadow_id = (shadow_email_id or "").strip()
+        if not shadow_id:
+            return None
+        shadow_dir = PROJECT_ROOT / ".hive-mind" / "shadow_mode_emails"
+        if not shadow_dir.exists():
+            return None
+
+        direct_path = shadow_dir / f"{shadow_id}.json"
+        if direct_path.exists():
+            try:
+                payload = json.loads(direct_path.read_text(encoding="utf-8"))
+                return payload.get("to")
+            except Exception:
+                return None
+
+        for path in shadow_dir.glob("*.json"):
+            try:
+                payload = json.loads(path.read_text(encoding="utf-8"))
+            except Exception:
+                continue
+            if payload.get("email_id") == shadow_id:
+                return payload.get("to")
+        return None
+
+    def _migrate_legacy_dedup_entries(self, state: OperatorDailyState) -> bool:
+        """Backfill canonical email dedup keys from legacy state entries."""
+        changed = False
+        existing_values = [str(v).strip() for v in (state.leads_dispatched or []) if str(v).strip()]
+        dedup_set = {value.lower() for value in existing_values}
+        to_add: Set[str] = set()
+
+        for value in existing_values:
+            lowered = value.lower()
+            if lowered.startswith("email:"):
+                continue
+            if "@" in value:
+                canonical = self._dedup_email_key(value)
+                if canonical and canonical not in dedup_set:
+                    to_add.add(canonical)
+                continue
+
+            resolved_email = self._resolve_recipient_email_from_shadow_id(value)
+            canonical = self._dedup_email_key(resolved_email or "")
+            if canonical and canonical not in dedup_set:
+                to_add.add(canonical)
+
+        if to_add:
+            state.leads_dispatched.extend(sorted(to_add))
+            changed = True
+        return changed
+
+    def _record_dispatched_email(self, state: OperatorDailyState, email: str):
+        dedup_key = self._dedup_email_key(email)
+        if not dedup_key:
+            return
+        existing = {str(v).strip().lower() for v in state.leads_dispatched if str(v).strip()}
+        if dedup_key not in existing:
+            state.leads_dispatched.append(dedup_key)
+
     def _is_lead_eligible(self, email: str, state: OperatorDailyState) -> bool:
         """Three-layer dedup check."""
-        if not email:
+        normalized_email = normalize_email(email)
+        if not normalized_email:
             return False
 
         # Layer 1: Already dispatched today
-        if email.lower() in [e.lower() for e in state.leads_dispatched]:
+        dedup_key = self._dedup_email_key(normalized_email)
+        dispatched = {str(v).strip().lower() for v in state.leads_dispatched if str(v).strip()}
+        if dedup_key in dispatched or normalized_email in dispatched:
             return False
 
         # Layer 2: Terminal or active status in signal loop
         mgr = self._get_signal_manager()
-        status_record = mgr.get_lead_status(email)
+        status_record = mgr.get_lead_status(normalized_email)
         if status_record:
             status = status_record.get("status", "")
             terminal = {"bounced", "unsubscribed", "rejected", "disqualified"}
@@ -356,7 +435,6 @@ class OperatorOutbound:
     # -------------------------------------------------------------------------
 
     def _check_emergency_stop(self) -> bool:
-        load_dotenv(override=True)
         return os.getenv("EMERGENCY_STOP", "false").lower().strip() in ("true", "1", "yes", "on")
 
     @property
@@ -366,6 +444,87 @@ class OperatorOutbound:
     # -------------------------------------------------------------------------
     # GATEKEEPER batch approval
     # -------------------------------------------------------------------------
+
+    def _batch_from_payload(self, data: Dict[str, Any]) -> DispatchBatch:
+        return DispatchBatch(**{
+            key: data.get(key)
+            for key in DispatchBatch.__dataclass_fields__.keys()
+            if key in data
+        })
+
+    def _get_batch_expiry_hours(self) -> int:
+        return int(self._operator_config.get("batch_expiry_hours", 24) or 24)
+
+    def _compute_batch_preview_hash(self, batch: DispatchBatch) -> str:
+        scope_payload = {
+            "motion": batch.motion,
+            "approved_shadow_email_ids": sorted(batch.approved_shadow_email_ids),
+            "approved_linkedin_shadow_ids": sorted(batch.approved_linkedin_shadow_ids),
+            "approved_revival_emails": sorted(batch.approved_revival_emails),
+            "approved_cadence_actions": sorted(
+                [
+                    {
+                        "action_id": str(item.get("action_id", "")),
+                        "email": normalize_email(item.get("email", "")),
+                        "channel": str(item.get("channel", "")),
+                        "step": int(item.get("step", 0) or 0),
+                        "day": int(item.get("day", 0) or 0),
+                    }
+                    for item in (batch.approved_cadence_actions or [])
+                ],
+                key=lambda item: item["action_id"],
+            ),
+        }
+        serialized = json.dumps(scope_payload, sort_keys=True, separators=(",", ":"))
+        return hashlib.sha256(serialized.encode("utf-8")).hexdigest()
+
+    def _is_batch_expired(self, batch: DispatchBatch) -> bool:
+        if not batch.expires_at:
+            return False
+        try:
+            expires_at = datetime.fromisoformat(batch.expires_at.replace("Z", "+00:00"))
+            return datetime.now(timezone.utc) > expires_at
+        except ValueError:
+            return False
+
+    def _validate_batch_for_execution(self, batch: DispatchBatch, expected_motion: str) -> None:
+        if batch.status != "approved":
+            raise ValueError(f"Batch {batch.batch_id} is '{batch.status}', not approved")
+        if not batch.preview_hash:
+            raise ValueError(f"Batch {batch.batch_id} missing preview_hash")
+        if not batch.expires_at:
+            raise ValueError(f"Batch {batch.batch_id} missing expires_at")
+        if batch.executed_at or (batch.execution_report and batch.execution_report.get("run_id")):
+            raise ValueError(f"Batch {batch.batch_id} already executed")
+        if self._is_batch_expired(batch):
+            batch.status = "expired"
+            self._state_store.save_batch(batch.batch_id, asdict(batch))
+            raise ValueError(f"Batch {batch.batch_id} expired at {batch.expires_at}")
+        if batch.motion not in {expected_motion, "all"}:
+            raise ValueError(
+                f"Batch {batch.batch_id} motion '{batch.motion}' incompatible with '{expected_motion}' execution"
+            )
+        expected_hash = self._compute_batch_preview_hash(batch)
+        if batch.preview_hash and batch.preview_hash != expected_hash:
+            raise ValueError(
+                f"Batch {batch.batch_id} preview hash mismatch (expected={batch.preview_hash}, actual={expected_hash})"
+            )
+
+    def _load_shadow_candidates(self) -> List[Dict[str, Any]]:
+        candidates: List[Dict[str, Any]] = []
+        shadow_dir = PROJECT_ROOT / ".hive-mind" / "shadow_mode_emails"
+        if not shadow_dir.exists():
+            return candidates
+        for path in sorted(shadow_dir.glob("*.json")):
+            try:
+                payload = json.loads(path.read_text(encoding="utf-8"))
+            except (json.JSONDecodeError, OSError):
+                continue
+            email_id = payload.get("email_id") or path.stem
+            payload["_shadow_email_id"] = str(email_id)
+            payload["_shadow_file"] = str(path)
+            candidates.append(payload)
+        return candidates
 
     def _build_batch_preview(self, motion: str) -> DispatchBatch:
         """
@@ -380,10 +539,14 @@ class OperatorOutbound:
             created_at=datetime.now(timezone.utc).isoformat(),
             motion=motion,
             warmup_schedule=asdict(self.get_warmup_schedule()),
+            expires_at=(
+                datetime.now(timezone.utc) + timedelta(hours=self._get_batch_expiry_hours())
+            ).isoformat(),
         )
 
         state = self._load_daily_state()
         schedule = self.get_warmup_schedule()
+        routing = self._operator_config.get("outbound", {}).get("tier_channel_routing", {})
 
         # Ramp mode: auto-apply tier filter for batch preview
         ramp = self._get_ramp_status()
@@ -391,71 +554,95 @@ class OperatorOutbound:
 
         # Preview outbound email leads (from approved shadow emails)
         if motion in ("outbound", "all"):
-            shadow_dir = PROJECT_ROOT / ".hive-mind" / "shadow_mode_emails"
-            if shadow_dir.exists():
-                tier_counts: Dict[str, int] = {}
-                email_count = 0
-                linkedin_count = 0
-                email_remaining = max(0, schedule.email_daily_limit - state.outbound_email_dispatched)
+            tier_counts: Dict[str, int] = {}
+            email_remaining = max(0, schedule.email_daily_limit - state.outbound_email_dispatched)
+            linkedin_remaining = max(0, schedule.linkedin_daily_limit - state.outbound_linkedin_dispatched)
 
-                for ef in sorted(shadow_dir.glob("*.json")):
-                    try:
-                        with open(ef, "r", encoding="utf-8") as f:
-                            data = json.load(f)
-                        if data.get("status") != "approved":
-                            continue
-                        if not self._is_lead_eligible(data.get("to", ""), state):
-                            continue
+            email_scope: List[str] = []
+            linkedin_scope: List[str] = []
+            for data in self._load_shadow_candidates():
+                status = data.get("status")
+                if status != "approved":
+                    continue
+                if data.get("sent_via_ghl"):
+                    continue
+                recipient_email = data.get("to", "")
+                if not self._is_lead_eligible(recipient_email, state):
+                    continue
 
-                        tier = data.get("tier", "tier_2")
+                tier = data.get("tier", "tier_2")
+                if ramp_tier_filter and tier != ramp_tier_filter:
+                    continue
 
-                        # Ramp tier filter — skip non-matching tiers
-                        if ramp_tier_filter and tier != ramp_tier_filter:
-                            continue
-                        recipient = data.get("recipient_data", {})
-                        tier_counts[tier] = tier_counts.get(tier, 0) + 1
+                shadow_email_id = str(data.get("_shadow_email_id") or "")
+                recipient = data.get("recipient_data", {})
+                tier_counts[tier] = tier_counts.get(tier, 0) + 1
 
-                        if email_count < email_remaining:
-                            batch.leads_preview.append({
-                                "email": data.get("to", ""),
-                                "name": recipient.get("name", ""),
-                                "company": recipient.get("company", ""),
-                                "tier": tier,
-                                "channel": "email",
-                            })
-                            email_count += 1
+                if len(email_scope) < email_remaining:
+                    email_scope.append(shadow_email_id)
+                    batch.leads_preview.append({
+                        "email": recipient_email,
+                        "name": recipient.get("name", ""),
+                        "company": recipient.get("company", ""),
+                        "tier": tier,
+                        "channel": "email",
+                        "shadow_email_id": shadow_email_id,
+                    })
 
-                        # Check if also eligible for LinkedIn
-                        routing = self._operator_config.get("outbound", {}).get("tier_channel_routing", {})
-                        if "heyreach" in routing.get(tier, []) and recipient.get("linkedin_url"):
-                            linkedin_count += 1
-                    except (json.JSONDecodeError, IOError):
-                        continue
+                if (
+                    len(linkedin_scope) < linkedin_remaining
+                    and "heyreach" in routing.get(tier, [])
+                    and recipient.get("linkedin_url")
+                ):
+                    linkedin_scope.append(shadow_email_id)
 
-                batch.total_email_leads = email_count
-                batch.total_linkedin_leads = min(
-                    linkedin_count,
-                    max(0, schedule.linkedin_daily_limit - state.outbound_linkedin_dispatched),
-                )
-                batch.tier_breakdown = tier_counts
+            batch.approved_shadow_email_ids = email_scope
+            batch.approved_linkedin_shadow_ids = linkedin_scope
+            batch.total_email_leads = len(email_scope)
+            batch.total_linkedin_leads = len(linkedin_scope)
+            batch.tier_breakdown = tier_counts
 
         # Preview cadence actions due
         if motion in ("cadence", "all"):
             try:
                 cadence = self._get_cadence_engine()
                 due_actions = cadence.get_due_actions()
-                batch.total_cadence_due = len(due_actions)
-            except Exception:
-                pass
+                action_scope: List[Dict[str, Any]] = []
+                for action in due_actions:
+                    if not self._is_lead_eligible(action.email, state):
+                        continue
+                    action_scope.append({
+                        "action_id": (
+                            f"{normalize_email(action.email)}|"
+                            f"{action.step.channel}|s{action.step.step}|d{action.step.day}"
+                        ),
+                        "email": action.email,
+                        "channel": action.step.channel,
+                        "step": action.step.step,
+                        "day": action.step.day,
+                        "cadence_id": action.cadence_id,
+                    })
+                batch.approved_cadence_actions = action_scope
+                batch.total_cadence_due = len(action_scope)
+            except Exception as exc:
+                logger.warning("Failed to build cadence batch preview: %s", exc)
 
         # Preview revival candidates
         if motion in ("revival", "all"):
             try:
                 scanner = self._get_revival_scanner()
                 candidates = scanner.scan(limit=schedule.revival_daily_limit)
-                batch.total_revival_candidates = len(candidates)
-            except Exception:
-                pass
+                revival_scope: List[str] = []
+                for candidate in candidates:
+                    if not self._is_lead_eligible(candidate.email, state):
+                        continue
+                    revival_scope.append(normalize_email(candidate.email))
+                batch.approved_revival_emails = revival_scope
+                batch.total_revival_candidates = len(revival_scope)
+            except Exception as exc:
+                logger.warning("Failed to build revival batch preview: %s", exc)
+
+        batch.preview_hash = self._compute_batch_preview_hash(batch)
 
         return batch
 
@@ -467,10 +654,7 @@ class OperatorOutbound:
         Saves batch to .hive-mind/operator_batches/ for dashboard review.
         """
         batch = self._build_batch_preview(motion)
-
-        filepath = self.batch_dir / f"{batch.batch_id}.json"
-        with open(filepath, "w", encoding="utf-8") as f:
-            json.dump(asdict(batch), f, indent=2, ensure_ascii=False)
+        self._state_store.save_batch(batch.batch_id, asdict(batch))
 
         logger.info("Created dispatch batch %s for GATEKEEPER review (%d email, %d linkedin, %d revival, %d cadence)",
                      batch.batch_id, batch.total_email_leads, batch.total_linkedin_leads,
@@ -492,12 +676,9 @@ class OperatorOutbound:
 
     def approve_batch(self, batch_id: str, approved_by: str = "dashboard") -> DispatchBatch:
         """Mark a batch as approved for execution."""
-        filepath = self.batch_dir / f"{batch_id}.json"
-        if not filepath.exists():
+        data = self._state_store.get_batch(batch_id)
+        if not data:
             raise FileNotFoundError(f"Batch {batch_id} not found")
-
-        with open(filepath, "r", encoding="utf-8") as f:
-            data = json.load(f)
 
         if data["status"] != "pending":
             raise ValueError(f"Batch {batch_id} is '{data['status']}', not pending")
@@ -505,72 +686,47 @@ class OperatorOutbound:
         data["status"] = "approved"
         data["approved_at"] = datetime.now(timezone.utc).isoformat()
         data["approved_by"] = approved_by
-
-        with open(filepath, "w", encoding="utf-8") as f:
-            json.dump(data, f, indent=2, ensure_ascii=False)
+        self._state_store.save_batch(batch_id, data)
 
         logger.info("Batch %s approved by %s", batch_id, approved_by)
-        return DispatchBatch(**{k: v for k, v in data.items() if k in DispatchBatch.__dataclass_fields__})
+        return self._batch_from_payload(data)
 
     def reject_batch(self, batch_id: str, reason: str = "", rejected_by: str = "dashboard") -> DispatchBatch:
         """Reject a dispatch batch."""
-        filepath = self.batch_dir / f"{batch_id}.json"
-        if not filepath.exists():
+        data = self._state_store.get_batch(batch_id)
+        if not data:
             raise FileNotFoundError(f"Batch {batch_id} not found")
-
-        with open(filepath, "r", encoding="utf-8") as f:
-            data = json.load(f)
 
         data["status"] = "rejected"
         data["rejected_at"] = datetime.now(timezone.utc).isoformat()
         data["rejected_reason"] = reason or f"Rejected by {rejected_by}"
-
-        with open(filepath, "w", encoding="utf-8") as f:
-            json.dump(data, f, indent=2, ensure_ascii=False)
+        self._state_store.save_batch(batch_id, data)
 
         logger.info("Batch %s rejected: %s", batch_id, reason)
-        return DispatchBatch(**{k: v for k, v in data.items() if k in DispatchBatch.__dataclass_fields__})
+        return self._batch_from_payload(data)
 
     def get_pending_batch(self) -> Optional[DispatchBatch]:
         """Get the most recent pending batch, if any."""
-        batches = []
-        for bf in self.batch_dir.glob("batch_*.json"):
-            try:
-                with open(bf, "r", encoding="utf-8") as f:
-                    data = json.load(f)
-                if data.get("status") == "pending":
-                    batches.append(data)
-            except (json.JSONDecodeError, IOError):
-                continue
-
+        batches = self._state_store.list_batches(status="pending")
         if not batches:
             return None
-
-        # Most recent first
-        batches.sort(key=lambda b: b.get("created_at", ""), reverse=True)
-        data = batches[0]
-        return DispatchBatch(**{k: v for k, v in data.items() if k in DispatchBatch.__dataclass_fields__})
+        return self._batch_from_payload(batches[0])
 
     def get_approved_batch(self) -> Optional[DispatchBatch]:
         """Get an approved batch waiting for execution."""
-        for bf in sorted(self.batch_dir.glob("batch_*.json"), reverse=True):
-            try:
-                with open(bf, "r", encoding="utf-8") as f:
-                    data = json.load(f)
-                if data.get("status") == "approved":
-                    return DispatchBatch(**{k: v for k, v in data.items() if k in DispatchBatch.__dataclass_fields__})
-            except (json.JSONDecodeError, IOError):
-                continue
-        return None
+        batches = self._state_store.list_batches(status="approved")
+        if not batches:
+            return None
+        return self._batch_from_payload(batches[0])
 
     def _mark_batch_executed(self, batch_id: str, report: OperatorReport):
         """Mark batch as executed after successful dispatch."""
-        filepath = self.batch_dir / f"{batch_id}.json"
-        if not filepath.exists():
+        data = self._state_store.get_batch(batch_id)
+        if not data:
             return
-
-        with open(filepath, "r", encoding="utf-8") as f:
-            data = json.load(f)
+        if data.get("status") == "executed":
+            logger.info("Batch %s already marked executed; skipping duplicate update", batch_id)
+            return
 
         data["status"] = "executed"
         data["executed_at"] = datetime.now(timezone.utc).isoformat()
@@ -579,27 +735,33 @@ class OperatorOutbound:
             "motion": report.motion,
             "errors": report.errors,
         }
-
-        with open(filepath, "w", encoding="utf-8") as f:
-            json.dump(data, f, indent=2, ensure_ascii=False)
+        self._state_store.save_batch(batch_id, data)
 
     def expire_stale_batches(self, max_age_hours: int = 24):
-        """Expire pending batches older than max_age_hours."""
+        """Expire pending batches using explicit expires_at (fallback to max_age_hours)."""
         cutoff = datetime.now(timezone.utc) - timedelta(hours=max_age_hours)
-        for bf in self.batch_dir.glob("batch_*.json"):
-            try:
-                with open(bf, "r", encoding="utf-8") as f:
-                    data = json.load(f)
-                if data.get("status") != "pending":
-                    continue
-                created = datetime.fromisoformat(data["created_at"].replace("Z", "+00:00"))
-                if created < cutoff:
-                    data["status"] = "expired"
-                    with open(bf, "w", encoding="utf-8") as f:
-                        json.dump(data, f, indent=2, ensure_ascii=False)
-                    logger.info("Expired stale batch: %s", bf.name)
-            except (json.JSONDecodeError, IOError, ValueError):
+        for data in self._state_store.list_batches(status="pending"):
+            batch_id = str(data.get("batch_id", "")).strip()
+            if not batch_id:
                 continue
+            expired = False
+            expires_at = data.get("expires_at")
+            if expires_at:
+                try:
+                    expired = datetime.now(timezone.utc) > datetime.fromisoformat(expires_at.replace("Z", "+00:00"))
+                except ValueError:
+                    expired = False
+            if not expired:
+                try:
+                    created = datetime.fromisoformat(data["created_at"].replace("Z", "+00:00"))
+                    expired = created < cutoff
+                except (ValueError, TypeError, KeyError):
+                    expired = False
+            if expired:
+                data["status"] = "expired"
+                data["expired_at"] = datetime.now(timezone.utc).isoformat()
+                self._state_store.save_batch(batch_id, data)
+                logger.info("Expired stale batch: %s", batch_id)
 
     # -------------------------------------------------------------------------
     # dispatch_outbound
@@ -610,6 +772,9 @@ class OperatorOutbound:
         tier_filter: Optional[str] = None,
         limit: Optional[int] = None,
         dry_run: bool = True,
+        approved_batch: Optional[DispatchBatch] = None,
+        skip_gatekeeper: bool = False,
+        mark_batch_executed: bool = True,
     ) -> OperatorReport:
         """
         New outbound: approved shadow emails → Instantly + HeyReach.
@@ -625,140 +790,191 @@ class OperatorOutbound:
             motion="outbound",
         )
 
-        # Safety
-        if self._check_emergency_stop():
-            report.errors.append("EMERGENCY_STOP active — all dispatch blocked")
-            report.completed_at = datetime.now(timezone.utc).isoformat()
-            return report
-
-        if not self._operator_config.get("enabled", False) and not dry_run:
-            report.errors.append("OPERATOR disabled in config/production.json")
-            report.completed_at = datetime.now(timezone.utc).isoformat()
-            return report
-
-        # --- Ramp mode: enforce tier filter + reduced limits ---
-        ramp = self._get_ramp_status()
-        if ramp["active"]:
-            if ramp["tier_filter"] and not tier_filter:
-                tier_filter = ramp["tier_filter"]
-                console.print(
-                    f"[cyan]RAMP MODE[/cyan] Day {ramp['day']}: "
-                    f"tier_filter={tier_filter}, email_limit={ramp['email_limit_override']}/day"
-                )
-
-        # --- Gatekeeper batch approval gate ---
-        if not dry_run and self.gatekeeper_required:
-            approved_batch = self.get_approved_batch()
-            if approved_batch and approved_batch.motion in ("outbound", "all"):
-                logger.info("Executing approved batch: %s", approved_batch.batch_id)
-                report.batch_id = approved_batch.batch_id
-                # Continue to dispatch — batch is approved
-            else:
-                # No approved batch → create one for review
-                batch = self.create_batch(motion="outbound")
-                report.pending_approval = True
-                report.batch_id = batch.batch_id
-                report.errors.append(
-                    f"GATEKEEPER: Batch {batch.batch_id} created for review. "
-                    f"Approve via POST /api/operator/approve-batch/{batch.batch_id}"
-                )
-                console.print(
-                    f"[yellow]GATEKEEPER GATE:[/yellow] Batch {batch.batch_id} requires approval.\n"
-                    f"  Email leads: {batch.total_email_leads}, LinkedIn: {batch.total_linkedin_leads}\n"
-                    f"  Approve: POST /api/operator/approve-batch/{batch.batch_id}"
-                )
+        lock_token = None
+        if not dry_run:
+            lock_token = self._state_store.acquire_operator_lock("outbound", ttl_seconds=240)
+            if not lock_token:
+                report.errors.append("Another outbound dispatch is already running (distributed lock not acquired)")
                 report.completed_at = datetime.now(timezone.utc).isoformat()
-                self._log_dispatch(report)
                 return report
 
-        schedule = self.get_warmup_schedule()
-        report.warmup_schedule = asdict(schedule)
-        state = self._load_daily_state()
-
-        # --- Step 1: Instantly dispatch (email) ---
+        # Safety
         try:
-            instantly = self._get_instantly()
-            email_remaining = max(0, schedule.email_daily_limit - state.outbound_email_dispatched)
+            if self._check_emergency_stop():
+                report.errors.append("EMERGENCY_STOP active — all dispatch blocked")
+                report.completed_at = datetime.now(timezone.utc).isoformat()
+                return report
 
-            if email_remaining > 0:
-                instantly_report = await instantly.dispatch(
-                    tier_filter=tier_filter,
-                    limit=min(limit, email_remaining) if limit else email_remaining,
-                    dry_run=dry_run,
-                )
-                report.instantly_report = asdict(instantly_report)
+            if not self._operator_config.get("enabled", False) and not dry_run:
+                report.errors.append("OPERATOR disabled in config/production.json")
+                report.completed_at = datetime.now(timezone.utc).isoformat()
+                return report
 
-                # Track dispatched leads
-                dispatched_count = instantly_report.total_dispatched
-                state.outbound_email_dispatched += dispatched_count
-
-                # Record dispatched lead emails for dedup
-                for campaign in instantly_report.campaigns_created:
-                    for eid in campaign.shadow_email_ids:
-                        if eid not in state.leads_dispatched:
-                            state.leads_dispatched.append(eid)
-            else:
-                report.errors.append(
-                    f"Email daily limit reached ({state.outbound_email_dispatched}/{schedule.email_daily_limit})"
-                )
-        except Exception as e:
-            report.errors.append(f"Instantly dispatch error: {e}")
-            logger.error("Instantly dispatch error: %s", e)
-
-        # --- Step 2: HeyReach dispatch (LinkedIn) ---
-        try:
-            # Check tier routing — only dispatch to HeyReach if tier is routed there
-            routing = self._operator_config.get("outbound", {}).get("tier_channel_routing", {})
-            heyreach_tiers = [t for t, channels in routing.items() if "heyreach" in channels]
-
-            heyreach_filter = tier_filter
-            if tier_filter and tier_filter not in heyreach_tiers:
-                logger.info("Tier %s not routed to HeyReach, skipping", tier_filter)
-            else:
-                heyreach = self._get_heyreach()
-                linkedin_remaining = max(0, schedule.linkedin_daily_limit - state.outbound_linkedin_dispatched)
-
-                if linkedin_remaining > 0:
-                    heyreach_report = await heyreach.dispatch(
-                        tier_filter=heyreach_filter,
-                        limit=min(limit, linkedin_remaining) if limit else linkedin_remaining,
-                        dry_run=dry_run,
+            # --- Ramp mode: enforce tier filter + reduced limits ---
+            ramp = self._get_ramp_status()
+            if ramp["active"]:
+                if ramp["tier_filter"] and not tier_filter:
+                    tier_filter = ramp["tier_filter"]
+                    console.print(
+                        f"[cyan]RAMP MODE[/cyan] Day {ramp['day']}: "
+                        f"tier_filter={tier_filter}, email_limit={ramp['email_limit_override']}/day"
                     )
-                    report.heyreach_report = asdict(heyreach_report)
 
-                    dispatched_count = heyreach_report.total_dispatched
-                    state.outbound_linkedin_dispatched += dispatched_count
+            # --- Gatekeeper batch approval gate ---
+            effective_batch = approved_batch
+            if not dry_run and self.gatekeeper_required and not skip_gatekeeper:
+                if effective_batch is None:
+                    effective_batch = self.get_approved_batch()
+                if effective_batch and effective_batch.motion in ("outbound", "all"):
+                    try:
+                        self._validate_batch_for_execution(effective_batch, expected_motion="outbound")
+                    except ValueError as exc:
+                        report.errors.append(str(exc))
+                        report.completed_at = datetime.now(timezone.utc).isoformat()
+                        self._log_dispatch(report)
+                        return report
+                    logger.info("Executing approved batch: %s", effective_batch.batch_id)
+                    report.batch_id = effective_batch.batch_id
+                else:
+                    # No approved batch -> create one for review
+                    batch = self.create_batch(motion="outbound")
+                    report.pending_approval = True
+                    report.batch_id = batch.batch_id
+                    report.errors.append(
+                        f"GATEKEEPER: Batch {batch.batch_id} created for review. "
+                        f"Approve via POST /api/operator/approve-batch/{batch.batch_id}"
+                    )
+                    console.print(
+                        f"[yellow]GATEKEEPER GATE:[/yellow] Batch {batch.batch_id} requires approval.\n"
+                        f"  Email leads: {batch.total_email_leads}, LinkedIn: {batch.total_linkedin_leads}\n"
+                        f"  Approve: POST /api/operator/approve-batch/{batch.batch_id}"
+                    )
+                    report.completed_at = datetime.now(timezone.utc).isoformat()
+                    self._log_dispatch(report)
+                    return report
+            elif effective_batch:
+                try:
+                    self._validate_batch_for_execution(effective_batch, expected_motion="outbound")
+                except ValueError as exc:
+                    report.errors.append(str(exc))
+                    report.completed_at = datetime.now(timezone.utc).isoformat()
+                    self._log_dispatch(report)
+                    return report
+                report.batch_id = effective_batch.batch_id
+
+            schedule = self.get_warmup_schedule()
+            report.warmup_schedule = asdict(schedule)
+            state = self._load_daily_state()
+
+            approved_shadow_email_ids: Optional[List[str]] = None
+            approved_linkedin_shadow_ids: Optional[List[str]] = None
+            if effective_batch:
+                approved_shadow_email_ids = list(effective_batch.approved_shadow_email_ids or [])
+                approved_linkedin_shadow_ids = list(effective_batch.approved_linkedin_shadow_ids or [])
+
+            # --- Step 1: Instantly dispatch (email) ---
+            try:
+                instantly = self._get_instantly()
+                email_remaining = max(0, schedule.email_daily_limit - state.outbound_email_dispatched)
+
+                if email_remaining > 0:
+                    instantly_report = await instantly.dispatch(
+                        tier_filter=tier_filter,
+                        limit=min(limit, email_remaining) if limit else email_remaining,
+                        dry_run=dry_run,
+                        approved_shadow_email_ids=approved_shadow_email_ids,
+                    )
+                    report.instantly_report = asdict(instantly_report)
+
+                    # Track dispatched leads
+                    dispatched_count = instantly_report.total_dispatched
+                    state.outbound_email_dispatched += dispatched_count
+
+                    # Record dispatched lead recipient emails for dedup
+                    for campaign in instantly_report.campaigns_created:
+                        recipient_emails = list(getattr(campaign, "recipient_emails", []) or [])
+                        if not recipient_emails:
+                            for shadow_id in getattr(campaign, "shadow_email_ids", []):
+                                resolved = self._resolve_recipient_email_from_shadow_id(str(shadow_id))
+                                if resolved:
+                                    recipient_emails.append(resolved)
+                        for recipient_email in recipient_emails:
+                            self._record_dispatched_email(state, recipient_email)
                 else:
                     report.errors.append(
-                        f"LinkedIn daily limit reached ({state.outbound_linkedin_dispatched}/{schedule.linkedin_daily_limit})"
+                        f"Email daily limit reached ({state.outbound_email_dispatched}/{schedule.email_daily_limit})"
                     )
-        except Exception as e:
-            report.errors.append(f"HeyReach dispatch error: {e}")
-            logger.error("HeyReach dispatch error: %s", e)
+            except Exception as e:
+                report.errors.append(f"Instantly dispatch error: {e}")
+                logger.error("Instantly dispatch error: %s", e)
 
-        # --- Step 3: Auto-enroll dispatched leads into cadence ---
-        try:
-            enrolled = self._auto_enroll_to_cadence()
-            if enrolled > 0:
-                console.print(f"  [cyan]Cadence auto-enroll:[/cyan] {enrolled} leads enrolled")
-                report.cadence_auto_enrolled = enrolled
-        except Exception as e:
-            report.errors.append(f"Cadence auto-enroll error: {e}")
-            logger.error("Cadence auto-enroll error: %s", e)
+            # --- Step 2: HeyReach dispatch (LinkedIn) ---
+            try:
+                # Check tier routing — only dispatch to HeyReach if tier is routed there
+                routing = self._operator_config.get("outbound", {}).get("tier_channel_routing", {})
+                heyreach_tiers = [t for t, channels in routing.items() if "heyreach" in channels]
 
-        # Update state
-        state.last_run_at = datetime.now(timezone.utc).isoformat()
-        state.runs_today += 1
-        self._save_daily_state(state)
+                heyreach_filter = tier_filter
+                if tier_filter and tier_filter not in heyreach_tiers:
+                    logger.info("Tier %s not routed to HeyReach, skipping", tier_filter)
+                else:
+                    heyreach = self._get_heyreach()
+                    linkedin_remaining = max(0, schedule.linkedin_daily_limit - state.outbound_linkedin_dispatched)
 
-        report.completed_at = datetime.now(timezone.utc).isoformat()
-        self._log_dispatch(report)
+                    if linkedin_remaining > 0:
+                        heyreach_report = await heyreach.dispatch(
+                            tier_filter=heyreach_filter,
+                            limit=min(limit, linkedin_remaining) if limit else linkedin_remaining,
+                            dry_run=dry_run,
+                            approved_shadow_email_ids=approved_linkedin_shadow_ids,
+                        )
+                        report.heyreach_report = asdict(heyreach_report)
 
-        # Mark batch as executed if we were processing an approved batch
-        if report.batch_id and not report.pending_approval:
-            self._mark_batch_executed(report.batch_id, report)
+                        dispatched_count = heyreach_report.total_dispatched
+                        state.outbound_linkedin_dispatched += dispatched_count
+                        for list_result in heyreach_report.lists_created:
+                            recipient_emails = list(getattr(list_result, "recipient_emails", []) or [])
+                            if not recipient_emails:
+                                for shadow_id in getattr(list_result, "shadow_email_ids", []):
+                                    resolved = self._resolve_recipient_email_from_shadow_id(str(shadow_id))
+                                    if resolved:
+                                        recipient_emails.append(resolved)
+                            for recipient_email in recipient_emails:
+                                self._record_dispatched_email(state, recipient_email)
+                    else:
+                        report.errors.append(
+                            f"LinkedIn daily limit reached ({state.outbound_linkedin_dispatched}/{schedule.linkedin_daily_limit})"
+                        )
+            except Exception as e:
+                report.errors.append(f"HeyReach dispatch error: {e}")
+                logger.error("HeyReach dispatch error: %s", e)
 
-        return report
+            # --- Step 3: Auto-enroll dispatched leads into cadence ---
+            try:
+                enrolled = self._auto_enroll_to_cadence()
+                if enrolled > 0:
+                    console.print(f"  [cyan]Cadence auto-enroll:[/cyan] {enrolled} leads enrolled")
+                    report.cadence_auto_enrolled = enrolled
+            except Exception as e:
+                report.errors.append(f"Cadence auto-enroll error: {e}")
+                logger.error("Cadence auto-enroll error: %s", e)
+
+            # Update state
+            state.last_run_at = datetime.now(timezone.utc).isoformat()
+            state.runs_today += 1
+            self._save_daily_state(state)
+
+            report.completed_at = datetime.now(timezone.utc).isoformat()
+            self._log_dispatch(report)
+
+            # Mark batch as executed if we were processing an approved batch
+            if mark_batch_executed and report.batch_id and not report.pending_approval:
+                self._mark_batch_executed(report.batch_id, report)
+
+            return report
+        finally:
+            if lock_token:
+                self._state_store.release_operator_lock("outbound", lock_token)
 
     # -------------------------------------------------------------------------
     # Auto-enroll dispatched leads into cadence
@@ -879,6 +1095,7 @@ class OperatorOutbound:
         self,
         limit: Optional[int] = None,
         dry_run: bool = True,
+        approved_revival_emails: Optional[List[str]] = None,
     ) -> OperatorReport:
         """
         GHL Revival: scan stale contacts → build context → dispatch re-engagement.
@@ -894,124 +1111,148 @@ class OperatorOutbound:
             motion="revival",
         )
 
-        if self._check_emergency_stop():
-            report.errors.append("EMERGENCY_STOP active — revival blocked")
-            report.completed_at = datetime.now(timezone.utc).isoformat()
-            return report
+        lock_token = None
+        if not dry_run:
+            lock_token = self._state_store.acquire_operator_lock("revival", ttl_seconds=180)
+            if not lock_token:
+                report.errors.append("Another revival dispatch is already running (distributed lock not acquired)")
+                report.completed_at = datetime.now(timezone.utc).isoformat()
+                return report
 
-        revival_cfg = self._operator_config.get("revival", {})
-        if not revival_cfg.get("enabled", False) and not dry_run:
-            report.errors.append("Revival disabled in config")
-            report.completed_at = datetime.now(timezone.utc).isoformat()
-            return report
-
-        schedule = self.get_warmup_schedule()
-        report.warmup_schedule = asdict(schedule)
-        state = self._load_daily_state()
-
-        revival_remaining = max(0, schedule.revival_daily_limit - state.revival_dispatched)
-        scan_limit = min(limit or revival_remaining, revival_remaining)
-
-        if scan_limit <= 0:
-            report.errors.append(
-                f"Revival daily limit reached ({state.revival_dispatched}/{schedule.revival_daily_limit})"
-            )
-            report.completed_at = datetime.now(timezone.utc).isoformat()
-            return report
-
-        # Scan for candidates
         try:
-            scanner = self._get_revival_scanner()
-            candidates = scanner.scan(limit=scan_limit)
-            report.revival_candidates_found = len(candidates)
-
-            if not candidates:
-                logger.info("No revival candidates found")
+            if self._check_emergency_stop():
+                report.errors.append("EMERGENCY_STOP active — revival blocked")
                 report.completed_at = datetime.now(timezone.utc).isoformat()
                 return report
 
-            console.print(f"[cyan]Revival scan:[/cyan] {len(candidates)} candidates found")
-
-            # Filter through dedup
-            eligible = [
-                c for c in candidates
-                if self._is_lead_eligible(c.email, state)
-            ]
-
-            if not eligible:
-                logger.info("All revival candidates filtered by dedup")
+            revival_cfg = self._operator_config.get("revival", {})
+            if not revival_cfg.get("enabled", False) and not dry_run:
+                report.errors.append("Revival disabled in config")
                 report.completed_at = datetime.now(timezone.utc).isoformat()
                 return report
 
-            if dry_run:
-                for c in eligible:
-                    console.print(
-                        f"  [yellow][DRY RUN][/yellow] Would revive: {c.email} "
-                        f"(score={c.revival_score:.2f}, reason={c.revival_reason}, "
-                        f"inactive={c.days_inactive}d)"
-                    )
-                report.revival_dispatched = len(eligible)
-            else:
-                # Mark as revival_queued in signal loop
-                mgr = self._get_signal_manager()
-                dispatched = 0
+            schedule = self.get_warmup_schedule()
+            report.warmup_schedule = asdict(schedule)
+            state = self._load_daily_state()
 
-                for c in eligible:
-                    try:
-                        mgr.update_lead_status(
-                            c.email, "revival_queued",
-                            "operator:revival_scan",
-                            {
-                                "revival_score": c.revival_score,
-                                "revival_reason": c.revival_reason,
-                                "days_inactive": c.days_inactive,
-                                "pipeline_stage": c.pipeline_stage,
-                            },
-                        )
-                        state.leads_dispatched.append(c.email)
-                        dispatched += 1
+            revival_remaining = max(0, schedule.revival_daily_limit - state.revival_dispatched)
+            scan_limit = min(limit or revival_remaining, revival_remaining)
 
+            if scan_limit <= 0:
+                report.errors.append(
+                    f"Revival daily limit reached ({state.revival_dispatched}/{schedule.revival_daily_limit})"
+                )
+                report.completed_at = datetime.now(timezone.utc).isoformat()
+                return report
+
+            # Scan for candidates
+            try:
+                scanner = self._get_revival_scanner()
+                candidates = scanner.scan(limit=scan_limit)
+                allowed_revival = {
+                    normalize_email(email) for email in (approved_revival_emails or []) if normalize_email(email)
+                }
+                if allowed_revival:
+                    candidates = [
+                        candidate for candidate in candidates
+                        if normalize_email(candidate.email) in allowed_revival
+                    ]
+                report.revival_candidates_found = len(candidates)
+
+                if not candidates:
+                    logger.info("No revival candidates found")
+                    report.completed_at = datetime.now(timezone.utc).isoformat()
+                    return report
+
+                console.print(f"[cyan]Revival scan:[/cyan] {len(candidates)} candidates found")
+
+                # Filter through dedup
+                eligible = [
+                    c for c in candidates
+                    if self._is_lead_eligible(c.email, state)
+                ]
+
+                if not eligible:
+                    logger.info("All revival candidates filtered by dedup")
+                    report.completed_at = datetime.now(timezone.utc).isoformat()
+                    return report
+
+                if dry_run:
+                    for c in eligible:
                         console.print(
-                            f"  [green]Queued revival:[/green] {c.email} "
-                            f"(score={c.revival_score:.2f}, {c.revival_reason})"
+                            f"  [yellow][DRY RUN][/yellow] Would revive: {c.email} "
+                            f"(score={c.revival_score:.2f}, reason={c.revival_reason}, "
+                            f"inactive={c.days_inactive}d)"
                         )
-                    except Exception as e:
-                        report.errors.append(f"Revival queue error for {c.email}: {e}")
-                        logger.error("Revival queue error: %s", e)
+                    report.revival_dispatched = len(eligible)
+                else:
+                    # Mark as revival_queued in signal loop
+                    mgr = self._get_signal_manager()
+                    dispatched = 0
 
-                state.revival_dispatched += dispatched
-                report.revival_dispatched = dispatched
+                    for c in eligible:
+                        try:
+                            mgr.update_lead_status(
+                                c.email, "revival_queued",
+                                "operator:revival_scan",
+                                {
+                                    "revival_score": c.revival_score,
+                                    "revival_reason": c.revival_reason,
+                                    "days_inactive": c.days_inactive,
+                                    "pipeline_stage": c.pipeline_stage,
+                                },
+                            )
+                            self._record_dispatched_email(state, c.email)
+                            dispatched += 1
 
-                # Slack notification
-                try:
-                    from core.alerts import send_info
-                    send_info(
-                        f"OPERATOR Revival: {dispatched} leads queued",
-                        f"Scanned GHL cache, found {len(candidates)} candidates, "
-                        f"queued {dispatched} for re-engagement.",
-                        source="operator_outbound",
-                    )
-                except ImportError:
-                    pass
+                            console.print(
+                                f"  [green]Queued revival:[/green] {c.email} "
+                                f"(score={c.revival_score:.2f}, {c.revival_reason})"
+                            )
+                        except Exception as e:
+                            report.errors.append(f"Revival queue error for {c.email}: {e}")
+                            logger.error("Revival queue error: %s", e)
 
-        except Exception as e:
-            report.errors.append(f"Revival scan error: {e}")
-            logger.error("Revival scan error: %s", e)
+                    state.revival_dispatched += dispatched
+                    report.revival_dispatched = dispatched
 
-        state.last_run_at = datetime.now(timezone.utc).isoformat()
-        state.runs_today += 1
-        self._save_daily_state(state)
+                    # Slack notification
+                    try:
+                        from core.alerts import send_info
+                        send_info(
+                            f"OPERATOR Revival: {dispatched} leads queued",
+                            f"Scanned GHL cache, found {len(candidates)} candidates, "
+                            f"queued {dispatched} for re-engagement.",
+                            source="operator_outbound",
+                        )
+                    except ImportError:
+                        pass
 
-        report.completed_at = datetime.now(timezone.utc).isoformat()
-        self._log_dispatch(report)
+            except Exception as e:
+                report.errors.append(f"Revival scan error: {e}")
+                logger.error("Revival scan error: %s", e)
 
-        return report
+            state.last_run_at = datetime.now(timezone.utc).isoformat()
+            state.runs_today += 1
+            self._save_daily_state(state)
+
+            report.completed_at = datetime.now(timezone.utc).isoformat()
+            self._log_dispatch(report)
+
+            return report
+        finally:
+            if lock_token:
+                self._state_store.release_operator_lock("revival", lock_token)
 
     # -------------------------------------------------------------------------
     # dispatch_cadence (follow-up steps for enrolled leads)
     # -------------------------------------------------------------------------
 
-    async def dispatch_cadence(self, dry_run: bool = True) -> OperatorReport:
+    async def dispatch_cadence(
+        self,
+        dry_run: bool = True,
+        approved_cadence_actions: Optional[List[Dict[str, Any]]] = None,
+    ) -> OperatorReport:
         """
         Process cadence follow-up actions for enrolled leads.
 
@@ -1029,121 +1270,146 @@ class OperatorOutbound:
             motion="cadence",
         )
 
-        if self._check_emergency_stop():
-            report.errors.append("EMERGENCY_STOP active — cadence blocked")
-            report.completed_at = datetime.now(timezone.utc).isoformat()
-            return report
-
-        schedule = self.get_warmup_schedule()
-        report.warmup_schedule = asdict(schedule)
-        state = self._load_daily_state()
-
-        cadence = self._get_cadence_engine()
-
-        # Step 1: Sync signals (auto-exit on reply/bounce/unsub)
-        try:
-            sync_result = cadence.sync_signals()
-            report.cadence_synced = sync_result
-        except Exception as e:
-            report.errors.append(f"Cadence signal sync error: {e}")
-            logger.error("Cadence signal sync error: %s", e)
-
-        # Step 2: Get actions due today
-        try:
-            due_actions = cadence.get_due_actions()
-            report.cadence_actions_due = len(due_actions)
-
-            if not due_actions:
-                logger.info("No cadence actions due today")
+        lock_token = None
+        if not dry_run:
+            lock_token = self._state_store.acquire_operator_lock("cadence", ttl_seconds=180)
+            if not lock_token:
+                report.errors.append("Another cadence dispatch is already running (distributed lock not acquired)")
                 report.completed_at = datetime.now(timezone.utc).isoformat()
-                self._log_dispatch(report)
                 return report
 
-            dispatched = 0
+        try:
+            if self._check_emergency_stop():
+                report.errors.append("EMERGENCY_STOP active — cadence blocked")
+                report.completed_at = datetime.now(timezone.utc).isoformat()
+                return report
 
-            for action in due_actions:
-                # Check daily limits
-                if action.step.channel == "email":
-                    remaining = max(0, schedule.email_daily_limit - state.outbound_email_dispatched)
-                    if remaining <= 0:
-                        report.errors.append(f"Email limit reached, skipping cadence step for {action.email}")
+            schedule = self.get_warmup_schedule()
+            report.warmup_schedule = asdict(schedule)
+            state = self._load_daily_state()
+
+            cadence = self._get_cadence_engine()
+
+            # Step 1: Sync signals (auto-exit on reply/bounce/unsub)
+            try:
+                sync_result = cadence.sync_signals()
+                report.cadence_synced = sync_result
+            except Exception as e:
+                report.errors.append(f"Cadence signal sync error: {e}")
+                logger.error("Cadence signal sync error: %s", e)
+
+            # Step 2: Get actions due today
+            try:
+                due_actions = cadence.get_due_actions()
+                allowed_action_ids = {
+                    str(item.get("action_id", "")).strip()
+                    for item in (approved_cadence_actions or [])
+                    if str(item.get("action_id", "")).strip()
+                }
+                if allowed_action_ids:
+                    due_actions = [
+                        action for action in due_actions
+                        if (
+                            f"{normalize_email(action.email)}|"
+                            f"{action.step.channel}|s{action.step.step}|d{action.step.day}"
+                        ) in allowed_action_ids
+                    ]
+                report.cadence_actions_due = len(due_actions)
+
+                if not due_actions:
+                    logger.info("No cadence actions due today")
+                    report.completed_at = datetime.now(timezone.utc).isoformat()
+                    self._log_dispatch(report)
+                    return report
+
+                dispatched = 0
+
+                for action in due_actions:
+                    # Check daily limits
+                    if action.step.channel == "email":
+                        remaining = max(0, schedule.email_daily_limit - state.outbound_email_dispatched)
+                        if remaining <= 0:
+                            report.errors.append(f"Email limit reached, skipping cadence step for {action.email}")
+                            continue
+                    elif action.step.channel == "linkedin":
+                        remaining = max(0, schedule.linkedin_daily_limit - state.outbound_linkedin_dispatched)
+                        if remaining <= 0:
+                            report.errors.append(f"LinkedIn limit reached, skipping cadence step for {action.email}")
+                            continue
+
+                    # Dedup check
+                    if not self._is_lead_eligible(action.email, state):
                         continue
-                elif action.step.channel == "linkedin":
-                    remaining = max(0, schedule.linkedin_daily_limit - state.outbound_linkedin_dispatched)
-                    if remaining <= 0:
-                        report.errors.append(f"LinkedIn limit reached, skipping cadence step for {action.email}")
-                        continue
 
-                # Dedup check
-                if not self._is_lead_eligible(action.email, state):
-                    continue
+                    # Generate follow-up copy for email steps via CRAFTER
+                    followup_copy = None
+                    if action.step.channel == "email" and action.step.action != "intro":
+                        try:
+                            from execution.crafter_campaign import CampaignCrafter
+                            crafter = CampaignCrafter()
+                            followup_copy = crafter.craft_cadence_followup(
+                                action_type=action.step.action,
+                                lead_data=action.lead_data,
+                                step_num=action.step.step,
+                                day_num=action.step.day,
+                            )
+                        except Exception as e:
+                            logger.warning("CRAFTER follow-up generation failed for %s: %s", action.email, e)
 
-                # Generate follow-up copy for email steps via CRAFTER
-                followup_copy = None
-                if action.step.channel == "email" and action.step.action != "intro":
-                    try:
-                        from execution.crafter_campaign import CampaignCrafter
-                        crafter = CampaignCrafter()
-                        followup_copy = crafter.craft_cadence_followup(
-                            action_type=action.step.action,
-                            lead_data=action.lead_data,
-                            step_num=action.step.step,
-                            day_num=action.step.day,
-                        )
-                    except Exception as e:
-                        logger.warning("CRAFTER follow-up generation failed for %s: %s", action.email, e)
-
-                if dry_run:
-                    label = f"  [yellow][DRY RUN][/yellow] Cadence Step {action.step.step} "
-                    label += f"(Day {action.step.day}) [{action.step.channel}] -> {action.email}"
-                    if followup_copy:
-                        label += f' | subj: "{followup_copy["subject"][:50]}"'
-                    else:
-                        label += f" | {action.step.action}"
-                    console.print(label)
-                    cadence.mark_step_done(action.email, action.step.step, "dry_run",
-                                           metadata={"followup_copy": bool(followup_copy)})
-                    dispatched += 1
-                else:
-                    try:
-                        if action.step.channel == "email":
-                            state.outbound_email_dispatched += 1
-                        elif action.step.channel == "linkedin":
-                            state.outbound_linkedin_dispatched += 1
-
-                        metadata = {}
+                    if dry_run:
+                        label = f"  [yellow][DRY RUN][/yellow] Cadence Step {action.step.step} "
+                        label += f"(Day {action.step.day}) [{action.step.channel}] -> {action.email}"
                         if followup_copy:
-                            # Save generated copy to shadow email dir for review
-                            self._save_cadence_email(action, followup_copy)
-                            metadata["followup_subject"] = followup_copy.get("subject", "")
-
-                        cadence.mark_step_done(action.email, action.step.step, "dispatched",
-                                               metadata=metadata)
-                        state.leads_dispatched.append(action.email)
+                            label += f' | subj: "{followup_copy["subject"][:50]}"'
+                        else:
+                            label += f" | {action.step.action}"
+                        console.print(label)
+                        cadence.mark_step_done(action.email, action.step.step, "dry_run",
+                                               metadata={"followup_copy": bool(followup_copy)})
                         dispatched += 1
+                    else:
+                        try:
+                            if action.step.channel == "email":
+                                state.outbound_email_dispatched += 1
+                            elif action.step.channel == "linkedin":
+                                state.outbound_linkedin_dispatched += 1
 
-                        console.print(
-                            f"  [green]Cadence[/green] Step {action.step.step} "
-                            f"(Day {action.step.day}) [{action.step.channel}] -> {action.email}"
-                        )
-                    except Exception as e:
-                        report.errors.append(f"Cadence dispatch error for {action.email}: {e}")
+                            metadata = {}
+                            if followup_copy:
+                                # Save generated copy to shadow email dir for review
+                                self._save_cadence_email(action, followup_copy)
+                                metadata["followup_subject"] = followup_copy.get("subject", "")
 
-            state.cadence_dispatched += dispatched
-            report.cadence_dispatched = dispatched
+                            cadence.mark_step_done(action.email, action.step.step, "dispatched",
+                                                   metadata=metadata)
+                            self._record_dispatched_email(state, action.email)
+                            dispatched += 1
 
-        except Exception as e:
-            report.errors.append(f"Cadence engine error: {e}")
-            logger.error("Cadence engine error: %s", e)
+                            console.print(
+                                f"  [green]Cadence[/green] Step {action.step.step} "
+                                f"(Day {action.step.day}) [{action.step.channel}] -> {action.email}"
+                            )
+                        except Exception as e:
+                            report.errors.append(f"Cadence dispatch error for {action.email}: {e}")
 
-        state.last_run_at = datetime.now(timezone.utc).isoformat()
-        state.runs_today += 1
-        self._save_daily_state(state)
+                state.cadence_dispatched += dispatched
+                report.cadence_dispatched = dispatched
 
-        report.completed_at = datetime.now(timezone.utc).isoformat()
-        self._log_dispatch(report)
+            except Exception as e:
+                report.errors.append(f"Cadence engine error: {e}")
+                logger.error("Cadence engine error: %s", e)
 
-        return report
+            state.last_run_at = datetime.now(timezone.utc).isoformat()
+            state.runs_today += 1
+            self._save_daily_state(state)
+
+            report.completed_at = datetime.now(timezone.utc).isoformat()
+            self._log_dispatch(report)
+
+            return report
+        finally:
+            if lock_token:
+                self._state_store.release_operator_lock("cadence", lock_token)
 
     # -------------------------------------------------------------------------
     # dispatch_all
@@ -1159,57 +1425,89 @@ class OperatorOutbound:
             motion="all",
         )
 
-        # --- Gatekeeper batch approval gate (combined for all motions) ---
-        if not dry_run and self.gatekeeper_required:
-            approved_batch = self.get_approved_batch()
-            if approved_batch and approved_batch.motion == "all":
-                logger.info("Executing approved 'all' batch: %s", approved_batch.batch_id)
-                report.batch_id = approved_batch.batch_id
-            else:
-                batch = self.create_batch(motion="all")
-                report.pending_approval = True
-                report.batch_id = batch.batch_id
-                report.errors.append(
-                    f"GATEKEEPER: Batch {batch.batch_id} created for review. "
-                    f"Approve via POST /api/operator/approve-batch/{batch.batch_id}"
-                )
-                console.print(
-                    f"[yellow]GATEKEEPER GATE:[/yellow] Batch {batch.batch_id} requires approval.\n"
-                    f"  Email: {batch.total_email_leads}, LinkedIn: {batch.total_linkedin_leads}\n"
-                    f"  Cadence due: {batch.total_cadence_due}, Revival: {batch.total_revival_candidates}\n"
-                    f"  Approve: POST /api/operator/approve-batch/{batch.batch_id}"
-                )
+        lock_token = None
+        if not dry_run:
+            lock_token = self._state_store.acquire_operator_lock("all", ttl_seconds=300)
+            if not lock_token:
+                report.errors.append("Another all-motion dispatch is already running (distributed lock not acquired)")
                 report.completed_at = datetime.now(timezone.utc).isoformat()
-                self._log_dispatch(report)
                 return report
 
-        # 1. Outbound (new leads)
-        outbound_report = await self.dispatch_outbound(dry_run=dry_run)
-        report.instantly_report = outbound_report.instantly_report
-        report.heyreach_report = outbound_report.heyreach_report
-        report.errors.extend(outbound_report.errors)
+        try:
+            approved_batch: Optional[DispatchBatch] = None
 
-        # 2. Cadence (follow-up steps for enrolled leads)
-        cadence_report = await self.dispatch_cadence(dry_run=dry_run)
-        report.cadence_actions_due = cadence_report.cadence_actions_due
-        report.cadence_dispatched = cadence_report.cadence_dispatched
-        report.cadence_synced = cadence_report.cadence_synced
-        report.errors.extend(cadence_report.errors)
+            # --- Gatekeeper batch approval gate (combined for all motions) ---
+            if not dry_run and self.gatekeeper_required:
+                approved_batch = self.get_approved_batch()
+                if approved_batch and approved_batch.motion == "all":
+                    try:
+                        self._validate_batch_for_execution(approved_batch, expected_motion="all")
+                    except ValueError as exc:
+                        report.errors.append(str(exc))
+                        report.completed_at = datetime.now(timezone.utc).isoformat()
+                        self._log_dispatch(report)
+                        return report
+                    logger.info("Executing approved 'all' batch: %s", approved_batch.batch_id)
+                    report.batch_id = approved_batch.batch_id
+                else:
+                    batch = self.create_batch(motion="all")
+                    report.pending_approval = True
+                    report.batch_id = batch.batch_id
+                    report.errors.append(
+                        f"GATEKEEPER: Batch {batch.batch_id} created for review. "
+                        f"Approve via POST /api/operator/approve-batch/{batch.batch_id}"
+                    )
+                    console.print(
+                        f"[yellow]GATEKEEPER GATE:[/yellow] Batch {batch.batch_id} requires approval.\n"
+                        f"  Email: {batch.total_email_leads}, LinkedIn: {batch.total_linkedin_leads}\n"
+                        f"  Cadence due: {batch.total_cadence_due}, Revival: {batch.total_revival_candidates}\n"
+                        f"  Approve: POST /api/operator/approve-batch/{batch.batch_id}"
+                    )
+                    report.completed_at = datetime.now(timezone.utc).isoformat()
+                    self._log_dispatch(report)
+                    return report
 
-        # 3. Revival (stale GHL contacts)
-        revival_report = await self.dispatch_revival(dry_run=dry_run)
-        report.revival_candidates_found = revival_report.revival_candidates_found
-        report.revival_dispatched = revival_report.revival_dispatched
-        report.errors.extend(revival_report.errors)
+            # 1. Outbound (new leads)
+            outbound_report = await self.dispatch_outbound(
+                dry_run=dry_run,
+                approved_batch=approved_batch,
+                skip_gatekeeper=True,
+                mark_batch_executed=False,
+            )
+            report.instantly_report = outbound_report.instantly_report
+            report.heyreach_report = outbound_report.heyreach_report
+            report.errors.extend(outbound_report.errors)
 
-        report.warmup_schedule = outbound_report.warmup_schedule
-        report.completed_at = datetime.now(timezone.utc).isoformat()
+            # 2. Cadence (follow-up steps for enrolled leads)
+            cadence_report = await self.dispatch_cadence(
+                dry_run=dry_run,
+                approved_cadence_actions=(approved_batch.approved_cadence_actions if approved_batch else None),
+            )
+            report.cadence_actions_due = cadence_report.cadence_actions_due
+            report.cadence_dispatched = cadence_report.cadence_dispatched
+            report.cadence_synced = cadence_report.cadence_synced
+            report.errors.extend(cadence_report.errors)
 
-        # Mark batch as executed if we were processing an approved batch
-        if report.batch_id and not report.pending_approval:
-            self._mark_batch_executed(report.batch_id, report)
+            # 3. Revival (stale GHL contacts)
+            revival_report = await self.dispatch_revival(
+                dry_run=dry_run,
+                approved_revival_emails=(approved_batch.approved_revival_emails if approved_batch else None),
+            )
+            report.revival_candidates_found = revival_report.revival_candidates_found
+            report.revival_dispatched = revival_report.revival_dispatched
+            report.errors.extend(revival_report.errors)
 
-        return report
+            report.warmup_schedule = outbound_report.warmup_schedule
+            report.completed_at = datetime.now(timezone.utc).isoformat()
+
+            # Mark batch as executed if we were processing an approved batch
+            if report.batch_id and not report.pending_approval:
+                self._mark_batch_executed(report.batch_id, report)
+
+            return report
+        finally:
+            if lock_token:
+                self._state_store.release_operator_lock("all", lock_token)
 
     # -------------------------------------------------------------------------
     # Status (for dashboard)

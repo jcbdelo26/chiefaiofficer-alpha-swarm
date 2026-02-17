@@ -60,15 +60,24 @@ async def _get_client():
 # AUTH (re-use dashboard pattern)
 # =============================================================================
 
-def _require_auth(token: str = Query(None, alias="token")):
-    """Re-use dashboard auth pattern."""
-    DASHBOARD_AUTH_TOKEN = os.getenv("DASHBOARD_AUTH_TOKEN", "")
-    LEGACY_TOKEN = "caio-swarm-secret-2026"
-    if not DASHBOARD_AUTH_TOKEN:
-        if token == LEGACY_TOKEN:
-            return True
+def _require_auth(request: Request, token: str = Query(None, alias="token")):
+    """Dashboard-compatible auth for Instantly control endpoints."""
+    configured_token = (os.getenv("DASHBOARD_AUTH_TOKEN") or "").strip()
+    strict_raw = (os.getenv("DASHBOARD_AUTH_STRICT") or "").strip().lower()
+    strict_mode = strict_raw in {"1", "true", "yes", "on"}
+
+    supplied_token = (
+        token
+        or request.headers.get("X-Dashboard-Token")
+        or request.headers.get("x-dashboard-token")
+    )
+
+    if not configured_token:
+        if strict_mode:
+            raise HTTPException(status_code=401, detail="Unauthorized")
         return True
-    if not token or (token != DASHBOARD_AUTH_TOKEN and token != LEGACY_TOKEN):
+
+    if not supplied_token or supplied_token != configured_token:
         raise HTTPException(status_code=401, detail="Unauthorized")
     return True
 
@@ -165,7 +174,6 @@ async def activate_campaign(
     This is the ONLY way a campaign goes live.
     """
     # Check emergency stop
-    load_dotenv(override=True)
     if os.getenv("EMERGENCY_STOP", "false").lower().strip() in ("true", "1", "yes", "on"):
         raise HTTPException(
             status_code=403,

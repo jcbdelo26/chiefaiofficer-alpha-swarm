@@ -1,6 +1,6 @@
 # CAIO Alpha Swarm — Unified Implementation Plan
 
-**Last Updated**: 2026-02-17 (v4.3 — Deep audit: pipeline body fix, dashboard v2.4 ramp banner, mid-market targets, full code verification)
+**Last Updated**: 2026-02-17 (v4.4 — P0 hardening patch train complete: strict auth, immutable Gatekeeper snapshots, dedup/send-path fixes, Redis cutover, strict gate pass)
 **Owner**: ChiefAIOfficer Production Team
 **AI**: Claude Opus 4.6
 
@@ -20,7 +20,7 @@ Phase 0: Foundation Lock          [##########] 100%  COMPLETE
 Phase 1: Live Pipeline Validation [##########] 100%  COMPLETE
 Phase 2: Supervised Burn-In       [##########] 100%  COMPLETE
 Phase 3: Expand & Harden          [##########] 100%  COMPLETE
-Phase 4: Autonomy Graduation      [#########.]  98%  IN PROGRESS (4A+4C+4D+4F COMPLETE, 4B infra done, 4E ramp active — awaiting first live dispatch)
+Phase 4: Autonomy Graduation      [#########.]  98%  IN PROGRESS (4A+4C+4D+4F+4G COMPLETE, 4B infra done, 4E ramp active — awaiting first live dispatch)
 ```
 
 ---
@@ -374,7 +374,7 @@ QUEEN (orchestrator)
 | Fix cadence engine encoding bug | DONE | Unicode `→` → ASCII `->` (Windows cp1252) |
 | Ramp configuration | DONE | `operator.ramp`: 5/day, tier_1, 3 supervised days |
 | Wire ramp into OPERATOR | DONE | Limit override + tier filter + batch preview + status display |
-| `actually_send: true` | DONE | Informational flag (real control: `--live` CLI flag) |
+| `actually_send` semantics clarified | DONE | Governs dashboard direct GHL send behavior only; OPERATOR path is controlled by `--live` + Gatekeeper + OPERATOR config |
 | Deploy to Railway | DONE | Ramp active, verified via `/api/operator/status` |
 
 ### Remaining (Operational — User Action Required)
@@ -434,6 +434,55 @@ QUEEN (orchestrator)
 - CRO Copilot (unnecessary at <100 leads)
 - Replace CRM (GHL works, "Rent the Pipes")
 
+### 4G: Production Hardening Patch Train (P0) — COMPLETE (v4.4)
+
+**Objective**: close P0 reliability/security gaps before autonomy progression and Golden Set replay at scale.
+
+#### Completed Patch Table (P0-A through P0-E)
+
+| Patch | Status | Outcome | Primary Files |
+|------|--------|---------|---------------|
+| **P0-A: API Auth Hardening (strict)** | DONE | Protected `/api/*` endpoints now require token via query (`token`) or header (`X-Dashboard-Token`); health allowlist remains unauthenticated; legacy token bypass removed (including Instantly control router) | `dashboard/health_app.py`, `dashboard/hos_dashboard.html`, `dashboard/leads_dashboard.html`, `webhooks/instantly_webhook.py` |
+| **P0-B: Gatekeeper Snapshot Integrity** | DONE | `DispatchBatch` now carries immutable approved scope (`approved_*`), `preview_hash`, `expires_at`; execution validates scope/hash/expiry and is one-time idempotent | `execution/operator_outbound.py`, `execution/instantly_dispatcher.py`, `execution/heyreach_dispatcher.py` |
+| **P0-C: Duplicate-Send + Dedup Corrections** | DONE | Dashboard GHL send success now writes terminal `status=sent_via_ghl`; Instantly/HeyReach loaders exclude GHL-sent leads; OPERATOR dedup migrated to canonical email keys with legacy compatibility | `dashboard/health_app.py`, `execution/operator_outbound.py`, `execution/instantly_dispatcher.py`, `execution/heyreach_dispatcher.py` |
+| **P0-D: Redis State Source-of-Truth (dual-read cutover)** | DONE | New Redis-backed state layer introduced for operator daily state, batches, cadence lead state; dual-read backfill from files; distributed locks added for live dispatch paths | `core/state_store.py`, `execution/operator_outbound.py`, `execution/cadence_engine.py`, `scripts/migrate_file_state_to_redis.py` |
+| **P0-E: Escalation Regression Fix** | DONE | Escalation chain aligned to deterministic rubric: Level 1 Slack, Level 2 Slack+SMS, Level 3 Slack+SMS+Email | `core/notifications.py` |
+
+#### Safety Controls (v4.4)
+
+| Control | Behavior | Verification |
+|---------|----------|--------------|
+| Strict API auth model | All protected `/api/*` endpoints reject unauthenticated calls with `401`; only health allowlist is unauthenticated | `tests/test_runtime_reliability.py::test_protected_api_endpoints_require_dashboard_token` |
+| Immutable Gatekeeper execution scope | Approved batch executes frozen IDs/actions only; queue drift cannot alter execution scope | `tests/test_operator_batch_snapshot_integrity.py` |
+| One-time batch execution | Executed batch cannot be replayed; subsequent live call creates new pending batch instead of re-sending prior approved scope | `tests/test_operator_batch_snapshot_integrity.py` |
+| Canonical dedup keys | Daily dedup key is normalized recipient email (`email:<normalized>`); legacy `email_id` entries are migrated/compatible | `tests/test_operator_dedup_and_send_path.py` |
+| Redis state + locking | Operator/cadence/batch state uses Redis-backed interface with dual-read fallback and live-motion distributed locks | `tests/test_state_store_redis_cutover.py` |
+
+#### Strict Release Gate (Executed)
+
+| Gate | Command | Threshold | Result |
+|------|---------|-----------|--------|
+| Replay Gate | `python scripts/replay_harness.py --min-pass-rate 0.95` | `pass_rate >= 0.95` | **PASS** (`1.0`, 50/50, `block_build=false`) |
+| Critical Pytest Pack | `python -m pytest -q tests/test_gatekeeper_integration.py tests/test_runtime_reliability.py tests/test_runtime_determinism_flows.py tests/test_trace_envelope_and_hardening.py tests/test_replay_harness_assets.py tests/test_operator_batch_snapshot_integrity.py tests/test_operator_dedup_and_send_path.py tests/test_state_store_redis_cutover.py` | Zero failures | **PASS** (60 passed) |
+| Operator Dry-Run Safety | `python -m execution.operator_outbound --motion outbound --dry-run --json` + `python -m execution.operator_outbound --motion all --dry-run --json` | No unexpected errors | **PASS** |
+| Endpoint Auth No-Go Gate (local deterministic) | `tests/test_runtime_reliability.py::test_protected_api_endpoints_require_dashboard_token` | Protected routes unauth=`401`; token auth accepted | **PASS** |
+
+#### Contradiction Cleanup (v4.4)
+
+- **Inngest function count**: canonical count is **5** functions (includes `daily-decay-detection`).
+- **`actually_send` semantics**: this flag applies to dashboard approval path (direct GHL send behavior). OPERATOR execution path is governed by `--live`, Gatekeeper approval, and OPERATOR config/ramp controls.
+
+#### Remaining Immediate Next Steps (Post-P0)
+
+- [x] Add deterministic deployed auth smoke gate utility:
+  - `python scripts/endpoint_auth_smoke.py --base-url "https://<env-domain>" --token "<DASHBOARD_AUTH_TOKEN>"`
+- [ ] Set production/staging `CORS_ALLOWED_ORIGINS` explicit allowlist (remove wildcard behavior in deployed env).
+- [ ] Run production endpoint auth smoke with real deployed URL/token:
+  - `python scripts/endpoint_auth_smoke.py --base-url "https://<prod>" --token "<DASHBOARD_AUTH_TOKEN>"`
+- [ ] Run one-time state migration in deployed environment:
+  - `python scripts/migrate_file_state_to_redis.py --hive-dir .hive-mind`
+- [ ] Keep conservative ramp policy active until 3 clean supervised live days are completed.
+
 ---
 
 ## Phase 5: Optimize & Scale (Post-Autonomy)
@@ -488,7 +537,7 @@ QUEEN (orchestrator)
 | **BetterContact** | CODE READY | Async API integrated in enricher, no subscription yet (Clay preferred) |
 | **Slack Alerting** | WORKING | Webhook configured, WARNING + CRITICAL alerts |
 | **Redis (Upstash)** | WORKING | 62ms from Railway |
-| **Inngest** | WORKING | 4 functions mounted |
+| **Inngest** | WORKING | 5 functions mounted |
 | **Instantly.ai** | V2 LIVE | Bearer auth, DRAFTED-by-default, 6 domains warmed (100% health), 4/4 webhooks registered, test campaign sent. Phase 4A COMPLETE. |
 | **HeyReach** | ACTIVE | API key verified, 4 webhooks registered (UI), signal loop wired. 19 campaigns exist. Webhook CRUD is UI-only. |
 | **Railway** | DEPLOYED | Auto-deploy on push |
@@ -538,7 +587,7 @@ QUEEN (orchestrator)
 
 | Control | Setting | Location |
 |---------|---------|----------|
-| `actually_send` | `false` | `config/production.json` |
+| `actually_send` | dashboard-path toggle (not OPERATOR master switch) | `config/production.json` |
 | `shadow_mode` | `true` | `config/production.json` |
 | `max_daily_sends` | `0` | `config/production.json` |
 | `EMERGENCY_STOP` | env var | Blocks all outbound |
@@ -597,6 +646,7 @@ QUEEN (orchestrator)
 
 ---
 
-*Plan Version: 3.7*
+*Plan Version: 4.4*
 *Created: 2026-02-13*
-*Supersedes: v3.6, Modernization Roadmap (implementation_plan.md.resolved), Original Path to Full Autonomy (f34646b2/task.md.resolved)*
+*Latest Patch Train Release: 2026-02-17 (P0-A..P0-E complete)*
+*Supersedes: v3.7, v3.6, Modernization Roadmap (implementation_plan.md.resolved), Original Path to Full Autonomy (f34646b2/task.md.resolved)*
