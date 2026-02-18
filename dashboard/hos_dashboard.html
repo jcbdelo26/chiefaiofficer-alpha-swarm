@@ -771,6 +771,7 @@
             resize: vertical;
             line-height: 1.6;
             overflow-y: auto;
+            white-space: pre-wrap;
         }
 
         .body-edit p {
@@ -878,6 +879,35 @@
             font-size: 14px;
             color: var(--text-primary);
             font-weight: 500;
+        }
+
+        .signal-checklist {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-top: 6px;
+        }
+
+        .signal-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            padding: 4px 8px;
+            border-radius: 999px;
+            width: fit-content;
+            border: 1px solid var(--border);
+            background: var(--bg-dark);
+        }
+
+        .signal-item.pass {
+            border-color: rgba(16, 185, 129, 0.45);
+            color: var(--green);
+        }
+
+        .signal-item.warn {
+            border-color: rgba(251, 191, 36, 0.45);
+            color: var(--yellow);
         }
     </style>
 </head>
@@ -1151,15 +1181,143 @@
         function formatPlatformBadge(email) {
             const platform = (email.targetPlatform || 'unknown').toLowerCase();
             const direction = (email.direction || 'outbound').toUpperCase();
+            const safePlatform = escapeHtml(platform);
             const label = platform === 'unknown' ? `${direction} · UNKNOWN` : `${direction} · ${platform.toUpperCase()}`;
-            return `<span class="route-badge platform-${platform}">${label}</span>`;
+            return `<span class="route-badge platform-${safePlatform}">${escapeHtml(label)}</span>`;
         }
 
         function formatCampaignLine(email) {
-            const campaignType = email.campaignType || 'unmapped';
-            const campaignId = email.campaignId || 'none';
-            const syncState = email.syncState || 'unknown';
+            const campaignType = escapeHtml(email.campaignType || 'unmapped');
+            const campaignId = escapeHtml(email.campaignId || 'none');
+            const syncState = escapeHtml(email.syncState || 'unknown');
             return `<span class="campaign-chip">Campaign: ${campaignType} (${campaignId})</span><span class="campaign-chip">Sync: ${syncState}</span>`;
+        }
+
+        function escapeHtml(value = '') {
+            return String(value)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function escapeRegExp(value = '') {
+            return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        }
+
+        function decodeHtmlEntities(value = '') {
+            const textarea = document.createElement('textarea');
+            textarea.innerHTML = String(value || '');
+            return textarea.value;
+        }
+
+        function extractFirstName(fullName = '') {
+            const cleaned = String(fullName || '').trim();
+            if (!cleaned) return 'there';
+            return cleaned.split(/\s+/)[0];
+        }
+
+        function normalizeEmailBody(rawBody = '') {
+            let text = String(rawBody || '');
+            text = text.replace(/<style[\s\S]*?<\/style>/gi, '');
+            text = text.replace(/<script[\s\S]*?<\/script>/gi, '');
+            text = text.replace(/<\/p>/gi, '\n\n').replace(/<p[^>]*>/gi, '');
+            text = text.replace(/<br\s*\/?>/gi, '\n');
+            text = text.replace(/<\/div>/gi, '\n').replace(/<div[^>]*>/gi, '');
+            text = text.replace(/<li[^>]*>/gi, '- ').replace(/<\/li>/gi, '\n');
+            text = text.replace(/<\/?ul[^>]*>/gi, '').replace(/<\/?ol[^>]*>/gi, '');
+            text = text.replace(/<[^>]+>/g, '');
+            text = decodeHtmlEntities(text);
+            text = text.replace(/\r\n?/g, '\n');
+            text = text.replace(/\u00a0/g, ' ');
+            text = text.replace(/[ \t]+\n/g, '\n');
+            text = text.replace(/\n{3,}/g, '\n\n');
+            return text.trim();
+        }
+
+        function formatCopyForApproval(rawBody = '', email = {}) {
+            let text = normalizeEmailBody(rawBody);
+            const firstName = extractFirstName(email.recipientName || '');
+            const company = (email.company && email.company !== 'Unknown Corp') ? email.company : '';
+            const industry = (email.industry && email.industry !== 'N/A') ? email.industry : '';
+            const title = (email.title && email.title !== 'Unknown Title') ? email.title : '';
+
+            if (!text || /^no body content$/i.test(text)) {
+                const signalLine = title && company
+                    ? `Given your role as ${title} at ${company}, this felt relevant.`
+                    : company
+                        ? `Noticed ${company}${industry ? ` in ${industry}` : ''} and wanted to share a practical AI execution path.`
+                        : 'Wanted to share a practical AI execution path that has worked for similar teams.';
+                return `Hi ${firstName},\n\n${signalLine}\n\nWould it be useful if I send a one-page plan with 2-3 workflows worth piloting first?\n\nBest,\nDani Apgar\nChief AI Officer\nhttps://caio.cx/ai-exec-briefing-call\n\n---\nReply STOP to unsubscribe.`;
+            }
+
+            text = text.replace(/^Hi\s+([^\n,]+),\s*/i, 'Hi $1,\n\n');
+            text = text.replace(/\.\s+(Usually,|Most teams|We step in|We act as|How we run it:|What that looks like:|If useful,|Worth a brief chat|Open to|Would it be helpful)/g, '.\n\n$1');
+            text = text.replace(/\s+(How we run it:|What that looks like:)/g, '\n\n$1');
+            text = text.replace(/(How we run it:|What that looks like:)\s*- /g, '$1\n- ');
+            text = text.replace(/\s-\s(?=[A-Za-z0-9][^:\n]{2,60}:)/g, '\n- ');
+            text = text.replace(/\n-\s*/g, '\n- ');
+            text = text.replace(/\s+(Best,|Cheers,|Thanks,)\s+/g, '\n\n$1\n');
+            text = text.replace(/\s+---\s+/g, '\n\n---\n');
+            text = text.replace(/\s+(Reply STOP to unsubscribe\.)/i, '\n$1');
+
+            if (normalizeTierValue(email.tier || 'tier_3') === 'tier_1') {
+                const hasCompany = company && new RegExp(escapeRegExp(company), 'i').test(text);
+                const roleAnchor = title.split(',')[0].trim();
+                const hasRole = roleAnchor && roleAnchor.length >= 4 && new RegExp(escapeRegExp(roleAnchor), 'i').test(text);
+                if (company && (!hasCompany || !hasRole)) {
+                    const signalLine = title
+                        ? `Given your role as ${title} at ${company}, this felt relevant.`
+                        : `Noticed ${company}${industry ? ` in ${industry}` : ''} and wanted to share a practical AI execution path.`;
+                    text = text.replace(/^Hi\s+[^\n,]+,\n\n/i, (match) => `${match}${signalLine}\n\n`);
+                }
+            }
+
+            text = text.replace(/[ \t]+\n/g, '\n');
+            text = text.replace(/\n{3,}/g, '\n\n');
+            return text.trim();
+        }
+
+        function buildCopySignalChecks(email = {}, bodyText = '') {
+            const body = String(bodyText || '');
+            const lower = body.toLowerCase();
+            const firstName = extractFirstName(email.recipientName || '').toLowerCase();
+            const company = String(email.company || '').toLowerCase();
+            const title = String(email.title || '').toLowerCase();
+            const roleAnchor = title.split(',')[0].trim();
+
+            const checks = [
+                {
+                    label: 'Personalization (name + company)',
+                    pass: !!firstName && lower.includes(firstName) && !!company && lower.includes(company),
+                },
+                {
+                    label: 'Role-aware context',
+                    pass: !!roleAnchor && roleAnchor.length >= 4 && lower.includes(roleAnchor),
+                },
+                {
+                    label: 'Business outcome signal',
+                    pass: /(roi|kpi|pipeline|conversion|time saved|productivity|revenue|velocity|meetings)/i.test(body),
+                },
+                {
+                    label: 'Clear CTA',
+                    pass: /(\?|15\s*-?\s*minute|quick call|open to|if useful|worth a brief chat)/i.test(body),
+                },
+                {
+                    label: 'Compliance footer',
+                    pass: /reply stop to unsubscribe\./i.test(body),
+                },
+            ];
+            return checks;
+        }
+
+        function renderSignalChecklist(checks = []) {
+            return checks.map((item) => {
+                const cls = item.pass ? 'pass' : 'warn';
+                const icon = item.pass ? '✓' : '⚠';
+                return `<span class="signal-item ${cls}">${icon} ${escapeHtml(item.label)}</span>`;
+            }).join('');
         }
 
         async function fetchPendingEmails({ silent = false } = {}) {
@@ -1205,7 +1363,7 @@
                     const classifier = e.classifier || {};
                     const campaignRef = e.campaign_ref || {};
                     const tier = normalizeTierValue(e.tier || 'tier_3');
-                    pendingEmails.push({
+                    const queuedEmail = {
                         id: e.email_id,
                         tier,
                         tierClass: normalizeTierClass(tier),
@@ -1235,7 +1393,10 @@
                         externalProvider: campaignRef.external_provider || '',
                         externalCampaignId: campaignRef.external_campaign_id || '',
                         externalCampaignName: campaignRef.external_campaign_name || ''
-                    });
+                    };
+                    queuedEmail.body = formatCopyForApproval(queuedEmail.body, queuedEmail);
+                    queuedEmail.copySignals = buildCopySignalChecks(queuedEmail, queuedEmail.body);
+                    pendingEmails.push(queuedEmail);
                 });
 
                 lastRefreshAt = data.refreshed_at || new Date().toISOString();
@@ -1322,30 +1483,41 @@
 
             document.getElementById('pendingCount').textContent = filteredEmails.length;
 
-            list.innerHTML = filteredEmails.map(email => `
+            list.innerHTML = filteredEmails.map(email => {
+                const safeId = escapeHtml(email.id);
+                const safeTierClass = escapeHtml(email.tierClass);
+                const safeTierLabel = escapeHtml(email.tierLabel);
+                const safeSubject = escapeHtml(email.subject);
+                const safeRecipientName = escapeHtml(email.recipientName);
+                const safeCompany = escapeHtml(email.company);
+                const safeAngle = escapeHtml(email.angle);
+                const safeTimestamp = escapeHtml(email.timestamp);
+                const safeQueueOrigin = escapeHtml(email.queueOrigin);
+                return `
                 <div class="email-item">
                     <div class="email-info">
                         <div class="email-subject">
                             ${getPriorityBadge(email)}
-                            <span class="email-tier ${email.tierClass}">${email.tierLabel}</span>
+                            <span class="email-tier ${safeTierClass}">${safeTierLabel}</span>
                             ${formatPlatformBadge(email)}
-                            ${email.subject}
+                            ${safeSubject}
                         </div>
                         <div class="email-meta">
-                            <span>To: ${email.recipientName} (${email.company})</span>
-                            <span>Angle: ${email.angle}</span>
-                            <span>${email.timestamp}</span>
+                            <span>To: ${safeRecipientName} (${safeCompany})</span>
+                            <span>Angle: ${safeAngle}</span>
+                            <span>${safeTimestamp}</span>
                         </div>
                         <div class="email-meta" style="margin-top: 6px;">
                             <span>${formatCampaignLine(email)}</span>
-                            <span>Origin: ${email.queueOrigin}</span>
+                            <span>Origin: ${safeQueueOrigin}</span>
                         </div>
                     </div>
                     <div class="email-actions">
-                        <button class="btn-sm btn-preview" onclick="previewEmail('${email.id}')">Edit & Preview</button>
+                        <button class="btn-sm btn-preview" onclick="previewEmail('${safeId}')">Edit & Preview</button>
                     </div>
                 </div>
-            `).join('');
+            `;
+            }).join('');
         }
 
         function renderActivityFeed() {
@@ -1381,22 +1553,42 @@
             const email = pendingEmails.find(e => e.id === emailId);
             if (!email) return;
 
+            const recipientName = escapeHtml(email.recipientName);
+            const recipient = escapeHtml(email.recipient);
+            const subject = escapeHtml(email.subject);
+            const title = escapeHtml(email.title);
+            const company = escapeHtml(email.company);
+            const employees = escapeHtml(email.employees);
+            const location = escapeHtml(email.location);
+            const angle = escapeHtml(email.angle);
+            const tierClass = escapeHtml(email.tierClass);
+            const tierLabel = escapeHtml(email.tierLabel);
+            const direction = escapeHtml((email.direction || 'outbound').toUpperCase());
+            const targetPlatform = escapeHtml((email.targetPlatform || 'unknown').toUpperCase());
+            const campaignType = escapeHtml(email.campaignType || 'unmapped');
+            const campaignId = escapeHtml(email.campaignId || 'none');
+            const syncState = escapeHtml(email.syncState || 'unknown');
+            const queueOrigin = escapeHtml(email.queueOrigin || 'unknown');
+            const leadSourceClass = escapeHtml(email.leadSourceClass || 'unknown');
+            const routingTargets = escapeHtml((email.routingTargets || []).join(', ') || 'none');
+            const checksHtml = renderSignalChecklist(email.copySignals || []);
+
             document.getElementById('emailPreviewBody').innerHTML = `
                 <div class="modal-main">
                     <!-- TO -->
                     <div class="email-preview-field">
                         <label>To</label>
-                        <div class="value">${email.recipientName} &lt;${email.recipient}&gt;</div>
+                        <div class="value">${recipientName} &lt;${recipient}&gt;</div>
                     </div>
                     <!-- SUBJECT -->
                     <div class="email-preview-field">
                         <label>Subject</label>
-                        <div class="value">${email.subject}</div>
+                        <div class="value">${subject}</div>
                     </div>
                     <!-- EDITABLE BODY -->
                     <div class="email-preview-field">
                         <label>Email Body (Click to Edit)</label>
-                        <div id="emailBodyInput" class="body-edit" contenteditable="true">${email.body}</div>
+                        <div id="emailBodyInput" class="body-edit" contenteditable="true"></div>
                     </div>
                     <!-- FEEDBACK -->
                     <div class="email-preview-field">
@@ -1408,47 +1600,51 @@
                     <div class="sidebar-title">Lead Insights</div>
                     <div class="sidebar-field">
                         <label>Target</label>
-                        <div class="value">${email.recipientName}</div>
+                        <div class="value">${recipientName}</div>
                     </div>
                     <div class="sidebar-field">
                         <label>Title</label>
-                        <div class="value">${email.title}</div>
+                        <div class="value">${title}</div>
                     </div>
                     <div class="sidebar-field">
                         <label>Company</label>
-                        <div class="value">${email.company}</div>
+                        <div class="value">${company}</div>
                     </div>
                     <div class="sidebar-field">
                         <label>Employees</label>
-                        <div class="value">${email.employees}</div>
+                        <div class="value">${employees}</div>
                     </div>
                     <div class="sidebar-field">
                         <label>Location</label>
-                        <div class="value">${email.location}</div>
+                        <div class="value">${location}</div>
                     </div>
                     <div class="sidebar-field">
                         <label>Angle Used</label>
-                        <div class="value"><span class="email-tier ${email.tierClass}">${email.tierLabel}</span> ${email.angle}</div>
+                        <div class="value"><span class="email-tier ${tierClass}">${tierLabel}</span> ${angle}</div>
                     </div>
                     <div class="sidebar-field">
                         <label>Delivery Classifier</label>
-                        <div class="value">${(email.direction || 'outbound').toUpperCase()} → ${(email.targetPlatform || 'unknown').toUpperCase()}</div>
+                        <div class="value">${direction} → ${targetPlatform}</div>
                     </div>
                     <div class="sidebar-field">
                         <label>Campaign Mapping</label>
-                        <div class="value">${email.campaignType || 'unmapped'} (${email.campaignId || 'none'})</div>
+                        <div class="value">${campaignType} (${campaignId})</div>
                     </div>
                     <div class="sidebar-field">
                         <label>Sync State</label>
-                        <div class="value">${email.syncState || 'unknown'}</div>
+                        <div class="value">${syncState}</div>
                     </div>
                     <div class="sidebar-field">
                         <label>Queue Origin</label>
-                        <div class="value">${email.queueOrigin || 'unknown'} (${email.leadSourceClass || 'unknown'})</div>
+                        <div class="value">${queueOrigin} (${leadSourceClass})</div>
                     </div>
                     <div class="sidebar-field">
                         <label>Routing Targets</label>
-                        <div class="value">${(email.routingTargets || []).join(', ') || 'none'}</div>
+                        <div class="value">${routingTargets}</div>
+                    </div>
+                    <div class="sidebar-field">
+                        <label>Tier 1 Copy Signals</label>
+                        <div class="signal-checklist">${checksHtml}</div>
                     </div>
 
                     <div class="sidebar-title" style="margin-top: 24px;">Actions</div>
@@ -1456,6 +1652,11 @@
                     <button class="btn-sm btn-secondary" style="width:100%; margin-top:8px;">🏢 View Website</button>
                 </div>
             `;
+
+            const bodyInput = document.getElementById('emailBodyInput');
+            if (bodyInput) {
+                bodyInput.textContent = email.body || 'No Body Content';
+            }
 
             document.getElementById('emailModal').classList.add('active');
         }
@@ -1471,7 +1672,9 @@
             // Save email ID before closing modal (closeModal sets currentEmailId to null)
             const emailId = currentEmailId;
             const token = getToken({ promptFallback: true });
-            const editedBody = document.getElementById('emailBodyInput').innerHTML;
+            const email = pendingEmails.find(e => e.id === emailId) || {};
+            const rawEditedBody = (document.getElementById('emailBodyInput')?.innerText || '').trim();
+            const editedBody = formatCopyForApproval(rawEditedBody, email);
             const feedback = document.getElementById('feedbackInput').value;
 
             try {
