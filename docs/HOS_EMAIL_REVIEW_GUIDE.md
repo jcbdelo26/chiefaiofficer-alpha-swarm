@@ -47,6 +47,76 @@ Each email card shows:
 
 ---
 
+## Backend Connection Clarity — Outbound GHL
+
+When you see:
+
+- `Campaign: t1_executive_buyin (camp_20260219_005010)`
+- `Delivery Classifier: OUTBOUND -> GHL`
+- `Sync: n/a_ghl_direct_path`
+
+this means:
+
+1. `camp_...` is an **internal CAIO pipeline campaign ID** (grouping/trace ID), not a native GHL campaign object.
+2. The email was queued by pipeline into pending approvals (`source=pipeline`, `status=pending`).
+3. On approval, system sends a **direct GHL conversation email** (not "create GHL campaign sequence").
+
+Code path:
+
+- Queue creation: `execution/run_pipeline.py` (`_stage_send`) writes pending cards with:
+  - `source: "pipeline"`
+  - `delivery_platform: "ghl"`
+  - `context.campaign_id` and `context.pipeline_run_id`
+- Queue classifier/mapping: `dashboard/health_app.py` (`_infer_pending_email_classifier`)
+  - sets `target_platform=ghl`, `sync_state=n/a_ghl_direct_path`
+- Live send on approval: `dashboard/health_app.py` (`/api/emails/{email_id}/approve`)
+  - builds `EmailTemplate(...)`
+  - calls `GHLOutreachClient.send_email(...)`
+  - marks result as `sent_via_ghl` with `ghl_message_id`
+- GHL API call details: `core/ghl_outreach.py`
+  - endpoint: `POST /conversations/messages`
+  - payload includes `contactId`, `subject`, `html`
+
+---
+
+## Pre-Live Cross-Check Ritual (Required)
+
+### 1) Validate pending queue routing and live-send readiness
+
+Run:
+
+```powershell
+python scripts/trace_outbound_ghl_queue.py `
+  --base-url https://caio-swarm-dashboard-production.up.railway.app `
+  --token <DASHBOARD_AUTH_TOKEN>
+```
+
+Interpretation:
+
+- `target_platform=ghl` confirms approval path is GHL.
+- `sendability=ready_for_live_send` means card has required fields for live send.
+- `sendability=blocked_missing_contact_id` means approving will **not** send live via GHL.
+
+### 2) Approve one card from `/sales`
+
+- Open `/sales?token=<DASHBOARD_AUTH_TOKEN>`
+- Click `Edit & Preview` -> final QA -> `Approve & Send`
+
+### 3) Confirm backend result
+
+- Card status should transition from `pending` to `sent_via_ghl` when successful.
+- Approval audit entry should be appended in `.hive-mind/audit/email_approvals.jsonl`.
+
+### 4) Confirm in GHL UI
+
+- Search contact by recipient email.
+- Open contact conversation.
+- Verify email subject/body and timestamp match approval action.
+
+If step 1 shows many `blocked_missing_contact_id`, do not run bulk live approvals until contact mapping is fixed.
+
+---
+
 ## First Pipeline Results — What You're Looking At
 
 Your first run (2026-02-18) scraped **Wpromote** and produced **2 emails**:
