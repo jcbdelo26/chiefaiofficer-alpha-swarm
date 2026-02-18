@@ -130,6 +130,7 @@ async def heyreach_webhook(request: Request):
         provider="HeyReach",
         secret_env="HEYREACH_WEBHOOK_SECRET",
         signature_header="X-HeyReach-Signature",
+        bearer_env="HEYREACH_BEARER_TOKEN",  # HeyReach has no custom header support
     )
     try:
         payload = json.loads(raw_body.decode("utf-8"))
