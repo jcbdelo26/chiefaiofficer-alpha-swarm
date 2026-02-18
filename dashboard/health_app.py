@@ -28,7 +28,7 @@ from typing import Dict, List, Any, Optional, Set
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, Query, Depends, Body, Request, Response
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import HTMLResponse, FileResponse, JSONResponse
+from fastapi.responses import HTMLResponse, FileResponse, JSONResponse, RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
 import uvicorn
@@ -93,8 +93,8 @@ def _sync_gatekeeper_queue_to_shadow(project_root: Path) -> int:
     """
     Ensure gatekeeper queue items are mirrored into shadow_mode_emails.
 
-    This prevents dashboard staleness if upstream writes only to gatekeeper_queue.
-    Returns number of files synced.
+    Uses shadow_queue.push() when available so synced items reach Redis too.
+    Returns number of queue items synced.
     """
     gatekeeper_dir = project_root / ".hive-mind" / "gatekeeper_queue"
     shadow_dir = project_root / ".hive-mind" / "shadow_mode_emails"
@@ -103,22 +103,63 @@ def _sync_gatekeeper_queue_to_shadow(project_root: Path) -> int:
     if not gatekeeper_dir.exists():
         return 0
 
-    synced_count = 0
-    for queue_file in gatekeeper_dir.glob("*.json"):
-        shadow_file = shadow_dir / queue_file.name
-        if shadow_file.exists():
-            continue
+    shadow_push = None
+    shadow_get = None
+    try:
+        from core.shadow_queue import push as shadow_push, get_email as shadow_get
+    except Exception:
+        shadow_push = None
+        shadow_get = None
 
+    synced_count = 0
+    terminal_statuses = {
+        "approved",
+        "rejected",
+        "sent",
+        "sent_via_ghl",
+        "sent_via_instantly",
+        "sent_via_heyreach",
+    }
+    for queue_file in gatekeeper_dir.glob("*.json"):
         try:
             with open(queue_file, "r", encoding="utf-8") as f:
                 queue_data = json.load(f)
 
+            queue_status = str(queue_data.get("status") or "").strip().lower()
+            if queue_status and queue_status != "pending":
+                continue
+
+            email_id = queue_data.get("queue_id") or queue_file.stem
+            existing_shadow = None
+            if shadow_get:
+                try:
+                    existing_shadow = shadow_get(email_id, shadow_dir=shadow_dir)
+                except Exception:
+                    existing_shadow = None
+            if existing_shadow is None:
+                shadow_file = shadow_dir / f"{email_id}.json"
+                if shadow_file.exists():
+                    try:
+                        with open(shadow_file, "r", encoding="utf-8") as fp:
+                            existing_shadow = json.load(fp)
+                    except Exception:
+                        existing_shadow = None
+            if existing_shadow:
+                existing_status = str(existing_shadow.get("status") or "pending").strip().lower()
+                if existing_status == "pending" or existing_status in terminal_statuses:
+                    continue
+
             visitor = queue_data.get("visitor", {})
             email = queue_data.get("email", {})
             context = queue_data.get("context", {})
+            created_at = (
+                queue_data.get("created_at")
+                or queue_data.get("timestamp")
+                or datetime.now(timezone.utc).isoformat()
+            )
 
             shadow_payload = {
-                "email_id": queue_data.get("queue_id") or queue_file.stem,
+                "email_id": email_id,
                 "status": "pending",
                 "to": visitor.get("email") or queue_data.get("to") or "unknown@example.com",
                 "subject": email.get("subject") or queue_data.get("subject") or "No Subject",
@@ -133,18 +174,52 @@ def _sync_gatekeeper_queue_to_shadow(project_root: Path) -> int:
                 "context": context,
                 "priority": queue_data.get("priority", "medium"),
                 "source": "gatekeeper_queue_sync",
-                "created_at": queue_data.get("created_at"),
-                "timestamp": queue_data.get("created_at"),
+                "created_at": created_at,
+                "timestamp": created_at,
                 "synced_at": datetime.now(timezone.utc).isoformat(),
             }
 
-            with open(shadow_file, "w", encoding="utf-8") as f:
-                json.dump(shadow_payload, f, indent=2)
+            wrote = False
+            if shadow_push:
+                try:
+                    wrote = bool(shadow_push(shadow_payload, shadow_dir=shadow_dir))
+                except Exception as exc:
+                    logger.warning("Failed to sync queue item %s through shadow_queue: %s", email_id, exc)
+
+            if not wrote:
+                shadow_file = shadow_dir / f"{email_id}.json"
+                with open(shadow_file, "w", encoding="utf-8") as f:
+                    json.dump(shadow_payload, f, indent=2)
+
             synced_count += 1
         except Exception as exc:
             logger.warning("Failed to sync gatekeeper queue file %s: %s", queue_file, exc)
 
     return synced_count
+
+
+def _read_pending_from_shadow_files(shadow_log: Path) -> List[Dict[str, Any]]:
+    """Read pending email payloads directly from shadow_mode_emails files."""
+    if not shadow_log.exists():
+        return []
+
+    pending: List[Dict[str, Any]] = []
+    for email_file in shadow_log.glob("*.json"):
+        try:
+            with open(email_file, "r", encoding="utf-8") as f:
+                email_data = json.load(f)
+            current_status = str(email_data.get("status", "pending")).strip().lower()
+            if current_status == "pending":
+                email_data["email_id"] = email_data.get("email_id") or email_file.stem
+                pending.append(email_data)
+        except Exception as exc:
+            logger.warning("Failed to read pending email file %s: %s", email_file, exc)
+
+    pending.sort(
+        key=lambda item: str(item.get("timestamp") or item.get("created_at") or ""),
+        reverse=True,
+    )
+    return pending
 
 # =============================================================================
 # CORRELATION ID MIDDLEWARE
@@ -872,6 +947,30 @@ async def sales_dashboard():
     raise HTTPException(status_code=404, detail="Sales dashboard not found")
 
 
+@app.get("/ChiefAIOfficer", include_in_schema=False)
+async def legacy_sales_dashboard_redirect(request: Request):
+    """
+    Backward-compatible route for older bookmarks.
+
+    Some operators still open `/ChiefAIOfficer`; canonical dashboard route is `/sales`.
+    Preserve query params (including `token`) when redirecting.
+    """
+    query = request.url.query
+    target = "/sales"
+    if query:
+        target = f"{target}?{query}"
+    return RedirectResponse(url=target, status_code=307)
+
+
+@app.get("/chiefaiofficer", include_in_schema=False)
+async def legacy_sales_dashboard_redirect_lower(request: Request):
+    query = request.url.query
+    target = "/sales"
+    if query:
+        target = f"{target}?{query}"
+    return RedirectResponse(url=target, status_code=307)
+
+
 @app.get("/leads")
 async def leads_dashboard():
     """
@@ -916,18 +1015,30 @@ async def get_pending_emails(response: Response, auth: bool = Depends(require_au
         logger.warning("shadow_queue.list_pending failed, falling back to filesystem: %s", exc)
         sq_debug["error"] = str(exc)
 
-    # Pure filesystem fallback if shadow_queue returned nothing
-    if not pending and shadow_log.exists():
-        for email_file in sorted(shadow_log.glob("*.json"), reverse=True)[:20]:
-            try:
-                with open(email_file) as f:
-                    email_data = json.load(f)
-                    current_status = email_data.get("status", "pending")
-                    if current_status == "pending":
-                        email_data["email_id"] = email_data.get("email_id") or email_file.stem
-                        pending.append(email_data)
-            except Exception as exc2:
-                logger.warning("Failed to read pending email file %s: %s", email_file, exc2)
+    # Always merge file-backed pending items to avoid partial visibility when Redis
+    # is stale or partially indexed.
+    file_pending = _read_pending_from_shadow_files(shadow_log)
+    sq_debug["filesystem_pending"] = len(file_pending)
+    pending_map: Dict[str, Dict[str, Any]] = {}
+    merged: List[Dict[str, Any]] = []
+    for item in pending:
+        email_id = str(item.get("email_id") or item.get("id") or "").strip()
+        if email_id:
+            pending_map[email_id] = item
+            merged.append(item)
+            continue
+        merged.append(item)
+    for item in file_pending:
+        email_id = str(item.get("email_id") or item.get("id") or "").strip()
+        if email_id and email_id in pending_map:
+            continue
+        merged.append(item)
+    merged.sort(
+        key=lambda item: str(item.get("timestamp") or item.get("created_at") or ""),
+        reverse=True,
+    )
+    pending = merged[:20]
+    sq_debug["merged_count"] = len(pending)
 
     # Sanitize all emails for frontend display
     for email_data in pending:

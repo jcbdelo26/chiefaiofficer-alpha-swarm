@@ -234,3 +234,17 @@ def test_protected_api_endpoints_require_dashboard_token(monkeypatch):
     assert auth_status.status_code != 401
     assert header_auth_status.status_code != 401
     assert preflight.status_code != 401
+
+
+def test_legacy_sales_routes_redirect_to_canonical_sales_dashboard():
+    from dashboard import health_app
+
+    client = TestClient(health_app.app)
+
+    legacy_upper = client.get("/ChiefAIOfficer?token=abc123", follow_redirects=False)
+    legacy_lower = client.get("/chiefaiofficer?token=abc123", follow_redirects=False)
+
+    assert legacy_upper.status_code in {307, 308}
+    assert legacy_lower.status_code in {307, 308}
+    assert legacy_upper.headers.get("location") == "/sales?token=abc123"
+    assert legacy_lower.headers.get("location") == "/sales?token=abc123"

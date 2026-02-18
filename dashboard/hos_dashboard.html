@@ -1007,30 +1007,69 @@
         let lastRefreshAt = null;
         let refreshInFlight = false;
         const REFRESH_INTERVAL_MS = 15000;
+        const TOKEN_STORAGE_KEY = `caio_dashboard_token_${window.location.host}`;
+        const LEGACY_TOKEN_STORAGE_KEY = 'caio_dashboard_token';
 
         let tokenPrompted = false;
+        let authRequiredForQueue = false;
+        let lastPendingFetchError = '';
+        let hasSuccessfulQueueFetch = false;
 
-        function getToken({ promptFallback = false } = {}) {
+        function persistToken(token) {
+            if (!token) return;
+            localStorage.setItem(TOKEN_STORAGE_KEY, token);
+            localStorage.setItem(LEGACY_TOKEN_STORAGE_KEY, token);
+        }
+
+        function clearPersistedToken() {
+            localStorage.removeItem(TOKEN_STORAGE_KEY);
+            localStorage.removeItem(LEGACY_TOKEN_STORAGE_KEY);
+        }
+
+        function getToken({ promptFallback = false, forcePrompt = false } = {}) {
             const urlParams = new URLSearchParams(window.location.search);
             const tokenFromQuery = urlParams.get('token');
-            if (tokenFromQuery) {
-                localStorage.setItem('caio_dashboard_token', tokenFromQuery);
-                return tokenFromQuery;
+            if (tokenFromQuery && tokenFromQuery.trim()) {
+                const normalized = tokenFromQuery.trim();
+                persistToken(normalized);
+                return normalized;
             }
-            const tokenFromStorage = localStorage.getItem('caio_dashboard_token');
-            if (tokenFromStorage) {
-                return tokenFromStorage;
+
+            if (!forcePrompt) {
+                const tokenFromStorage = localStorage.getItem(TOKEN_STORAGE_KEY);
+                if (tokenFromStorage && tokenFromStorage.trim()) {
+                    return tokenFromStorage.trim();
+                }
+                const tokenFromLegacyStorage = localStorage.getItem(LEGACY_TOKEN_STORAGE_KEY);
+                if (tokenFromLegacyStorage && tokenFromLegacyStorage.trim()) {
+                    const normalized = tokenFromLegacyStorage.trim();
+                    localStorage.setItem(TOKEN_STORAGE_KEY, normalized);
+                    return normalized;
+                }
+            } else {
+                clearPersistedToken();
+                tokenPrompted = false;
             }
+
             if (promptFallback && !tokenPrompted) {
                 tokenPrompted = true;
                 const tokenFromPrompt = window.prompt('Enter dashboard token for protected API access:');
                 if (tokenFromPrompt && tokenFromPrompt.trim()) {
                     const normalized = tokenFromPrompt.trim();
-                    localStorage.setItem('caio_dashboard_token', normalized);
+                    persistToken(normalized);
+                    authRequiredForQueue = false;
+                    lastPendingFetchError = '';
                     return normalized;
                 }
             }
             return '';
+        }
+
+        function promptForDashboardToken() {
+            const token = getToken({ promptFallback: true, forcePrompt: true });
+            if (token) {
+                fetchPendingEmails({ silent: false });
+            }
         }
 
         function buildAuthHeaders(baseHeaders = {}, token = '') {
@@ -1061,8 +1100,14 @@
                     headers: buildAuthHeaders({ 'Accept': 'application/json' }, token)
                 });
 
+                if (response.status === 401) {
+                    authRequiredForQueue = true;
+                    lastPendingFetchError = 'Dashboard token missing or invalid. Open /sales?token=<DASHBOARD_AUTH_TOKEN> or click Re-enter Token.';
+                    clearPersistedToken();
+                }
+
                 if (response.status === 401 && !silent) {
-                    token = getToken({ promptFallback: true });
+                    token = getToken({ promptFallback: true, forcePrompt: true });
                     response = await fetch(buildPendingEmailsUrl(token), {
                         method: 'GET',
                         cache: 'no-store',
@@ -1075,6 +1120,9 @@
                     throw new Error(errorData.detail || `Server error (${response.status})`);
                 }
 
+                authRequiredForQueue = false;
+                lastPendingFetchError = '';
+                hasSuccessfulQueueFetch = true;
                 const data = await response.json();
                 pendingEmails.length = 0;
 
@@ -1110,6 +1158,10 @@
                 }
             } catch (e) {
                 console.error("Failed to fetch pending emails:", e);
+                if (!authRequiredForQueue) {
+                    lastPendingFetchError = e.message || 'Unknown refresh error';
+                }
+                renderPendingEmails();
                 if (!silent) {
                     showToast(`Refresh failed: ${e.message}`);
                 }
@@ -1126,13 +1178,41 @@
 
             document.addEventListener('visibilitychange', () => {
                 if (document.visibilityState === 'visible') {
-                    fetchPendingEmails({ silent: true });
+                    fetchPendingEmails({ silent: authRequiredForQueue ? false : true });
                 }
             });
         }
 
         function renderPendingEmails() {
             const list = document.getElementById('emailList');
+
+            if (authRequiredForQueue) {
+                list.innerHTML = `
+                    <div class="empty-state">
+                        <div class="icon">🔒</div>
+                        <h3>Authentication Required</h3>
+                        <p>${lastPendingFetchError || 'Dashboard token is required to load pending approvals.'}</p>
+                        <div style="margin-top: 12px;">
+                            <button class="btn-sm btn-secondary" onclick="promptForDashboardToken()">Re-enter Token</button>
+                        </div>
+                    </div>
+                `;
+                document.getElementById('pendingCount').textContent = '!';
+                return;
+            }
+
+            if (!hasSuccessfulQueueFetch && lastPendingFetchError) {
+                list.innerHTML = `
+                    <div class="empty-state">
+                        <div class="icon">⚠️</div>
+                        <h3>Queue Unavailable</h3>
+                        <p>${lastPendingFetchError}</p>
+                    </div>
+                `;
+                document.getElementById('pendingCount').textContent = '?';
+                return;
+            }
+
             const filteredEmails = currentFilter === 'all'
                 ? pendingEmails
                 : pendingEmails.filter(e => classifyPriority(e) === currentFilter);

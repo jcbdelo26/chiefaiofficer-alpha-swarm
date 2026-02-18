@@ -6,6 +6,10 @@
 
 **When you're done**: Hand this doc back to Claude with "I've completed the PTO inputs" and Claude will run the automated smoke tests.
 
+If you need the full operating guide for one real pipeline cycle + `/sales` no-reload validation + full staging/production smoke, use:
+
+- `docs/PTO_NON_TECH_REAL_PIPELINE_AND_DEPLOYED_SMOKE_GUIDE.md`
+
 ---
 
 ## What's Already Done (DO NOT touch these)

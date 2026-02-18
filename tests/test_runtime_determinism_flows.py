@@ -14,6 +14,12 @@ import pytest
 from starlette.responses import Response
 
 
+def _disable_shadow_queue_redis(monkeypatch) -> None:
+    from core import shadow_queue
+
+    monkeypatch.setattr(shadow_queue, "_get_redis", lambda: None)
+
+
 @pytest.mark.asyncio
 async def test_inngest_gateway_helper_emits_trace(monkeypatch, tmp_path: Path):
     if importlib.util.find_spec("inngest") is None:
@@ -51,6 +57,7 @@ async def test_inngest_gateway_helper_emits_trace(monkeypatch, tmp_path: Path):
 async def test_queue_lifecycle_has_consistent_audit_logs(monkeypatch, tmp_path: Path):
     from dashboard import health_app
 
+    _disable_shadow_queue_redis(monkeypatch)
     monkeypatch.setattr(health_app, "PROJECT_ROOT", tmp_path)
 
     shadow_dir = tmp_path / ".hive-mind" / "shadow_mode_emails"
@@ -140,6 +147,7 @@ async def test_queue_lifecycle_has_consistent_audit_logs(monkeypatch, tmp_path: 
 async def test_pending_emails_syncs_gatekeeper_queue(monkeypatch, tmp_path: Path):
     from dashboard import health_app
 
+    _disable_shadow_queue_redis(monkeypatch)
     monkeypatch.setattr(health_app, "PROJECT_ROOT", tmp_path)
 
     gatekeeper_dir = tmp_path / ".hive-mind" / "gatekeeper_queue"
@@ -183,3 +191,101 @@ async def test_pending_emails_syncs_gatekeeper_queue(monkeypatch, tmp_path: Path
     assert shadow_file.exists()
     shadow_data = json.loads(shadow_file.read_text(encoding="utf-8"))
     assert shadow_data["source"] == "gatekeeper_queue_sync"
+
+
+@pytest.mark.asyncio
+async def test_pending_emails_merges_filesystem_sync_when_redis_is_partial(monkeypatch, tmp_path: Path):
+    from dashboard import health_app
+    from core import shadow_queue
+
+    monkeypatch.setattr(health_app, "PROJECT_ROOT", tmp_path)
+
+    gatekeeper_dir = tmp_path / ".hive-mind" / "gatekeeper_queue"
+    gatekeeper_dir.mkdir(parents=True, exist_ok=True)
+    (gatekeeper_dir / "queue_disk.json").write_text(
+        json.dumps(
+            {
+                "queue_id": "queue_disk",
+                "priority": "medium",
+                "created_at": "2026-02-10T13:00:00Z",
+                "visitor": {"email": "disk@example.com", "name": "Disk Lead"},
+                "email": {"subject": "Disk pending", "body": "Disk body"},
+                "context": {"icp_tier": "tier_2", "triggers": ["intent"]},
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    monkeypatch.setattr(shadow_queue, "_get_redis", lambda: object())
+    monkeypatch.setattr(shadow_queue, "_prefix", lambda: "caio:test")
+    monkeypatch.setattr(
+        shadow_queue,
+        "list_pending",
+        lambda limit=20, shadow_dir=None: [
+            {
+                "email_id": "queue_redis",
+                "status": "pending",
+                "to": "redis@example.com",
+                "subject": "Redis pending",
+                "body": "Redis body",
+                "tier": "tier_1",
+                "angle": "roi",
+                "timestamp": "2026-02-10T14:00:00Z",
+            }
+        ],
+    )
+
+    response = Response()
+    payload = await health_app.get_pending_emails(response=response, auth=True)
+
+    ids = {item["email_id"] for item in payload["pending_emails"]}
+    assert payload["count"] == 2
+    assert ids == {"queue_redis", "queue_disk"}
+    assert payload["synced_from_gatekeeper"] == 1
+    assert payload["_shadow_queue_debug"]["filesystem_pending"] >= 1
+    assert payload["_shadow_queue_debug"]["merged_count"] == 2
+
+
+@pytest.mark.asyncio
+async def test_gatekeeper_sync_does_not_reopen_terminal_shadow_status(monkeypatch, tmp_path: Path):
+    from dashboard import health_app
+
+    _disable_shadow_queue_redis(monkeypatch)
+    monkeypatch.setattr(health_app, "PROJECT_ROOT", tmp_path)
+
+    gatekeeper_dir = tmp_path / ".hive-mind" / "gatekeeper_queue"
+    gatekeeper_dir.mkdir(parents=True, exist_ok=True)
+    (gatekeeper_dir / "queue_approved.json").write_text(
+        json.dumps(
+            {
+                "queue_id": "queue_approved",
+                "priority": "high",
+                "created_at": "2026-02-10T12:00:00Z",
+                "visitor": {"email": "approved@example.com", "name": "Approved Lead"},
+                "email": {"subject": "Should stay approved", "body": "Body"},
+                "context": {"icp_tier": "tier_1", "triggers": ["hiring_signal"]},
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    shadow_dir = tmp_path / ".hive-mind" / "shadow_mode_emails"
+    shadow_dir.mkdir(parents=True, exist_ok=True)
+    (shadow_dir / "queue_approved.json").write_text(
+        json.dumps(
+            {
+                "email_id": "queue_approved",
+                "status": "approved",
+                "to": "approved@example.com",
+                "subject": "Approved already",
+                "body": "Approved body",
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    response = Response()
+    payload = await health_app.get_pending_emails(response=response, auth=True)
+
+    assert payload["count"] == 0
+    assert payload["synced_from_gatekeeper"] == 0

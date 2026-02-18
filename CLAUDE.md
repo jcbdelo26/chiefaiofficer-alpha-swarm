@@ -567,6 +567,12 @@ Railway Dashboard → shadow_queue.list_pending() → Redis (primary) + disk (fa
 3. **NEVER** assume a filesystem path that "works locally" will work on Railway
 4. **ALWAYS** use `CONTEXT_REDIS_PREFIX` (not `STATE_REDIS_PREFIX`) for shared Redis keys — it's consistently `caio:production:context` on both environments
 5. **ALWAYS** verify data appears on Railway after any pipeline change (check `/api/pending-emails` or relevant API endpoint)
+6. **ALWAYS** sync gatekeeper queue items through `shadow_queue.push()` (Redis + file), never file-only mirroring
+7. **ALWAYS** merge Redis and file pending sources in `/api/pending-emails` until all producers are Redis-native (dedup by `email_id`)
+8. **NEVER** re-open terminal statuses (`approved`, `rejected`, `sent_via_ghl`, etc.) back to `pending` during queue sync
+9. **ALWAYS** fail-closed in UI: if `/api/pending-emails` returns `401`, show explicit auth-required state (never render "All caught up")
+10. **ALWAYS** clear stale dashboard token on `401` and reprompt (or require `?token=`) before declaring queue empty
+11. **ALWAYS** keep legacy bookmark routes (`/ChiefAIOfficer`, `/chiefaiofficer`) redirecting to canonical `/sales`
 
 #### Redis Key Schema (Shadow Queue)
 
@@ -599,6 +605,8 @@ Before implementing ANY feature where data flows between local and Railway:
 - [ ] **Q3**: Have I tested the Railway dashboard after the change? → Must verify via API
 - [ ] **Q4**: Is there a filesystem fallback for when Redis is unavailable? → Should have one
 - [ ] **Q5**: Does the API endpoint return diagnostic info for debugging? → Add `_debug` field
+- [ ] **Q6**: If endpoint is polled by browser (`/api/pending-emails`), did I enforce `Cache-Control: no-store` + query timestamp cache-buster?
+- [ ] **Q7**: Does the dashboard auto-refresh (`setInterval`) and refresh on tab visibility return (`visibilitychange`)?
 
 #### Historical Incidents (Learn From These)
 
@@ -609,6 +617,22 @@ Before implementing ANY feature where data flows between local and Railway:
 | Dashboard shows "no pending emails" (3rd) | Same root — filesystem assumption | Same pattern — always Redis first | Various |
 
 **The pattern is always the same**: something was written to disk locally and expected to appear on Railway. The fix is always the same: use Redis.
+
+#### Pending Email Refresh Non-Regression Gate (MANDATORY)
+
+Before shipping any queue/dashboard change, run:
+
+1. `python -m pytest -q tests/test_runtime_determinism_flows.py`
+2. `curl -s "https://<dashboard>/api/pending-emails?token=<DASHBOARD_AUTH_TOKEN>" | python -m json.tool`
+3. `python scripts/deployed_full_smoke_checklist.py --base-url "https://<dashboard>" --token "<DASHBOARD_AUTH_TOKEN>"`
+
+Pass criteria:
+- `count` reflects new queue items without manual page reload
+- `_shadow_queue_debug.redis_connected=true` in deployed env
+- `_shadow_queue_debug.merged_count >= _shadow_queue_debug.redis_returned`
+- `sales_page_auto_refresh_wiring.passed=true`
+- `pending_emails_refresh_timestamp_changes.passed=true`
+- Browser shows **Authentication Required** (not **All caught up**) when token is missing/invalid
 
 ---
 
