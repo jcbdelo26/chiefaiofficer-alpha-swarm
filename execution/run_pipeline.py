@@ -726,6 +726,9 @@ class UnifiedPipeline:
                     "subject": subject,
                     "body": body,
                     "source": "pipeline",
+                    "direction": "outbound",
+                    "delivery_platform": "ghl",
+                    "delivery_path": "dashboard_approval_direct",
                     "timestamp": datetime.utcnow().isoformat() + "+00:00",
                     "created_at": datetime.utcnow().isoformat() + "+00:00",
                     "recipient_data": {
@@ -743,6 +746,7 @@ class UnifiedPipeline:
                         "icp_score": lead.get("icp_score", 0),
                         "campaign_type": campaign.get("campaign_type", ""),
                         "campaign_id": campaign.get("campaign_id", ""),
+                        "campaign_name": campaign.get("name", ""),
                         "pipeline_run_id": self.run_id,
                     },
                     "priority": ("high" if tier == "tier_1"

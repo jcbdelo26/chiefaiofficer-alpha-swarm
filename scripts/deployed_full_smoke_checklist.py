@@ -295,6 +295,42 @@ def run_full_smoke(
         error=error1 or error2,
     )
 
+    # Pending payload should expose classifier + campaign mapping contract for UI traceability
+    pending_items = data2.get("pending_emails") if isinstance(data2, dict) else None
+    first_item = pending_items[0] if isinstance(pending_items, list) and pending_items else {}
+    classifier = first_item.get("classifier") if isinstance(first_item, dict) else None
+    campaign_ref = first_item.get("campaign_ref") if isinstance(first_item, dict) else None
+    classifier_contract_ok = (
+        status2 == 200
+        and (
+            not isinstance(pending_items, list)
+            or len(pending_items) == 0
+            or (
+                isinstance(classifier, dict)
+                and isinstance(campaign_ref, dict)
+                and "target_platform" in classifier
+                and "queue_origin" in classifier
+                and "internal_id" in campaign_ref
+            )
+        )
+    )
+
+    _record(
+        checks,
+        name="pending_emails_classifier_contract",
+        method="GET",
+        url=pending_url_2,
+        status=status2,
+        passed=classifier_contract_ok,
+        expectation="pending emails expose classifier + campaign_ref metadata",
+        details={
+            "count": len(pending_items) if isinstance(pending_items, list) else None,
+            "first_item_classifier": classifier if isinstance(classifier, dict) else None,
+            "first_item_campaign_ref": campaign_ref if isinstance(campaign_ref, dict) else None,
+        },
+        error=error2,
+    )
+
     passed = all(c.passed for c in checks)
     return {
         "base_url": base_url.rstrip("/"),

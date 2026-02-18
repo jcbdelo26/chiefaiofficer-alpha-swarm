@@ -35,6 +35,15 @@ Each email card shows:
 | **ICP Tier** | tier_1 (C-Suite), tier_2 (VP), tier_3 (Director) |
 | **ICP Score** | 0-100 fit score (higher = better match) |
 | **Template** | Which email angle was used (e.g., `t1_executive_buyin`) |
+| **Delivery Classifier** | Outbound/Inbound + target platform (Instantly/GHL/HeyReach) |
+| **Campaign Mapping** | Internal campaign ID/type + sync state to external campaign |
+
+### Classifier Interpretation (new)
+
+- `OUTBOUND -> GHL`: Pre-send approval currently routed through dashboard/GHL path.
+- `OUTBOUND -> INSTANTLY`: Draft is intended for Instantly campaign execution path.
+- `Sync: pending_external_campaign_mapping`: Internal campaign exists, external campaign link not created yet.
+- `Sync: n/a_ghl_direct_path`: This card is not expected to map to an Instantly campaign.
 
 ---
 

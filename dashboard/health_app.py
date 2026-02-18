@@ -208,6 +208,180 @@ def _pending_email_exclusion_reasons(
     return reasons
 
 
+def _get_default_tier_routing_targets() -> Dict[str, List[str]]:
+    return {
+        "tier_1": ["instantly", "heyreach"],
+        "tier_2": ["instantly", "heyreach"],
+        "tier_3": ["instantly"],
+    }
+
+
+def _get_tier_routing_targets_by_tier() -> Dict[str, List[str]]:
+    """
+    Best-effort load of tier routing configuration used by OPERATOR.
+    Falls back to deterministic defaults when OPERATOR context isn't available.
+    """
+    default_targets = _get_default_tier_routing_targets()
+    operator = globals().get("_operator")
+    if operator is None:
+        return default_targets
+
+    try:
+        status = operator.get_status()
+        config = status.get("config", {})
+        routing = config.get("tier_routing", {})
+        if not isinstance(routing, dict):
+            return default_targets
+        normalized: Dict[str, List[str]] = {}
+        for tier, channels in routing.items():
+            key = str(tier or "").strip().lower()
+            if not key:
+                continue
+            if isinstance(channels, list):
+                normalized[key] = [str(ch).strip().lower() for ch in channels if str(ch).strip()]
+        if normalized:
+            return normalized
+    except Exception as exc:
+        logger.debug("Failed to load tier routing config from OPERATOR: %s", exc)
+
+    return default_targets
+
+
+def _infer_pending_email_classifier(
+    email_data: Dict[str, Any],
+    *,
+    tier_routing_targets: Dict[str, List[str]],
+) -> Dict[str, Any]:
+    """
+    Build deterministic classification metadata for pending-approval cards.
+
+    This makes queue intent explicit (origin, outbound/inbound, target platform,
+    and campaign mapping state) so operators can reconcile dashboard cards with
+    Instantly/GHL views.
+    """
+    source = str(email_data.get("source") or "").strip().lower()
+    status = str(email_data.get("status") or "").strip().lower()
+    context = email_data.get("context", {})
+    if not isinstance(context, dict):
+        context = {}
+
+    tier = str(email_data.get("tier") or context.get("icp_tier") or "").strip().lower() or "tier_3"
+    routing_targets = tier_routing_targets.get(tier, [])
+
+    # Direction is message-level (email draft/reply), not lead-source.
+    direction = str(
+        email_data.get("direction")
+        or context.get("direction")
+        or "outbound"
+    ).strip().lower()
+    if direction not in {"outbound", "inbound"}:
+        direction = "outbound"
+
+    # Lead-source class captures where the lead signal originated.
+    source_type = str(context.get("source_type") or "").strip().lower()
+    inbound_sources = {
+        "website_intent_monitor",
+        "gatekeeper_queue_sync",
+        "rb2b",
+        "webhook",
+    }
+    lead_source_class = "inbound_signal" if (source in inbound_sources or source_type in {"website_visitor", "inbound"}) else "outbound_prospecting"
+
+    explicit_platform = str(
+        email_data.get("delivery_platform")
+        or context.get("delivery_platform")
+        or context.get("platform")
+        or ""
+    ).strip().lower()
+    if explicit_platform not in {"instantly", "ghl", "heyreach"}:
+        explicit_platform = ""
+
+    if explicit_platform:
+        target_platform = explicit_platform
+        target_platform_reason = "explicit_metadata"
+    elif status in {"sent_via_ghl"} or email_data.get("sent_via_ghl"):
+        target_platform = "ghl"
+        target_platform_reason = "delivery_status"
+    elif status in {"sent_via_instantly"}:
+        target_platform = "instantly"
+        target_platform_reason = "delivery_status"
+    elif status in {"sent_via_heyreach"}:
+        target_platform = "heyreach"
+        target_platform_reason = "delivery_status"
+    elif "instantly" in source:
+        target_platform = "instantly"
+        target_platform_reason = "source"
+    elif "heyreach" in source or "linkedin" in source:
+        target_platform = "heyreach"
+        target_platform_reason = "source"
+    elif source in {"pipeline", "nurture_engine", "website_intent_monitor", "gatekeeper_queue_sync"}:
+        # Current dashboard approve path sends via GHL unless dispatch is delegated.
+        target_platform = "ghl"
+        target_platform_reason = "dashboard_approve_path"
+    else:
+        target_platform = "unknown"
+        target_platform_reason = "insufficient_metadata"
+
+    campaign_ref = {
+        "internal_id": (
+            email_data.get("campaign_id")
+            or context.get("campaign_id")
+            or context.get("cadence_id")
+            or ""
+        ),
+        "internal_type": (
+            email_data.get("campaign_type")
+            or context.get("campaign_type")
+            or context.get("campaign_template")
+            or ""
+        ),
+        "internal_name": (
+            email_data.get("campaign_name")
+            or context.get("campaign_name")
+            or ""
+        ),
+        "pipeline_run_id": context.get("pipeline_run_id") or email_data.get("pipeline_run_id") or "",
+        "external_provider": (
+            email_data.get("external_provider")
+            or context.get("external_provider")
+            or ("instantly" if (context.get("instantly_campaign_id") or context.get("instantly_campaign_name")) else "")
+        ),
+        "external_campaign_id": (
+            email_data.get("external_campaign_id")
+            or context.get("external_campaign_id")
+            or context.get("instantly_campaign_id")
+            or ""
+        ),
+        "external_campaign_name": (
+            email_data.get("external_campaign_name")
+            or context.get("external_campaign_name")
+            or context.get("instantly_campaign_name")
+            or ""
+        ),
+    }
+
+    if target_platform == "instantly":
+        sync_state = "external_campaign_mapped" if (campaign_ref["external_campaign_id"] or campaign_ref["external_campaign_name"]) else "pending_external_campaign_mapping"
+    elif target_platform == "ghl":
+        sync_state = "n/a_ghl_direct_path"
+    elif target_platform == "heyreach":
+        sync_state = "n/a_linkedin_path"
+    else:
+        sync_state = "unknown"
+
+    return {
+        "queue_stage": "approval_pending",
+        "queue_origin": source or "unknown",
+        "message_direction": direction,
+        "lead_source_class": lead_source_class,
+        "target_platform": target_platform,
+        "target_platform_reason": target_platform_reason,
+        "routing_targets": routing_targets,
+        "sync_state": sync_state,
+        "campaign_ref": campaign_ref,
+    }
+
+
 def _sync_gatekeeper_queue_to_shadow(project_root: Path) -> int:
     """
     Ensure gatekeeper queue items are mirrored into shadow_mode_emails.
@@ -283,6 +457,9 @@ def _sync_gatekeeper_queue_to_shadow(project_root: Path) -> int:
                 "to": visitor.get("email") or queue_data.get("to") or "unknown@example.com",
                 "subject": email.get("subject") or queue_data.get("subject") or "No Subject",
                 "body": email.get("body") or queue_data.get("body") or "No Body Content",
+                "direction": "outbound",
+                "delivery_platform": "ghl",
+                "delivery_path": "dashboard_approval_direct",
                 "tier": context.get("icp_tier") or _priority_to_tier(queue_data.get("priority")),
                 "angle": (context.get("triggers") or ["general"])[0],
                 "recipient_data": {
@@ -1204,7 +1381,9 @@ async def get_pending_emails(response: Response, auth: bool = Depends(require_au
     sq_debug["excluded_non_actionable_reasons"] = excluded_reasons_count
     sq_debug["excluded_non_actionable_examples"] = excluded_examples
 
-    # Sanitize all emails for frontend display
+    tier_routing_targets = _get_tier_routing_targets_by_tier()
+
+    # Sanitize and classify all emails for frontend display
     for email_data in pending:
         email_data["timestamp"] = email_data.get("timestamp", "Unknown")
         email_data["recipient_data"] = email_data.get("recipient_data", {})
@@ -1213,6 +1392,14 @@ async def get_pending_emails(response: Response, auth: bool = Depends(require_au
         email_data["body"] = email_data.get("body") or email_data.get("body_preview") or "No Body Content"
         email_data["tier"] = email_data.get("tier", "tier_3")
         email_data["angle"] = email_data.get("angle", "General")
+        classifier = _infer_pending_email_classifier(
+            email_data,
+            tier_routing_targets=tier_routing_targets,
+        )
+        email_data["classifier"] = {
+            key: value for key, value in classifier.items() if key != "campaign_ref"
+        }
+        email_data["campaign_ref"] = classifier.get("campaign_ref", {})
 
     return {
         "pending_emails": pending,

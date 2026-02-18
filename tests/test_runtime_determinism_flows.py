@@ -188,6 +188,10 @@ async def test_pending_emails_syncs_gatekeeper_queue(monkeypatch, tmp_path: Path
     assert payload["pending_emails"][0]["email_id"] == "queue_123"
     assert payload["pending_emails"][0]["to"] == "prospect@example.com"
     assert payload["pending_emails"][0]["tier"] == "tier_1"
+    assert payload["pending_emails"][0]["classifier"]["queue_origin"] == "gatekeeper_queue_sync"
+    assert payload["pending_emails"][0]["classifier"]["message_direction"] == "outbound"
+    assert payload["pending_emails"][0]["classifier"]["target_platform"] == "ghl"
+    assert payload["pending_emails"][0]["campaign_ref"]["internal_id"] == ""
 
     shadow_file = tmp_path / ".hive-mind" / "shadow_mode_emails" / "queue_123.json"
     assert shadow_file.exists()
@@ -248,6 +252,55 @@ async def test_pending_emails_merges_filesystem_sync_when_redis_is_partial(monke
     assert payload["synced_from_gatekeeper"] == 1
     assert payload["_shadow_queue_debug"]["filesystem_pending"] >= 1
     assert payload["_shadow_queue_debug"]["merged_count"] == 2
+
+
+@pytest.mark.asyncio
+async def test_pending_email_classifier_exposes_campaign_mapping(monkeypatch, tmp_path: Path):
+    from dashboard import health_app
+
+    _disable_shadow_queue_redis(monkeypatch)
+    monkeypatch.setattr(health_app, "PROJECT_ROOT", tmp_path)
+    monkeypatch.setenv("PENDING_QUEUE_MAX_AGE_HOURS", "0")
+    monkeypatch.setenv("PENDING_QUEUE_ENFORCE_RAMP_TIER", "false")
+
+    shadow_dir = tmp_path / ".hive-mind" / "shadow_mode_emails"
+    shadow_dir.mkdir(parents=True, exist_ok=True)
+    (shadow_dir / "pipeline_1.json").write_text(
+        json.dumps(
+            {
+                "email_id": "pipeline_1",
+                "status": "pending",
+                "to": "ceo@example.com",
+                "subject": "Roadmap",
+                "body": "Hi there",
+                "tier": "tier_1",
+                "source": "pipeline",
+                "direction": "outbound",
+                "delivery_platform": "ghl",
+                "context": {
+                    "campaign_id": "camp_t1_abc",
+                    "campaign_type": "t1_executive_buyin",
+                    "campaign_name": "Tier 1 Executive Buy-in",
+                    "pipeline_run_id": "run_123",
+                },
+                "timestamp": "2026-02-18T12:00:00+00:00",
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    response = Response()
+    payload = await health_app.get_pending_emails(response=response, auth=True)
+    assert payload["count"] == 1
+    item = payload["pending_emails"][0]
+    assert item["classifier"]["queue_origin"] == "pipeline"
+    assert item["classifier"]["message_direction"] == "outbound"
+    assert item["classifier"]["target_platform"] == "ghl"
+    assert item["classifier"]["target_platform_reason"] == "explicit_metadata"
+    assert item["campaign_ref"]["internal_id"] == "camp_t1_abc"
+    assert item["campaign_ref"]["internal_type"] == "t1_executive_buyin"
+    assert item["campaign_ref"]["internal_name"] == "Tier 1 Executive Buy-in"
+    assert item["campaign_ref"]["pipeline_run_id"] == "run_123"
 
 
 @pytest.mark.asyncio
