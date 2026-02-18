@@ -37,6 +37,10 @@ logger = logging.getLogger("heyreach_webhook")
 
 PROJECT_ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
+from core.webhook_security import (
+    get_webhook_signature_status,
+    require_webhook_auth,
+)
 
 router = APIRouter()
 
@@ -119,9 +123,17 @@ async def heyreach_webhook(request: Request):
 
     HeyReach sends all events to a single URL. Event type is in the payload.
     """
+    raw_body = await request.body()
+    require_webhook_auth(
+        request=request,
+        raw_body=raw_body,
+        provider="HeyReach",
+        secret_env="HEYREACH_WEBHOOK_SECRET",
+        signature_header="X-HeyReach-Signature",
+    )
     try:
-        payload = await request.json()
-    except Exception:
+        payload = json.loads(raw_body.decode("utf-8"))
+    except json.JSONDecodeError:
         raise HTTPException(status_code=400, detail="Invalid JSON")
 
     # Extract event type — field name TBD (needs empirical validation)
@@ -363,9 +375,13 @@ EVENT_HANDLERS = {
 async def heyreach_webhook_health():
     """Health check for HeyReach webhook router."""
     api_key_set = bool(os.getenv("HEYREACH_API_KEY", ""))
+    signature_status = get_webhook_signature_status("HEYREACH_WEBHOOK_SECRET")
     return {
         "status": "healthy",
         "webhook": "heyreach",
         "api_key_configured": api_key_set,
+        "secret_configured": signature_status["secret_configured"],
+        "bearer_configured": signature_status["bearer_configured"],
+        "signature_strict_mode": signature_status["strict_mode"],
         "events_supported": list(EVENT_HANDLERS.keys()),
     }

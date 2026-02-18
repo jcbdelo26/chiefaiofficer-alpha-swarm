@@ -34,6 +34,7 @@ def _load_bootstrap_module():
 def test_runtime_dependency_health_optional_is_ready(monkeypatch):
     monkeypatch.setenv("REDIS_REQUIRED", "false")
     monkeypatch.setenv("INNGEST_REQUIRED", "false")
+    monkeypatch.setenv("WEBHOOK_SIGNATURE_REQUIRED", "false")
     monkeypatch.delenv("REDIS_URL", raising=False)
     monkeypatch.delenv("INNGEST_SIGNING_KEY", raising=False)
     monkeypatch.delenv("INNGEST_EVENT_KEY", raising=False)
@@ -51,6 +52,7 @@ def test_runtime_dependency_health_optional_is_ready(monkeypatch):
 def test_runtime_dependency_health_required_missing_fails(monkeypatch):
     monkeypatch.setenv("REDIS_REQUIRED", "true")
     monkeypatch.setenv("INNGEST_REQUIRED", "true")
+    monkeypatch.setenv("WEBHOOK_SIGNATURE_REQUIRED", "false")
     monkeypatch.delenv("REDIS_URL", raising=False)
     monkeypatch.delenv("INNGEST_SIGNING_KEY", raising=False)
     monkeypatch.delenv("INNGEST_EVENT_KEY", raising=False)
@@ -63,6 +65,44 @@ def test_runtime_dependency_health_required_missing_fails(monkeypatch):
     assert health["ready"] is False
     assert any(failure.startswith("redis:") for failure in health["required_failures"])
     assert any(failure.startswith("inngest:") for failure in health["required_failures"])
+
+
+def test_runtime_dependency_health_webhooks_required_missing_fails(monkeypatch):
+    monkeypatch.setenv("REDIS_REQUIRED", "false")
+    monkeypatch.setenv("INNGEST_REQUIRED", "false")
+    monkeypatch.setenv("WEBHOOK_SIGNATURE_REQUIRED", "true")
+    monkeypatch.setenv("INSTANTLY_WEBHOOK_SECRET", "")
+    monkeypatch.setenv("HEYREACH_WEBHOOK_SECRET", "")
+    monkeypatch.setenv("RB2B_WEBHOOK_SECRET", "")
+    monkeypatch.setenv("CLAY_WEBHOOK_SECRET", "")
+
+    health = get_runtime_dependency_health(
+        check_connections=False,
+        inngest_route_mounted=False,
+    )
+
+    assert health["ready"] is False
+    assert health["dependencies"]["webhooks"]["status"] == "unhealthy"
+    assert any(failure.startswith("webhooks:") for failure in health["required_failures"])
+
+
+def test_runtime_dependency_health_webhooks_required_with_secrets_passes(monkeypatch):
+    monkeypatch.setenv("REDIS_REQUIRED", "false")
+    monkeypatch.setenv("INNGEST_REQUIRED", "false")
+    monkeypatch.setenv("WEBHOOK_SIGNATURE_REQUIRED", "true")
+    monkeypatch.setenv("INSTANTLY_WEBHOOK_SECRET", "instantly-secret")
+    monkeypatch.setenv("HEYREACH_WEBHOOK_SECRET", "heyreach-secret")
+    monkeypatch.setenv("RB2B_WEBHOOK_SECRET", "rb2b-secret")
+    monkeypatch.setenv("CLAY_WEBHOOK_SECRET", "clay-secret")
+
+    health = get_runtime_dependency_health(
+        check_connections=False,
+        inngest_route_mounted=False,
+    )
+
+    assert health["ready"] is True
+    assert health["dependencies"]["webhooks"]["status"] == "healthy"
+    assert health["dependencies"]["webhooks"]["ready"] is True
 
 
 def test_merge_runtime_env_values_respects_existing_and_overrides():
@@ -136,6 +176,7 @@ async def test_readiness_probe_fails_when_runtime_required_missing(monkeypatch):
     monkeypatch.setattr(health_app, "INNGEST_ROUTE_MOUNTED", False)
     monkeypatch.setenv("REDIS_REQUIRED", "true")
     monkeypatch.setenv("INNGEST_REQUIRED", "true")
+    monkeypatch.setenv("WEBHOOK_SIGNATURE_REQUIRED", "false")
     monkeypatch.delenv("REDIS_URL", raising=False)
     monkeypatch.delenv("INNGEST_SIGNING_KEY", raising=False)
     monkeypatch.delenv("INNGEST_EVENT_KEY", raising=False)
@@ -152,6 +193,7 @@ async def test_runtime_dependencies_endpoint_contract(monkeypatch):
     from dashboard import health_app
 
     monkeypatch.setattr(health_app, "INNGEST_ROUTE_MOUNTED", False)
+    monkeypatch.setenv("WEBHOOK_SIGNATURE_REQUIRED", "false")
     payload = await health_app.get_runtime_dependencies(auth=True)
 
     assert "status" in payload
@@ -166,6 +208,7 @@ def test_protected_api_endpoints_require_dashboard_token(monkeypatch):
 
     monkeypatch.setenv("DASHBOARD_AUTH_TOKEN", "unit-test-token")
     monkeypatch.setenv("DASHBOARD_AUTH_STRICT", "true")
+    monkeypatch.setenv("WEBHOOK_SIGNATURE_REQUIRED", "false")
 
     client = TestClient(health_app.app)
 
@@ -177,9 +220,17 @@ def test_protected_api_endpoints_require_dashboard_token(monkeypatch):
         "/api/operator/status",
         headers={"X-Dashboard-Token": "unit-test-token"},
     )
+    preflight = client.options(
+        "/api/operator/status",
+        headers={
+            "Origin": "http://localhost:3000",
+            "Access-Control-Request-Method": "GET",
+        },
+    )
 
     assert unauth_status.status_code == 401
     assert unauth_trigger.status_code == 401
     assert health_ready.status_code != 401
     assert auth_status.status_code != 401
     assert header_auth_status.status_code != 401
+    assert preflight.status_code != 401

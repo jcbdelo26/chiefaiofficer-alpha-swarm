@@ -8,8 +8,6 @@ RB2B sends POST requests when visitors are identified on your website.
 
 import os
 import sys
-import hmac
-import hashlib
 import json
 import logging
 from datetime import datetime, timezone
@@ -18,6 +16,16 @@ from typing import Dict, Any, Optional
 
 from fastapi import FastAPI, Request, HTTPException, Header, APIRouter, BackgroundTasks
 from dotenv import load_dotenv
+
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
+from core.webhook_security import (
+    get_webhook_signature_status,
+    require_hmac_sha256_signature,
+    require_webhook_auth,
+)
 
 logger = logging.getLogger("rb2b_webhook")
 
@@ -37,8 +45,6 @@ except Exception as e:
 # Use APIRouter instead of FastAPI app for better integration
 app = FastAPI()
 router = APIRouter()
-
-RB2B_WEBHOOK_SECRET = os.getenv('RB2B_WEBHOOK_SECRET', '')
 
 # =============================================================================
 # ROBUST IMPORT PATH SETUP
@@ -115,26 +121,15 @@ except Exception as e:
 
 async def verify_rb2b_signature(request: Request, x_signature: str = Header(None)):
     """Verify RB2B webhook signature."""
-    if not RB2B_WEBHOOK_SECRET:
-        # If secret is not configured, skip verification (WARN: Insecure)
-        # In production, this should likely fail or log a warning
-        return True
-        
-    if not x_signature:
-        raise HTTPException(status_code=401, detail="Missing signature header")
-    
     body = await request.body()
-    
-    # Calculate HMAC SHA256 signature
-    signature = hmac.new(
-        RB2B_WEBHOOK_SECRET.encode(),
-        body,
-        hashlib.sha256
-    ).hexdigest()
-    
-    if not hmac.compare_digest(signature, x_signature):
-        raise HTTPException(status_code=401, detail="Invalid signature")
-    
+    signature = x_signature or request.headers.get("X-RB2B-Signature") or ""
+    require_hmac_sha256_signature(
+        raw_body=body,
+        signature=signature,
+        provider="RB2B",
+        secret_env="RB2B_WEBHOOK_SECRET",
+        header_name="X-Signature",
+    )
     return True
 
 
@@ -314,11 +309,13 @@ async def handle_rb2b_webhook(
 @router.get("/webhooks/rb2b/health")
 async def health_check():
     """Health check endpoint."""
+    signature_status = get_webhook_signature_status("RB2B_WEBHOOK_SECRET")
     return {
         "status": "healthy",
         "webhook": "rb2b",
         "supabase_configured": supabase is not None,
-        "secret_configured": bool(RB2B_WEBHOOK_SECRET),
+        "secret_configured": signature_status["secret_configured"],
+        "signature_strict_mode": signature_status["strict_mode"],
         "icp_engine_enabled": icp_enabled,
         "icp_error": icp_error
     }
@@ -341,7 +338,18 @@ async def handle_clay_callback(
     in Clay's HTTP API action callback payload.
     """
     try:
-        payload = await request.json()
+        raw_body = await request.body()
+        require_webhook_auth(
+            request=request,
+            raw_body=raw_body,
+            provider="Clay",
+            secret_env="CLAY_WEBHOOK_SECRET",
+            signature_header="X-Clay-Signature",
+        )
+        try:
+            payload = json.loads(raw_body.decode("utf-8"))
+        except json.JSONDecodeError:
+            raise HTTPException(status_code=400, detail="Invalid JSON")
         logger.info("Clay callback received: %s", json.dumps(payload)[:120])
 
         visitor_id = payload.get("visitor_id") or payload.get("id")
@@ -371,6 +379,8 @@ async def handle_clay_callback(
 
         return {"status": "processed", "visitor_id": visitor_id}
 
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error("Clay callback error: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
@@ -379,9 +389,13 @@ async def handle_clay_callback(
 @router.get("/webhooks/clay/health")
 async def clay_health_check():
     """Health check for Clay webhook."""
+    signature_status = get_webhook_signature_status("CLAY_WEBHOOK_SECRET")
     return {
-        "status": "healthy", 
-        "enricher_initialized": clay_enricher is not None
+        "status": "healthy",
+        "enricher_initialized": clay_enricher is not None,
+        "secret_configured": signature_status["secret_configured"],
+        "bearer_configured": signature_status["bearer_configured"],
+        "signature_strict_mode": signature_status["strict_mode"],
     }
 
 

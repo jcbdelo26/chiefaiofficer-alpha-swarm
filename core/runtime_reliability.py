@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """
-Runtime reliability helpers for Redis and Inngest.
+Runtime reliability helpers for Redis, Inngest, and webhook signature policy.
 
 This module provides:
 - deterministic runtime dependency health checks
-- env bootstrap defaults for Redis/Inngest reliability settings
+- env bootstrap defaults for Redis/Inngest/webhook reliability settings
 - safe .env upsert helpers for automation scripts
 """
 
@@ -21,6 +21,19 @@ try:
     import redis
 except Exception:  # pragma: no cover - optional dependency in some test envs
     redis = None
+
+_WEBHOOK_SECRET_ENV_BY_PROVIDER = {
+    "instantly": "INSTANTLY_WEBHOOK_SECRET",
+    "heyreach": "HEYREACH_WEBHOOK_SECRET",
+    "rb2b": "RB2B_WEBHOOK_SECRET",
+    "clay": "CLAY_WEBHOOK_SECRET",
+}
+
+# Providers that support custom HTTP headers (can use bearer token as fallback)
+_BEARER_CAPABLE_PROVIDERS = {"instantly", "clay"}
+
+# Providers that have NO auth mechanism (no HMAC, no custom headers)
+_NO_AUTH_PROVIDERS = {"heyreach"}
 
 
 def to_bool(value: Optional[str], default: bool = False) -> bool:
@@ -62,6 +75,11 @@ def get_runtime_env_defaults(mode: str) -> Dict[str, str]:
         "INNGEST_APP_ID": f"caio-alpha-swarm-{normalized_mode}",
         "INNGEST_APP_NAME": "CAIO Alpha Swarm",
         "INNGEST_WEBHOOK_URL": "http://localhost:8080/inngest",
+        "WEBHOOK_SIGNATURE_REQUIRED": required_default,
+        "INSTANTLY_WEBHOOK_SECRET": "",
+        "HEYREACH_WEBHOOK_SECRET": "",
+        "RB2B_WEBHOOK_SECRET": "",
+        "CLAY_WEBHOOK_SECRET": "",
         "TRACE_ENVELOPE_FILE": f".hive-mind/traces/tool_trace_envelopes{trace_suffix}.jsonl",
         "TRACE_ENVELOPE_ENABLED": "true",
         "TRACE_RETENTION_DAYS": "30",
@@ -189,25 +207,83 @@ def _inngest_health(*, check_connections: bool, route_mounted: Optional[bool]) -
     return result
 
 
+def _webhook_signature_health() -> Dict[str, Any]:
+    required_raw = (os.getenv("WEBHOOK_SIGNATURE_REQUIRED") or "").strip()
+    if required_raw:
+        required = to_bool(required_raw, default=False)
+    else:
+        environment = (os.getenv("ENVIRONMENT") or "").strip().lower()
+        required = environment in {"staging", "production"}
+
+    bearer_token_set = bool((os.getenv("WEBHOOK_BEARER_TOKEN") or "").strip())
+
+    # A provider is "authed" if:
+    # 1. Its HMAC secret is configured, OR
+    # 2. It supports custom headers AND the bearer token is configured, OR
+    # 3. It has no auth mechanism at all (e.g. HeyReach) — accepted as-is
+    provider_auth = {}
+    for provider, secret_env in _WEBHOOK_SECRET_ENV_BY_PROVIDER.items():
+        has_secret = bool((os.getenv(secret_env) or "").strip())
+        has_bearer = provider in _BEARER_CAPABLE_PROVIDERS and bearer_token_set
+        no_auth_available = provider in _NO_AUTH_PROVIDERS
+        provider_auth[provider] = {
+            "hmac": has_secret,
+            "bearer": has_bearer,
+            "no_auth_provider": no_auth_available,
+            "authed": has_secret or has_bearer or no_auth_available,
+        }
+
+    unauthed = [p for p, info in provider_auth.items() if not info["authed"]]
+    all_authed = not unauthed
+
+    if all_authed:
+        status = "healthy"
+        message = "Webhook auth configured for all providers"
+    elif required:
+        status = "unhealthy"
+        message = (
+            "WEBHOOK_SIGNATURE_REQUIRED=true but no auth for: "
+            + ", ".join(unauthed)
+        )
+    else:
+        status = "not_configured"
+        message = "Webhook auth is optional in current mode"
+
+    return {
+        "name": "webhooks",
+        "required": required,
+        "configured": all_authed,
+        "ready": all_authed or not required,
+        "status": status,
+        "message": message,
+        "provider_auth": provider_auth,
+        "bearer_token_configured": bearer_token_set,
+        "unauthed_providers": unauthed,
+    }
+
+
 def get_runtime_dependency_health(
     *,
     check_connections: bool = True,
     inngest_route_mounted: Optional[bool] = None,
 ) -> Dict[str, Any]:
     """
-    Return Redis/Inngest runtime health with strict required-dependency semantics.
+    Return Redis/Inngest/webhook runtime health with strict required-dependency semantics.
     """
     redis_result = _redis_health(check_connections=check_connections)
     inngest_result = _inngest_health(
         check_connections=check_connections,
         route_mounted=inngest_route_mounted,
     )
+    webhook_result = _webhook_signature_health()
 
     failures = []
     if redis_result["required"] and not redis_result["ready"]:
         failures.append(f"redis: {redis_result['message']}")
     if inngest_result["required"] and not inngest_result["ready"]:
         failures.append(f"inngest: {inngest_result['message']}")
+    if webhook_result["required"] and not webhook_result["ready"]:
+        failures.append(f"webhooks: {webhook_result['message']}")
 
     ready = len(failures) == 0
     status = "ready" if ready else "not_ready"
@@ -219,6 +295,7 @@ def get_runtime_dependency_health(
         "dependencies": {
             "redis": redis_result,
             "inngest": inngest_result,
+            "webhooks": webhook_result,
         },
         "required_failures": failures,
     }

@@ -14,7 +14,6 @@ import os
 import sys
 import json
 import hmac
-import hashlib
 import logging
 from datetime import datetime, timezone
 from pathlib import Path
@@ -29,6 +28,10 @@ logger = logging.getLogger("instantly_webhook")
 
 PROJECT_ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
+from core.webhook_security import (
+    get_webhook_signature_status,
+    require_webhook_auth,
+)
 
 # Lazy Instantly client
 _instantly_client = None
@@ -77,30 +80,9 @@ def _require_auth(request: Request, token: str = Query(None, alias="token")):
             raise HTTPException(status_code=401, detail="Unauthorized")
         return True
 
-    if not supplied_token or supplied_token != configured_token:
+    if not supplied_token or not hmac.compare_digest(supplied_token, configured_token):
         raise HTTPException(status_code=401, detail="Unauthorized")
     return True
-
-
-# =============================================================================
-# WEBHOOK SIGNATURE VERIFICATION
-# =============================================================================
-
-INSTANTLY_WEBHOOK_SECRET = os.getenv("INSTANTLY_WEBHOOK_SECRET", "")
-
-
-def _verify_signature(raw_body: bytes, signature: str) -> bool:
-    """Verify HMAC SHA256 signature from Instantly webhooks."""
-    if not INSTANTLY_WEBHOOK_SECRET:
-        return True  # No secret configured, skip verification
-    if not signature:
-        return False
-    expected = hmac.new(
-        INSTANTLY_WEBHOOK_SECRET.encode("utf-8"),
-        raw_body,
-        hashlib.sha256,
-    ).hexdigest()
-    return hmac.compare_digest(expected, signature.replace("sha256=", ""))
 
 
 router = APIRouter()
@@ -517,12 +499,17 @@ async def _process_unsubscribe(payload: Dict[str, Any]):
 async def handle_instantly_reply(request: Request, background_tasks: BackgroundTasks):
     """Handle reply webhook from Instantly."""
     raw = await request.body()
-    sig = request.headers.get("X-Instantly-Signature", "")
-
-    if INSTANTLY_WEBHOOK_SECRET and not _verify_signature(raw, sig):
-        raise HTTPException(status_code=401, detail="Invalid signature")
-
-    payload = await request.json()
+    require_webhook_auth(
+        request=request,
+        raw_body=raw,
+        provider="Instantly",
+        secret_env="INSTANTLY_WEBHOOK_SECRET",
+        signature_header="X-Instantly-Signature",
+    )
+    try:
+        payload = json.loads(raw.decode("utf-8"))
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=400, detail="Invalid JSON")
     background_tasks.add_task(_process_reply, payload)
     return {"status": "received", "event": "reply"}
 
@@ -531,12 +518,17 @@ async def handle_instantly_reply(request: Request, background_tasks: BackgroundT
 async def handle_instantly_bounce(request: Request, background_tasks: BackgroundTasks):
     """Handle bounce webhook from Instantly."""
     raw = await request.body()
-    sig = request.headers.get("X-Instantly-Signature", "")
-
-    if INSTANTLY_WEBHOOK_SECRET and not _verify_signature(raw, sig):
-        raise HTTPException(status_code=401, detail="Invalid signature")
-
-    payload = await request.json()
+    require_webhook_auth(
+        request=request,
+        raw_body=raw,
+        provider="Instantly",
+        secret_env="INSTANTLY_WEBHOOK_SECRET",
+        signature_header="X-Instantly-Signature",
+    )
+    try:
+        payload = json.loads(raw.decode("utf-8"))
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=400, detail="Invalid JSON")
     background_tasks.add_task(_process_bounce, payload)
     return {"status": "received", "event": "bounce"}
 
@@ -545,12 +537,17 @@ async def handle_instantly_bounce(request: Request, background_tasks: Background
 async def handle_instantly_open(request: Request):
     """Handle open tracking webhook from Instantly."""
     raw = await request.body()
-    sig = request.headers.get("X-Instantly-Signature", "")
-
-    if INSTANTLY_WEBHOOK_SECRET and not _verify_signature(raw, sig):
-        raise HTTPException(status_code=401, detail="Invalid signature")
-
-    payload = await request.json()
+    require_webhook_auth(
+        request=request,
+        raw_body=raw,
+        provider="Instantly",
+        secret_env="INSTANTLY_WEBHOOK_SECRET",
+        signature_header="X-Instantly-Signature",
+    )
+    try:
+        payload = json.loads(raw.decode("utf-8"))
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=400, detail="Invalid JSON")
     _log_event("open", payload)
 
     # Signal loop: update lead engagement status
@@ -571,12 +568,17 @@ async def handle_instantly_unsubscribe(
 ):
     """Handle unsubscribe webhook from Instantly (compliance-critical)."""
     raw = await request.body()
-    sig = request.headers.get("X-Instantly-Signature", "")
-
-    if INSTANTLY_WEBHOOK_SECRET and not _verify_signature(raw, sig):
-        raise HTTPException(status_code=401, detail="Invalid signature")
-
-    payload = await request.json()
+    require_webhook_auth(
+        request=request,
+        raw_body=raw,
+        provider="Instantly",
+        secret_env="INSTANTLY_WEBHOOK_SECRET",
+        signature_header="X-Instantly-Signature",
+    )
+    try:
+        payload = json.loads(raw.decode("utf-8"))
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=400, detail="Invalid JSON")
     background_tasks.add_task(_process_unsubscribe, payload)
     return {"status": "received", "event": "unsubscribe"}
 
@@ -584,9 +586,12 @@ async def handle_instantly_unsubscribe(
 @router.get("/webhooks/instantly/health")
 async def instantly_webhook_health():
     """Health check for Instantly webhook router."""
+    signature_status = get_webhook_signature_status("INSTANTLY_WEBHOOK_SECRET")
     return {
         "status": "healthy",
         "webhook": "instantly",
-        "secret_configured": bool(INSTANTLY_WEBHOOK_SECRET),
+        "secret_configured": signature_status["secret_configured"],
+        "bearer_configured": signature_status["bearer_configured"],
+        "signature_strict_mode": signature_status["strict_mode"],
         "client_available": _instantly_client is not None,
     }
