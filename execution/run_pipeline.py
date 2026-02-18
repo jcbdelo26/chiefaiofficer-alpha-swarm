@@ -363,23 +363,29 @@ class UnifiedPipeline:
         
         def _sync_scrape():
             scraper = LinkedInFollowerScraper()
-            
+
             # Pre-flight: validate session before attempting scrape
             scraper.validate_session()
-            
+
             if source and source.startswith("competitor_"):
-                company = source.replace("competitor_", "")
+                company_key = source.replace("competitor_", "")
+                target = scraper.TARGET_COMPANIES.get(company_key, {})
                 results = scraper.fetch_followers(
-                    f"https://www.linkedin.com/company/{company}",
-                    company, limit=limit
+                    target.get("url", f"https://www.linkedin.com/company/{company_key}"),
+                    target.get("name", company_key),
+                    limit=limit,
+                    company_domain=target.get("domain", ""),
                 )
             else:
-                # Default: Apollo.io (mid-market SaaS, 51-500 employees)
-                # scores higher on company_size for tier_1 eligibility
-                default_company = source or "apollo.io"
+                # Default: Vidyard (mid-market SaaS, non-competitor, unambiguous name).
+                # Look up domain from TARGET_COMPANIES for precise Apollo matching.
+                company_key = source or "vidyard"
+                target = scraper.TARGET_COMPANIES.get(company_key, {})
                 results = scraper.fetch_followers(
-                    f"https://www.linkedin.com/company/{default_company}",
-                    default_company, limit=limit
+                    target.get("url", f"https://www.linkedin.com/company/{company_key}"),
+                    target.get("name", company_key),
+                    limit=limit,
+                    company_domain=target.get("domain", ""),
                 )
             
             # Convert dataclass to dict if needed
@@ -748,13 +754,20 @@ class UnifiedPipeline:
                     "template_id": None,
                 }
 
-                filepath = shadow_dir / f"{email_id}.json"
+                # Write to Redis (for Railway dashboard) + local disk (for dev)
                 try:
-                    with open(filepath, "w", encoding="utf-8") as f:
-                        json.dump(shadow_email, f, indent=2, ensure_ascii=False)
+                    from core.shadow_queue import push as shadow_push
+                    shadow_push(shadow_email, shadow_dir=shadow_dir)
                     queued += 1
                 except Exception as e:
-                    errors.append(f"Failed to write shadow email: {e}")
+                    # Fallback: write to disk only if shadow_queue fails to import
+                    filepath = shadow_dir / f"{email_id}.json"
+                    try:
+                        with open(filepath, "w", encoding="utf-8") as f:
+                            json.dump(shadow_email, f, indent=2, ensure_ascii=False)
+                        queued += 1
+                    except Exception as e2:
+                        errors.append(f"Failed to write shadow email: {e2}")
 
             campaign["shadow_queued"] = True
             campaign["shadow_email_count"] = len(leads)

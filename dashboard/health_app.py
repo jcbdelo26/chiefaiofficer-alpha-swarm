@@ -18,6 +18,7 @@ Usage:
 import os
 import sys
 import json
+import hmac
 import asyncio
 import logging
 from uuid import uuid4
@@ -255,7 +256,9 @@ def _token_is_valid(token: Optional[str]) -> bool:
             logger.warning("DASHBOARD_AUTH_TOKEN not configured; protected API routes are in non-strict mode.")
             _AUTH_WARNING_EMITTED = True
         return True
-    return bool(token and token == configured_token)
+    if not token:
+        return False
+    return hmac.compare_digest(token, configured_token)
 
 
 def _is_auth_exempt_path(path: str) -> bool:
@@ -281,6 +284,8 @@ class APIAuthMiddleware(BaseHTTPMiddleware):
 
     async def dispatch(self, request: Request, call_next):
         path = _normalize_path(request.url.path)
+        if request.method.upper() == "OPTIONS":
+            return await call_next(request)
         if path.startswith("/api/") and not _is_auth_exempt_path(path):
             token = _extract_dashboard_token(request)
             if not _token_is_valid(token):
@@ -883,8 +888,10 @@ async def leads_dashboard():
 async def get_pending_emails(response: Response, auth: bool = Depends(require_auth)):
     """
     Get pending emails awaiting approval.
-    
-    Returns emails that need HoS review before sending.
+
+    Reads from Redis (shared with local pipeline) first, filesystem fallback.
+    This bridges the local-vs-Railway filesystem gap: pipeline writes to Redis
+    from any machine, dashboard reads from the same Redis on Railway.
     """
     # Prevent stale browser/proxy caches for queue polling
     response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
@@ -894,36 +901,39 @@ async def get_pending_emails(response: Response, auth: bool = Depends(require_au
     # Keep shadow queue in sync with gatekeeper queue for resilience
     synced_count = _sync_gatekeeper_queue_to_shadow(PROJECT_ROOT)
 
-    # Load from shadow mode log
     shadow_log = PROJECT_ROOT / ".hive-mind" / "shadow_mode_emails"
+
+    # Redis-backed shadow queue (handles Redis-first + filesystem fallback)
     pending = []
-    
-    if shadow_log.exists():
+    try:
+        from core.shadow_queue import list_pending
+        pending = list_pending(limit=20, shadow_dir=shadow_log)
+    except Exception as exc:
+        logger.warning("shadow_queue.list_pending failed, falling back to filesystem: %s", exc)
+
+    # Pure filesystem fallback if shadow_queue returned nothing
+    if not pending and shadow_log.exists():
         for email_file in sorted(shadow_log.glob("*.json"), reverse=True)[:20]:
             try:
                 with open(email_file) as f:
                     email_data = json.load(f)
-                    
-                    # Backwards compatibility: Missing status = pending
                     current_status = email_data.get("status", "pending")
-                    
                     if current_status == "pending":
-                        # Ensure we pass all necessary fields for the frontend
                         email_data["email_id"] = email_data.get("email_id") or email_file.stem
-                        email_data["timestamp"] = email_data.get("timestamp", "Unknown")
-                        email_data["recipient_data"] = email_data.get("recipient_data", {})
-                        
-                        # Sanitize critical fields to prevent frontend crash
-                        email_data["to"] = email_data.get("to") or "unknown@example.com"
-                        email_data["subject"] = email_data.get("subject") or "No Subject"
-                        email_data["body"] = email_data.get("body") or email_data.get("body_preview") or "No Body Content"
-                        email_data["tier"] = email_data.get("tier", "tier_3")
-                        email_data["angle"] = email_data.get("angle", "General")
-                        
                         pending.append(email_data)
-            except Exception as exc:
-                logger.warning("Failed to read pending email file %s: %s", email_file, exc)
-    
+            except Exception as exc2:
+                logger.warning("Failed to read pending email file %s: %s", email_file, exc2)
+
+    # Sanitize all emails for frontend display
+    for email_data in pending:
+        email_data["timestamp"] = email_data.get("timestamp", "Unknown")
+        email_data["recipient_data"] = email_data.get("recipient_data", {})
+        email_data["to"] = email_data.get("to") or "unknown@example.com"
+        email_data["subject"] = email_data.get("subject") or "No Subject"
+        email_data["body"] = email_data.get("body") or email_data.get("body_preview") or "No Body Content"
+        email_data["tier"] = email_data.get("tier", "tier_3")
+        email_data["angle"] = email_data.get("angle", "General")
+
     return {
         "pending_emails": pending,
         "count": len(pending),
@@ -950,38 +960,37 @@ async def approve_email(
     5. Updates status and queues for send.
     """
     shadow_log = PROJECT_ROOT / ".hive-mind" / "shadow_mode_emails"
-
-    # Ensure the directory exists
-    if not shadow_log.exists():
-        print(f"ERROR: Shadow email directory not found at {shadow_log}")
-        raise HTTPException(
-            status_code=500,
-            detail=f"Email storage directory not found. Please contact support."
-        )
+    shadow_log.mkdir(parents=True, exist_ok=True)
 
     email_file = None
     email_data = None
 
-    # Find the email file
+    # Try Redis first (handles Railway where filesystem is empty)
+    try:
+        from core.shadow_queue import get_email as sq_get
+        email_data = sq_get(email_id, shadow_dir=shadow_log)
+    except Exception:
+        pass
+
+    # Filesystem search (sets email_file for later disk write)
     for f in shadow_log.glob("*.json"):
         try:
             with open(f) as fp:
                 data = json.load(fp)
                 if data.get("email_id") == email_id or f.stem == email_id:
                     email_file = f
-                    email_data = data
+                    if email_data is None:
+                        email_data = data
                     break
-        except Exception as e:
-            print(f"Error reading email file {f}: {e}")
+        except Exception:
             continue
 
-    if not email_file or not email_data:
-        print(f"ERROR: Email {email_id} not found in {shadow_log}")
+    if not email_data:
         raise HTTPException(status_code=404, detail=f"Email {email_id} not found in queue")
 
     if email_data.get("status") == "approved":
         raise HTTPException(status_code=400, detail="Email already approved")
-    
+
     # Capture original body BEFORE overwriting for training logs
     original_body = email_data.get("body") if edited_body else None
     
@@ -1082,13 +1091,22 @@ async def approve_email(
     email_data["approved_by"] = approver
     email_data["feedback"] = feedback
     
-    # Save updated data
+    # Save updated data — Redis + filesystem
     try:
-        with open(email_file, "w") as fp:
-            json.dump(email_data, fp, indent=2)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to save approval: {e}")
-    
+        from core.shadow_queue import update_status as sq_update
+        sq_update(email_id, final_status, shadow_dir=shadow_log, extra_fields={
+            "approved_at": email_data.get("approved_at"),
+            "approved_by": approver,
+        })
+    except Exception:
+        pass  # Redis sync is best-effort; file is authoritative
+    if email_file:
+        try:
+            with open(email_file, "w") as fp:
+                json.dump(email_data, fp, indent=2)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Failed to save approval: {e}")
+
     # Log to Audit Log
     audit_log = PROJECT_ROOT / ".hive-mind" / "audit" / "email_approvals.jsonl"
     audit_log.parent.mkdir(parents=True, exist_ok=True)
@@ -1158,50 +1176,59 @@ async def reject_email(
     Logs the rejection for agent training.
     """
     shadow_log = PROJECT_ROOT / ".hive-mind" / "shadow_mode_emails"
-
-    # Ensure the directory exists
-    if not shadow_log.exists():
-        print(f"ERROR: Shadow email directory not found at {shadow_log}")
-        raise HTTPException(
-            status_code=500,
-            detail=f"Email storage directory not found. Please contact support."
-        )
+    shadow_log.mkdir(parents=True, exist_ok=True)
 
     email_file = None
     email_data = None
 
-    # Find the email file
+    # Try Redis first (handles Railway where filesystem is empty)
+    try:
+        from core.shadow_queue import get_email as sq_get
+        email_data = sq_get(email_id, shadow_dir=shadow_log)
+    except Exception:
+        pass
+
+    # Filesystem search
     for f in shadow_log.glob("*.json"):
         try:
             with open(f) as fp:
                 data = json.load(fp)
                 if data.get("email_id") == email_id or f.stem == email_id:
                     email_file = f
-                    email_data = data
+                    if email_data is None:
+                        email_data = data
                     break
-        except Exception as e:
-            print(f"Error reading email file {f}: {e}")
+        except Exception:
             continue
 
-    if not email_file or not email_data:
-        print(f"ERROR: Email {email_id} not found in {shadow_log}")
+    if not email_data:
         raise HTTPException(status_code=404, detail=f"Email {email_id} not found in queue")
-    
+
     if email_data.get("status") == "rejected":
         raise HTTPException(status_code=400, detail="Email already rejected")
-    
+
     # Update status
     email_data["status"] = "rejected"
     email_data["rejected_at"] = datetime.now().isoformat()
     email_data["rejected_by"] = approver
     email_data["rejection_reason"] = reason or "No reason provided"
-    
-    # Save updated data
+
+    # Save updated data — Redis + filesystem
     try:
-        with open(email_file, "w") as fp:
-            json.dump(email_data, fp, indent=2)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to save rejection: {e}")
+        from core.shadow_queue import update_status as sq_update
+        sq_update(email_id, "rejected", shadow_dir=shadow_log, extra_fields={
+            "rejected_at": email_data.get("rejected_at"),
+            "rejected_by": approver,
+            "rejection_reason": email_data.get("rejection_reason"),
+        })
+    except Exception:
+        pass
+    if email_file:
+        try:
+            with open(email_file, "w") as fp:
+                json.dump(email_data, fp, indent=2)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Failed to save rejection: {e}")
 
     # Log to Training Feedback Log - comprehensive learning record
     training_log = PROJECT_ROOT / ".hive-mind" / "audit" / "agent_feedback.jsonl"
