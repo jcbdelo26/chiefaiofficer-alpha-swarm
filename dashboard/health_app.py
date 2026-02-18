@@ -16,13 +16,14 @@ Usage:
 """
 
 import os
+import re
 import sys
 import json
 import hmac
 import asyncio
 import logging
 from uuid import uuid4
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from pathlib import Path
 from typing import Dict, List, Any, Optional, Set
 
@@ -87,6 +88,124 @@ def _priority_to_tier(priority: Optional[str]) -> str:
     if p == "medium":
         return "tier_2"
     return "tier_3"
+
+
+def _env_bool(name: str, default: bool) -> bool:
+    raw = (os.getenv(name) or "").strip().lower()
+    if not raw:
+        return default
+    if raw in {"1", "true", "yes", "on"}:
+        return True
+    if raw in {"0", "false", "no", "off"}:
+        return False
+    return default
+
+
+def _pending_queue_max_age_hours() -> Optional[float]:
+    raw = (os.getenv("PENDING_QUEUE_MAX_AGE_HOURS") or "72").strip()
+    try:
+        value = float(raw)
+    except Exception:
+        value = 72.0
+    if value <= 0:
+        return None
+    return value
+
+
+def _pending_queue_placeholder_tokens() -> Set[str]:
+    raw = (os.getenv("PENDING_QUEUE_PLACEHOLDER_BODIES") or "no body content").strip()
+    tokens = {token.strip().lower() for token in raw.split(",") if token.strip()}
+    tokens.add("")
+    return tokens
+
+
+def _parse_iso_datetime(value: Any) -> Optional[datetime]:
+    if value is None:
+        return None
+    text = str(value).strip()
+    if not text:
+        return None
+    try:
+        dt = datetime.fromisoformat(text.replace("Z", "+00:00"))
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt
+    except Exception:
+        return None
+
+
+def _get_active_pending_queue_tier_filter() -> Optional[str]:
+    """
+    Return active tier filter for pending queue display.
+
+    Priority:
+      1. Explicit env override `PENDING_QUEUE_TIER_FILTER`.
+      2. Active OPERATOR ramp tier filter (if enforcement enabled).
+    """
+    explicit = (os.getenv("PENDING_QUEUE_TIER_FILTER") or "").strip().lower()
+    if explicit:
+        return explicit
+
+    if not _env_bool("PENDING_QUEUE_ENFORCE_RAMP_TIER", True):
+        return None
+
+    operator = globals().get("_operator")
+    if operator is None:
+        return None
+    try:
+        status = operator.get_status()
+        ramp = status.get("ramp", {})
+        if ramp.get("active"):
+            tier_filter = str(ramp.get("tier_filter") or "").strip().lower()
+            if tier_filter:
+                return tier_filter
+    except Exception as exc:
+        logger.debug("Failed to load operator ramp tier for pending queue filter: %s", exc)
+    return None
+
+
+def _pending_email_exclusion_reasons(
+    email_data: Dict[str, Any],
+    *,
+    now_utc: datetime,
+    tier_filter: Optional[str],
+    max_age_hours: Optional[float],
+    placeholder_tokens: Set[str],
+    seen_dedupe_keys: Set[str],
+) -> List[str]:
+    reasons: List[str] = []
+
+    status = str(email_data.get("status") or "pending").strip().lower()
+    if status != "pending":
+        reasons.append(f"status:{status}")
+        return reasons
+
+    tier = str(email_data.get("tier") or "").strip().lower()
+    if tier_filter and tier and tier != tier_filter:
+        reasons.append(f"tier_mismatch:{tier}")
+
+    body = str(email_data.get("body") or email_data.get("body_preview") or "").strip()
+    body_normalized = body.lower()
+    if body_normalized in placeholder_tokens:
+        reasons.append("placeholder_body")
+    elif re.fullmatch(r"\{\{[^{}]+\}\}", body_normalized):
+        reasons.append("unrendered_placeholder_body")
+
+    if max_age_hours is not None:
+        ts = _parse_iso_datetime(email_data.get("timestamp") or email_data.get("created_at"))
+        if ts is not None and ts < (now_utc - timedelta(hours=max_age_hours)):
+            reasons.append(f"stale_gt_{int(max_age_hours)}h")
+
+    to_addr = str(email_data.get("to") or "").strip().lower()
+    subject = str(email_data.get("subject") or "").strip().lower()
+    if to_addr and subject:
+        dedupe_key = f"{to_addr}|{subject}"
+        if dedupe_key in seen_dedupe_keys:
+            reasons.append("duplicate_recipient_subject")
+        else:
+            seen_dedupe_keys.add(dedupe_key)
+
+    return reasons
 
 
 def _sync_gatekeeper_queue_to_shadow(project_root: Path) -> int:
@@ -1037,8 +1156,53 @@ async def get_pending_emails(response: Response, auth: bool = Depends(require_au
         key=lambda item: str(item.get("timestamp") or item.get("created_at") or ""),
         reverse=True,
     )
-    pending = merged[:20]
-    sq_debug["merged_count"] = len(pending)
+    sq_debug["merged_count"] = len(merged)
+
+    # Queue hygiene filter: hide non-actionable backlog items from approval UI.
+    # This prevents stale placeholders and duplicate drafts from crowding valid approvals.
+    now_utc = datetime.now(timezone.utc)
+    tier_filter = _get_active_pending_queue_tier_filter()
+    max_age_hours = _pending_queue_max_age_hours()
+    placeholder_tokens = _pending_queue_placeholder_tokens()
+    seen_dedupe_keys: Set[str] = set()
+
+    pending = []
+    excluded_reasons_count: Dict[str, int] = {}
+    excluded_items_count = 0
+    excluded_examples: List[Dict[str, Any]] = []
+    for item in merged:
+        reasons = _pending_email_exclusion_reasons(
+            item,
+            now_utc=now_utc,
+            tier_filter=tier_filter,
+            max_age_hours=max_age_hours,
+            placeholder_tokens=placeholder_tokens,
+            seen_dedupe_keys=seen_dedupe_keys,
+        )
+        if reasons:
+            excluded_items_count += 1
+            for reason in reasons:
+                excluded_reasons_count[reason] = excluded_reasons_count.get(reason, 0) + 1
+            if len(excluded_examples) < 5:
+                excluded_examples.append(
+                    {
+                        "email_id": item.get("email_id") or item.get("id"),
+                        "tier": item.get("tier"),
+                        "to": item.get("to"),
+                        "timestamp": item.get("timestamp") or item.get("created_at"),
+                        "reasons": reasons,
+                    }
+                )
+            continue
+        pending.append(item)
+        if len(pending) >= 20:
+            break
+
+    sq_debug["queue_tier_filter"] = tier_filter
+    sq_debug["queue_max_age_hours"] = max_age_hours
+    sq_debug["excluded_non_actionable_count"] = excluded_items_count
+    sq_debug["excluded_non_actionable_reasons"] = excluded_reasons_count
+    sq_debug["excluded_non_actionable_examples"] = excluded_examples
 
     # Sanitize all emails for frontend display
     for email_data in pending:

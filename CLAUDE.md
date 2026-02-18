@@ -573,6 +573,13 @@ Railway Dashboard → shadow_queue.list_pending() → Redis (primary) + disk (fa
 9. **ALWAYS** fail-closed in UI: if `/api/pending-emails` returns `401`, show explicit auth-required state (never render "All caught up")
 10. **ALWAYS** clear stale dashboard token on `401` and reprompt (or require `?token=`) before declaring queue empty
 11. **ALWAYS** keep legacy bookmark routes (`/ChiefAIOfficer`, `/chiefaiofficer`) redirecting to canonical `/sales`
+12. **ALWAYS** apply queue hygiene before rendering approvals:
+    - exclude placeholder-body drafts (`"No Body Content"` / empty),
+    - exclude stale drafts older than `PENDING_QUEUE_MAX_AGE_HOURS` (default 72h),
+    - exclude tier mismatch when ramp is active (`tier_filter` from `/api/operator/status`),
+    - exclude duplicate recipient+subject drafts (keep newest only).
+13. **ALWAYS** run queue hygiene cleanup before supervised cycles if pending list drifts:
+    - `python scripts/cleanup_pending_queue.py --base-url "https://<dashboard>" --token "<DASHBOARD_AUTH_TOKEN>" --apply`
 
 #### Redis Key Schema (Shadow Queue)
 

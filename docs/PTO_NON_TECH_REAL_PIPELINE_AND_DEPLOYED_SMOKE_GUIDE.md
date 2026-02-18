@@ -121,6 +121,19 @@ If `/sales` does not auto-update:
 - Confirm `pending_emails_refresh_timestamp_changes: true`.
 - If either fails, send smoke JSON output to Codex/Claude for direct patching.
 
+If pending approvals look wrong (old Tier 2/Tier 3, placeholder body, duplicates):
+- Run queue hygiene dry-run first:
+
+```powershell
+python scripts/cleanup_pending_queue.py --base-url $env:CAIO_PROD_URL --token $env:CAIO_PROD_TOKEN
+```
+
+- If candidates are correct, apply cleanup:
+
+```powershell
+python scripts/cleanup_pending_queue.py --base-url $env:CAIO_PROD_URL --token $env:CAIO_PROD_TOKEN --apply
+```
+
 ---
 
 ## 7) Copy/Paste Handoff Message Back to Claude

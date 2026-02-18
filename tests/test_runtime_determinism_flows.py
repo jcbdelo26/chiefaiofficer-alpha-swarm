@@ -149,6 +149,8 @@ async def test_pending_emails_syncs_gatekeeper_queue(monkeypatch, tmp_path: Path
 
     _disable_shadow_queue_redis(monkeypatch)
     monkeypatch.setattr(health_app, "PROJECT_ROOT", tmp_path)
+    monkeypatch.setenv("PENDING_QUEUE_MAX_AGE_HOURS", "0")
+    monkeypatch.setenv("PENDING_QUEUE_ENFORCE_RAMP_TIER", "false")
 
     gatekeeper_dir = tmp_path / ".hive-mind" / "gatekeeper_queue"
     gatekeeper_dir.mkdir(parents=True, exist_ok=True)
@@ -199,6 +201,8 @@ async def test_pending_emails_merges_filesystem_sync_when_redis_is_partial(monke
     from core import shadow_queue
 
     monkeypatch.setattr(health_app, "PROJECT_ROOT", tmp_path)
+    monkeypatch.setenv("PENDING_QUEUE_MAX_AGE_HOURS", "0")
+    monkeypatch.setenv("PENDING_QUEUE_ENFORCE_RAMP_TIER", "false")
 
     gatekeeper_dir = tmp_path / ".hive-mind" / "gatekeeper_queue"
     gatekeeper_dir.mkdir(parents=True, exist_ok=True)
@@ -244,6 +248,150 @@ async def test_pending_emails_merges_filesystem_sync_when_redis_is_partial(monke
     assert payload["synced_from_gatekeeper"] == 1
     assert payload["_shadow_queue_debug"]["filesystem_pending"] >= 1
     assert payload["_shadow_queue_debug"]["merged_count"] == 2
+
+
+@pytest.mark.asyncio
+async def test_pending_emails_filters_non_actionable_items(monkeypatch, tmp_path: Path):
+    from dashboard import health_app
+
+    _disable_shadow_queue_redis(monkeypatch)
+    monkeypatch.setattr(health_app, "PROJECT_ROOT", tmp_path)
+    monkeypatch.setenv("PENDING_QUEUE_ENFORCE_RAMP_TIER", "false")
+    monkeypatch.setenv("PENDING_QUEUE_MAX_AGE_HOURS", "72")
+
+    shadow_dir = tmp_path / ".hive-mind" / "shadow_mode_emails"
+    shadow_dir.mkdir(parents=True, exist_ok=True)
+
+    # Actionable (kept)
+    (shadow_dir / "email_keep.json").write_text(
+        json.dumps(
+            {
+                "email_id": "email_keep",
+                "status": "pending",
+                "to": "buyer@example.com",
+                "subject": "Roadmap intro",
+                "body": "Valid personalized body",
+                "tier": "tier_1",
+                "timestamp": "2026-02-18T12:00:00+00:00",
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    # Duplicate recipient+subject (excluded)
+    (shadow_dir / "email_dup.json").write_text(
+        json.dumps(
+            {
+                "email_id": "email_dup",
+                "status": "pending",
+                "to": "buyer@example.com",
+                "subject": "Roadmap intro",
+                "body": "Older duplicate body",
+                "tier": "tier_1",
+                "timestamp": "2026-02-18T11:30:00+00:00",
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    # Placeholder body (excluded)
+    (shadow_dir / "email_placeholder.json").write_text(
+        json.dumps(
+            {
+                "email_id": "email_placeholder",
+                "status": "pending",
+                "to": "placeholder@example.com",
+                "subject": "Placeholder draft",
+                "body": "No Body Content",
+                "tier": "tier_1",
+                "timestamp": "2026-02-18T11:00:00+00:00",
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    # Stale (excluded)
+    (shadow_dir / "email_stale.json").write_text(
+        json.dumps(
+            {
+                "email_id": "email_stale",
+                "status": "pending",
+                "to": "stale@example.com",
+                "subject": "Very old draft",
+                "body": "Looks valid but is too old",
+                "tier": "tier_1",
+                "timestamp": "2026-01-01T11:00:00+00:00",
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    response = Response()
+    payload = await health_app.get_pending_emails(response=response, auth=True)
+
+    assert payload["count"] == 1
+    assert payload["pending_emails"][0]["email_id"] == "email_keep"
+
+    debug = payload["_shadow_queue_debug"]
+    assert debug["excluded_non_actionable_count"] == 3
+    assert debug["excluded_non_actionable_reasons"]["duplicate_recipient_subject"] >= 1
+    assert debug["excluded_non_actionable_reasons"]["placeholder_body"] >= 1
+    assert debug["excluded_non_actionable_reasons"]["stale_gt_72h"] >= 1
+
+
+@pytest.mark.asyncio
+async def test_pending_emails_respects_active_ramp_tier_filter(monkeypatch, tmp_path: Path):
+    from dashboard import health_app
+
+    class _FakeOperator:
+        def get_status(self):
+            return {"ramp": {"active": True, "tier_filter": "tier_1"}}
+
+    _disable_shadow_queue_redis(monkeypatch)
+    monkeypatch.setattr(health_app, "PROJECT_ROOT", tmp_path)
+    monkeypatch.setattr(health_app, "_operator", _FakeOperator())
+    monkeypatch.setenv("PENDING_QUEUE_ENFORCE_RAMP_TIER", "true")
+    monkeypatch.setenv("PENDING_QUEUE_MAX_AGE_HOURS", "0")
+
+    shadow_dir = tmp_path / ".hive-mind" / "shadow_mode_emails"
+    shadow_dir.mkdir(parents=True, exist_ok=True)
+
+    (shadow_dir / "email_t1.json").write_text(
+        json.dumps(
+            {
+                "email_id": "email_t1",
+                "status": "pending",
+                "to": "tier1@example.com",
+                "subject": "Tier 1 draft",
+                "body": "Tier 1 body",
+                "tier": "tier_1",
+                "timestamp": "2026-02-18T10:00:00+00:00",
+            }
+        ),
+        encoding="utf-8",
+    )
+    (shadow_dir / "email_t2.json").write_text(
+        json.dumps(
+            {
+                "email_id": "email_t2",
+                "status": "pending",
+                "to": "tier2@example.com",
+                "subject": "Tier 2 draft",
+                "body": "Tier 2 body",
+                "tier": "tier_2",
+                "timestamp": "2026-02-18T10:01:00+00:00",
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    response = Response()
+    payload = await health_app.get_pending_emails(response=response, auth=True)
+
+    assert payload["count"] == 1
+    assert payload["pending_emails"][0]["email_id"] == "email_t1"
+    assert payload["_shadow_queue_debug"]["queue_tier_filter"] == "tier_1"
+    assert payload["_shadow_queue_debug"]["excluded_non_actionable_reasons"]["tier_mismatch:tier_2"] >= 1
 
 
 @pytest.mark.asyncio
