@@ -1506,69 +1506,105 @@ async def approve_email(
     final_status = "approved"
     
     if actually_send:
-        contact_id = email_data.get("contact_id")
-        
-        # Guard against synthetic/test data in live mode
-        if contact_id and not contact_id.startswith("synthetic_"):
-            try:
-                # Extract limits from loaded config
-                # Default to 150/3000 if not found in config
-                # Note: config structure is guardrails -> email_limits
-                email_limits = project_config.get("guardrails", {}).get("email_limits", {})
+        try:
+            # Extract limits from loaded config
+            # Default to 150/3000 if not found in config
+            # Note: config structure is guardrails -> email_limits
+            email_limits = project_config.get("guardrails", {}).get("email_limits", {})
 
-                outreach_config = OutreachConfig(
-                    monthly_limit=email_limits.get("monthly_limit", 3000),
-                    daily_limit=email_limits.get("daily_limit", 150),
-                    min_delay_seconds=email_limits.get("min_delay_seconds", 60)
-                )
+            outreach_config = OutreachConfig(
+                monthly_limit=email_limits.get("monthly_limit", 3000),
+                daily_limit=email_limits.get("daily_limit", 150),
+                min_delay_seconds=email_limits.get("min_delay_seconds", 60)
+            )
 
-                # Load GHL credentials from environment
-                api_key = os.getenv("GHL_API_KEY") or os.getenv("GHL_PROD_API_KEY")
-                location_id = os.getenv("GHL_LOCATION_ID")
+            # Load GHL credentials from environment
+            api_key = os.getenv("GHL_API_KEY") or os.getenv("GHL_PROD_API_KEY")
+            location_id = os.getenv("GHL_LOCATION_ID")
 
-                if api_key and location_id:
-                    client = GHLOutreachClient(api_key, location_id, config=outreach_config)
-                    
-                    # Create temp template from the approved content
-                    temp_template = EmailTemplate(
-                        id=f"approved_{email_id}",
-                        name="Approved Dashboard Email",
-                        subject=email_data.get("subject", ""),
-                        body=email_data.get("body", ""),
-                        type=OutreachType.WARM
-                    )
-                    
-                    # Send!
-                    result = await client.send_email(contact_id, temp_template)
-                    await client.close()
-                    
-                    if result.get("success"):
-                        email_data["sent_via_ghl"] = True
-                        email_data["ghl_message_id"] = result.get("message_id")
-                        final_status = "sent_via_ghl"
-                        formatted_response = "Email sent via GHL"
+            if api_key and location_id:
+                client = GHLOutreachClient(api_key, location_id, config=outreach_config)
+                try:
+                    contact_id = str(email_data.get("contact_id") or "").strip()
+                    recipient_email = str(email_data.get("to") or "").strip().lower()
+
+                    # Guard against synthetic/test data in live mode
+                    if email_data.get("synthetic") or contact_id.startswith("synthetic_"):
+                        formatted_response = "Email approved (Synthetic/Test skipped)"
                     else:
-                        error_msg = result.get("error", "Unknown error")
-                        if "limit reached" in str(error_msg):
-                            # Rate limit hit - Queue it!
-                            email_data["sent_via_ghl"] = False
-                            email_data["queued_for_send"] = True
-                            email_data["send_error"] = f"Rate Limit Hit: {error_msg}"
-                            formatted_response = "Email approved & Queued (Rate Limit Hit)"
+                        # Auto resolve/create GHL contact for real sends.
+                        if not contact_id and recipient_email:
+                            recipient_data = email_data.get("recipient_data", {})
+                            full_name = str(recipient_data.get("name") or "").strip()
+                            first_name = full_name.split(None, 1)[0] if full_name else ""
+                            last_name = full_name.split(None, 1)[1] if full_name and len(full_name.split(None, 1)) > 1 else ""
+                            resolve_result = await client.resolve_or_create_contact_by_email(
+                                email=recipient_email,
+                                name=full_name,
+                                first_name=first_name,
+                                last_name=last_name,
+                                company=str(recipient_data.get("company") or "").strip(),
+                            )
+                            if resolve_result.get("success"):
+                                contact_id = str(resolve_result.get("contact_id") or "").strip()
+                                if contact_id:
+                                    email_data["contact_id"] = contact_id
+                                    email_data["contact_resolution"] = {
+                                        "resolved": True,
+                                        "created": bool(resolve_result.get("created")),
+                                        "resolved_at": datetime.now().isoformat(),
+                                    }
+                            else:
+                                err = resolve_result.get("error") or "unknown_upsert_error"
+                                email_data["contact_resolution"] = {
+                                    "resolved": False,
+                                    "error": str(err),
+                                    "resolved_at": datetime.now().isoformat(),
+                                }
+                                email_data["send_error"] = f"GHL contact upsert failed: {err}"
+
+                        if contact_id:
+                            # Create temp template from the approved content
+                            temp_template = EmailTemplate(
+                                id=f"approved_{email_id}",
+                                name="Approved Dashboard Email",
+                                subject=email_data.get("subject", ""),
+                                body=email_data.get("body", ""),
+                                type=OutreachType.WARM
+                            )
+
+                            # Send!
+                            result = await client.send_email(contact_id, temp_template)
+
+                            if result.get("success"):
+                                email_data["sent_via_ghl"] = True
+                                email_data["ghl_message_id"] = result.get("message_id")
+                                final_status = "sent_via_ghl"
+                                formatted_response = "Email sent via GHL"
+                            else:
+                                error_msg = result.get("error", "Unknown error")
+                                if "limit reached" in str(error_msg):
+                                    # Rate limit hit - Queue it!
+                                    email_data["sent_via_ghl"] = False
+                                    email_data["queued_for_send"] = True
+                                    email_data["send_error"] = f"Rate Limit Hit: {error_msg}"
+                                    formatted_response = "Email approved & Queued (Rate Limit Hit)"
+                                else:
+                                    # Other error - Fail hard
+                                    raise Exception(f"GHL Send Failed: {error_msg}")
                         else:
-                            # Other error - Fail hard
-                            raise Exception(f"GHL Send Failed: {error_msg}")
-                else:
-                     print("Warning: GHL Config missing, skipping send.")
-                     formatted_response = "Email approved (Config Missing)"
-            except Exception as e:
-                # If sending fails, we should generally Notify user
-                print(f"Critical Error sending email: {e}")
-                # For now, we allow approval to proceed but log the error
-                email_data["send_error"] = str(e)
-                formatted_response = f"Approved but Send Failed: {str(e)}"
-        else:
-             formatted_response = "Email approved (Synthetic/Test skipped)"
+                            formatted_response = "Email approved (GHL contact unresolved)"
+                finally:
+                    await client.close()
+            else:
+                print("Warning: GHL Config missing, skipping send.")
+                formatted_response = "Email approved (Config Missing)"
+        except Exception as e:
+            # If sending fails, we should generally Notify user
+            print(f"Critical Error sending email: {e}")
+            # For now, we allow approval to proceed but log the error
+            email_data["send_error"] = str(e)
+            formatted_response = f"Approved but Send Failed: {str(e)}"
 
     # =========================================================================
     
@@ -1584,6 +1620,12 @@ async def approve_email(
         sq_update(email_id, final_status, shadow_dir=shadow_log, extra_fields={
             "approved_at": email_data.get("approved_at"),
             "approved_by": approver,
+            "contact_id": email_data.get("contact_id"),
+            "contact_resolution": email_data.get("contact_resolution"),
+            "sent_via_ghl": email_data.get("sent_via_ghl"),
+            "ghl_message_id": email_data.get("ghl_message_id"),
+            "queued_for_send": email_data.get("queued_for_send"),
+            "send_error": email_data.get("send_error"),
         })
     except Exception:
         pass  # Redis sync is best-effort; file is authoritative

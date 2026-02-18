@@ -211,19 +211,175 @@ class GHLOutreachClient:
         if self._session and not self._session.closed:
             await self._session.close()
     
-    async def _request(self, method: str, endpoint: str, data: Optional[Dict] = None) -> Dict[str, Any]:
+    async def _request(
+        self,
+        method: str,
+        endpoint: str,
+        data: Optional[Dict] = None,
+        params: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
         """Make API request to GHL."""
         session = await self._get_session()
         url = f"{self.BASE_URL}{endpoint}"
         
         try:
-            async with session.request(method, url, json=data) as response:
+            async with session.request(method, url, json=data, params=params) as response:
                 result = await response.json()
                 if response.status >= 400:
                     raise Exception(f"GHL API error: {response.status} - {result}")
                 return result
         except aiohttp.ClientError as e:
             raise Exception(f"GHL request failed: {e}")
+
+    @staticmethod
+    def _split_name(name: Optional[str]) -> tuple[str, str]:
+        """Split full name into first/last for GHL contact payloads."""
+        raw = (name or "").strip()
+        if not raw:
+            return "", ""
+        parts = raw.split(None, 1)
+        first = parts[0].strip()
+        last = parts[1].strip() if len(parts) > 1 else ""
+        return first, last
+
+    @staticmethod
+    def _extract_contact_id(contact: Dict[str, Any]) -> str:
+        """Get canonical contact id from varied GHL response shapes."""
+        return str(
+            contact.get("id")
+            or contact.get("contactId")
+            or contact.get("_id")
+            or ""
+        ).strip()
+
+    async def find_contact_by_email(self, email: str) -> Optional[Dict[str, Any]]:
+        """
+        Find an existing GHL contact by email.
+        Returns first exact email match when found, otherwise None.
+        """
+        email_norm = (email or "").strip().lower()
+        if not email_norm:
+            return None
+
+        result = await self._request(
+            "GET",
+            "/contacts/search",
+            params={"locationId": self.location_id, "query": email_norm},
+        )
+        contacts = result.get("contacts") or []
+        for contact in contacts:
+            contact_email = str(contact.get("email") or "").strip().lower()
+            if contact_email == email_norm:
+                return contact
+        return None
+
+    async def create_contact(
+        self,
+        *,
+        email: str,
+        name: Optional[str] = None,
+        first_name: Optional[str] = None,
+        last_name: Optional[str] = None,
+        company: Optional[str] = None,
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Create a GHL contact with minimum safe fields.
+        Returns contact payload when available.
+        """
+        email_norm = (email or "").strip().lower()
+        if not email_norm:
+            return None
+
+        split_first, split_last = self._split_name(name)
+        payload: Dict[str, Any] = {
+            "locationId": self.location_id,
+            "email": email_norm,
+            "firstName": (first_name or split_first or "").strip(),
+            "lastName": (last_name or split_last or "").strip(),
+            "name": (name or f"{(first_name or split_first or '').strip()} {(last_name or split_last or '').strip()}".strip() or email_norm.split("@")[0]).strip(),
+            "source": "caio_dashboard_approval",
+        }
+        if company:
+            payload["companyName"] = str(company).strip()
+
+        result = await self._request("POST", "/contacts/", data=payload)
+        if isinstance(result, dict):
+            return result.get("contact") or result
+        return None
+
+    async def resolve_or_create_contact_by_email(
+        self,
+        *,
+        email: str,
+        name: Optional[str] = None,
+        first_name: Optional[str] = None,
+        last_name: Optional[str] = None,
+        company: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """
+        Resolve a GHL contact by email or create it if missing.
+        Returns: {success, created, contact_id, contact, error?}
+        """
+        email_norm = (email or "").strip().lower()
+        if not email_norm:
+            return {"success": False, "created": False, "contact_id": "", "contact": None, "error": "missing_email"}
+
+        try:
+            existing = await self.find_contact_by_email(email_norm)
+            if existing:
+                contact_id = self._extract_contact_id(existing)
+                if contact_id:
+                    return {
+                        "success": True,
+                        "created": False,
+                        "contact_id": contact_id,
+                        "contact": existing,
+                    }
+
+            created = await self.create_contact(
+                email=email_norm,
+                name=name,
+                first_name=first_name,
+                last_name=last_name,
+                company=company,
+            )
+            if created:
+                contact_id = self._extract_contact_id(created)
+                if contact_id:
+                    return {
+                        "success": True,
+                        "created": True,
+                        "contact_id": contact_id,
+                        "contact": created,
+                    }
+
+            # Some GHL responses omit full payload; re-query for deterministic id.
+            searched = await self.find_contact_by_email(email_norm)
+            if searched:
+                contact_id = self._extract_contact_id(searched)
+                if contact_id:
+                    return {
+                        "success": True,
+                        "created": True,
+                        "contact_id": contact_id,
+                        "contact": searched,
+                    }
+
+            return {
+                "success": False,
+                "created": False,
+                "contact_id": "",
+                "contact": None,
+                "error": "contact_not_found_after_upsert",
+            }
+        except Exception as exc:
+            return {
+                "success": False,
+                "created": False,
+                "contact_id": "",
+                "contact": None,
+                "error": str(exc),
+            }
     
     def get_usage_stats(self) -> Dict[str, Any]:
         """Get current usage statistics."""

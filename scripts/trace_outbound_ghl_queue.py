@@ -36,6 +36,9 @@ def _sendability_reason(item: Dict[str, Any]) -> str:
 
     contact_id = item.get("contact_id")
     if not contact_id:
+        to_email = str(item.get("to") or "").strip()
+        if to_email:
+            return "auto_resolve_on_approve"
         return "blocked_missing_contact_id"
 
     return "ready_for_live_send"
@@ -80,9 +83,10 @@ def main() -> int:
         "total_pending": len(rows),
         "ghl_targeted": sum(1 for r in rows if r.get("target_platform") == "ghl"),
         "ready_for_live_send": sum(1 for r in rows if r.get("sendability") == "ready_for_live_send"),
+        "auto_resolve_on_approve": sum(1 for r in rows if r.get("sendability") == "auto_resolve_on_approve"),
         "blocked_missing_contact_id": sum(1 for r in rows if r.get("sendability") == "blocked_missing_contact_id"),
         "blocked_synthetic": sum(1 for r in rows if r.get("sendability") == "blocked_synthetic"),
-        "note": "campaign_id is internal CAIO pipeline grouping id; GHL send is direct message on approval.",
+        "note": "campaign_id is internal CAIO pipeline grouping id; GHL send is direct message on approval (with auto contact upsert when needed).",
     }
 
     report = {
@@ -110,4 +114,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

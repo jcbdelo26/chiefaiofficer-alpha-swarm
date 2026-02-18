@@ -60,6 +60,7 @@ this means:
 1. `camp_...` is an **internal CAIO pipeline campaign ID** (grouping/trace ID), not a native GHL campaign object.
 2. The email was queued by pipeline into pending approvals (`source=pipeline`, `status=pending`).
 3. On approval, system sends a **direct GHL conversation email** (not "create GHL campaign sequence").
+4. If `contact_id` is missing, system now **auto-resolves/creates contact in GHL by email before send**.
 
 Code path:
 
@@ -95,7 +96,8 @@ Interpretation:
 
 - `target_platform=ghl` confirms approval path is GHL.
 - `sendability=ready_for_live_send` means card has required fields for live send.
-- `sendability=blocked_missing_contact_id` means approving will **not** send live via GHL.
+- `sendability=auto_resolve_on_approve` means contact will be upserted by email at approve time.
+- `sendability=blocked_missing_contact_id` means neither existing contact nor resolvable email is present.
 
 ### 2) Approve one card from `/sales`
 

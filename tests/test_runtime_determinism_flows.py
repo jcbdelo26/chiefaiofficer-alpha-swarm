@@ -144,6 +144,87 @@ async def test_queue_lifecycle_has_consistent_audit_logs(monkeypatch, tmp_path: 
 
 
 @pytest.mark.asyncio
+async def test_approve_email_auto_resolves_contact_before_live_send(monkeypatch, tmp_path: Path):
+    from dashboard import health_app
+
+    _disable_shadow_queue_redis(monkeypatch)
+    monkeypatch.setattr(health_app, "PROJECT_ROOT", tmp_path)
+
+    config_dir = tmp_path / "config"
+    config_dir.mkdir(parents=True, exist_ok=True)
+    (config_dir / "production.json").write_text(
+        json.dumps(
+            {
+                "email_behavior": {"actually_send": True},
+                "guardrails": {"email_limits": {"monthly_limit": 3000, "daily_limit": 150, "min_delay_seconds": 60}},
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    shadow_dir = tmp_path / ".hive-mind" / "shadow_mode_emails"
+    shadow_dir.mkdir(parents=True, exist_ok=True)
+    email_path = shadow_dir / "email_live_001.json"
+    email_path.write_text(
+        json.dumps(
+            {
+                "email_id": "email_live_001",
+                "status": "pending",
+                "to": "vp.sales@example.com",
+                "subject": "AI Roadmap",
+                "body": "Hi there",
+                "tier": "tier_1",
+                "recipient_data": {"name": "Taylor Prospect", "company": "Acme Corp"},
+                "synthetic": False,
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    class _FakeGHLClient:
+        def __init__(self, api_key, location_id, config=None):
+            self.api_key = api_key
+            self.location_id = location_id
+            self.config = config
+            self.closed = False
+
+        async def resolve_or_create_contact_by_email(self, **kwargs):
+            assert kwargs.get("email") == "vp.sales@example.com"
+            return {"success": True, "created": True, "contact_id": "contact_123", "contact": {"id": "contact_123"}}
+
+        async def send_email(self, contact_id, template, personalization=None):
+            assert contact_id == "contact_123"
+            assert template.subject == "AI Roadmap"
+            return {"success": True, "message_id": "msg_abc"}
+
+        async def close(self):
+            self.closed = True
+
+    monkeypatch.setattr(health_app, "GHLOutreachClient", _FakeGHLClient)
+    monkeypatch.setenv("GHL_API_KEY", "test_key")
+    monkeypatch.setenv("GHL_LOCATION_ID", "test_location")
+
+    result = await health_app.approve_email(
+        email_id="email_live_001",
+        approver="head_of_sales",
+        auth=True,
+        edited_body=None,
+        feedback="approved_live",
+    )
+
+    assert result["status"] == "approved"
+    assert result["message"] == "Email sent via GHL"
+
+    updated = json.loads(email_path.read_text(encoding="utf-8"))
+    assert updated["status"] == "sent_via_ghl"
+    assert updated["contact_id"] == "contact_123"
+    assert updated["sent_via_ghl"] is True
+    assert updated["ghl_message_id"] == "msg_abc"
+    assert updated["contact_resolution"]["resolved"] is True
+    assert updated["contact_resolution"]["created"] is True
+
+
+@pytest.mark.asyncio
 async def test_pending_emails_syncs_gatekeeper_queue(monkeypatch, tmp_path: Path):
     from dashboard import health_app
 
