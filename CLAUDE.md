@@ -17,7 +17,7 @@
 **Founder**: Chris Daigle (https://www.linkedin.com/in/doctordaigle/)
 **Company**: Chiefaiofficer.com
 **Platform**: Railway (production) at `caio-swarm-dashboard-production.up.railway.app`
-**Dashboard**: v2.4 — deployed commit `b8dfc0f` (2026-02-17)
+**Dashboard**: v2.6 — deployed commit `077e34b` (2026-02-18) — Redis shadow queue bridge
 
 ### Current Status (Phase 4: Autonomy Graduation — 98%)
 
@@ -139,7 +139,7 @@ chiefaiofficer-alpha-swarm/
 │   ├── scraped/                   # Raw scraped data (Apollo)
 │   ├── enriched/                  # Enriched leads
 │   ├── campaigns/                 # Generated campaigns
-│   ├── shadow_mode_emails/        # Shadow email queue (review before sending)
+│   ├── shadow_mode_emails/        # Shadow email queue (LOCAL FALLBACK — primary is Redis)
 │   ├── lead_status/               # Signal loop state per lead (JSONL)
 │   ├── cadence_state/             # Cadence engine state per lead
 │   ├── audit/                     # Gatekeeper approval/rejection logs
@@ -151,6 +151,7 @@ chiefaiofficer-alpha-swarm/
 │   ├── lead_signals.py            # Lead signal loop (21 statuses, decay detection)
 │   ├── activity_timeline.py       # Per-lead event aggregation
 │   ├── alerts.py                  # Slack alerting (WARNING, CRITICAL, INFO)
+│   ├── shadow_queue.py             # Redis-backed shadow email queue (local↔Railway bridge)
 │   ├── circuit_breaker.py         # Failure protection (3-trip, 5min reset)
 │   ├── ghl_local_sync.py          # GHL contact cache + search
 │   ├── unified_guardrails.py      # Main guardrails system
@@ -248,7 +249,7 @@ Message 3: TodoWrite
 | Slack | `SLACK_WEBHOOK_URL` | Alerts (WARNING, CRITICAL, INFO) |
 | Twilio | `TWILIO_ACCOUNT_SID` | SMS/Voice (future) |
 | SendGrid | `SENDGRID_API_KEY` | Transactional email (future) |
-| Redis (Upstash) | `CONTEXT_REDIS_PREFIX` | Context caching, rate limiting |
+| Redis (Upstash) | `CONTEXT_REDIS_PREFIX` | Context caching, rate limiting, **shadow email queue** |
 
 ### Email + LinkedIn Platform Strategy (Multi-Channel)
 
@@ -517,6 +518,30 @@ Chief AI Officer Inc. | 5700 Harper Dr, Suite 210, Albuquerque, NM 87109
 - Never save working files to the root folder.
 - **ALL campaigns require AE approval via GATEKEEPER**.
 
+### CRITICAL: Local ↔ Railway Filesystem Constraint
+
+**Pipeline runs locally (Windows). Dashboard runs on Railway (Linux container). They have completely separate filesystems.**
+
+This means:
+- Files written to `.hive-mind/shadow_mode_emails/` locally are **NOT visible** on Railway
+- Files written to `.hive-mind/` on Railway are ephemeral (container restarts wipe them)
+- **ALL cross-environment data MUST go through Redis (Upstash)** — the only shared persistence layer
+
+**Shadow Email Queue Architecture** (`core/shadow_queue.py`):
+```
+Local Pipeline → shadow_queue.push() → Redis (primary) + disk (fallback)
+                                            ↓
+Railway Dashboard → shadow_queue.list_pending() → Redis (primary) + disk (fallback)
+```
+
+**Rules**:
+1. NEVER write shadow emails directly to disk — always use `core/shadow_queue.py`
+2. NEVER read shadow emails directly from disk on Railway — always use `core/shadow_queue.py`
+3. Redis keys: `{prefix}:shadow:email:{email_id}` (hash) + `{prefix}:shadow:pending_ids` (sorted set)
+4. If you add ANY new data that must be visible on both local and Railway, use Redis via the `core/state_store.py` or similar pattern
+
+**Why this keeps recurring**: The filesystem path `.hive-mind/shadow_mode_emails/` exists on both local and Railway, but they are DIFFERENT directories. Code that "works locally" will silently produce empty results on Railway. Always test the Railway dashboard after pipeline changes.
+
 ---
 
 ## 🛡️ Unified Guardrails System (CRITICAL)
@@ -757,12 +782,12 @@ uvicorn dashboard.health_app:app --host 0.0.0.0 --port 8080
 | `GET /api/scorecard` | Precision Scorecard summary |
 | `WS /ws` | Real-time WebSocket updates |
 
-**Email Queue (Head of Sales)**:
+**Email Queue (Head of Sales)** — reads from Redis via `core/shadow_queue.py`:
 | Endpoint | Description |
 |----------|-------------|
-| `GET /api/pending-emails` | Pending emails awaiting approval |
-| `POST /api/emails/{id}/approve` | Approve email (optional edits) |
-| `POST /api/emails/{id}/reject` | Reject email with reason |
+| `GET /api/pending-emails` | Pending emails (Redis primary, filesystem fallback) |
+| `POST /api/emails/{id}/approve` | Approve email — syncs status to Redis + disk |
+| `POST /api/emails/{id}/reject` | Reject email — syncs status to Redis + disk |
 
 **Lead Signal Loop**:
 | Endpoint | Description |
