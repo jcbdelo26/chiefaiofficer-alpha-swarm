@@ -119,6 +119,19 @@ def _pending_queue_placeholder_tokens() -> Set[str]:
     return tokens
 
 
+def _pending_queue_should_merge_filesystem(redis_connected: bool) -> bool:
+    """
+    Decide whether to merge file-backed queue items into pending approvals.
+
+    Default: Redis-first source of truth. Filesystem merge is only used when
+    Redis is unavailable. Set PENDING_QUEUE_ALWAYS_MERGE_FILES=true to force
+    merge behavior for migration/debug scenarios.
+    """
+    if _env_bool("PENDING_QUEUE_ALWAYS_MERGE_FILES", False):
+        return True
+    return not redis_connected
+
+
 def _parse_iso_datetime(value: Any) -> Optional[datetime]:
     if value is None:
         return None
@@ -1311,10 +1324,16 @@ async def get_pending_emails(response: Response, auth: bool = Depends(require_au
         logger.warning("shadow_queue.list_pending failed, falling back to filesystem: %s", exc)
         sq_debug["error"] = str(exc)
 
-    # Always merge file-backed pending items to avoid partial visibility when Redis
-    # is stale or partially indexed.
-    file_pending = _read_pending_from_shadow_files(shadow_log)
+    merge_filesystem = _pending_queue_should_merge_filesystem(
+        bool(sq_debug.get("redis_connected"))
+    )
+    file_pending = (
+        _read_pending_from_shadow_files(shadow_log)
+        if merge_filesystem
+        else []
+    )
     sq_debug["filesystem_pending"] = len(file_pending)
+    sq_debug["filesystem_merge_enabled"] = merge_filesystem
     pending_map: Dict[str, Dict[str, Any]] = {}
     merged: List[Dict[str, Any]] = []
     for item in pending:

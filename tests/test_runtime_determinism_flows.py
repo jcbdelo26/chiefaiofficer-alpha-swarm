@@ -207,6 +207,7 @@ async def test_pending_emails_merges_filesystem_sync_when_redis_is_partial(monke
     monkeypatch.setattr(health_app, "PROJECT_ROOT", tmp_path)
     monkeypatch.setenv("PENDING_QUEUE_MAX_AGE_HOURS", "0")
     monkeypatch.setenv("PENDING_QUEUE_ENFORCE_RAMP_TIER", "false")
+    monkeypatch.setenv("PENDING_QUEUE_ALWAYS_MERGE_FILES", "true")
 
     gatekeeper_dir = tmp_path / ".hive-mind" / "gatekeeper_queue"
     gatekeeper_dir.mkdir(parents=True, exist_ok=True)
@@ -251,7 +252,65 @@ async def test_pending_emails_merges_filesystem_sync_when_redis_is_partial(monke
     assert ids == {"queue_redis", "queue_disk"}
     assert payload["synced_from_gatekeeper"] == 1
     assert payload["_shadow_queue_debug"]["filesystem_pending"] >= 1
+    assert payload["_shadow_queue_debug"]["filesystem_merge_enabled"] is True
     assert payload["_shadow_queue_debug"]["merged_count"] == 2
+
+
+@pytest.mark.asyncio
+async def test_pending_emails_redis_first_skips_filesystem_merge_by_default(monkeypatch, tmp_path: Path):
+    from dashboard import health_app
+    from core import shadow_queue
+
+    monkeypatch.setattr(health_app, "PROJECT_ROOT", tmp_path)
+    monkeypatch.setenv("PENDING_QUEUE_MAX_AGE_HOURS", "0")
+    monkeypatch.setenv("PENDING_QUEUE_ENFORCE_RAMP_TIER", "false")
+    monkeypatch.delenv("PENDING_QUEUE_ALWAYS_MERGE_FILES", raising=False)
+
+    shadow_dir = tmp_path / ".hive-mind" / "shadow_mode_emails"
+    shadow_dir.mkdir(parents=True, exist_ok=True)
+    (shadow_dir / "disk_only.json").write_text(
+        json.dumps(
+            {
+                "email_id": "disk_only",
+                "status": "pending",
+                "to": "disk@example.com",
+                "subject": "Disk pending",
+                "body": "Disk body",
+                "tier": "tier_1",
+                "timestamp": "2026-02-10T13:00:00Z",
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    monkeypatch.setattr(shadow_queue, "_get_redis", lambda: object())
+    monkeypatch.setattr(shadow_queue, "_prefix", lambda: "caio:test")
+    monkeypatch.setattr(
+        shadow_queue,
+        "list_pending",
+        lambda limit=20, shadow_dir=None: [
+            {
+                "email_id": "queue_redis",
+                "status": "pending",
+                "to": "redis@example.com",
+                "subject": "Redis pending",
+                "body": "Redis body",
+                "tier": "tier_1",
+                "angle": "roi",
+                "timestamp": "2026-02-10T14:00:00Z",
+            }
+        ],
+    )
+
+    response = Response()
+    payload = await health_app.get_pending_emails(response=response, auth=True)
+
+    ids = {item["email_id"] for item in payload["pending_emails"]}
+    assert payload["count"] == 1
+    assert ids == {"queue_redis"}
+    assert payload["_shadow_queue_debug"]["filesystem_merge_enabled"] is False
+    assert payload["_shadow_queue_debug"]["filesystem_pending"] == 0
+    assert payload["_shadow_queue_debug"]["merged_count"] == 1
 
 
 @pytest.mark.asyncio
