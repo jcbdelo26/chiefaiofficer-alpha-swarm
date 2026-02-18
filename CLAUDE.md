@@ -34,6 +34,28 @@ Phase 4F: Monaco Signal Loop                 COMPLETE (lead_signals + activity_t
 **Safety**: `actually_send: true` (informational), real control: `--live` CLI flag + `EMERGENCY_STOP` env var + `gatekeeper_required: true`.
 **Ramp Mode**: 5 emails/day, tier_1 only (C-Suite at agencies/consulting/law), 3 supervised days starting 2026-02-18. Set `operator.ramp.enabled: false` to graduate to 25/day.
 
+### Pending Queue Non-Regression Contract (Required)
+
+To prevent repeating "Tier queue drift / campaign mismatch" incidents, every pending card in `/api/pending-emails` MUST expose deterministic classifier metadata:
+
+- `classifier.queue_origin` (e.g., `pipeline`, `gatekeeper_queue_sync`, `website_intent_monitor`)
+- `classifier.message_direction` (`outbound` or `inbound`)
+- `classifier.target_platform` (`ghl`, `instantly`, `heyreach`, `unknown`)
+- `classifier.sync_state` (`external_campaign_mapped`, `pending_external_campaign_mapping`, `n/a_ghl_direct_path`, etc.)
+- `campaign_ref.internal_id` + `campaign_ref.pipeline_run_id`
+- `campaign_ref.external_campaign_id/name` when routed to Instantly
+
+Operational interpretation rule:
+- If `target_platform=ghl` and `sync_state=n/a_ghl_direct_path`, those cards are **not** expected to appear as Instantly campaign sequence steps.
+- If `target_platform=instantly`, external campaign metadata must be present (or explicitly flagged pending mapping).
+
+Pre-live gate (must pass in staging + production):
+1. `python scripts/deployed_full_smoke_matrix.py --staging-url <...> --staging-token <...> --production-url <...> --production-token <...>`
+2. Assert `pending_emails_classifier_contract.passed=true`.
+3. Assert pending queue debug excludes stale/tier-mismatch/placeholder entries during ramp mode.
+
+Do not proceed to unsupervised sends if classifier contract fails.
+
 See `docs/CAIO_TASK_TRACKER.md` for detailed progress and next steps.
 
 ### Dashboard Pipeline Improvements (commit `b8dfc0f`)
