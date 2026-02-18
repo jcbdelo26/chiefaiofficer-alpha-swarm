@@ -17,7 +17,7 @@
 **Founder**: Chris Daigle (https://www.linkedin.com/in/doctordaigle/)
 **Company**: Chiefaiofficer.com
 **Platform**: Railway (production) at `caio-swarm-dashboard-production.up.railway.app`
-**Dashboard**: v2.6 — deployed commit `077e34b` (2026-02-18) — Redis shadow queue bridge
+**Dashboard**: v2.7 — deployed commit `2d074c6` (2026-02-18) — Redis shadow queue prefix fix
 
 ### Current Status (Phase 4: Autonomy Graduation — 98%)
 
@@ -541,6 +541,8 @@ Railway Dashboard → shadow_queue.list_pending() → Redis (primary) + disk (fa
 4. If you add ANY new data that must be visible on both local and Railway, use Redis via the `core/state_store.py` or similar pattern
 
 **Why this keeps recurring**: The filesystem path `.hive-mind/shadow_mode_emails/` exists on both local and Railway, but they are DIFFERENT directories. Code that "works locally" will silently produce empty results on Railway. Always test the Railway dashboard after pipeline changes.
+
+**Redis prefix pitfall**: `STATE_REDIS_PREFIX` and `CONTEXT_REDIS_PREFIX` may differ between local and Railway. Shadow queue uses `CONTEXT_REDIS_PREFIX` first (consistently `caio:production:context` on both). If you create new Redis-backed modules, ALWAYS use `CONTEXT_REDIS_PREFIX` as the primary prefix, NOT `STATE_REDIS_PREFIX`.
 
 ---
 
