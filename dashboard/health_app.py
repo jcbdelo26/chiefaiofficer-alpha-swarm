@@ -905,11 +905,16 @@ async def get_pending_emails(response: Response, auth: bool = Depends(require_au
 
     # Redis-backed shadow queue (handles Redis-first + filesystem fallback)
     pending = []
+    sq_debug = {}
     try:
-        from core.shadow_queue import list_pending
+        from core.shadow_queue import list_pending, _prefix, _get_redis
+        sq_debug["prefix"] = _prefix()
+        sq_debug["redis_connected"] = _get_redis() is not None
         pending = list_pending(limit=20, shadow_dir=shadow_log)
+        sq_debug["redis_returned"] = len(pending)
     except Exception as exc:
         logger.warning("shadow_queue.list_pending failed, falling back to filesystem: %s", exc)
+        sq_debug["error"] = str(exc)
 
     # Pure filesystem fallback if shadow_queue returned nothing
     if not pending and shadow_log.exists():
@@ -939,6 +944,7 @@ async def get_pending_emails(response: Response, auth: bool = Depends(require_au
         "count": len(pending),
         "synced_from_gatekeeper": synced_count,
         "refreshed_at": datetime.now(timezone.utc).isoformat(),
+        "_shadow_queue_debug": sq_debug,
     }
 
 

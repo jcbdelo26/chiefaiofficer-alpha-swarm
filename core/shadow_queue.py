@@ -58,7 +58,9 @@ def _get_redis() -> Optional[Any]:
 
 
 def _prefix() -> str:
-    return (os.getenv("STATE_REDIS_PREFIX") or os.getenv("CONTEXT_REDIS_PREFIX") or "caio").strip()
+    # CONTEXT_REDIS_PREFIX first — it's consistently set on both local and Railway.
+    # STATE_REDIS_PREFIX can differ between environments, causing key mismatches.
+    return (os.getenv("CONTEXT_REDIS_PREFIX") or os.getenv("STATE_REDIS_PREFIX") or "caio").strip()
 
 
 def _key(email_id: str) -> str:
