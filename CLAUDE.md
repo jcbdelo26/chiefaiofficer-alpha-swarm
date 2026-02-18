@@ -518,31 +518,97 @@ Chief AI Officer Inc. | 5700 Harper Dr, Suite 210, Albuquerque, NM 87109
 - Never save working files to the root folder.
 - **ALL campaigns require AE approval via GATEKEEPER**.
 
-### CRITICAL: Local ↔ Railway Filesystem Constraint
+### CRITICAL: Local ↔ Railway Filesystem Constraint (ARCHITECTURAL LAW)
 
-**Pipeline runs locally (Windows). Dashboard runs on Railway (Linux container). They have completely separate filesystems.**
+> **This is the #1 recurring bug source in this project. Three separate incidents have been caused by violating these rules. Read this entire section before touching ANY data flow between pipeline and dashboard.**
 
-This means:
-- Files written to `.hive-mind/shadow_mode_emails/` locally are **NOT visible** on Railway
-- Files written to `.hive-mind/` on Railway are ephemeral (container restarts wipe them)
-- **ALL cross-environment data MUST go through Redis (Upstash)** — the only shared persistence layer
+**Pipeline runs locally (Windows). Dashboard runs on Railway (Linux container). They have completely separate filesystems. NOTHING written to disk locally is visible on Railway. NOTHING written to disk on Railway persists across deploys.**
 
-**Shadow Email Queue Architecture** (`core/shadow_queue.py`):
+```
+┌─────────────────────┐          ┌─────────────────────┐
+│   LOCAL (Windows)    │          │  RAILWAY (Linux)     │
+│                      │          │                      │
+│  Pipeline writes     │    ✗     │  Dashboard reads     │
+│  .hive-mind/...      │ ←──────→ │  .hive-mind/...      │
+│                      │  NEVER   │                      │
+│  These are DIFFERENT │ CONNECTED│  These are DIFFERENT  │
+│  directories!        │          │  directories!         │
+└──────────┬───────────┘          └──────────┬───────────┘
+           │                                  │
+           │     ┌──────────────────┐         │
+           └────→│  Redis (Upstash)  │←────────┘
+                 │  ONLY shared      │
+                 │  persistence      │
+                 └──────────────────┘
+```
+
+#### The Law: Every Cross-Environment Data Path MUST Use Redis
+
+If a piece of data is:
+- **Written** by the pipeline (local) AND **read** by the dashboard (Railway), OR
+- **Written** by the dashboard (Railway) AND **read** by the pipeline (local)
+
+Then it **MUST** go through Redis. No exceptions. No "temporary" filesystem workarounds.
+
+#### Shadow Email Queue Architecture (`core/shadow_queue.py`)
+
+This is the **canonical pattern** for cross-environment data. All new cross-environment features MUST follow this pattern:
+
 ```
 Local Pipeline → shadow_queue.push() → Redis (primary) + disk (fallback)
                                             ↓
 Railway Dashboard → shadow_queue.list_pending() → Redis (primary) + disk (fallback)
 ```
 
-**Rules**:
-1. NEVER write shadow emails directly to disk — always use `core/shadow_queue.py`
-2. NEVER read shadow emails directly from disk on Railway — always use `core/shadow_queue.py`
-3. Redis keys: `{prefix}:shadow:email:{email_id}` (hash) + `{prefix}:shadow:pending_ids` (sorted set)
-4. If you add ANY new data that must be visible on both local and Railway, use Redis via the `core/state_store.py` or similar pattern
+#### Ironclad Rules
 
-**Why this keeps recurring**: The filesystem path `.hive-mind/shadow_mode_emails/` exists on both local and Railway, but they are DIFFERENT directories. Code that "works locally" will silently produce empty results on Railway. Always test the Railway dashboard after pipeline changes.
+1. **NEVER** write cross-environment data directly to disk — always use a Redis-backed module (`core/shadow_queue.py`, `core/state_store.py`)
+2. **NEVER** read cross-environment data from disk on Railway — the disk is ephemeral and isolated
+3. **NEVER** assume a filesystem path that "works locally" will work on Railway
+4. **ALWAYS** use `CONTEXT_REDIS_PREFIX` (not `STATE_REDIS_PREFIX`) for shared Redis keys — it's consistently `caio:production:context` on both environments
+5. **ALWAYS** verify data appears on Railway after any pipeline change (check `/api/pending-emails` or relevant API endpoint)
 
-**Redis prefix pitfall**: `STATE_REDIS_PREFIX` and `CONTEXT_REDIS_PREFIX` may differ between local and Railway. Shadow queue uses `CONTEXT_REDIS_PREFIX` first (consistently `caio:production:context` on both). If you create new Redis-backed modules, ALWAYS use `CONTEXT_REDIS_PREFIX` as the primary prefix, NOT `STATE_REDIS_PREFIX`.
+#### Redis Key Schema (Shadow Queue)
+
+| Key Pattern | Type | Purpose |
+|-------------|------|---------|
+| `{prefix}:shadow:email:{email_id}` | String (JSON) | Individual email data |
+| `{prefix}:shadow:pending_ids` | Sorted Set (score=timestamp) | Index of pending email IDs |
+
+Where `{prefix}` = `CONTEXT_REDIS_PREFIX` = `caio:production:context`
+
+#### Redis Prefix Pitfall (Bug Incident — Fixed in commit `2d074c6`)
+
+| Variable | Local Value | Railway Value | Safe for Shared Keys? |
+|----------|-------------|---------------|----------------------|
+| `STATE_REDIS_PREFIX` | `""` (empty) | `"caio"` | **NO** — differs between environments |
+| `CONTEXT_REDIS_PREFIX` | `"caio:production:context"` | `"caio:production:context"` | **YES** — same everywhere |
+
+**Rule**: Any Redis module that stores data accessed by BOTH local and Railway MUST use `CONTEXT_REDIS_PREFIX` as primary. The `_prefix()` function in `shadow_queue.py` demonstrates the correct pattern:
+```python
+def _prefix() -> str:
+    return (os.getenv("CONTEXT_REDIS_PREFIX") or os.getenv("STATE_REDIS_PREFIX") or "caio").strip()
+```
+
+#### Pre-Flight Checklist (MANDATORY for Any New Feature That Shares Data)
+
+Before implementing ANY feature where data flows between local and Railway:
+
+- [ ] **Q1**: Does this data need to be visible on both local AND Railway? → If YES, use Redis
+- [ ] **Q2**: Am I using `CONTEXT_REDIS_PREFIX` for the Redis key prefix? → Must be YES
+- [ ] **Q3**: Have I tested the Railway dashboard after the change? → Must verify via API
+- [ ] **Q4**: Is there a filesystem fallback for when Redis is unavailable? → Should have one
+- [ ] **Q5**: Does the API endpoint return diagnostic info for debugging? → Add `_debug` field
+
+#### Historical Incidents (Learn From These)
+
+| Incident | Root Cause | Fix | Commit |
+|----------|-----------|-----|--------|
+| Dashboard shows "no pending emails" (1st) | Pipeline wrote to disk, dashboard on Railway can't see local disk | Created `core/shadow_queue.py` with Redis bridge | `077e34b` |
+| Dashboard shows "no pending emails" (2nd) | `_prefix()` checked `STATE_REDIS_PREFIX` first, which differs between environments | Swapped to check `CONTEXT_REDIS_PREFIX` first | `2d074c6` |
+| Dashboard shows "no pending emails" (3rd) | Same root — filesystem assumption | Same pattern — always Redis first | Various |
+
+**The pattern is always the same**: something was written to disk locally and expected to appear on Railway. The fix is always the same: use Redis.
 
 ---
 
