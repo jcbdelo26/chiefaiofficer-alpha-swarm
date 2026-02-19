@@ -132,6 +132,15 @@ def _pending_queue_should_merge_filesystem(redis_connected: bool) -> bool:
     return not redis_connected
 
 
+def _pending_queue_include_non_dispatchable_default() -> bool:
+    """
+    Whether to include non-dispatchable training/canary cards in /api/pending-emails.
+
+    Default is false so supervised live-send queue stays clean/actionable.
+    """
+    return _env_bool("PENDING_QUEUE_INCLUDE_NON_DISPATCHABLE", False)
+
+
 def _parse_iso_datetime(value: Any) -> Optional[datetime]:
     if value is None:
         return None
@@ -185,6 +194,7 @@ def _pending_email_exclusion_reasons(
     max_age_hours: Optional[float],
     placeholder_tokens: Set[str],
     seen_dedupe_keys: Set[str],
+    include_non_dispatchable: bool,
 ) -> List[str]:
     reasons: List[str] = []
 
@@ -192,6 +202,14 @@ def _pending_email_exclusion_reasons(
     if status != "pending":
         reasons.append(f"status:{status}")
         return reasons
+
+    if not include_non_dispatchable:
+        if bool(email_data.get("_do_not_dispatch")):
+            reasons.append("non_dispatchable:_do_not_dispatch")
+            return reasons
+        if bool(email_data.get("canary_training")):
+            reasons.append("non_dispatchable:canary_training")
+            return reasons
 
     tier = str(email_data.get("tier") or "").strip().lower()
     if tier_filter and tier and tier != tier_filter:
@@ -277,6 +295,8 @@ def _infer_pending_email_classifier(
     context = email_data.get("context", {})
     if not isinstance(context, dict):
         context = {}
+    if not source:
+        source = str(context.get("source") or "").strip().lower()
 
     tier = str(email_data.get("tier") or context.get("icp_tier") or "").strip().lower() or "tier_3"
     routing_targets = tier_routing_targets.get(tier, [])
@@ -309,7 +329,17 @@ def _infer_pending_email_classifier(
     if explicit_platform not in {"instantly", "ghl", "heyreach"}:
         explicit_platform = ""
 
-    if explicit_platform:
+    is_non_dispatchable_training = bool(
+        email_data.get("_do_not_dispatch")
+        or email_data.get("canary_training")
+        or email_data.get("canary")
+        or (source.startswith("canary_") if source else False)
+    )
+
+    if is_non_dispatchable_training:
+        target_platform = "training"
+        target_platform_reason = "non_dispatchable_training"
+    elif explicit_platform:
         target_platform = explicit_platform
         target_platform_reason = "explicit_metadata"
     elif status in {"sent_via_ghl"} or email_data.get("sent_via_ghl"):
@@ -340,12 +370,14 @@ def _infer_pending_email_classifier(
             email_data.get("campaign_id")
             or context.get("campaign_id")
             or context.get("cadence_id")
+            or ("canary_training" if is_non_dispatchable_training else "")
             or ""
         ),
         "internal_type": (
             email_data.get("campaign_type")
             or context.get("campaign_type")
             or context.get("campaign_template")
+            or (source if is_non_dispatchable_training else "")
             or ""
         ),
         "internal_name": (
@@ -379,6 +411,8 @@ def _infer_pending_email_classifier(
         sync_state = "n/a_ghl_direct_path"
     elif target_platform == "heyreach":
         sync_state = "n/a_linkedin_path"
+    elif target_platform == "training":
+        sync_state = "non_dispatchable_training"
     else:
         sync_state = "unknown"
 
@@ -1293,7 +1327,11 @@ async def leads_dashboard():
 
 
 @app.get("/api/pending-emails")
-async def get_pending_emails(response: Response, auth: bool = Depends(require_auth)):
+async def get_pending_emails(
+    response: Response,
+    include_non_dispatchable: bool = False,
+    auth: bool = Depends(require_auth),
+):
     """
     Get pending emails awaiting approval.
 
@@ -1359,6 +1397,9 @@ async def get_pending_emails(response: Response, auth: bool = Depends(require_au
     now_utc = datetime.now(timezone.utc)
     tier_filter = _get_active_pending_queue_tier_filter()
     max_age_hours = _pending_queue_max_age_hours()
+    include_non_dispatchable_effective = (
+        include_non_dispatchable or _pending_queue_include_non_dispatchable_default()
+    )
     placeholder_tokens = _pending_queue_placeholder_tokens()
     seen_dedupe_keys: Set[str] = set()
 
@@ -1374,6 +1415,7 @@ async def get_pending_emails(response: Response, auth: bool = Depends(require_au
             max_age_hours=max_age_hours,
             placeholder_tokens=placeholder_tokens,
             seen_dedupe_keys=seen_dedupe_keys,
+            include_non_dispatchable=include_non_dispatchable_effective,
         )
         if reasons:
             excluded_items_count += 1
@@ -1396,6 +1438,7 @@ async def get_pending_emails(response: Response, auth: bool = Depends(require_au
 
     sq_debug["queue_tier_filter"] = tier_filter
     sq_debug["queue_max_age_hours"] = max_age_hours
+    sq_debug["include_non_dispatchable"] = include_non_dispatchable_effective
     sq_debug["excluded_non_actionable_count"] = excluded_items_count
     sq_debug["excluded_non_actionable_reasons"] = excluded_reasons_count
     sq_debug["excluded_non_actionable_examples"] = excluded_examples
@@ -1527,9 +1570,18 @@ async def approve_email(
                 try:
                     contact_id = str(email_data.get("contact_id") or "").strip()
                     recipient_email = str(email_data.get("to") or "").strip().lower()
+                    non_dispatchable_training = bool(
+                        email_data.get("_do_not_dispatch")
+                        or email_data.get("canary_training")
+                        or email_data.get("canary")
+                    )
 
                     # Guard against synthetic/test data in live mode
-                    if email_data.get("synthetic") or contact_id.startswith("synthetic_"):
+                    if non_dispatchable_training:
+                        email_data["send_skipped_reason"] = "non_dispatchable_training"
+                        email_data["sent_via_ghl"] = False
+                        formatted_response = "Email approved (Training/Non-dispatchable skipped)"
+                    elif email_data.get("synthetic") or contact_id.startswith("synthetic_"):
                         formatted_response = "Email approved (Synthetic/Test skipped)"
                     else:
                         # Auto resolve/create GHL contact for real sends.

@@ -15,10 +15,19 @@ from typing import Any, Dict, List
 import requests
 
 
-def _api_get(base_url: str, path: str, token: str) -> Dict[str, Any]:
+def _api_get(
+    base_url: str,
+    path: str,
+    token: str,
+    *,
+    include_non_dispatchable: bool = False,
+) -> Dict[str, Any]:
+    params: Dict[str, Any] = {"token": token}
+    if include_non_dispatchable:
+        params["include_non_dispatchable"] = "true"
     response = requests.get(
         f"{base_url.rstrip('/')}{path}",
-        params={"token": token},
+        params=params,
         timeout=30,
     )
     response.raise_for_status()
@@ -71,10 +80,20 @@ def main() -> int:
     parser.add_argument("--base-url", required=True, help="Dashboard base URL (https://...)")
     parser.add_argument("--token", required=True, help="Dashboard auth token")
     parser.add_argument("--limit", type=int, default=20, help="Max rows to print")
+    parser.add_argument(
+        "--include-non-dispatchable",
+        action="store_true",
+        help="Include canary/training cards marked as non-dispatchable.",
+    )
     parser.add_argument("--json", action="store_true", help="Output JSON only")
     args = parser.parse_args()
 
-    payload = _api_get(args.base_url, "/api/pending-emails", args.token)
+    payload = _api_get(
+        args.base_url,
+        "/api/pending-emails",
+        args.token,
+        include_non_dispatchable=args.include_non_dispatchable,
+    )
     pending = payload.get("pending_emails", [])
     rows: List[Dict[str, Any]] = [_compact_row(item) for item in pending]
 
@@ -86,6 +105,7 @@ def main() -> int:
         "auto_resolve_on_approve": sum(1 for r in rows if r.get("sendability") == "auto_resolve_on_approve"),
         "blocked_missing_contact_id": sum(1 for r in rows if r.get("sendability") == "blocked_missing_contact_id"),
         "blocked_synthetic": sum(1 for r in rows if r.get("sendability") == "blocked_synthetic"),
+        "include_non_dispatchable": bool(args.include_non_dispatchable),
         "note": "campaign_id is internal CAIO pipeline grouping id; GHL send is direct message on approval (with auto contact upsert when needed).",
     }
 

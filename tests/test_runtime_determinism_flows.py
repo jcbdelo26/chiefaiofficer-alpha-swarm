@@ -225,6 +225,83 @@ async def test_approve_email_auto_resolves_contact_before_live_send(monkeypatch,
 
 
 @pytest.mark.asyncio
+async def test_approve_email_skips_non_dispatchable_training_even_when_live(monkeypatch, tmp_path: Path):
+    from dashboard import health_app
+
+    _disable_shadow_queue_redis(monkeypatch)
+    monkeypatch.setattr(health_app, "PROJECT_ROOT", tmp_path)
+
+    config_dir = tmp_path / "config"
+    config_dir.mkdir(parents=True, exist_ok=True)
+    (config_dir / "production.json").write_text(
+        json.dumps(
+            {
+                "email_behavior": {"actually_send": True},
+                "guardrails": {"email_limits": {"monthly_limit": 3000, "daily_limit": 150, "min_delay_seconds": 60}},
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    shadow_dir = tmp_path / ".hive-mind" / "shadow_mode_emails"
+    shadow_dir.mkdir(parents=True, exist_ok=True)
+    email_path = shadow_dir / "email_canary_001.json"
+    email_path.write_text(
+        json.dumps(
+            {
+                "email_id": "email_canary_001",
+                "status": "pending",
+                "to": "trainer@canary-training.internal",
+                "subject": "Canary training",
+                "body": "Training body",
+                "tier": "tier_1",
+                "recipient_data": {"name": "Canary Trainer", "company": "Canary Co"},
+                "synthetic": False,
+                "canary": True,
+                "canary_training": True,
+                "_do_not_dispatch": True,
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    class _FakeGHLClient:
+        def __init__(self, api_key, location_id, config=None):
+            self.api_key = api_key
+            self.location_id = location_id
+            self.config = config
+
+        async def resolve_or_create_contact_by_email(self, **kwargs):
+            raise AssertionError("resolve_or_create_contact_by_email must not be called for non-dispatchable training cards")
+
+        async def send_email(self, contact_id, template, personalization=None):
+            raise AssertionError("send_email must not be called for non-dispatchable training cards")
+
+        async def close(self):
+            return None
+
+    monkeypatch.setattr(health_app, "GHLOutreachClient", _FakeGHLClient)
+    monkeypatch.setenv("GHL_API_KEY", "test_key")
+    monkeypatch.setenv("GHL_LOCATION_ID", "test_location")
+
+    result = await health_app.approve_email(
+        email_id="email_canary_001",
+        approver="head_of_sales",
+        auth=True,
+        edited_body=None,
+        feedback="training_skip",
+    )
+
+    assert result["status"] == "approved"
+    assert result["message"] == "Email approved (Training/Non-dispatchable skipped)"
+
+    updated = json.loads(email_path.read_text(encoding="utf-8"))
+    assert updated["status"] == "approved"
+    assert updated["send_skipped_reason"] == "non_dispatchable_training"
+    assert updated["sent_via_ghl"] is False
+
+
+@pytest.mark.asyncio
 async def test_pending_emails_syncs_gatekeeper_queue(monkeypatch, tmp_path: Path):
     from dashboard import health_app
 
@@ -585,6 +662,108 @@ async def test_pending_emails_respects_active_ramp_tier_filter(monkeypatch, tmp_
     assert payload["pending_emails"][0]["email_id"] == "email_t1"
     assert payload["_shadow_queue_debug"]["queue_tier_filter"] == "tier_1"
     assert payload["_shadow_queue_debug"]["excluded_non_actionable_reasons"]["tier_mismatch:tier_2"] >= 1
+
+
+@pytest.mark.asyncio
+async def test_pending_emails_excludes_non_dispatchable_training_by_default(monkeypatch, tmp_path: Path):
+    from dashboard import health_app
+
+    _disable_shadow_queue_redis(monkeypatch)
+    monkeypatch.setattr(health_app, "PROJECT_ROOT", tmp_path)
+    monkeypatch.setenv("PENDING_QUEUE_ENFORCE_RAMP_TIER", "false")
+    monkeypatch.setenv("PENDING_QUEUE_MAX_AGE_HOURS", "0")
+    monkeypatch.setenv("PENDING_QUEUE_INCLUDE_NON_DISPATCHABLE", "false")
+
+    shadow_dir = tmp_path / ".hive-mind" / "shadow_mode_emails"
+    shadow_dir.mkdir(parents=True, exist_ok=True)
+
+    (shadow_dir / "email_live.json").write_text(
+        json.dumps(
+            {
+                "email_id": "email_live",
+                "status": "pending",
+                "to": "live@example.com",
+                "subject": "Live draft",
+                "body": "Live body",
+                "tier": "tier_1",
+            }
+        ),
+        encoding="utf-8",
+    )
+    (shadow_dir / "email_canary.json").write_text(
+        json.dumps(
+            {
+                "email_id": "email_canary",
+                "status": "pending",
+                "to": "trainer@canary-training.internal",
+                "subject": "Training draft",
+                "body": "Training body",
+                "tier": "tier_1",
+                "canary": True,
+                "canary_training": True,
+                "_do_not_dispatch": True,
+                "context": {"source": "canary_lane_b"},
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    response = Response()
+    payload = await health_app.get_pending_emails(response=response, auth=True)
+
+    assert payload["count"] == 1
+    assert payload["pending_emails"][0]["email_id"] == "email_live"
+    reasons = payload["_shadow_queue_debug"]["excluded_non_actionable_reasons"]
+    assert reasons["non_dispatchable:_do_not_dispatch"] >= 1
+
+
+@pytest.mark.asyncio
+async def test_pending_emails_can_include_non_dispatchable_training_when_requested(monkeypatch, tmp_path: Path):
+    from dashboard import health_app
+
+    _disable_shadow_queue_redis(monkeypatch)
+    monkeypatch.setattr(health_app, "PROJECT_ROOT", tmp_path)
+    monkeypatch.setenv("PENDING_QUEUE_ENFORCE_RAMP_TIER", "false")
+    monkeypatch.setenv("PENDING_QUEUE_MAX_AGE_HOURS", "0")
+    monkeypatch.setenv("PENDING_QUEUE_INCLUDE_NON_DISPATCHABLE", "false")
+
+    shadow_dir = tmp_path / ".hive-mind" / "shadow_mode_emails"
+    shadow_dir.mkdir(parents=True, exist_ok=True)
+
+    (shadow_dir / "email_canary.json").write_text(
+        json.dumps(
+            {
+                "email_id": "email_canary",
+                "status": "pending",
+                "to": "trainer@canary-training.internal",
+                "subject": "Training draft",
+                "body": "Training body",
+                "tier": "tier_1",
+                "canary": True,
+                "canary_training": True,
+                "_do_not_dispatch": True,
+                "context": {"source": "canary_lane_b"},
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    response = Response()
+    payload = await health_app.get_pending_emails(
+        response=response,
+        include_non_dispatchable=True,
+        auth=True,
+    )
+
+    assert payload["count"] == 1
+    item = payload["pending_emails"][0]
+    assert item["email_id"] == "email_canary"
+    assert item["classifier"]["queue_origin"] == "canary_lane_b"
+    assert item["classifier"]["target_platform"] == "training"
+    assert item["classifier"]["sync_state"] == "non_dispatchable_training"
+    assert item["campaign_ref"]["internal_id"] == "canary_training"
+    assert item["campaign_ref"]["internal_type"] == "canary_lane_b"
+    assert payload["_shadow_queue_debug"]["include_non_dispatchable"] is True
 
 
 @pytest.mark.asyncio
