@@ -17,7 +17,15 @@
 **Founder**: Chris Daigle (https://www.linkedin.com/in/doctordaigle/)
 **Company**: Chiefaiofficer.com
 **Platform**: Railway (production) at `caio-swarm-dashboard-production.up.railway.app`
-**Dashboard**: v2.7 — deployed commit `2d074c6` (2026-02-18) — Redis shadow queue prefix fix
+**Dashboard**: v3.0 full 4-tab UI (Overview/Email Queue/Campaigns/Settings) + live KPIs + compliance checks
+**Latest successful production deploy**: commit `48bb228` (2026-02-19) — Dashboard v3.0 + P0 compliance checks + P1 refresh heartbeat
+
+### Mandatory Read Order (Every New Session)
+
+1. `CLAUDE.md`
+2. `docs/CAIO_CLAUDE_MEMORY.md` (living runtime truth)
+3. `CAIO_IMPLEMENTATION_PLAN.md` (v4.5)
+4. `docs/CAIO_UIUX_BULLETPROOF_HANDOFF_FOR_CLAUDE_2026-02-19.md` (UI/UX hardening handoff)
 
 ### Current Status (Phase 4: Autonomy Graduation — 98%)
 
@@ -60,7 +68,7 @@ See `docs/CAIO_TASK_TRACKER.md` for detailed progress and next steps.
 
 ### Dashboard Pipeline Improvements (commit `b8dfc0f`)
 
-- **HoS Dashboard v2.4** (`/sales`): Live RAMP MODE banner fetches from `/api/operator/status` every 30s — shows day/total, daily limit, tier filter, sent count
+- **HoS Dashboard v3.0** (`/sales`): Full 4-tab UI — Overview (live KPIs from `/api/scorecard`, 12-agent health grid, pipeline funnel, constraint banner, activity feed), Email Queue (pending approvals + review history + queue diagnostics + refresh heartbeat), Campaigns (dispatch history, cadence pipeline, queue metrics), Settings (ramp config, guardrails, dependencies, safety controls). Backend compliance checks (reply_stop, signature, CTA, footer) on every pending email. Tab routing via URL hash.
 - **Email bodies fixed**: Pipeline send stage now extracts subject/body from per-lead sequences (CRAFTER stores sequences on each lead, not campaign level)
 - **Enriched lead insights**: Shadow emails now include location, employees, industry in `recipient_data` for dashboard display
 - **HoS-aligned scrape targets**: TARGET_COMPANIES aligned to HoS Tier 1 ICP: Wpromote, Tinuiti, Power Digital (agencies), Insight Global, Kforce (staffing), Slalom, West Monroe (consulting), ShipBob (e-commerce), Chili Piper (Tier 2 test). Old SaaS targets removed.
@@ -201,6 +209,7 @@ chiefaiofficer-alpha-swarm/
 │   ├── heyreach_webhook.py        # 11 LinkedIn event handlers
 │   └── rb2b_webhook.py            # RB2B visitor enrichment
 ├── scripts/
+│   ├── canary_lane_b.py               # Lane B: Safe HoS training with synthetic leads (no real contacts)
 │   ├── register_instantly_webhooks.py  # Instantly webhook CRUD
 │   ├── register_heyreach_webhooks.py   # HeyReach webhook CRUD
 │   └── ...                        # Deploy, test, validate scripts
@@ -213,7 +222,7 @@ chiefaiofficer-alpha-swarm/
 ├── docs/                          # Documentation
 │   ├── CAIO_TASK_TRACKER.md       # Single source of truth for progress
 │   └── research/                  # Provider research docs
-└── CAIO_IMPLEMENTATION_PLAN.md    # Full implementation plan (v4.2)
+└── CAIO_IMPLEMENTATION_PLAN.md    # Full implementation plan (v4.5)
 ```
 
 ---
@@ -313,6 +322,12 @@ python -m execution.cadence_engine --sync                      # Sync signals (e
 
 # --- Revival Scanner ---
 python -m execution.operator_revival_scanner --scan --limit 10 # Preview revival candidates
+
+# --- Lane B: Canary Training (safe HoS practice, no real contacts) ---
+python scripts/canary_lane_b.py                               # Generate 5 canary training emails
+python scripts/canary_lane_b.py --count 3                     # Generate N canary emails
+python scripts/canary_lane_b.py --status                      # Show canary email statuses
+python scripts/canary_lane_b.py --clear                       # Remove all canary emails from queue
 
 # --- Dispatchers (standalone) ---
 python -m execution.instantly_dispatcher --dry-run             # Preview Instantly dispatch
@@ -539,6 +554,8 @@ Chief AI Officer Inc. | 5700 Harper Dr, Suite 210, Albuquerque, NM 87109
 - NEVER proactively create documentation unless requested.
 - Never save working files to the root folder.
 - **ALL campaigns require AE approval via GATEKEEPER**.
+- **ALWAYS update** `docs/CAIO_CLAUDE_MEMORY.md` after deploys/hotfixes/incidents.
+- After updating memory, sync key truth back into `CLAUDE.md` (deploy hash, gates, active risks).
 
 ### CRITICAL: Local ↔ Railway Filesystem Constraint (ARCHITECTURAL LAW)
 
