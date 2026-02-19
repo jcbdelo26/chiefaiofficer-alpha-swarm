@@ -127,7 +127,11 @@ def text_to_html_body(body_text: str) -> str:
     )
 
     paragraphs = [p.strip() for p in escaped.split("\n\n") if p.strip()]
-    return "\n\n".join(f"<p>{p.replace('\n', '<br>')}</p>" for p in paragraphs)
+    formatted_paragraphs = []
+    for paragraph in paragraphs:
+        with_breaks = paragraph.replace("\n", "<br>")
+        formatted_paragraphs.append(f"<p>{with_breaks}</p>")
+    return "\n\n".join(formatted_paragraphs)
 
 
 def ensure_outbound_html(body: str) -> str:
