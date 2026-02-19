@@ -276,7 +276,8 @@ def clear_canary_emails():
         data = json.loads(r.get(key))
         if not data.get("canary"):
             continue
-        email_id = data.get("email_id", key.decode().split(":")[-1])
+        key_text = key.decode() if isinstance(key, (bytes, bytearray)) else str(key)
+        email_id = data.get("email_id", key_text.split(":")[-1])
         r.delete(key)
         r.zrem(pending_key, email_id)
         removed += 1
