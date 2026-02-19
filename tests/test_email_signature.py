@@ -21,6 +21,8 @@ def test_enforce_text_signature_replaces_legacy_footer():
     assert CALL_LINK in output
     assert "support@chiefaiofficer.com" in output
     assert output.count("Best,") == 1
+    assert output.strip().endswith("Reply STOP to unsubscribe.")
+    assert output.find("Copyright © 2026 Chief AI Officer. All rights reserved") < output.find("Reply STOP to unsubscribe.")
 
 
 def test_enforce_html_signature_replaces_legacy_signoff_and_footer():
@@ -36,6 +38,8 @@ def test_enforce_html_signature_replaces_legacy_signoff_and_footer():
     assert CALL_LINK in output
     assert "Reply STOP to unsubscribe." in output
     assert "support@chiefaiofficer.com" in output
+    assert "<center>" in output.lower()
+    assert output.lower().find("copyright © 2026 chief ai officer. all rights reserved") < output.lower().find("reply stop to unsubscribe.")
 
 
 def test_ensure_outbound_html_converts_text_and_links_schedule_cta():
@@ -45,3 +49,4 @@ def test_ensure_outbound_html_converts_text_and_links_schedule_cta():
     assert f'href="{CALL_LINK}"' in html_output
     assert "Schedule a call with CAIO" in html_output
     assert "Reply STOP to unsubscribe." in html_output
+    assert "<center>" in html_output.lower()

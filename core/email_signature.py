@@ -25,12 +25,12 @@ STANDARD_TEXT_SIGNATURE: Final[str] = "\n".join(
 
 STANDARD_TEXT_FOOTER: Final[str] = "\n".join(
     [
-        "Reply STOP to unsubscribe.",
         "We only reach out to professionals we believe can lead AI strategy inside their organizations. If this isn't you, or now's not the right time, just click here and I'll take care of it personally.",
         "Chief AI Officer Inc.",
         "5700 Harper Dr, Suite 210, Albuquerque, NM 87109",
         SUPPORT_EMAIL,
         "Copyright © 2026 Chief AI Officer. All rights reserved",
+        "Reply STOP to unsubscribe.",
     ]
 )
 
@@ -41,18 +41,19 @@ STANDARD_HTML_SIGNATURE: Final[str] = (
 )
 
 STANDARD_HTML_FOOTER: Final[str] = (
-    '<p style="font-size: 11px; color: #666; margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; text-align: center;">'
-    "Reply STOP to unsubscribe.<br>"
+    '<center><p style="font-size: 11px; color: #666; margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; text-align: center;">'
     "We only reach out to professionals we believe can lead AI strategy inside their organizations. "
-    f'If this isn&#39;t you, or now&#39;s not the right time, just <a href="{UNSUBSCRIBE_MAILTO}">click here</a> and I&#39;ll take care of it personally.<br><br>'
-    "<strong>Chief AI Officer Inc.</strong><br>"
+    f'If this isn&#39;t you, or now&#39;s not the right time, just <a href="{UNSUBSCRIBE_MAILTO}">click here</a> and I&#39;ll take care of it personally.<br>'
+    "Chief AI Officer Inc.<br>"
     "5700 Harper Dr, Suite 210, Albuquerque, NM 87109<br>"
     f'<a href="mailto:{SUPPORT_EMAIL}">{SUPPORT_EMAIL}</a><br>'
-    "Copyright © 2026 Chief AI Officer. All rights reserved"
-    "</p>"
+    "Copyright © 2026 Chief AI Officer. All rights reserved<br>"
+    "Reply STOP to unsubscribe."
+    "</p></center>"
 )
 
 _LEGACY_HTML_BLOCKS = [
+    r"(?is)<center>[\s\S]*?We only reach out to professionals we believe can lead AI strategy inside their organizations\.[\s\S]*?</center>",
     r"(?is)<p[^>]*>\s*We only reach out to professionals we believe can lead AI strategy inside their organizations\..*?</p>",
     r"(?is)<p[^>]*>\s*Reply STOP to unsubscribe\.?\s*</p>",
     r"(?is)<p[^>]*>\s*(?:Best|Cheers|Thanks),<br>[\s\S]*?</p>",
