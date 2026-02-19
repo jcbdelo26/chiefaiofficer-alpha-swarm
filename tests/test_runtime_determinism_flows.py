@@ -83,6 +83,7 @@ async def test_queue_lifecycle_has_consistent_audit_logs(monkeypatch, tmp_path: 
     pending = await health_app.get_pending_emails(response=response, auth=True)
     assert pending["count"] == 1
     assert "Schedule a call with CAIO" in pending["pending_emails"][0]["body"]
+    assert "Reply STOP to unsubscribe." in pending["pending_emails"][0]["body"]
     assert "support@chiefaiofficer.com" in pending["pending_emails"][0]["body"]
     assert response.headers["Cache-Control"] == "no-store, no-cache, must-revalidate, max-age=0"
     assert response.headers["Pragma"] == "no-cache"
@@ -102,6 +103,7 @@ async def test_queue_lifecycle_has_consistent_audit_logs(monkeypatch, tmp_path: 
     assert approved_payload["approved_by"] == "head_of_sales"
     assert approved_payload["was_edited"] is True
     assert "Schedule a call with CAIO" in approved_payload["body"]
+    assert "Reply STOP to unsubscribe." in approved_payload["body"]
 
     reject_email_path = shadow_dir / "email_002.json"
     reject_email_path.write_text(

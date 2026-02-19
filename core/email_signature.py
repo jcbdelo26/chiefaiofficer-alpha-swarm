@@ -25,6 +25,7 @@ STANDARD_TEXT_SIGNATURE: Final[str] = "\n".join(
 
 STANDARD_TEXT_FOOTER: Final[str] = "\n".join(
     [
+        "Reply STOP to unsubscribe.",
         "We only reach out to professionals we believe can lead AI strategy inside their organizations. If this isn't you, or now's not the right time, just click here and I'll take care of it personally.",
         "Chief AI Officer Inc.",
         "5700 Harper Dr, Suite 210, Albuquerque, NM 87109",
@@ -41,6 +42,7 @@ STANDARD_HTML_SIGNATURE: Final[str] = (
 
 STANDARD_HTML_FOOTER: Final[str] = (
     '<p style="font-size: 11px; color: #666; margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; text-align: center;">'
+    "Reply STOP to unsubscribe.<br>"
     "We only reach out to professionals we believe can lead AI strategy inside their organizations. "
     f'If this isn&#39;t you, or now&#39;s not the right time, just <a href="{UNSUBSCRIBE_MAILTO}">click here</a> and I&#39;ll take care of it personally.<br><br>'
     "<strong>Chief AI Officer Inc.</strong><br>"

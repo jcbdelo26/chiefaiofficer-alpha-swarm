@@ -16,7 +16,7 @@ def test_enforce_text_signature_replaces_legacy_footer():
         "Chief AI Officer Inc. | 5700 Harper Dr, Suite 210, Albuquerque, NM 87109"
     )
     output = enforce_text_signature(body)
-    assert "Reply STOP to unsubscribe." not in output
+    assert "Reply STOP to unsubscribe." in output
     assert "Schedule a call with CAIO" in output
     assert CALL_LINK in output
     assert "support@chiefaiofficer.com" in output
@@ -34,6 +34,7 @@ def test_enforce_html_signature_replaces_legacy_signoff_and_footer():
     assert "old.example.com" not in output
     assert "Schedule a call with CAIO" in output
     assert CALL_LINK in output
+    assert "Reply STOP to unsubscribe." in output
     assert "support@chiefaiofficer.com" in output
 
 
@@ -43,3 +44,4 @@ def test_ensure_outbound_html_converts_text_and_links_schedule_cta():
     assert "<p>" in html_output
     assert f'href="{CALL_LINK}"' in html_output
     assert "Schedule a call with CAIO" in html_output
+    assert "Reply STOP to unsubscribe." in html_output
