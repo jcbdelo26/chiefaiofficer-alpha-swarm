@@ -566,6 +566,9 @@ class OperatorOutbound:
                     continue
                 if data.get("sent_via_ghl"):
                     continue
+                # Canary safety gate: never dispatch training emails
+                if data.get("canary") or data.get("_do_not_dispatch"):
+                    continue
                 recipient_email = data.get("to", "")
                 if not self._is_lead_eligible(recipient_email, state):
                     continue
@@ -886,20 +889,21 @@ class OperatorOutbound:
                     )
                     report.instantly_report = asdict(instantly_report)
 
-                    # Track dispatched leads
-                    dispatched_count = instantly_report.total_dispatched
-                    state.outbound_email_dispatched += dispatched_count
+                    # Track dispatched leads (skip in dry-run to avoid state pollution)
+                    if not dry_run:
+                        dispatched_count = instantly_report.total_dispatched
+                        state.outbound_email_dispatched += dispatched_count
 
-                    # Record dispatched lead recipient emails for dedup
-                    for campaign in instantly_report.campaigns_created:
-                        recipient_emails = list(getattr(campaign, "recipient_emails", []) or [])
-                        if not recipient_emails:
-                            for shadow_id in getattr(campaign, "shadow_email_ids", []):
-                                resolved = self._resolve_recipient_email_from_shadow_id(str(shadow_id))
-                                if resolved:
-                                    recipient_emails.append(resolved)
-                        for recipient_email in recipient_emails:
-                            self._record_dispatched_email(state, recipient_email)
+                        # Record dispatched lead recipient emails for dedup
+                        for campaign in instantly_report.campaigns_created:
+                            recipient_emails = list(getattr(campaign, "recipient_emails", []) or [])
+                            if not recipient_emails:
+                                for shadow_id in getattr(campaign, "shadow_email_ids", []):
+                                    resolved = self._resolve_recipient_email_from_shadow_id(str(shadow_id))
+                                    if resolved:
+                                        recipient_emails.append(resolved)
+                            for recipient_email in recipient_emails:
+                                self._record_dispatched_email(state, recipient_email)
                 else:
                     report.errors.append(
                         f"Email daily limit reached ({state.outbound_email_dispatched}/{schedule.email_daily_limit})"
@@ -930,17 +934,18 @@ class OperatorOutbound:
                         )
                         report.heyreach_report = asdict(heyreach_report)
 
-                        dispatched_count = heyreach_report.total_dispatched
-                        state.outbound_linkedin_dispatched += dispatched_count
-                        for list_result in heyreach_report.lists_created:
-                            recipient_emails = list(getattr(list_result, "recipient_emails", []) or [])
-                            if not recipient_emails:
-                                for shadow_id in getattr(list_result, "shadow_email_ids", []):
-                                    resolved = self._resolve_recipient_email_from_shadow_id(str(shadow_id))
-                                    if resolved:
-                                        recipient_emails.append(resolved)
-                            for recipient_email in recipient_emails:
-                                self._record_dispatched_email(state, recipient_email)
+                        if not dry_run:
+                            dispatched_count = heyreach_report.total_dispatched
+                            state.outbound_linkedin_dispatched += dispatched_count
+                            for list_result in heyreach_report.lists_created:
+                                recipient_emails = list(getattr(list_result, "recipient_emails", []) or [])
+                                if not recipient_emails:
+                                    for shadow_id in getattr(list_result, "shadow_email_ids", []):
+                                        resolved = self._resolve_recipient_email_from_shadow_id(str(shadow_id))
+                                        if resolved:
+                                            recipient_emails.append(resolved)
+                                for recipient_email in recipient_emails:
+                                    self._record_dispatched_email(state, recipient_email)
                     else:
                         report.errors.append(
                             f"LinkedIn daily limit reached ({state.outbound_linkedin_dispatched}/{schedule.linkedin_daily_limit})"
@@ -950,14 +955,15 @@ class OperatorOutbound:
                 logger.error("HeyReach dispatch error: %s", e)
 
             # --- Step 3: Auto-enroll dispatched leads into cadence ---
-            try:
-                enrolled = self._auto_enroll_to_cadence()
-                if enrolled > 0:
-                    console.print(f"  [cyan]Cadence auto-enroll:[/cyan] {enrolled} leads enrolled")
-                    report.cadence_auto_enrolled = enrolled
-            except Exception as e:
-                report.errors.append(f"Cadence auto-enroll error: {e}")
-                logger.error("Cadence auto-enroll error: %s", e)
+            if not dry_run:
+                try:
+                    enrolled = self._auto_enroll_to_cadence()
+                    if enrolled > 0:
+                        console.print(f"  [cyan]Cadence auto-enroll:[/cyan] {enrolled} leads enrolled")
+                        report.cadence_auto_enrolled = enrolled
+                except Exception as e:
+                    report.errors.append(f"Cadence auto-enroll error: {e}")
+                    logger.error("Cadence auto-enroll error: %s", e)
 
             # Update state
             state.last_run_at = datetime.now(timezone.utc).isoformat()
@@ -985,7 +991,7 @@ class OperatorOutbound:
         Scan shadow emails for newly dispatched leads and enroll them in cadence.
 
         Called after dispatch_outbound(). Reads shadow email files that have
-        been dispatched to Instantly (status == "dispatched_to_instantly") and
+        been dispatched to outreach channels (Instantly/HeyReach) and
         enrolls them into the default 21-day cadence if not already enrolled.
 
         Returns count of newly enrolled leads.
@@ -1002,8 +1008,8 @@ class OperatorOutbound:
                 with open(email_file, "r", encoding="utf-8") as f:
                     data = json.load(f)
 
-                # Only process dispatched-to-instantly emails
-                if data.get("status") != "dispatched_to_instantly":
+                # Only process emails dispatched to first-touch outreach channels
+                if data.get("status") not in {"dispatched_to_instantly", "dispatched_to_heyreach"}:
                     continue
 
                 # Skip if already enrolled flag set
@@ -1364,8 +1370,6 @@ class OperatorOutbound:
                         else:
                             label += f" | {action.step.action}"
                         console.print(label)
-                        cadence.mark_step_done(action.email, action.step.step, "dry_run",
-                                               metadata={"followup_copy": bool(followup_copy)})
                         dispatched += 1
                     else:
                         try:
@@ -1392,16 +1396,18 @@ class OperatorOutbound:
                         except Exception as e:
                             report.errors.append(f"Cadence dispatch error for {action.email}: {e}")
 
-                state.cadence_dispatched += dispatched
+                if not dry_run:
+                    state.cadence_dispatched += dispatched
                 report.cadence_dispatched = dispatched
 
             except Exception as e:
                 report.errors.append(f"Cadence engine error: {e}")
                 logger.error("Cadence engine error: %s", e)
 
-            state.last_run_at = datetime.now(timezone.utc).isoformat()
-            state.runs_today += 1
-            self._save_daily_state(state)
+            if not dry_run:
+                state.last_run_at = datetime.now(timezone.utc).isoformat()
+                state.runs_today += 1
+                self._save_daily_state(state)
 
             report.completed_at = datetime.now(timezone.utc).isoformat()
             self._log_dispatch(report)

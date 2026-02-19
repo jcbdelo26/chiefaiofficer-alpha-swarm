@@ -155,6 +155,9 @@ class InstantlyDispatcher:
     def __init__(self):
         self.shadow_dir = PROJECT_ROOT / ".hive-mind" / "shadow_mode_emails"
         self.dispatch_log = PROJECT_ROOT / ".hive-mind" / "instantly_dispatch_log.jsonl"
+        self.deliverability_rejection_log = (
+            PROJECT_ROOT / ".hive-mind" / "audit" / "deliverability_guard_rejections.jsonl"
+        )
         self.ceiling = DailyCeilingTracker()
         self.config = self._load_config()
         self._client = None  # Lazy init
@@ -207,11 +210,59 @@ class InstantlyDispatcher:
         )
 
     @staticmethod
+    def _is_excluded_domain(email_domain: str, excluded_domains: set) -> bool:
+        """
+        Match excluded recipient domains with subdomain awareness.
+        Example: sub.example.com matches excluded example.com.
+        """
+        normalized = (email_domain or "").strip().lower().rstrip(".")
+        if not normalized:
+            return False
+        for excluded in excluded_domains:
+            base = str(excluded or "").strip().lower().rstrip(".")
+            if not base:
+                continue
+            if normalized == base or normalized.endswith(f".{base}"):
+                return True
+        return False
+
+    @staticmethod
     def _validate_email_format(email: str) -> bool:
         """RFC 5322 simplified email format check."""
         import re
         pattern = r'^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$'
         return bool(re.match(pattern, email))
+
+    def _log_deliverability_rejection(
+        self,
+        *,
+        reason_code: str,
+        to_email: str,
+        email_domain: str,
+        shadow_email_id: str,
+        file_name: str,
+        scope_enforced: bool,
+        metadata: Optional[Dict[str, Any]] = None,
+    ) -> None:
+        """Emit structured rejection events for deliverability guard diagnostics."""
+        try:
+            self.deliverability_rejection_log.parent.mkdir(parents=True, exist_ok=True)
+            payload: Dict[str, Any] = {
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "source": "instantly_dispatcher",
+                "reason_code": reason_code,
+                "to_email": to_email,
+                "email_domain": email_domain,
+                "shadow_email_id": shadow_email_id,
+                "file_name": file_name,
+                "scope_enforced": scope_enforced,
+            }
+            if metadata:
+                payload["metadata"] = metadata
+            with open(self.deliverability_rejection_log, "a", encoding="utf-8") as f:
+                f.write(json.dumps(payload, ensure_ascii=False) + "\n")
+        except Exception as exc:
+            logger.warning("Failed to log deliverability rejection for %s: %s", file_name, exc)
 
     # -------------------------------------------------------------------------
     # Shadow email loading
@@ -267,6 +318,9 @@ class InstantlyDispatcher:
                     continue
                 if data.get("synthetic"):
                     continue
+                # Canary safety gate: never dispatch training emails
+                if data.get("canary") or data.get("_do_not_dispatch"):
+                    continue
 
                 shadow_email_id = str(data.get("email_id") or email_file.stem)
                 if scope_enforced and shadow_email_id not in approved_scope:
@@ -281,6 +335,14 @@ class InstantlyDispatcher:
                 # Guard 1: Email format validation
                 if require_valid_format and not self._validate_email_format(to_email):
                     rejected_format += 1
+                    self._log_deliverability_rejection(
+                        reason_code="invalid_email_format",
+                        to_email=to_email,
+                        email_domain="",
+                        shadow_email_id=shadow_email_id,
+                        file_name=email_file.name,
+                        scope_enforced=scope_enforced,
+                    )
                     logger.warning(
                         "REJECTED (bad format): %s in %s", to_email, email_file.name
                     )
@@ -288,8 +350,16 @@ class InstantlyDispatcher:
 
                 # Guard 2: Excluded domain check (competitors + own domains + customers)
                 email_domain = to_email.split("@")[-1] if "@" in to_email else ""
-                if email_domain in excluded_domains:
+                if self._is_excluded_domain(email_domain, excluded_domains):
                     rejected_excluded += 1
+                    self._log_deliverability_rejection(
+                        reason_code="excluded_recipient_domain",
+                        to_email=to_email,
+                        email_domain=email_domain,
+                        shadow_email_id=shadow_email_id,
+                        file_name=email_file.name,
+                        scope_enforced=scope_enforced,
+                    )
                     logger.warning(
                         "REJECTED (excluded domain): %s -> %s in %s",
                         to_email, email_domain, email_file.name,
@@ -299,6 +369,14 @@ class InstantlyDispatcher:
                 # Guard 4: Individual email exclusion (customer contacts from HoS 1.4)
                 if to_email in excluded_emails:
                     rejected_email_exclusion += 1
+                    self._log_deliverability_rejection(
+                        reason_code="excluded_recipient_email",
+                        to_email=to_email,
+                        email_domain=email_domain,
+                        shadow_email_id=shadow_email_id,
+                        file_name=email_file.name,
+                        scope_enforced=scope_enforced,
+                    )
                     logger.warning(
                         "REJECTED (excluded email): %s in %s",
                         to_email, email_file.name,
@@ -309,6 +387,18 @@ class InstantlyDispatcher:
                 domain_counts[email_domain] = domain_counts.get(email_domain, 0) + 1
                 if domain_counts[email_domain] > max_per_domain:
                     rejected_concentration += 1
+                    self._log_deliverability_rejection(
+                        reason_code="domain_concentration_cap",
+                        to_email=to_email,
+                        email_domain=email_domain,
+                        shadow_email_id=shadow_email_id,
+                        file_name=email_file.name,
+                        scope_enforced=scope_enforced,
+                        metadata={
+                            "count_for_domain": domain_counts[email_domain],
+                            "max_per_domain": max_per_domain,
+                        },
+                    )
                     logger.warning(
                         "REJECTED (domain concentration %d/%d): %s in %s",
                         domain_counts[email_domain], max_per_domain,

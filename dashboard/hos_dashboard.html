@@ -1392,7 +1392,8 @@
                         pipelineRunId: campaignRef.pipeline_run_id || e.context?.pipeline_run_id || '',
                         externalProvider: campaignRef.external_provider || '',
                         externalCampaignId: campaignRef.external_campaign_id || '',
-                        externalCampaignName: campaignRef.external_campaign_name || ''
+                        externalCampaignName: campaignRef.external_campaign_name || '',
+                        canary: !!e.canary
                     };
                     queuedEmail.body = formatCopyForApproval(queuedEmail.body, queuedEmail);
                     queuedEmail.copySignals = buildCopySignalChecks(queuedEmail, queuedEmail.body);
@@ -1498,6 +1499,7 @@
                     <div class="email-info">
                         <div class="email-subject">
                             ${getPriorityBadge(email)}
+                            ${email.canary ? '<span style="background:#f59e0b;color:#000;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700;margin-right:6px;">TRAINING</span>' : ''}
                             <span class="email-tier ${safeTierClass}">${safeTierLabel}</span>
                             ${formatPlatformBadge(email)}
                             ${safeSubject}
@@ -1575,6 +1577,7 @@
 
             document.getElementById('emailPreviewBody').innerHTML = `
                 <div class="modal-main">
+                    ${email.canary ? '<div style="background:#f59e0b;color:#000;padding:8px 16px;border-radius:6px;margin-bottom:12px;font-weight:700;text-align:center;">TRAINING MODE — This is a canary email with a synthetic lead. Safe to practice approve/reject.</div>' : ''}
                     <!-- TO -->
                     <div class="email-preview-field">
                         <label>To</label>
