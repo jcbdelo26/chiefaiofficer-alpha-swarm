@@ -1465,6 +1465,16 @@ async def get_pending_emails(
         }
         email_data["campaign_ref"] = classifier.get("campaign_ref", {})
 
+        # P0: Backend compliance checks — single source of truth for UI
+        body_text = email_data.get("body") or ""
+        email_data["compliance_checks"] = {
+            "reply_stop_present": "reply stop to unsubscribe" in body_text.lower(),
+            "signature_present": "dani apgar" in body_text.lower(),
+            "cta_present": "caio.cx/ai-exec-briefing-call" in body_text.lower(),
+            "footer_present": "support@chiefaiofficer.com" in body_text.lower(),
+            "normalization_version": "v3.0",
+        }
+
     return {
         "pending_emails": pending,
         "count": len(pending),
