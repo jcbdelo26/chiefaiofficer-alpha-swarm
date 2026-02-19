@@ -39,6 +39,7 @@ from core.context import (
     ContextZone,
     estimate_tokens
 )
+from core.email_signature import enforce_text_signature
 
 console = Console()
 
@@ -385,7 +386,8 @@ Chief AI Officer Inc. | 5700 Harper Dr, Suite 210, Albuquerque, NM 87109"""
     FOLLOWUP_TEMPLATES = [
         {
             "delay_days": 3,
-            "subject": "Re: {{original_subject}}",
+            "subject_a": "Re: {{original_subject}}",
+            "subject_b": "{{lead.first_name}} - quick AI readiness question",
             "body": """Hi {{lead.first_name}},
 
 Following up on my note from earlier this week.
@@ -409,7 +411,8 @@ Chief AI Officer Inc. | 5700 Harper Dr, Suite 210, Albuquerque, NM 87109"""
         },
         {
             "delay_days": 7,
-            "subject": "Closing the loop / {{lead.company}}",
+            "subject_a": "Closing the loop / {{lead.company}}",
+            "subject_b": "{{lead.first_name}} - should I close your file?",
             "body": """Hi {{lead.first_name}},
 
 I haven't heard back, so I'm assuming AI implementation isn't a top-three priority for {{lead.company}} this quarter.
@@ -637,7 +640,7 @@ Chief AI Officer Inc. | 5700 Harper Dr, Suite 210, Albuquerque, NM 87109"""
         variables = self._build_template_variables(lead_data)
 
         subject = self._render_template(template["subject"], variables)
-        body = self._render_template(template["body"], variables)
+        body = enforce_text_signature(self._render_template(template["body"], variables))
 
         return {
             "subject": subject,
@@ -660,6 +663,7 @@ Chief AI Officer Inc. | 5700 Harper Dr, Suite 210, Albuquerque, NM 87109"""
         subject_a = self._render_template(template["subject_a"], variables)
         subject_b = self._render_template(template["subject_b"], variables)
         body = self._render_template(template["body"], variables)
+        body = enforce_text_signature(body)
 
         return {
             "lead_id": lead.get("lead_id", ""),
@@ -693,17 +697,21 @@ Chief AI Officer Inc. | 5700 Harper Dr, Suite 210, Albuquerque, NM 87109"""
             body_b=self._render_template(template["body"], variables),
             personalization_level=3
         ))
+        sequence[-1].body_a = enforce_text_signature(sequence[-1].body_a)
+        sequence[-1].body_b = enforce_text_signature(sequence[-1].body_b)
 
         # Follow-up steps
         for i, followup in enumerate(self.FOLLOWUP_TEMPLATES, start=2):
+            followup_subject_a = followup.get("subject_a") or followup.get("subject") or ""
+            followup_subject_b = followup.get("subject_b") or followup_subject_a
             sequence.append(EmailStep(
                 step=i,
                 delay_days=followup["delay_days"],
                 channel="email",
-                subject_a=self._render_template(followup["subject"], variables),
-                subject_b=self._render_template(followup["subject"], variables),
-                body_a=self._render_template(followup["body"], variables),
-                body_b=self._render_template(followup["body"], variables),
+                subject_a=self._render_template(followup_subject_a, variables),
+                subject_b=self._render_template(followup_subject_b, variables),
+                body_a=enforce_text_signature(self._render_template(followup["body"], variables)),
+                body_b=enforce_text_signature(self._render_template(followup["body"], variables)),
                 personalization_level=2
             ))
 

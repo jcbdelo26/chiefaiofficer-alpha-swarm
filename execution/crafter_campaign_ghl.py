@@ -29,6 +29,7 @@ import requests
 
 from core.signal_detector import SignalDetector, DetectedSignal
 from core.messaging_strategy import MessagingStrategy
+from core.email_signature import ensure_outbound_html
 
 load_dotenv()
 
@@ -162,6 +163,7 @@ class GHLCampaignCrafter:
         """
         Send email to contact via GHL.
         """
+        body = ensure_outbound_html(body)
         url = f"{self.base_url}/conversations/messages"
         
         payload = {
@@ -712,6 +714,7 @@ class GHLCampaignCrafter:
         Returns:
             True if sent successfully, False otherwise
         """
+        body = ensure_outbound_html(body)
         url = f"{self.base_url}/conversations/messages"
         
         payload = {

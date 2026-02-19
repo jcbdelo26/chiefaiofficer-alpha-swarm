@@ -14,6 +14,8 @@ from enum import Enum
 from typing import Optional, List, Dict, Any
 from pathlib import Path
 
+from core.email_signature import ensure_outbound_html
+
 
 class OutreachType(Enum):
     """Types of outreach campaigns."""
@@ -439,6 +441,8 @@ class GHLOutreachClient:
             for key, value in personalization.items():
                 subject = subject.replace(f"{{{{{key}}}}}", value)
                 body = body.replace(f"{{{{{key}}}}}", value)
+
+        body = ensure_outbound_html(body)
         
         try:
             result = await self._request("POST", f"/conversations/messages", {

@@ -16,6 +16,7 @@ from pathlib import Path
 from typing import Dict, Optional
 import pytz
 from dotenv import load_dotenv
+from core.email_signature import enforce_text_signature
 
 # Setup paths
 PROJECT_ROOT = Path(__file__).parent.parent
@@ -110,6 +111,7 @@ def render_template(template_key: str, lead_data: Dict) -> Dict:
     body = template["body"].replace("{{first_name}}", first_name)
     body = body.replace("{{company}}", company)
     body = body.replace("{{original_subject}}", original_subject)
+    body = enforce_text_signature(body)
     
     return {"subject": subject, "body": body}
 

@@ -42,6 +42,7 @@ from core.precision_scorecard import get_scorecard, reset_scorecard
 from core.messaging_strategy import MessagingStrategy
 from core.signal_detector import SignalDetector
 from core.ghl_outreach import OutreachConfig, GHLOutreachClient, EmailTemplate, OutreachType
+from core.email_signature import enforce_text_signature
 from core.runtime_reliability import get_runtime_dependency_health
 from core.trace_envelope import (
     set_current_case_id,
@@ -1451,7 +1452,8 @@ async def get_pending_emails(
         email_data["recipient_data"] = email_data.get("recipient_data", {})
         email_data["to"] = email_data.get("to") or "unknown@example.com"
         email_data["subject"] = email_data.get("subject") or "No Subject"
-        email_data["body"] = email_data.get("body") or email_data.get("body_preview") or "No Body Content"
+        raw_body = email_data.get("body") or email_data.get("body_preview") or "No Body Content"
+        email_data["body"] = enforce_text_signature(raw_body)
         email_data["tier"] = email_data.get("tier", "tier_3")
         email_data["angle"] = email_data.get("angle", "General")
         classifier = _infer_pending_email_classifier(
@@ -1524,10 +1526,13 @@ async def approve_email(
     # Capture original body BEFORE overwriting for training logs
     original_body = email_data.get("body") if edited_body else None
     
-    # Handle Body Edits
+    # Always enforce canonical signature/footer contract at approval boundary.
+    # If user edited body, enforce on edited content; otherwise normalize queued body.
     if edited_body:
-        email_data["body"] = edited_body
+        email_data["body"] = enforce_text_signature(edited_body)
         email_data["was_edited"] = True
+    else:
+        email_data["body"] = enforce_text_signature(email_data.get("body") or "")
     
     # =========================================================================
     # LIVE SENDING LOGIC

@@ -13,6 +13,7 @@ Selection Logic:
 
 from typing import Dict, Any, Tuple
 from core.signal_detector import SignalType, DetectedSignal
+from core.email_signature import enforce_html_signature, CALL_LINK
 
 # =============================================================================
 # CAN-SPAM FOOTER (Required on ALL emails)
@@ -28,7 +29,7 @@ CAN_SPAM_FOOTER = """
 </p>
 """
 
-BOOK_URL = "https://api.leadconnectorhq.com/widget/bookings/dani-apgar-meeting-calendar-30mzmehwb"
+BOOK_URL = CALL_LINK
 
 
 class MessagingStrategy:
@@ -83,14 +84,13 @@ class MessagingStrategy:
             return self._get_template("tier3_angle_a", lead)  # Quick Win (Default)
 
     def _get_template(self, template_id: str, lead: Dict[str, Any] = None) -> Tuple[str, str, str]:
-        """Retrieve template by ID and append CAN-SPAM footer."""
+        """Retrieve template by ID and enforce canonical signature/footer."""
         tmpl = self.templates.get(template_id)
         if not tmpl:
             # Fallback
-            return "fallback", "Quick question", "Hi {first_name}, connecting..." + CAN_SPAM_FOOTER
-        
-        # Append footer to body
-        body_with_footer = tmpl["body"] + CAN_SPAM_FOOTER
+            return "fallback", "Quick question", enforce_html_signature("<p>Hi {first_name}, connecting...</p>")
+
+        body_with_footer = enforce_html_signature(tmpl["body"])
         return template_id, tmpl["subject"], body_with_footer
 
     def get_followup_template(self, followup_number: int, lead: Dict[str, Any]) -> Tuple[str, str, str]:

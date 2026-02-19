@@ -1236,6 +1236,40 @@
             return text.trim();
         }
 
+        const STANDARD_SIGNATURE_BLOCK = [
+            'Best,',
+            'Dani Apgar',
+            'Schedule a call with CAIO: https://caio.cx/ai-exec-briefing-call',
+        ].join('\n');
+
+        const STANDARD_FOOTER_BLOCK = [
+            "We only reach out to professionals we believe can lead AI strategy inside their organizations. If this isn't you, or now's not the right time, just click here and I'll take care of it personally.",
+            'Chief AI Officer Inc.',
+            '5700 Harper Dr, Suite 210, Albuquerque, NM 87109',
+            'support@chiefaiofficer.com',
+            'Copyright © 2026 Chief AI Officer. All rights reserved',
+        ].join('\n');
+
+        function stripLegacySignatureFooter(rawText = '') {
+            let cleaned = String(rawText || '');
+            cleaned = cleaned.replace(/\n*We only reach out to professionals we believe can lead AI strategy inside their organizations\.[\s\S]*$/i, '');
+            cleaned = cleaned.replace(/\n*(Best,|Cheers,|Thanks,)\s*\n[\s\S]*$/i, '');
+            cleaned = cleaned.replace(/\n*---\s*\n[\s\S]*$/i, '');
+            cleaned = cleaned.replace(/\n*Reply STOP to unsubscribe\.?\s*$/gi, '');
+            cleaned = cleaned.replace(/\n*Chief AI Officer Inc\.[\s\S]*$/i, '');
+            cleaned = cleaned.replace(/[ \t]+\n/g, '\n');
+            cleaned = cleaned.replace(/\n{3,}/g, '\n\n');
+            return cleaned.trim();
+        }
+
+        function appendStandardSignatureFooter(rawText = '') {
+            const cleaned = stripLegacySignatureFooter(rawText);
+            if (!cleaned) {
+                return `${STANDARD_SIGNATURE_BLOCK}\n\n${STANDARD_FOOTER_BLOCK}`;
+            }
+            return `${cleaned}\n\n${STANDARD_SIGNATURE_BLOCK}\n\n${STANDARD_FOOTER_BLOCK}`.trim();
+        }
+
         function formatCopyForApproval(rawBody = '', email = {}) {
             let text = normalizeEmailBody(rawBody);
             const firstName = extractFirstName(email.recipientName || '');
@@ -1249,7 +1283,9 @@
                     : company
                         ? `Noticed ${company}${industry ? ` in ${industry}` : ''} and wanted to share a practical AI execution path.`
                         : 'Wanted to share a practical AI execution path that has worked for similar teams.';
-                return `Hi ${firstName},\n\n${signalLine}\n\nWould it be useful if I send a one-page plan with 2-3 workflows worth piloting first?\n\nBest,\nDani Apgar\nChief AI Officer\nhttps://caio.cx/ai-exec-briefing-call\n\n---\nReply STOP to unsubscribe.`;
+                return appendStandardSignatureFooter(
+                    `Hi ${firstName},\n\n${signalLine}\n\nWould it be useful if I send a one-page plan with 2-3 workflows worth piloting first?`
+                );
             }
 
             text = text.replace(/^Hi\s+([^\n,]+),\s*/i, 'Hi $1,\n\n');
@@ -1276,7 +1312,7 @@
 
             text = text.replace(/[ \t]+\n/g, '\n');
             text = text.replace(/\n{3,}/g, '\n\n');
-            return text.trim();
+            return appendStandardSignatureFooter(text);
         }
 
         function buildCopySignalChecks(email = {}, bodyText = '') {
@@ -1306,7 +1342,7 @@
                 },
                 {
                     label: 'Compliance footer',
-                    pass: /reply stop to unsubscribe\./i.test(body),
+                    pass: /(reply stop to unsubscribe|we only reach out to professionals we believe can lead ai strategy inside their organizations|support@chiefaiofficer\.com)/i.test(body),
                 },
             ];
             return checks;
