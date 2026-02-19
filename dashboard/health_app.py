@@ -1474,6 +1474,46 @@ async def get_pending_emails(
     }
 
 
+@app.get("/api/emails/history")
+async def get_email_history(
+    limit: int = Query(20, ge=1, le=100, description="Max emails to return"),
+    auth: bool = Depends(require_auth),
+):
+    """Return recently reviewed (approved/rejected) emails from Redis shadow queue."""
+    reviewed = []
+    try:
+        from core.shadow_queue import _prefix, _get_redis
+        prefix = _prefix()
+        r = _get_redis()
+        if r:
+            import json as _json
+            for key in r.scan_iter(f"{prefix}:shadow:email:*"):
+                try:
+                    raw = r.get(key)
+                    if not raw:
+                        continue
+                    data = _json.loads(raw)
+                    status = (data.get("status") or "").lower()
+                    if status not in ("approved", "rejected"):
+                        continue
+                    reviewed.append({
+                        "email_id": data.get("email_id", ""),
+                        "to": data.get("to", ""),
+                        "subject": data.get("subject", ""),
+                        "status": status,
+                        "reviewed_at": data.get("approved_at") or data.get("rejected_at") or data.get("timestamp", ""),
+                        "reviewer": data.get("approved_by") or data.get("rejected_by") or "",
+                    })
+                except Exception:
+                    continue
+            # Sort by reviewed_at descending
+            reviewed.sort(key=lambda x: x.get("reviewed_at", ""), reverse=True)
+            reviewed = reviewed[:limit]
+    except Exception as exc:
+        logger.warning("get_email_history error: %s", exc)
+    return {"emails": reviewed, "count": len(reviewed)}
+
+
 @app.post("/api/emails/{email_id}/approve")
 async def approve_email(
     email_id: str,
