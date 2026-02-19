@@ -1,7 +1,7 @@
 # CAIO Alpha Swarm — Unified Task Tracker
 
 **Last Updated**: 2026-02-17
-**Source**: Merged from `CAIO_IMPLEMENTATION_PLAN.md` (v4.3) + `docs/MONACO_SIGNAL_LOOP_GUIDE.md`
+**Source**: `CAIO_IMPLEMENTATION_PLAN.md` (v4.5) + Production Cutover Results
 **Quick Nav**: [Phase 0](#phase-0-foundation-lock--complete) | [Phase 1](#phase-1-live-pipeline-validation--complete) | [Phase 2](#phase-2-supervised-burn-in--complete) | [Phase 3](#phase-3-expand--harden--complete) | **[Phase 4 (YOU ARE HERE)](#phase-4-autonomy-graduation--in-progress)** | [Phase 5](#phase-5-optimize--scale-post-autonomy)
 
 ---
@@ -13,13 +13,14 @@ Phase 0: Foundation Lock          [##########] 100%  COMPLETE
 Phase 1: Live Pipeline Validation [##########] 100%  COMPLETE
 Phase 2: Supervised Burn-In       [##########] 100%  COMPLETE
 Phase 3: Expand & Harden          [##########] 100%  COMPLETE
-Phase 4: Autonomy Graduation      [#########.]  98%  ◄◄◄ YOU ARE HERE
+Phase 4: Autonomy Graduation      [#########.]  98%  <<< YOU ARE HERE
 Phase 5: Optimize & Scale         [----------]   0%  FUTURE
 ```
 
 **Autonomy Score**: ~98/100
 **Production Runs**: 33+ (22 fully clean, last 10 consecutive 6/6 PASS)
-**Monthly Spend**: ~$583/mo (Clay $499 + Apollo $49 + Railway $5 + Instantly $30)
+**Monthly Spend**: ~$662/mo (Clay $499 + Apollo $49 + Railway $5 + Instantly $30 + HeyReach $79)
+**Latest Deployed Commit**: `0f0e0a9` (2026-02-19) — Compliance footer fix + Dashboard v3.0 + P0 checks
 
 ---
 
@@ -34,7 +35,7 @@ All core infrastructure deployed and validated. Nothing to do here.
 - [x] 6-stage pipeline (scrape/enrich/segment/craft/approve/send) — `execution/run_pipeline.py`
 - [x] FastAPI dashboard on port 8080 — `dashboard/health_app.py`
 - [x] Redis (Upstash) integration — 62ms from Railway
-- [x] Inngest event-driven functions — 4 functions mounted
+- [x] Inngest event-driven functions — 5 functions mounted (incl. daily_decay_detection)
 - [x] Railway deployment — auto-deploy on git push
 - [x] Safety controls (shadow mode, EMERGENCY_STOP) — `config/production.json`
 - [x] Gatekeeper approve/reject/edit flows — full audit trail in `.hive-mind/audit/`
@@ -68,9 +69,9 @@ Production pipeline validated with real Apollo data. All critical blockers resol
 <summary>Click to expand completed tasks</summary>
 
 ### Blockers Resolved
-- [x] LinkedIn Scraper 403 → replaced with Apollo.io People Search + Match
-- [x] Clay API v1 deprecated → replaced with direct Apollo.io enrichment
-- [x] Slack alerting → webhook configured, WARNING + CRITICAL alerts working
+- [x] LinkedIn Scraper 403 -> replaced with Apollo.io People Search + Match
+- [x] Clay API v1 deprecated -> replaced with direct Apollo.io enrichment
+- [x] Slack alerting -> webhook configured, WARNING + CRITICAL alerts working
 
 ### Production Results (Real Data)
 - [x] Scrape: 5 leads via Apollo People Search (7.3s)
@@ -85,7 +86,7 @@ Production pipeline validated with real Apollo data. All critical blockers resol
 - [x] Apollo `reveal_phone_number` requires `webhook_url` — removed from payload
 - [x] Segmentor `NoneType.lower()` crash — null-safe `(x or "").lower()` pattern
 - [x] Segmentor `employee_count` None crash — safe dict access
-- [x] Segmentor email resolution — fallback chain: work_email → verified_email → top-level
+- [x] Segmentor email resolution — fallback chain: work_email -> verified_email -> top-level
 - [x] Send stage broken Instantly import — rewrote to shadow queue
 - [x] CampaignCrafter `first_name` missing — name normalization added
 - [x] Circuit breaker silent state changes — wired to Slack alerts
@@ -101,28 +102,28 @@ Production pipeline validated with real Apollo data. All critical blockers resol
 <summary>Click to expand completed tasks</summary>
 
 ### Enrichment & Pipeline
-- [x] Apollo two-step flow (Search → Match) — free search + 1 credit/reveal
-- [x] Enrichment provider research (28+ providers) — `docs/research/ENRICHMENT_PROVIDER_RESEARCH_2026.md`
+- [x] Apollo two-step flow (Search -> Match) — free search + 1 credit/reveal
+- [x] Enrichment provider research (28+ providers)
 - [x] Proxycurl removal (scraper + enricher) — shutting down Jul 2026
 - [x] BetterContact fallback code — async polling in `enricher_clay_waterfall.py`
 - [x] Clay removed from pipeline enrichment — `lead_id` not accessible in callback
 - [x] `/webhooks/clay` simplified — RB2B visitor path only
-- [x] Pipeline waterfall: Apollo → BetterContact → mock/skip
+- [x] Pipeline waterfall: Apollo -> BetterContact -> mock/skip
 
 ### Stability
 - [x] Send stage rewrite — shadow mode queue for HoS dashboard
-- [x] Pipeline alerts → Slack — stage failures WARNING, exceptions CRITICAL
-- [x] Circuit breaker alerts → Slack — OPEN/recovery transitions
-- [x] 3 consecutive clean production runs — 6/6 PASS × 3
+- [x] Pipeline alerts -> Slack — stage failures WARNING, exceptions CRITICAL
+- [x] Circuit breaker alerts -> Slack — OPEN/recovery transitions
+- [x] 3 consecutive clean production runs — 6/6 PASS x 3
 - [x] 20-lead scale test — 19 enriched, 2 campaigns, 68.4s, 0 errors
 - [x] Dashboard API E2E test — approve/reject/pending flows verified
 - [x] 10+ consecutive clean production runs — ACHIEVED
 
 ### Integrations
-- [x] Google Calendar setup guide — `docs/GOOGLE_CALENDAR_SETUP_GUIDE.md`
+- [x] Google Calendar setup guide
 - [x] GHL Calendar integration — replaced Google Calendar, zero new dependencies
 - [x] Instantly V2 API migration — server.py, dispatcher, webhooks, MCP server
-- [x] Multi-channel cadence research — `docs/research/MULTI_CHANNEL_CADENCE_RESEARCH_2026.md`
+- [x] Multi-channel cadence research
 
 ### Deferred from Phase 3
 - [ ] BetterContact subscription — activate when Apollo miss rate justifies $15/mo
@@ -134,445 +135,336 @@ Production pipeline validated with real Apollo data. All critical blockers resol
 
 ## Phase 4: Autonomy Graduation — IN PROGRESS
 
-### ◄◄◄ YOU ARE HERE ◄◄◄
+### <<< YOU ARE HERE <<<
 
-**Overall Phase 4 Progress**: 98% — 4A+4C+4D+4E+4F COMPLETE, 4B awaiting LinkedIn warmup
+**Overall Phase 4 Progress**: 98% — All code built + production cutover complete. Only operational steps remain.
 
 ```
 4A: Domain & Instantly Go-Live      [##########] 100%  COMPLETE
-4B: HeyReach LinkedIn Integration   [########--]  80%  API VERIFIED, CAMPAIGNS CREATED, WEBHOOKS REGISTERED
-4C: OPERATOR Agent Activation       [##########] 100%  COMPLETE (unified dispatch + revival + GATEKEEPER gate)
-4D: Multi-Channel Cadence           [##########] 100%  COMPLETE (Engine + CRAFTER + Auto-Enroll)
-4E: Supervised Live Sends           [########--]  80%  RAMP MODE ACTIVE (5/day, tier_1, 3 supervised days)
-4F: Monaco Signal Loop              [##########] 100%  COMPLETE (signal loop + decay cron + bootstrap done)
+4B: HeyReach LinkedIn Integration   [########--]  80%  CODE DONE, WEBHOOKS REGISTERED, AWAITING WARMUP
+4C: OPERATOR Agent Activation       [##########] 100%  COMPLETE
+4D: Multi-Channel Cadence           [##########] 100%  COMPLETE
+4E: Supervised Live Sends           [#########-]  90%  RAMP DAY 2, COMPLIANCE PASS, AWAITING HoS SEND
+4F: Monaco Signal Loop              [##########] 100%  COMPLETE
+4G: Production Hardening (P0)       [##########] 100%  COMPLETE (commit 746d347)
 ```
 
 ---
 
 ### 4A: Domain & Instantly Go-Live — COMPLETE
 
-All Instantly V2 infrastructure is live and verified.
-
 <details>
-<summary>Click to expand completed tasks</summary>
+<summary>Click to expand (15 tasks done)</summary>
 
 - [x] Instantly V2 API migration (server.py, dispatcher, webhooks)
 - [x] Fix `email_list` bug in `create_campaign()` — sending accounts passed in payload
 - [x] Multi-account rotation config — 6 accounts, round-robin
-- [x] Webhook handler V2 cleanup — `activate_campaign()` replaces old pattern
 - [x] Domain strategy config in `production.json`
-- [x] All code verified (AST + JSON parse)
 - [x] Generate Instantly V2 API key — working
 - [x] Set `INSTANTLY_API_KEY` (V2) in Railway — confirmed
 - [x] Deploy V2 code to Railway — commit `53ab1c1`
 - [x] 6 cold outreach domains DNS verified — all 100% health
 - [x] Instantly warm-up complete — 100% health across all 6 accounts
 - [x] Fix production.json domain mismatch — actual chris.d@ accounts
-- [x] Set `INSTANTLY_FROM_EMAIL` in Railway
 - [x] GHL dedicated domain (`chiefai.ai`) — Stage 1 warmup (8%)
 - [x] Send 1 internal test campaign — `test_internal_v2_20260215` active
 - [x] Register Instantly webhooks — 4/4 (reply, bounce, open, unsubscribe)
 
-**Domains (confirmed)**:
-| Domain | Sender | Health |
-|--------|--------|--------|
-| chiefaiofficerai.com | chris.d@ | 100% |
-| chiefaiofficerconsulting.com | chris.d@ | 100% |
-| chiefaiofficerguide.com | chris.d@ | 100% |
-| chiefaiofficerlabs.com | chris.d@ | 100% |
-| chiefaiofficerresources.com | chris.d@ | 100% |
-| chiefaiofficersolutions.com | chris.d@ | 100% |
+**Domains**: chiefaiofficerai.com, chiefaiofficerconsulting.com, chiefaiofficerguide.com, chiefaiofficerlabs.com, chiefaiofficerresources.com, chiefaiofficersolutions.com — all chris.d@, all 100% health.
 
 </details>
 
 ---
 
-### 4B: HeyReach LinkedIn Integration — API VERIFIED, CAMPAIGNS CREATED
+### 4B: HeyReach LinkedIn Integration — AWAITING WARMUP
 
-**What's done**: API key verified, 3 CAIO campaigns created (tier 1/2/3), 4 webhooks registered in UI, bidirectional Instantly sync configured, dispatcher + webhook handlers deployed.
-**What's remaining**: LinkedIn warm-up (4 weeks) + shadow test with 5 profiles.
-
-#### Code Tasks (DONE)
-- [x] `execution/heyreach_dispatcher.py` — API client + lead-list-first safety, 20/day ceiling, CLI
-- [x] `webhooks/heyreach_webhook.py` — 11 event handlers, JSONL logging, follow-up flags, Slack alerts
-- [x] Mount HeyReach webhook in `dashboard/health_app.py`
-- [x] `scripts/register_heyreach_webhooks.py` — CRUD: --list, --delete-all, --check-auth
-- [x] Wire CONNECTION_REQUEST_ACCEPTED → Instantly warm follow-up flag
-
-#### Infrastructure (DONE)
-- [x] `HEYREACH_API_KEY` set in Railway — verified working (19 campaigns visible)
-- [x] 3 CAIO campaign templates created in HeyReach UI:
-  - tier_1: 334314 ("CAIO Tier 1 — VP+ Decision Makers")
-  - tier_2: 334364 ("CAIO Tier 2 — Directors & Managers")
-  - tier_3: 334381 ("CAIO Tier 3 — Connection Only")
-- [x] 4 webhooks registered via HeyReach UI (Settings → Integrations)
-- [x] Bidirectional HeyReach ↔ Instantly sync configured (API key exchange)
-- [x] Campaign IDs mapped in `config/production.json`
-
-#### Remaining (TODO)
-
-| # | Action | Time | How |
-|---|--------|------|-----|
-| 1 | Connect LinkedIn account + start warm-up | 10 min | HeyReach → Accounts → Add LinkedIn → warm 4 weeks |
-| 2 | Shadow test with 5 internal LinkedIn profiles | 15 min | Add 5 test profiles → verify events flow to dashboard |
-
----
-
-### 4F: Monaco-Inspired Intelligence Layer — COMPLETE
-
-**What it is**: Feedback loop architecture inspired by Monaco.com. Transforms linear pipeline into a signal loop.
+**Code + infra done**. Remaining: LinkedIn warm-up (4 weeks) + shadow test (5 profiles).
 
 <details>
 <summary>Click to expand completed tasks</summary>
 
-#### Signal Loop + Timeline + Dashboard (DONE)
+#### Code (DONE)
+- [x] `execution/heyreach_dispatcher.py` — API client + lead-list-first safety, 20/day ceiling, CLI
+- [x] `webhooks/heyreach_webhook.py` — 11 event handlers, JSONL logging, follow-up flags, Slack alerts
+- [x] Mount HeyReach webhook in `dashboard/health_app.py`
+- [x] `scripts/register_heyreach_webhooks.py` — CRUD utility
 
-- [x] **Signal Loop Engine** — `core/lead_signals.py`
-  - LeadStatusManager with 21 lead statuses (incl. 3 revival states)
-  - Signal handlers for email (open/reply/bounce/unsub) and LinkedIn (connect/reply)
-  - Engagement decay detection (72h ghost, 7d stall, 2+ opens no reply)
-  - `is_revivable()` check for revival eligibility
-  - Bootstrap from existing shadow emails
-
-- [x] **Unified Activity Timeline** — `core/activity_timeline.py`
-  - Aggregates events from ALL sources per lead
-  - `get_revival_context()` for CRAFTER re-engagement copy
-
-- [x] **"Why This Score" Explainability** — `execution/segmentor_classify.py`
-
-- [x] **Leads Dashboard** — `dashboard/leads_dashboard.html` (served at `/leads`)
-
-- [x] **API Endpoints** (6 leads routes + 4 cadence routes in `dashboard/health_app.py`)
-
-#### Webhook Wiring (DONE)
-
-- [x] **Instantly webhooks wired to signal loop** — all 4 handlers call `LeadStatusManager`:
-  - `_process_reply` → `handle_email_replied()`
-  - `_process_bounce` → `handle_email_bounced()`
-  - `_process_unsubscribe` → `handle_email_unsubscribed()`
-  - `handle_instantly_open` → `handle_email_opened()`
-
-- [x] **HeyReach webhooks wired to signal loop** — all key handlers call `LeadStatusManager`:
-  - `CONNECTION_REQUEST_SENT` → `handle_linkedin_connection_sent()`
-  - `CONNECTION_REQUEST_ACCEPTED` → `handle_linkedin_connection_accepted()`
-  - `MESSAGE_REPLY_RECEIVED` → `handle_linkedin_reply()`
-  - `CAMPAIGN_COMPLETED` → `update_lead_status("linkedin_exhausted")`
-
-#### Remaining (TODO)
-
-- [x] **Bootstrap lead data** — 15 leads bootstrapped into signal loop from shadow emails
-- [x] **Schedule decay detection** — `daily_decay_detection` Inngest cron (10 AM UTC): decay scan + batch expiry + cadence sync
+#### Infrastructure (DONE)
+- [x] `HEYREACH_API_KEY` set in Railway — verified working (19 campaigns visible)
+- [x] 3 CAIO campaign templates created (tier_1: 334314, tier_2: 334364, tier_3: 334381)
+- [x] 4 webhooks registered via HeyReach UI
+- [x] Bidirectional HeyReach <-> Instantly sync configured
+- [x] Campaign IDs mapped in `config/production.json`
+- [x] Signal loop wired into HeyReach webhook handlers
 
 </details>
+
+#### Remaining (USER ACTION)
+
+| # | Action | Time | How |
+|---|--------|------|-----|
+| 1 | Connect LinkedIn account + start warm-up | 10 min | HeyReach -> Accounts -> Add LinkedIn -> warm 4 weeks |
+| 2 | Shadow test with 5 internal LinkedIn profiles | 15 min | Add 5 test profiles -> verify events flow to dashboard |
 
 ---
 
 ### 4C: OPERATOR Agent Activation — COMPLETE
 
-Unified dispatch layer orchestrating Instantly + HeyReach + GHL Revival under warmup-aware volume limits.
-
 <details>
-<summary>Click to expand completed tasks</summary>
+<summary>Click to expand (13 tasks done)</summary>
 
-- [x] `execution/operator_outbound.py` — OperatorOutbound class (zero-args constructor, registry-compatible)
-  - `dispatch_outbound()` — Instantly email + HeyReach LinkedIn (sequential)
-  - `dispatch_cadence()` — follow-up steps for enrolled leads
-  - `dispatch_revival()` — GHL stale contact re-engagement
-  - `dispatch_all()` — all three motions sequentially
-  - `get_status()` — dashboard data with cadence summary
-  - `get_warmup_schedule()` — date-based LinkedIn ceiling calculation
-  - WarmupSchedule, OperatorDailyState, OperatorReport dataclasses
-  - Three-layer dedup: daily state + signal loop + shadow email flags
-  - Full CLI: `--status`, `--motion`, `--dry-run`, `--live`, `--history`, `--json`
-- [x] `execution/operator_revival_scanner.py` — RevivalScanner + RevivalCandidate
-  - Scores: website_revisit (0.9+) > previously_replied (0.7-0.9) > opened_only (0.5-0.7) > never_engaged (0.3)
-  - Filters: 30-120 day inactivity window, exclude tags, revivability check
-  - CLI: `--scan --limit N --json`
+- [x] `execution/operator_outbound.py` — OperatorOutbound class with CLI
+- [x] `execution/operator_revival_scanner.py` — RevivalScanner
+- [x] Wire InstantlyDispatcher + HeyReachDispatcher under OPERATOR
+- [x] Three-layer dedup: daily state + signal loop + shadow flags
 - [x] 3 revival statuses added to `core/lead_signals.py` (21 total)
-- [x] `is_revivable()` method on LeadStatusManager
-- [x] `get_revival_context()` on ActivityTimeline
-- [x] `search_by_tags()`, `search_by_pipeline_stage()`, `get_stale_contacts()` on GHLLocalSync
-- [x] 4 `/api/operator/*` endpoints in dashboard
-- [x] Operator config in `config/production.json` (warmup schedule, tier routing, revival config)
-- [x] ICP tier → channel routing logic (tier_1/2: email+LinkedIn, tier_3: email only)
+- [x] Operator config in `config/production.json`
+- [x] ICP tier -> channel routing (tier_1/2: email+LinkedIn, tier_3: email only)
+- [x] 4 `/api/operator/*` dashboard endpoints
+- [x] GATEKEEPER approval gate — batch approval before live dispatch
 - [x] Update agent registry + permissions
-- [x] GATEKEEPER approval gate — batch approval before live dispatch (`create_batch` → `approve_batch` → execute). 3 new dashboard endpoints: `pending-batch`, `approve-batch`, `reject-batch`. Slack alert on batch creation.
 
 </details>
 
 ---
 
-### 4D: Multi-Channel Cadence — COMPLETE (Engine + CRAFTER + Auto-Enroll)
+### 4D: Multi-Channel Cadence — COMPLETE
 
-Simplified Email + LinkedIn 21-day sequence (no phone — deferred per user directive). Aligned to LinkedIn warmup period (4 weeks, 5/day).
+<details>
+<summary>Click to expand (9 tasks done)</summary>
 
-#### Cadence Sequence (Email + LinkedIn Only)
+- [x] `execution/cadence_engine.py` — CadenceEngine (8-step, 21-day)
+- [x] Cadence config in `production.json`
+- [x] `dispatch_cadence()` motion in OPERATOR
+- [x] 4 `/api/cadence/*` dashboard endpoints
+- [x] CRAFTER follow-up templates (value_followup, social_proof, breakup, close)
+- [x] Auto-enroll from pipeline dispatch
+- [ ] Phone/GHL calls — deferred
 
-| Step | Day | Channel | Action | Condition |
-|------|-----|---------|--------|-----------|
-| 1 | 1 | Email | Personalized intro | Always |
-| 2 | 2 | LinkedIn | Connection request | Has linkedin_url |
-| 3 | 5 | Email | Value/case study follow-up | Not replied |
-| 4 | 7 | LinkedIn | Direct message | Connected only |
-| 5 | 10 | Email | Social proof/testimonial | Not replied |
-| 6 | 14 | LinkedIn | Follow-up message | Connected only |
-| 7 | 17 | Email | Break-up | Not replied |
-| 8 | 21 | Email | Graceful close | Not replied |
-
-**Exit on**: replied, meeting_booked, bounced, unsubscribed, linkedin_replied
-**Pause on**: engaged_not_replied (2+ opens, no reply — needs human review)
-
-#### Built (DONE)
-- [x] `execution/cadence_engine.py` — CadenceEngine class (~350 lines)
-  - `enroll()` — start lead in cadence (idempotent)
-  - `get_due_actions()` — scan all active leads, return actions due today
-  - `mark_step_done()` — record completion, advance to next step
-  - `sync_signals()` — auto-exit replied/bounced/unsubscribed leads
-  - `pause_lead()` / `resume_lead()` / `exit_lead()` — manual controls
-  - `get_cadence_summary()` — dashboard stats
-  - Condition evaluation: `has_linkedin_url`, `not_replied`, `linkedin_connected`
-  - Step skipping: if condition not met, auto-advance to next step
-  - CLI: `--due`, `--status`, `--list`, `--enroll`, `--sync`, `--json`
-- [x] Cadence config in `config/production.json` (8-step sequence, exit/pause conditions)
-- [x] `dispatch_cadence()` motion in OPERATOR — processes follow-up steps
-- [x] `dispatch_all()` updated: outbound → cadence → revival (3 motions)
-- [x] 4 `/api/cadence/*` dashboard endpoints (summary, due, leads, sync)
-- [x] OPERATOR `--motion cadence` CLI support
-- [x] OPERATOR status includes cadence summary
-
-- [x] **CRAFTER integration** — `craft_cadence_followup()` generates personalized email copy for Steps 3/5/7/8
-  - 4 templates: `value_followup`, `social_proof`, `breakup`, `close`
-  - Jinja2-rendered with lead data (first_name, company, title)
-  - Follow-up emails saved as shadow files (`cadence_s{step}_d{day}_*.json`) for review
-- [x] **Auto-enroll from pipeline** — `_auto_enroll_to_cadence()` in OPERATOR
-  - Scans dispatched shadow emails, enrolls into default_21day cadence
-  - Extracts tier, linkedin_url, lead_data from shadow email files
-  - Idempotent: skips already-enrolled leads, marks `cadence_enrolled` flag on file
-
-#### Remaining (TODO)
-- [ ] **Phone/GHL calls** — deferred (add Day 3 call when complexity budget allows)
+</details>
 
 ---
 
-### 4E: Supervised Live Sends — RAMP MODE ACTIVE
+### 4E: Supervised Live Sends — RAMP DAY 2, COMPLIANCE PASS
 
-Infrastructure deployed and ramp mode activated. Awaiting first live dispatch via OPERATOR.
+**All code deployed. 2 real emails compliance-PASS, awaiting HoS review and send.**
 
-#### Prerequisites
-- [x] 6 cold outreach domains DNS verified + warm-up complete
-- [x] Internal test campaign sent via Instantly
-- [x] Signal loop wired into Instantly webhooks (4F)
-- [x] Signal loop wired into HeyReach webhooks (4F)
-- [x] OPERATOR agent operational (4C)
-- [x] Cadence engine built (4D)
-- [ ] LinkedIn account warm-up complete (4 weeks) — requires 4B
-- [ ] Shadow test via HeyReach completed (5 profiles) — requires 4B
-- [x] GATEKEEPER approval gate for OPERATOR dispatch (batch approval flow)
+#### Infrastructure (ALL DONE)
+- [x] Instantly V2 timezone fix (`America/Detroit`)
+- [x] Cadence engine encoding fix (Unicode -> ASCII)
+- [x] Ramp configuration (5/day, tier_1, 3 days)
+- [x] Ramp wired into OPERATOR agent
+- [x] Pipeline body extraction fix (per-lead sequences)
+- [x] Mid-market scrape targets (apollo.io default)
+- [x] HoS Dashboard v3.0 with 4-tab UI (Overview, Email Queue, Campaigns, Settings)
+- [x] Backend compliance checks (Reply STOP, signature, CTA, footer) on every pending email
+- [x] "Reply STOP to unsubscribe." added to canonical text + HTML footer (commit `0f0e0a9`)
+- [x] Refresh heartbeat + compliance indicators in approval modal
+- [x] Deployed to Railway (`0f0e0a9`, 2026-02-19)
 
-#### Deployed (commits `87225fa` → `b8dfc0f` → `af12208`)
-- [x] **Instantly V2 timezone fix** — `America/New_York` rejected by API whitelist, fixed to `America/Detroit` (same Eastern Time)
-- [x] **Cadence engine encoding fix** — Unicode `->` arrow replaced with ASCII for Windows cp1252
-- [x] **Ramp configuration** — `config/production.json` → `operator.ramp`:
-  - `enabled: true`, `email_daily_limit_override: 5`, `tier_filter: tier_1`
-  - `start_date: 2026-02-17`, `ramp_days: 3`
-- [x] **Ramp wired into OPERATOR** — `get_warmup_schedule()` applies limit override, `dispatch_outbound()` auto-applies tier filter, `_build_batch_preview()` respects ramp, `get_status()` shows ramp info
-- [x] **`actually_send: true`** flipped in config (informational — real control is `--live` CLI flag)
-- [x] **Pipeline body extraction fix** — Send stage now extracts subject/body from per-lead sequences (CampaignCrafter stores sequences on each lead, not campaign level)
-- [x] **Enriched recipient data** — Shadow emails now include location, employees, industry in `recipient_data` for dashboard display
-- [x] **Mid-market scrape targets** — Default source changed from "gong" (enterprise, tier_2) to "apollo.io" (mid-market SaaS, tier_1 eligible). Added: Regie.ai, Lavender, Orum, Seamless.AI
-- [x] **HoS Dashboard v2.4** — Live RAMP MODE banner from `/api/operator/status` (auto-refresh 30s). Shows day/total, daily limit, tier filter, sent count
-- [x] **CLAUDE.md autonomy graduation path** — KPI red flags, graduation config, completion checklist
-- [x] **Deployed to Railway** — ramp active, dashboard v2.4, body extraction live (`/api/operator/status` confirms 5/day, tier_1)
-
-#### Go-Live Checklist (Operational — Ready for First Dispatch)
-
-**Pipeline body fix + mid-market targets deployed.** Dashboard v2.4 live with ramp banner.
+#### Go-Live Checklist (Operational — User Action Required)
 
 | # | Step | Command / Action | Status |
 |---|------|-----------------|--------|
-| 1 | Run pipeline (mid-market) | `echo yes \| python execution/run_pipeline.py --mode production` | READY — default source is now `apollo.io` (tier_1 eligible) |
-| 2 | Review leads in HoS dashboard | Open `/sales` → review tier_1 leads with real email bodies | READY — dashboard shows ramp banner + enriched lead insights |
-| 3 | Approve tier_1 leads | Click "Edit & Preview" → "Approve & Send" for each | WAITING for Step 1 |
+| 1 | Run pipeline (mid-market) | `echo yes \| python execution/run_pipeline.py --mode production` | READY |
+| 2 | Review leads in HoS dashboard | Open `/sales` -> review tier_1 leads | READY |
+| 3 | Approve tier_1 leads | Click "Approve & Send" per lead | WAITING for Step 1 |
 | 4 | First live dispatch | `python -m execution.operator_outbound --motion outbound --live` | WAITING for Step 3 |
-| 5 | Approve GATEKEEPER batch | `/api/operator/pending-batch` → review → `/api/operator/approve-batch/{id}` | WAITING for Step 4 |
-| 6 | Activate DRAFTED campaigns | Instantly dashboard → find campaign → Activate | WAITING for Step 5 |
-| 7 | 3 supervised days | Monitor 5 emails/day, tier_1 only, check KPIs daily | WAITING for Step 6 |
-| 8 | Graduate to full autonomy | Set `ramp.enabled: false` in `config/production.json` → 25/day + all tiers | WAITING for Step 7 KPIs |
-| 9 | Enable LinkedIn sends | Start HeyReach warmup (5 connections/day, 4 weeks) | Can start NOW (parallel) |
+| 5 | Approve GATEKEEPER batch | `/api/operator/approve-batch/{id}` | WAITING for Step 4 |
+| 6 | Activate DRAFTED campaigns | Instantly dashboard -> Activate | WAITING for Step 5 |
+| 7 | 3 supervised days | Monitor 5 emails/day, check KPIs daily | WAITING for Step 6 |
+| 8 | Graduate to full autonomy | Set `ramp.enabled: false` -> 25/day + all tiers | WAITING for Step 7 |
 
 #### KPI Targets
 
-| Metric | Target | Source |
-|--------|--------|--------|
-| ICP Match Rate | ≥ 80% | Pipeline segmentation |
-| Email Open Rate | ≥ 50% | Instantly analytics |
-| Reply Rate | ≥ 8% | Instantly + HeyReach |
-| Bounce Rate | < 5% | Instantly analytics |
-| LinkedIn Accept Rate | ≥ 30% | HeyReach stats |
-| Autonomous Days | 3 consecutive | No manual intervention |
+| Metric | Target | Red Flag | Source |
+|--------|--------|----------|--------|
+| ICP Match Rate | >= 80% | < 60% | Pipeline segmentation |
+| Email Open Rate | >= 50% | < 30% | Instantly analytics |
+| Reply Rate | >= 8% | 0 after 15 sends | Instantly + HeyReach |
+| Bounce Rate | < 5% | > 10% | Instantly analytics |
+| Unsubscribe Rate | < 2% | > 5% | Instantly webhooks |
 
 ---
 
-## Recommended Next Steps (In Priority Order)
+### 4F: Monaco Signal Loop — COMPLETE
 
-Based on deep audit (Phase 4, 98% complete — 12/12 code claims verified, production healthy, ramp active). **All code is built and deployed. Only operational steps remain for full autonomy.**
+<details>
+<summary>Click to expand (10 tasks done)</summary>
 
-### Recently Completed
+- [x] Signal Loop Engine — `core/lead_signals.py` (21 statuses)
+- [x] Unified Activity Timeline — `core/activity_timeline.py`
+- [x] "Why This Score" Explainability in segmentor
+- [x] Leads Dashboard at `/leads`
+- [x] 6 leads API endpoints + 4 cadence API endpoints
+- [x] Instantly webhooks wired to signal loop (4 handlers)
+- [x] HeyReach webhooks wired to signal loop (4 handlers)
+- [x] Bootstrap lead data (15 leads from shadow emails)
+- [x] Daily decay detection cron (Inngest, 10 AM UTC)
 
-| # | Task | Status |
-|---|------|--------|
-| ~~1~~ | GATEKEEPER approval gate | DONE — batch approval + 3 endpoints (commit `bcd3815`) |
-| ~~2~~ | Daily decay detection cron | DONE — Inngest `daily_decay_detection` (10 AM UTC) in `core/inngest_scheduler.py` |
-| ~~3~~ | Instantly V2 timezone fix | DONE — `America/Detroit` accepted by API whitelist |
-| ~~4~~ | Cadence engine encoding fix | DONE — Unicode arrow → ASCII for Windows |
-| ~~5~~ | Ramp mode config + wiring | DONE — 5/day, tier_1 only, 3 supervised days (commit `87225fa`) |
-| ~~6~~ | Pipeline body extraction fix | DONE — per-lead sequence extraction in send stage (commit `b8dfc0f`) |
-| ~~7~~ | Enriched recipient data | DONE — location/employees/industry passed to dashboard |
-| ~~8~~ | Mid-market scrape targets | DONE — default "apollo.io", 5 new mid-market companies |
-| ~~9~~ | HoS Dashboard v2.4 ramp banner | DONE — live operator status, auto-refresh 30s (commit `b8dfc0f`) |
-| ~~10~~ | CLAUDE.md graduation path | DONE — KPI red flags, config changes, checklist (commit `af12208`) |
+</details>
 
-### IMMEDIATE: First Live Dispatch (Steps 1-3 can happen TODAY)
+---
+
+### 4G: Production Hardening (P0) — COMPLETE
+
+**Deployed**: Commit `746d347` — 22 files, 3,064 insertions, 592 deletions.
+
+| Patch | What | Key Files |
+|-------|------|-----------|
+| P0-A | API auth middleware (strict token auth on all `/api/*` routes) | `dashboard/health_app.py` |
+| P0-B | Gatekeeper snapshot integrity (immutable batch scope) | `execution/operator_outbound.py` |
+| P0-C | Dedup corrections (canonical email keys, GHL-sent exclusion) | `operator_outbound.py`, `instantly_dispatcher.py`, `heyreach_dispatcher.py` |
+| P0-D | Redis state store (dual-read cutover, distributed locks) | `core/state_store.py`, `scripts/migrate_file_state_to_redis.py` |
+| P0-E | Escalation regression fix (deterministic Level 1/2/3) | `core/notifications.py` |
+
+#### Production Gates — ALL PASS
+
+| Gate | Result |
+|------|--------|
+| Runtime env validation (staging + production) | PASS |
+| Endpoint auth smoke (6/6 checks) | PASS |
+| Redis state migration | ok: true (2 items) |
+| Replay harness (50 golden set cases) | 100% pass (avg 4.54/5) |
+| Critical pytest pack (60 tests) | 0 failures |
+
+#### Post-P0 Cutover Steps — REVALIDATION REQUIRED
+- [x] CORS_ALLOWED_ORIGINS set (Railway domain only)
+- [ ] Rotate staging+production `DASHBOARD_AUTH_TOKEN` (previous value appeared in documentation history)
+- [x] DASHBOARD_AUTH_STRICT=true in Railway
+- [ ] Re-run auth smoke on staging+production URLs using newly rotated tokens
+- [x] Redis migration executed successfully
+- [x] Replay harness gate passed
+
+---
+
+## Recommended Next Steps (Priority Order)
+
+### IMMEDIATE: First Live Dispatch (Steps 1-5 can happen TODAY)
 
 | # | Task | How | Time |
 |---|------|-----|------|
-| 1 | **Run fresh pipeline** | `echo yes \| python execution/run_pipeline.py --mode production` | 30-60s |
-| 2 | **Approve tier_1 leads** | HoS dashboard at `/sales` → review emails with real bodies → Approve | 5 min |
-| 3 | **First live dispatch** | `python -m execution.operator_outbound --motion outbound --live` | 1 min |
-| 4 | **Approve GATEKEEPER batch** | Call `/api/operator/approve-batch/{id}` (Slack alert will notify) | 1 min |
-| 5 | **Activate Instantly campaign** | Instantly dashboard → find DRAFTED campaign → Activate | 1 min |
+| 1 | **Rotate dashboard tokens** | Update Railway staging+production `DASHBOARD_AUTH_TOKEN`, redeploy both | 5 min |
+| 2 | **Re-run endpoint auth smoke** | `python scripts/endpoint_auth_smoke.py --base-url "https://<env-domain>" --token "<new-token>"` | 2 min |
+| 3 | **Run fresh pipeline** | `echo yes \| python execution/run_pipeline.py --mode production` | 30-60s |
+| 4 | **Approve tier_1 leads** | HoS dashboard at `/sales` -> review -> Approve | 5 min |
+| 5 | **First live dispatch** | `python -m execution.operator_outbound --motion outbound --live` | 1 min |
+| 6 | **Approve GATEKEEPER batch** | `/api/operator/approve-batch/{id}` (Slack notifies) | 1 min |
+| 7 | **Activate Instantly campaign** | Instantly dashboard -> find DRAFTED campaign -> Activate | 1 min |
 
 ### SHORT-TERM: 3-Day Supervised Ramp (Days 1-3)
 
-| # | Task | How | When |
-|---|------|-----|------|
-| 6 | **Monitor Day 1 KPIs** | Instantly analytics + `/leads` dashboard → check opens/replies | Day 1 EOD |
-| 7 | **Repeat dispatch Day 2** | Same Steps 1-5, review KPIs | Day 2 |
-| 8 | **Repeat dispatch Day 3** | Same Steps 1-5, review KPIs | Day 3 |
-| 9 | **Graduate: disable ramp** | `config/production.json` → `operator.ramp.enabled: false` → push | Day 3 EOD (if KPIs pass) |
+| # | Task | When |
+|---|------|------|
+| 8 | Monitor Day 1 KPIs (opens, replies, bounces) | Day 1 EOD |
+| 9 | Repeat pipeline -> dispatch -> approve cycle | Days 2-3 |
+| 10 | Graduate: `ramp.enabled: false` in production.json | Day 3 EOD (if KPIs pass) |
 
 ### PARALLEL: LinkedIn Warmup (Can start NOW, runs 4 weeks)
 
-| # | Task | How | When |
-|---|------|-----|------|
-| 10 | **Connect LinkedIn in HeyReach** | HeyReach → Accounts → Add LinkedIn account | NOW |
-| 11 | **Start LinkedIn warmup** | HeyReach auto-warms: 5 connections/day, gradual ramp | 4 weeks |
-| 12 | **Shadow test (5 profiles)** | Add 5 internal LinkedIn profiles → verify webhook events | After warmup starts |
-| 13 | **Enable LinkedIn in cadence** | Steps 2/4/6 in cadence become active (connection + messages) | After 4 weeks |
+| # | Task | When |
+|---|------|------|
+| 11 | Connect LinkedIn in HeyReach | NOW |
+| 12 | Start LinkedIn warmup (5/day, 4 weeks) | NOW |
+| 13 | Shadow test with 5 internal profiles | After warmup starts |
+| 14 | Enable LinkedIn in cadence steps 2/4/6 | After 4 weeks |
 
-### POST-GRADUATION: Full Autonomy Configuration
+### POST-GRADUATION: Full Autonomy Config
 
 ```json
-// config/production.json changes after 3 clean supervised days:
-"operator.ramp.enabled": false,          // Unlocks 25 emails/day + all tiers
-"operator.gatekeeper_required": false,   // Optional: skip batch approval for auto-dispatch
+// After 3 clean supervised days:
+"operator.ramp.enabled": false           // Unlocks 25/day + all tiers
+"operator.gatekeeper_required": false    // Optional: skip batch approval
+
 // After LinkedIn warmup (4 weeks):
-// HeyReach LinkedIn sends become active in cadence steps 2/4/6
+// HeyReach sends active in cadence steps 2/4/6
 ```
 
 ### OPTIONAL: Quality Improvements
 
-| # | Task | How | Impact |
-|---|------|-----|--------|
-| 14 | **Activate BetterContact** | Approve $15/mo subscription | Improves email quality on Apollo misses |
-| 15 | **Add ZeroBounce verification** | Pre-verify emails before dispatch | Reduces bounce rate |
-| 16 | **Custom scrape targets** | Run pipeline with `--source competitor_<company>` per ICP vertical | Better lead quality per niche |
+| # | Task | Impact |
+|---|------|--------|
+| 15 | Activate BetterContact ($15/mo) | Better email quality on Apollo misses |
+| 16 | Add ZeroBounce verification | Reduces bounce rate |
+| 17 | Custom scrape targets per ICP vertical | Higher lead quality |
+| 18 | Remove file-based state fallback | Cleaner Redis-only state (after 1 week stability) |
+| 19 | Enforce webhook signature/secret checks on non-API webhooks | Prevents forged webhook events |
 
-### Future (Phase 5 Triggers)
+### Phase 5 Triggers (FUTURE)
 
 | Task | Trigger |
 |------|---------|
 | Self-learning ICP calibration | 2 weeks of live send data |
-| Multi-source intent fusion (RB2B + email + LinkedIn) | 30 days of send data |
+| Multi-source intent fusion | 30 days of send data |
 | A/B testing infrastructure | 30 days of send data |
-| Enrichment result caching (Supabase) | Apollo credits running low |
-| CRO Copilot ("Ask" chat) | Lead volume exceeds 500+ |
-| Phone/GHL calls in cadence | After email+LinkedIn prove ROI |
-
----
-
-## Key Decisions & Questions Per Phase
-
-### Phase 4E Decisions (ANSWERED — Ramp Mode Active)
-
-| Question | Decision | Config |
-|----------|----------|--------|
-| Daily send volume | 5/day ramp → 25/day after 3 days | `operator.ramp.email_daily_limit_override: 5` |
-| Tier restriction | tier_1 only during ramp | `operator.ramp.tier_filter: "tier_1"` |
-| Approval workflow | GATEKEEPER batch approval required | `gatekeeper_required: true` |
-| Bounce handling | Auto-suppress via `.hive-mind/unsubscribes.jsonl` | Instantly bounce webhook → JSONL append |
-| Reply routing | Instantly webhook → Signal Loop → Slack alert | `handle_email_replied()` → `LeadStatusManager` |
-
-### Phase 5 Decisions (FUTURE — After Graduation)
-
-1. **Auto-approve threshold**: Skip GATEKEEPER for tier_1 ICP score >=85? Or keep manual?
-2. **Multi-channel cadence timing**: Adjust 21-day sequence based on reply rate data?
-3. **Revival aggressiveness**: How soon to re-engage ghosted leads (currently 30-120 day window)?
-4. **A/B testing**: Test subject lines first, or body copy first?
-5. **Phone outreach**: Add Twilio calls to cadence? Which step?
+| Enrichment result caching | Apollo credits running low |
+| CRO Copilot | Lead volume > 500 |
 
 ---
 
 ## Architecture Overview
 
 ```
-                    ┌─────────────────────────────────┐
-                    │   6-STAGE PIPELINE (existing)     │
-                    │ Scrape → Enrich → Segment →       │
-                    │ Craft → Approve → Send             │
-                    └────────────┬────────────────────┘
-                                 │
-                    ┌────────────▼────────────────────┐
-                    │   SHADOW QUEUE (.hive-mind/)      │
-                    │   Shadow emails + dispatch logs    │
-                    └────────────┬────────────────────┘
-                                 │
-            ┌────────────────────┼────────────────────┐
-            │                    │                     │
-    ┌───────▼───────┐   ┌───────▼───────┐   ┌────────▼──────┐
-    │   Instantly     │   │   HeyReach    │   │    GHL         │
-    │   (Email)       │   │  (LinkedIn)   │   │   (Nurture)    │
-    │   V2 LIVE       │   │  CODE BUILT   │   │   ACTIVE       │
-    └───────┬───────┘   └───────┬───────┘   └────────────────┘
-            │                    │
-    ┌───────▼───────┐   ┌───────▼───────┐
-    │   Webhooks     │   │   Webhooks     │
-    │ open/reply/    │   │ connect/reply/ │
-    │ bounce/unsub   │   │ campaign done  │
-    └───────┬───────┘   └───────┬───────┘
-            │                    │
-            └────────┬───────────┘
-                     │
-         ┌───────────▼────────────────┐  ◄── Phase 4F (BUILT)
-         │   LEAD SIGNAL LOOP          │
-         │   core/lead_signals.py      │
-         │   21 statuses, decay scan   │
-         └───────────┬────────────────┘
-                     │
-         ┌───────────▼────────────────┐  ◄── Phase 4F (BUILT)
-         │   ACTIVITY TIMELINE         │
-         │   core/activity_timeline.py │
-         │   All channels → 1 timeline │
-         └───────────┬────────────────┘
-                     │
-         ┌───────────▼────────────────┐  ◄── Phase 4F (BUILT)
-         │   LEADS DASHBOARD           │
-         │   /leads                    │
-         │   Pipeline flow + timeline  │
-         │   + "Why This Score"        │
-         └────────────────────────────┘
+                    +----------------------------------+
+                    |   6-STAGE PIPELINE               |
+                    | Scrape -> Enrich -> Segment ->    |
+                    | Craft -> Approve -> Send          |
+                    +----------------+-----------------+
+                                     |
+                    +----------------v-----------------+
+                    |   SHADOW QUEUE (.hive-mind/)      |
+                    |   Shadow emails + dispatch logs   |
+                    +----------------+-----------------+
+                                     |
+            +------------------------+------------------------+
+            |                        |                        |
+    +-------v-------+       +-------v-------+       +--------v------+
+    |   Instantly    |       |   HeyReach    |       |    GHL        |
+    |   (Email)      |       |  (LinkedIn)   |       |   (Nurture)   |
+    |   V2 LIVE      |       |  CODE BUILT   |       |   ACTIVE      |
+    +-------+-------+       +-------+-------+       +---------------+
+            |                        |
+    +-------v-------+       +-------v-------+
+    |   Webhooks     |       |   Webhooks    |
+    | open/reply/    |       | connect/reply/|
+    | bounce/unsub   |       | campaign done |
+    +-------+-------+       +-------+-------+
+            |                        |
+            +------------+-----------+
+                         |
+         +---------------v-----------------+  <-- Phase 4F (DONE)
+         |   LEAD SIGNAL LOOP              |
+         |   core/lead_signals.py          |
+         |   21 statuses, decay scan       |
+         +---------------+-----------------+
+                         |
+         +---------------v-----------------+  <-- Phase 4F (DONE)
+         |   ACTIVITY TIMELINE             |
+         |   core/activity_timeline.py     |
+         |   All channels -> 1 timeline    |
+         +---------------+-----------------+
+                         |
+         +---------------v-----------------+  <-- Phase 4F (DONE)
+         |   LEADS DASHBOARD (/leads)      |
+         |   Pipeline flow + timeline      |
+         |   + "Why This Score"            |
+         +----------------------------------+
 ```
 
 ---
 
-## Dashboards Quick Reference
+## Safety Controls (Active — 8 Layers)
 
-| Dashboard | URL | Purpose |
-|-----------|-----|---------|
-| System Health | `/` | Agent status, circuit breakers, context zones |
-| Scorecard | `/scorecard` | Pipeline run history, stage pass/fail |
-| Head of Sales | `/sales` | Email approval queue (approve/reject/edit) |
-| **Leads Signal Loop** | `/leads` | Pipeline funnel, lead list, timeline, decay scan |
+| Layer | Control | Status | What It Does |
+|-------|---------|--------|-------------|
+| 1 | `EMERGENCY_STOP` env var | `false` | Kills ALL outbound instantly |
+| 2 | API auth middleware | **ACTIVE** (P0-A) | 401 on unauthenticated `/api/*` calls |
+| 3 | CORS lockdown | **ACTIVE** (P0-A) | Only Railway domain accepted |
+| 4 | GATEKEEPER gate | **ACTIVE** | Live dispatch requires batch approval |
+| 5 | Ramp mode | **ACTIVE** | 5/day, tier_1 only, 3 days |
+| 6 | `--dry-run` default | **ACTIVE** | OPERATOR requires `--live` flag |
+| 7 | Campaigns DRAFTED | Built-in | Instantly V2 creates as status=0 |
+| 8 | Shadow mode | **ACTIVE** | Emails -> `.hive-mind/shadow_mode_emails/` |
 
 ---
 
@@ -587,54 +479,35 @@ Based on deep audit (Phase 4, 98% complete — 12/12 code claims verified, produ
 | **OPERATOR** | `execution/operator_outbound.py` | Unified dispatch: outbound + cadence + revival |
 | | `execution/operator_revival_scanner.py` | GHL contact mining for re-engagement |
 | | `execution/cadence_engine.py` | 21-day Email + LinkedIn cadence scheduler |
-| **Dispatch** | `execution/instantly_dispatcher.py` | Shadow → Instantly campaigns |
+| **Dispatch** | `execution/instantly_dispatcher.py` | Shadow -> Instantly campaigns |
 | | `execution/heyreach_dispatcher.py` | Lead-list-first LinkedIn dispatch |
 | **Webhooks** | `webhooks/instantly_webhook.py` | Email open/reply/bounce/unsub |
 | | `webhooks/heyreach_webhook.py` | 11 LinkedIn events |
 | **Signal Loop** | `core/lead_signals.py` | Lead status engine + decay detection |
 | | `core/activity_timeline.py` | Per-lead event aggregation |
-| **Dashboard** | `dashboard/health_app.py` | FastAPI + all routes |
-| | `dashboard/leads_dashboard.html` | Leads signal loop UI |
-| **Config** | `config/production.json` | `actually_send`, `shadow_mode`, domains |
-| **Scripts** | `scripts/register_instantly_webhooks.py` | Instantly webhook CRUD |
-| | `scripts/register_heyreach_webhooks.py` | HeyReach webhook CRUD |
-| **Docs** | `CAIO_IMPLEMENTATION_PLAN.md` | Full implementation plan (v3.6) |
-| | `docs/MONACO_SIGNAL_LOOP_GUIDE.md` | Signal loop activation guide |
+| **Security** | `dashboard/health_app.py` | FastAPI + auth middleware + all routes |
+| | `core/state_store.py` | Redis state backend (NEW in 4G) |
+| **Config** | `config/production.json` | Safety controls, ramp, cadence, domains |
+| **Scripts** | `scripts/endpoint_auth_smoke.py` | Auth smoke test (6 checks) |
+| | `scripts/migrate_file_state_to_redis.py` | File -> Redis migration |
+| | `scripts/validate_runtime_env.py` | Runtime env validator |
+| **Docs** | `CAIO_IMPLEMENTATION_PLAN.md` | Full implementation plan (v4.5) |
+| | `docs/CODEX_HANDOFF.md` | Codex review handoff |
 
 ---
 
-## Safety Controls (Active)
+## Dashboards Quick Reference
 
-| Control | Setting | Location | What It Does |
-|---------|---------|----------|-------------|
-| `actually_send` | **true** | `config/production.json` | Informational only — real control is `--live` CLI flag |
-| `shadow_mode` | **true** | `config/production.json` | Emails go to `.hive-mind/shadow_mode_emails/` |
-| `gatekeeper_required` | **true** | `config/production.json` | Live dispatch creates batch for human approval before execution |
-| `operator.ramp.enabled` | **true** | `config/production.json` | 5/day, tier_1 only, 3 supervised days from 2026-02-17 |
-| `EMERGENCY_STOP` | env var | Railway | Kill switch — blocks ALL outbound |
-| Shadow emails | `.hive-mind/shadow_mode_emails/` | Local/Railway | Review queue before enabling real sends |
-| Audit trail | `.hive-mind/audit/` | Local/Railway | All Gatekeeper decisions logged |
-| Lead status files | `.hive-mind/lead_status/` | Local/Railway | Signal loop state per lead |
-
----
-
-## Metrics to Watch (Once Live)
-
-| Metric | Target | What It Tells You | Where to See It |
-|--------|--------|-------------------|-----------------|
-| ICP Match Rate | ≥ 80% | Lead quality from Apollo | Pipeline segmentation output |
-| Email Open Rate | ≥ 50% | Subject line + deliverability quality | Instantly analytics + `/leads` funnel |
-| Reply Rate | ≥ 8% | Outreach copy effectiveness | Instantly + `/leads` → "Replied" filter |
-| Bounce Rate | < 5% | Email data quality | Instantly analytics + `/leads` → "Bounced" |
-| Ghost Rate | track | % emails never opened after 72h | `/leads` → "Ghosted" filter |
-| Stall Rate | track | % opens that never reply after 7d | `/leads` → "Stalled" filter |
-| Engaged-Not-Replied | track | Interested but hesitant leads | `/leads` → candidates for follow-up |
-| LinkedIn Accept Rate | ≥ 30% | Profile + message quality | HeyReach stats |
-| Open → Reply Conv | ≥ 15% | Outreach quality combined metric | `/leads` funnel numbers |
-| Autonomous Days | 3 consecutive | Pipeline stability | No manual intervention needed |
+| Dashboard | URL | Purpose |
+|-----------|-----|---------|
+| System Health | `/` | Agent status, circuit breakers, context zones |
+| Scorecard | `/scorecard` | Pipeline run history, stage pass/fail |
+| Head of Sales | `/sales` | Email approval queue (approve/reject/edit) |
+| Leads Signal Loop | `/leads` | Pipeline funnel, lead list, timeline, decay scan |
 
 ---
 
 *This tracker is the single source of truth for CAIO Alpha Swarm development status.*
-*For full implementation details, see `CAIO_IMPLEMENTATION_PLAN.md` (v4.3).*
-*For signal loop activation steps, see `docs/MONACO_SIGNAL_LOOP_GUIDE.md`.*
+*For full implementation details, see `CAIO_IMPLEMENTATION_PLAN.md` (v4.5).*
+*For Codex review, see `docs/CODEX_HANDOFF.md`.*
+*For signal loop activation, see `docs/MONACO_SIGNAL_LOOP_GUIDE.md`.*
