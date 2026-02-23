@@ -1716,19 +1716,20 @@
             return text.trim();
         }
 
+        const CALL_LINK = 'https://caio.cx/ai-exec-briefing-call';
+
         const STANDARD_SIGNATURE_BLOCK = [
             'Best,',
             'Dani Apgar',
-            'Schedule a call with CAIO: https://caio.cx/ai-exec-briefing-call',
+            'Schedule a call with CAIO',
         ].join('\n');
 
         const STANDARD_FOOTER_BLOCK = [
-            "We only reach out to professionals we believe can lead AI strategy inside their organizations. If this isn't you, or now's not the right time, just click here and I'll take care of it personally.",
+            "We only reach out to professionals we believe can lead AI strategy inside their organizations. If this isn't you, or now's not the right time, just Reply STOP to unsubscribe.",
             'Chief AI Officer Inc.',
             '5700 Harper Dr, Suite 210, Albuquerque, NM 87109',
             'support@chiefaiofficer.com',
             'Copyright © 2026 Chief AI Officer. All rights reserved',
-            'Reply STOP to unsubscribe.',
         ].join('\n');
 
         const REJECTION_TAG_OPTIONS = [
@@ -1771,6 +1772,20 @@
                 return `${STANDARD_SIGNATURE_BLOCK}\n\n${STANDARD_FOOTER_BLOCK}`;
             }
             return `${cleaned}\n\n${STANDARD_SIGNATURE_BLOCK}\n\n${STANDARD_FOOTER_BLOCK}`.trim();
+        }
+
+        function renderEditableBodyHtml(rawText = '') {
+            const text = String(rawText || 'No Body Content');
+            let html = escapeHtml(text).replace(/\r\n?/g, '\n').replace(/\n/g, '<br>');
+            html = html.replace(
+                /Schedule a call with CAIO/g,
+                `<a href="${CALL_LINK}" target="_blank" rel="noopener noreferrer">Schedule a call with CAIO</a>`
+            );
+            html = html.replace(
+                /support@chiefaiofficer\.com/g,
+                '<a href="mailto:support@chiefaiofficer.com">support@chiefaiofficer.com</a>'
+            );
+            return html;
         }
 
         function formatCopyForApproval(rawBody = '', email = {}) {
@@ -2233,7 +2248,7 @@
 
             const bodyInput = document.getElementById('emailBodyInput');
             if (bodyInput) {
-                bodyInput.textContent = email.body || 'No Body Content';
+                bodyInput.innerHTML = renderEditableBodyHtml(email.body || 'No Body Content');
             }
 
             document.getElementById('emailModal').classList.add('active');

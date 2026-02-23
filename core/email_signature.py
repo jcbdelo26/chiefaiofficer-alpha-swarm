@@ -13,42 +13,39 @@ from typing import Final
 
 CALL_LINK: Final[str] = "https://caio.cx/ai-exec-briefing-call"
 SUPPORT_EMAIL: Final[str] = "support@chiefaiofficer.com"
-UNSUBSCRIBE_MAILTO: Final[str] = f"mailto:{SUPPORT_EMAIL}?subject=Unsubscribe"
 
 STANDARD_TEXT_SIGNATURE: Final[str] = "\n".join(
     [
         "Best,",
         "Dani Apgar",
-        f"Schedule a call with CAIO: {CALL_LINK}",
+        "Schedule a call with CAIO",
     ]
 )
 
 STANDARD_TEXT_FOOTER: Final[str] = "\n".join(
     [
-        "We only reach out to professionals we believe can lead AI strategy inside their organizations. If this isn't you, or now's not the right time, just click here and I'll take care of it personally.",
+        "We only reach out to professionals we believe can lead AI strategy inside their organizations. If this isn't you, or now's not the right time, just Reply STOP to unsubscribe.",
         "Chief AI Officer Inc.",
         "5700 Harper Dr, Suite 210, Albuquerque, NM 87109",
         SUPPORT_EMAIL,
         "Copyright © 2026 Chief AI Officer. All rights reserved",
-        "Reply STOP to unsubscribe.",
     ]
 )
 
 STANDARD_HTML_SIGNATURE: Final[str] = (
     f'<p>Best,<br>\n'
-    f'<a href="{CALL_LINK}"><strong>Dani Apgar</strong></a><br>\n'
+    "Dani Apgar<br>\n"
     f'<a href="{CALL_LINK}">Schedule a call with CAIO</a></p>'
 )
 
 STANDARD_HTML_FOOTER: Final[str] = (
     '<center><p style="font-size: 11px; color: #666; margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; text-align: center;">'
     "We only reach out to professionals we believe can lead AI strategy inside their organizations. "
-    f'If this isn&#39;t you, or now&#39;s not the right time, just <a href="{UNSUBSCRIBE_MAILTO}">click here</a> and I&#39;ll take care of it personally.<br>'
+    "If this isn&#39;t you, or now&#39;s not the right time, just Reply STOP to unsubscribe.<br>"
     "Chief AI Officer Inc.<br>"
     "5700 Harper Dr, Suite 210, Albuquerque, NM 87109<br>"
     f'<a href="mailto:{SUPPORT_EMAIL}">{SUPPORT_EMAIL}</a><br>'
-    "Copyright © 2026 Chief AI Officer. All rights reserved<br>"
-    "Reply STOP to unsubscribe."
+    "Copyright © 2026 Chief AI Officer. All rights reserved"
     "</p></center>"
 )
 
@@ -80,6 +77,11 @@ def _strip_legacy_text(body: str) -> str:
     text = _normalize_newlines(body or "")
     for pattern in _LEGACY_TEXT_BLOCKS:
         text = re.sub(pattern, "", text, flags=re.IGNORECASE | re.DOTALL)
+    text = re.sub(
+        rf"(?im)^Schedule a call with CAIO\s*:\s*{re.escape(CALL_LINK)}\s*$",
+        "",
+        text,
+    )
     text = re.sub(r"(?im)^https?://caio\.cx/ai-exec-briefing-call\s*$", "", text)
     text = re.sub(r"\n{3,}", "\n\n", text).strip()
     return text
@@ -121,12 +123,12 @@ def text_to_html_body(body_text: str) -> str:
         f'<a href="{CALL_LINK}">Schedule a call with CAIO</a>',
     )
     escaped = escaped.replace(
-        SUPPORT_EMAIL,
-        f'<a href="mailto:{SUPPORT_EMAIL}">{SUPPORT_EMAIL}</a>',
+        "Schedule a call with CAIO",
+        f'<a href="{CALL_LINK}">Schedule a call with CAIO</a>',
     )
     escaped = escaped.replace(
-        "just click here and I&#x27;ll take care of it personally.",
-        f'just <a href="{UNSUBSCRIBE_MAILTO}">click here</a> and I&#x27;ll take care of it personally.',
+        SUPPORT_EMAIL,
+        f'<a href="mailto:{SUPPORT_EMAIL}">{SUPPORT_EMAIL}</a>',
     )
 
     paragraphs = [p.strip() for p in escaped.split("\n\n") if p.strip()]

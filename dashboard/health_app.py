@@ -1514,11 +1514,12 @@ async def get_pending_emails(
 
         # P0: Backend compliance checks — single source of truth for UI
         body_text = email_data.get("body") or ""
+        body_lower = body_text.lower()
         email_data["compliance_checks"] = {
-            "reply_stop_present": "reply stop to unsubscribe" in body_text.lower(),
-            "signature_present": "dani apgar" in body_text.lower(),
-            "cta_present": "caio.cx/ai-exec-briefing-call" in body_text.lower(),
-            "footer_present": "support@chiefaiofficer.com" in body_text.lower(),
+            "reply_stop_present": "reply stop to unsubscribe" in body_lower,
+            "signature_present": "dani apgar" in body_lower,
+            "cta_present": ("schedule a call with caio" in body_lower) or ("caio.cx/ai-exec-briefing-call" in body_lower),
+            "footer_present": "support@chiefaiofficer.com" in body_lower,
             "normalization_version": "v3.0",
         }
 
