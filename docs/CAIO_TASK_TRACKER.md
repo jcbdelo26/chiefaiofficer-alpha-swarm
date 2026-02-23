@@ -1,6 +1,6 @@
 # CAIO Alpha Swarm — Unified Task Tracker
 
-**Last Updated**: 2026-02-23
+**Last Updated**: 2026-02-24
 **Source**: `CAIO_IMPLEMENTATION_PLAN.md` (v4.5) + Production Cutover Results
 **Quick Nav**: **[Weekly Focus (YOU ARE HERE)](#weekly-focus-week-of-2026-02-23-pto-gtm-execution)** | [Phase 0](#phase-0-foundation-lock--complete) | [Phase 1](#phase-1-live-pipeline-validation--complete) | [Phase 2](#phase-2-supervised-burn-in--complete) | [Phase 3](#phase-3-expand--harden--complete) | [Phase 4](#phase-4-autonomy-graduation--in-progress) | [Phase 5](#phase-5-optimize--scale-post-autonomy)
 
@@ -23,7 +23,8 @@ Primary runbook: `docs/PTO_GTM_SAFE_TRAINING_EVAL_REGIMEN.md`.
   - `tests/test_operator_ramp_logic.py`
 - [x] Deploy current patch set to Railway.
 - [x] Run post-deploy smoke matrix on staging + production.
-- [ ] Run supervised live cycle and capture HoS approval/rejection tags.
+- [x] Crafter now ingests rejection feedback and normalizes executive title personalization (e.g., `Chief Revenue Officer (CRO)` -> `CRO`) in `execution/crafter_campaign.py`.
+- [ ] Run supervised live cycle and capture HoS approval/rejection tags after fresh post-patch generation.
 
 ### Execution Log (2026-02-23 EST / 2026-02-24 UTC)
 
@@ -52,6 +53,45 @@ Primary runbook: `docs/PTO_GTM_SAFE_TRAINING_EVAL_REGIMEN.md`.
   - Command: `echo yes | python execution/run_pipeline.py --mode production --source "wpromote" --limit 2`
   - Run ID: `run_20260224_003326_6354d2`
   - Result: `2` fresh Tier_1 pending cards with updated copy.
+- [x] Production post-check validated:
+  - `/api/pending-emails` => `count=0`
+  - queue debug shows Redis-backed stale exclusion working (`stale_gt_72h` only, no active actionable cards)
+  - `/api/health/ready` => `200`
+  - `scripts/trace_outbound_ghl_queue.py` => `total_pending=0`, `ghl_targeted=0`
+  - `scripts/deployed_full_smoke_checklist.py` => `passed=true` on production (`/sales` polling wiring + auth matrix + pending refresh checks all green)
+- [x] Focused Railway log diagnostic completed:
+  - captured explicit reject feedback in production logs requiring acronym title style for personalization:
+    - "Always summarize job titles as CRO and do not display the full title as Chief Revenue Officer."
+  - observed repeated `POST /inngest?fnId=caio-alpha-swarm-pipeline-scan&stepId=step` -> `500`
+  - observed repeated `POST /api/errors/frontend` -> `401` (tokenless frontend reporter traffic)
+  - no active GHL upsert/send failures in current window because queue is empty.
+
+### PTO Fix Checklist: Approvals -> `Email sent via GHL`
+
+Use this exact checklist before next supervised approval cycle.
+
+1. Environment inputs (Railway production variables):
+   - `GHL_API_KEY` (or `GHL_PROD_API_KEY`) is set and current.
+   - `GHL_LOCATION_ID` matches the live sub-account where messages must send.
+   - `DASHBOARD_AUTH_TOKEN` is current and used in UI/API checks.
+   - keep strict runtime flags enabled: `DASHBOARD_AUTH_STRICT=true`, `REDIS_REQUIRED=true`, `INNGEST_REQUIRED=true`.
+2. GHL API permission scope on the key:
+   - Contacts read/search (`GET /contacts/search` used by auto-resolve).
+   - Contacts create/update (`POST /contacts/` used by auto-upsert).
+   - Conversations/messages send (`POST /conversations/messages` used for actual email send).
+3. GHL location/email readiness:
+   - sending mailbox/domain for the target location is connected and healthy.
+   - outbound email channel is enabled for that location.
+4. Pre-flight commands (run before approvals):
+   - `python scripts/trace_outbound_ghl_queue.py --base-url https://caio-swarm-dashboard-production.up.railway.app --token <DASHBOARD_AUTH_TOKEN>`
+   - `railway logs --lines 800 | Select-String -Pattern "GHL contact upsert failed|GHL Send Failed|Email approved \\(GHL contact unresolved\\)|Email sent via GHL" -CaseSensitive:$false`
+5. Approval-time verification:
+   - approve from `/sales`, then confirm response text is `Email sent via GHL` (not `GHL contact unresolved`).
+   - confirm message appears in GHL conversation thread for the approved contact.
+6. If unresolved persists:
+   - verify contact email exists and is valid.
+   - validate `GHL_LOCATION_ID` is correct for the approving environment (staging vs production mismatch is a common root cause).
+   - rotate `GHL_API_KEY` and re-test with one Tier_1 approval.
 
 ### Next Manual Gate (PTO @ 15:00 EST)
 

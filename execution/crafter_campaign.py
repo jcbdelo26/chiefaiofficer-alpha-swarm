@@ -14,10 +14,12 @@ import sys
 import json
 import uuid
 import argparse
+import re
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import List, Dict, Any, Optional
 from dataclasses import dataclass, asdict, field
+from collections import Counter, deque
 from jinja2 import Template, Environment, FileSystemLoader
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -81,6 +83,22 @@ class Campaign:
 
 class CampaignCrafter:
     """Generates hyper-personalized email campaigns."""
+
+    AGENT_FEEDBACK_LOG = Path(__file__).parent.parent / ".hive-mind" / "audit" / "agent_feedback.jsonl"
+    FEEDBACK_WINDOW = 200
+    EXEC_TITLE_ABBREVIATIONS = {
+        "chief executive officer": "CEO",
+        "chief revenue officer": "CRO",
+        "chief marketing officer": "CMO",
+        "chief operating officer": "COO",
+        "chief financial officer": "CFO",
+        "chief technology officer": "CTO",
+        "chief information officer": "CIO",
+        "chief strategy officer": "CSO",
+        "chief product officer": "CPO",
+        "chief people officer": "CPO",
+        "chief human resources officer": "CHRO",
+    }
 
     # =========================================================================
     # 11 HoS-Approved Email Angles (Fractional Chief AI Officer + M.A.P. Framework)
@@ -538,6 +556,97 @@ Chief AI Officer Inc. | 5700 Harper Dr, Suite 210, Albuquerque, NM 87109"""
             "company": "ChiefAIOfficer.com",
             "calendar_link": "https://caio.cx/ai-exec-briefing-call"
         }
+        self.feedback_profile = self._load_feedback_profile()
+
+    def _load_feedback_profile(self) -> Dict[str, Any]:
+        """
+        Load recent HoS feedback and produce deterministic copy preferences.
+
+        The crafter uses this profile to reduce repeat rejection patterns
+        (e.g. title-personalization mismatches).
+        """
+        profile: Dict[str, Any] = {
+            "recent_rejection_tags": {},
+            "personalization_rejections": 0,
+            "prefer_exec_title_abbreviations": False,
+        }
+        if not self.AGENT_FEEDBACK_LOG.exists():
+            return profile
+
+        recent = deque(maxlen=self.FEEDBACK_WINDOW)
+        try:
+            with open(self.AGENT_FEEDBACK_LOG, "r", encoding="utf-8") as fp:
+                for line in fp:
+                    line = line.strip()
+                    if not line:
+                        continue
+                    try:
+                        recent.append(json.loads(line))
+                    except json.JSONDecodeError:
+                        continue
+        except OSError:
+            return profile
+
+        tag_counts: Counter = Counter()
+        personalization_rejections = 0
+        abbreviation_feedback_hits = 0
+
+        for item in recent:
+            if str(item.get("action") or "").lower() != "rejected":
+                continue
+            learning_signals = item.get("learning_signals") or {}
+            tag = str(learning_signals.get("rejection_tag") or "").strip().lower()
+            if tag:
+                tag_counts[tag] += 1
+
+            feedback_text = str(item.get("feedback") or "").lower()
+            if tag == "personalization_mismatch" or "personalization" in feedback_text:
+                personalization_rejections += 1
+            if (
+                "abbreviat" in feedback_text
+                or "full title" in feedback_text
+                or re.search(r"\buse\b.*\b(cro|ceo|cmo|coo|cfo|cto|cio|ciso)\b", feedback_text)
+            ):
+                abbreviation_feedback_hits += 1
+
+        profile["recent_rejection_tags"] = dict(tag_counts)
+        profile["personalization_rejections"] = personalization_rejections
+        profile["prefer_exec_title_abbreviations"] = abbreviation_feedback_hits > 0
+        return profile
+
+    def _normalize_title_for_personalization(self, raw_title: Any) -> str:
+        """Prefer concise exec-role titles (e.g. CRO) for intro personalization."""
+        title = re.sub(r"\s+", " ", str(raw_title or "")).strip()
+        if not title:
+            return ""
+
+        # Prefer explicit acronym when available: "Chief Revenue Officer (CRO)" -> "CRO"
+        acronym_match = re.search(r"\(([A-Z]{2,6})\)", title)
+        if acronym_match:
+            return acronym_match.group(1).strip()
+
+        title_lower = title.lower()
+        for long_form, short_form in self.EXEC_TITLE_ABBREVIATIONS.items():
+            if long_form in title_lower:
+                return short_form
+
+        # Apply learned HoS preference to abbreviate long chief titles when safe.
+        if self.feedback_profile.get("prefer_exec_title_abbreviations") and title_lower.startswith("chief "):
+            tokens = [t for t in re.split(r"[^a-zA-Z]+", title) if t]
+            if 2 <= len(tokens) <= 6:
+                acronym = "".join(token[0].upper() for token in tokens)
+                if 2 <= len(acronym) <= 6:
+                    return acronym
+
+        return title
+
+    @staticmethod
+    def _resolve_company_name(lead: Dict[str, Any]) -> str:
+        """Resolve company value safely from mixed lead shapes."""
+        company = lead.get("company_name") or lead.get("company") or "your company"
+        if isinstance(company, dict):
+            company = company.get("name") or company.get("company_name") or "your company"
+        return str(company or "your company").strip()
 
     def _select_template(self, lead: Dict[str, Any]) -> str:
         """Select appropriate template based on lead ICP tier and source."""
@@ -555,6 +664,11 @@ Chief AI Officer Inc. | 5700 Harper Dr, Suite 210, Albuquerque, NM 87109"""
         # Hiring trigger detection
         if lead.get("hiring_signal"):
             return "t1_hiring_trigger"
+
+        # HoS feedback showed RevOps personas reject generic copy more often.
+        title_lower = str(lead.get("title") or "").lower()
+        if "revops" in title_lower or "revenue operations" in title_lower:
+            return "t2_ops_efficiency"
 
         # Route by ICP tier
         tier = lead.get("icp_tier", "tier_3")
@@ -578,13 +692,19 @@ Chief AI Officer Inc. | 5700 Harper Dr, Suite 210, Albuquerque, NM 87109"""
 
     def _build_template_variables(self, lead: Dict[str, Any]) -> Dict[str, Any]:
         """Build template variables from lead data."""
+        company_name = self._resolve_company_name(lead)
+        raw_title = lead.get("title", "")
+        normalized_title = self._normalize_title_for_personalization(raw_title)
+
         return {
             "lead": {
                 "first_name": lead.get("first_name", lead.get("name", "").split()[0] if lead.get("name") else "there"),
                 "last_name": lead.get("last_name", ""),
                 "name": lead.get("name", ""),
-                "title": lead.get("title", ""),
-                "company": lead.get("company", "your company"),
+                "title": normalized_title,
+                "title_raw": str(raw_title or "").strip(),
+                "title_for_personalization": normalized_title,
+                "company": company_name,
                 "location": lead.get("location", ""),
                 "industry": lead.get("industry", lead.get("company", {}).get("industry", "") if isinstance(lead.get("company"), dict) else ""),
             },
