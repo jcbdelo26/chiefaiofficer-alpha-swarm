@@ -21,9 +21,37 @@ Primary runbook: `docs/PTO_GTM_SAFE_TRAINING_EVAL_REGIMEN.md`.
 - [x] Targeted regression tests pass locally:
   - `tests/test_runtime_determinism_flows.py`
   - `tests/test_operator_ramp_logic.py`
-- [ ] Deploy current patch set to Railway.
-- [ ] Run post-deploy smoke matrix on staging + production.
+- [x] Deploy current patch set to Railway.
+- [x] Run post-deploy smoke matrix on staging + production.
 - [ ] Run supervised live cycle and capture HoS approval/rejection tags.
+
+### Execution Log (2026-02-23 EST / 2026-02-24 UTC)
+
+- [x] Deployed patch commit `d9ade64` to `main` (Railway auto-deploy).
+- [x] Post-deploy smoke matrix passed on staging + production.
+- [x] Production pre-flight smoke passed (`scripts/deployed_full_smoke_checklist.py`).
+- [x] Production queue trace captured before run (0 actionable pending).
+- [x] Supervised generation run completed:
+  - Command: `echo yes | python execution/run_pipeline.py --mode production --source "wpromote" --limit 2`
+  - Run ID: `run_20260224_000856_3e4b9b`
+  - Result: `6/6 PASS`, `2` Tier_1 pending cards generated.
+- [x] Post-run queue trace validated:
+  - `total_pending=2`
+  - `ghl_targeted=2`
+  - `ready_for_live_send=0`
+  - `auto_resolve_on_approve=2`
+- [x] Operator dry-run validated:
+  - Command: `python -m execution.operator_outbound --motion outbound --dry-run --json`
+  - Result: no errors; waiting on approvals (expected).
+
+### Next Manual Gate (PTO @ 15:00 EST)
+
+- Open `/sales?token=<DASHBOARD_AUTH_TOKEN>#emails`
+- Review and decide the 2 cards (approve/reject with structured tag).
+- If approved, execute live dispatch:
+  - `python -m execution.operator_outbound --motion outbound --live`
+- Verify sent messages in GHL conversations for approved contacts.
+- Log approval/rejection counts and tags in this tracker.
 
 ### Ramp Logic (recommended and now coded)
 
