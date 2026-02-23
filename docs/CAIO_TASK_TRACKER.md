@@ -43,6 +43,15 @@ Primary runbook: `docs/PTO_GTM_SAFE_TRAINING_EVAL_REGIMEN.md`.
 - [x] Operator dry-run validated:
   - Command: `python -m execution.operator_outbound --motion outbound --dry-run --json`
   - Result: no errors; waiting on approvals (expected).
+- [x] HoS rejected 2 Tier_1 emails in dashboard (no written reason captured in previous flow).
+- [x] Patch applied for stronger learning loop:
+  - `/api/emails/history` now returns `feedback`, `rejection_reason`, `rejection_tag`.
+  - Reject flow now requires both structured `rejection_tag` and non-empty `reason`.
+  - Tier_1 executive template updated to role-aware, less-generic subject/body.
+- [x] Supervised regeneration run completed after copy patch:
+  - Command: `echo yes | python execution/run_pipeline.py --mode production --source "wpromote" --limit 2`
+  - Run ID: `run_20260224_003326_6354d2`
+  - Result: `2` fresh Tier_1 pending cards with updated copy.
 
 ### Next Manual Gate (PTO @ 15:00 EST)
 

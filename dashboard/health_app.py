@@ -99,6 +99,16 @@ def _validate_rejection_tag(rejection_tag: Optional[str]) -> str:
     return normalized
 
 
+def _validate_rejection_reason(reason: Optional[str]) -> str:
+    normalized = str(reason or "").strip()
+    if not normalized:
+        raise HTTPException(
+            status_code=422,
+            detail="reason is required for rejected emails",
+        )
+    return normalized
+
+
 def _categorize_rejection(reason: str) -> str:
     """Categorize rejection reason for ML training patterns."""
     reason_lower = (reason or "").lower()
@@ -1526,7 +1536,7 @@ async def get_email_history(
     limit: int = Query(20, ge=1, le=100, description="Max emails to return"),
     auth: bool = Depends(require_auth),
 ):
-    """Return recently reviewed (approved/rejected) emails from Redis shadow queue."""
+    """Return recently reviewed (approved/rejected) emails from shadow queue (Redis + file fallback)."""
     reviewed = []
     try:
         from core.shadow_queue import _prefix, _get_redis
@@ -1550,14 +1560,48 @@ async def get_email_history(
                         "status": status,
                         "reviewed_at": data.get("approved_at") or data.get("rejected_at") or data.get("timestamp", ""),
                         "reviewer": data.get("approved_by") or data.get("rejected_by") or "",
+                        "feedback": data.get("feedback"),
+                        "rejection_reason": data.get("rejection_reason"),
+                        "rejection_tag": data.get("rejection_tag"),
+                        "campaign_ref": data.get("campaign_ref") or {},
+                        "classifier": data.get("classifier") or {},
                     })
                 except Exception:
                     continue
-            # Sort by reviewed_at descending
-            reviewed.sort(key=lambda x: x.get("reviewed_at", ""), reverse=True)
-            reviewed = reviewed[:limit]
     except Exception as exc:
         logger.warning("get_email_history error: %s", exc)
+    # File fallback for local/dev scenarios when Redis is unavailable or sparse.
+    if len(reviewed) < limit:
+        shadow_dir = PROJECT_ROOT / ".hive-mind" / "shadow_mode_emails"
+        if shadow_dir.exists():
+            for f in shadow_dir.glob("*.json"):
+                try:
+                    with open(f, "r", encoding="utf-8") as fp:
+                        data = json.load(fp)
+                    status = (data.get("status") or "").lower()
+                    if status not in ("approved", "rejected"):
+                        continue
+                    email_id = data.get("email_id") or f.stem
+                    if any(item.get("email_id") == email_id for item in reviewed):
+                        continue
+                    reviewed.append({
+                        "email_id": email_id,
+                        "to": data.get("to", ""),
+                        "subject": data.get("subject", ""),
+                        "status": status,
+                        "reviewed_at": data.get("approved_at") or data.get("rejected_at") or data.get("timestamp", ""),
+                        "reviewer": data.get("approved_by") or data.get("rejected_by") or "",
+                        "feedback": data.get("feedback"),
+                        "rejection_reason": data.get("rejection_reason"),
+                        "rejection_tag": data.get("rejection_tag"),
+                        "campaign_ref": data.get("campaign_ref") or {},
+                        "classifier": data.get("classifier") or {},
+                    })
+                except Exception:
+                    continue
+    # Sort by reviewed_at descending
+    reviewed.sort(key=lambda x: x.get("reviewed_at", ""), reverse=True)
+    reviewed = reviewed[:limit]
     return {"emails": reviewed, "count": len(reviewed)}
 
 
@@ -1881,13 +1925,14 @@ async def reject_email(
     if email_data.get("status") == "rejected":
         raise HTTPException(status_code=400, detail="Email already rejected")
 
+    validated_reason = _validate_rejection_reason(reason)
     validated_tag = _validate_rejection_tag(rejection_tag)
 
     # Update status
     email_data["status"] = "rejected"
     email_data["rejected_at"] = datetime.now().isoformat()
     email_data["rejected_by"] = approver
-    email_data["rejection_reason"] = reason or "No reason provided"
+    email_data["rejection_reason"] = validated_reason
     email_data["rejection_tag"] = validated_tag
 
     # Save updated data — Redis + filesystem
@@ -1896,7 +1941,7 @@ async def reject_email(
         sq_update(email_id, "rejected", shadow_dir=shadow_log, extra_fields={
             "rejected_at": email_data.get("rejected_at"),
             "rejected_by": approver,
-            "rejection_reason": email_data.get("rejection_reason"),
+            "rejection_reason": validated_reason,
             "rejection_tag": validated_tag,
         })
     except Exception:
@@ -1915,7 +1960,7 @@ async def reject_email(
         learning_record = {
             "email_id": email_id,
             "action": "rejected",
-            "feedback": reason,
+            "feedback": validated_reason,
             "original_body": email_data.get("body"),
             "subject": email_data.get("subject"),
             "recipient": email_data.get("to"),
@@ -1925,10 +1970,10 @@ async def reject_email(
             "timestamp": datetime.now().isoformat(),
             "learning_signals": {
                 "was_edited": False,
-                "had_feedback": bool(reason),
+                "had_feedback": True,
                 "rejection_tag": validated_tag,
                 "rejection_category": validated_tag,
-                "rejection_category_heuristic": _categorize_rejection(reason) if reason else "no_reason",
+                "rejection_category_heuristic": _categorize_rejection(validated_reason),
             }
         }
         with open(training_log, "a") as fp:
@@ -1945,7 +1990,7 @@ async def reject_email(
                 "email_id": email_id,
                 "action": "rejected",
                 "approver": approver,
-                "reason": reason,
+                "reason": validated_reason,
                 "rejection_tag": validated_tag,
                 "timestamp": datetime.now().isoformat(),
                 "recipient": email_data.get("to"),
@@ -1957,7 +2002,7 @@ async def reject_email(
     return {
         "status": "rejected",
         "email_id": email_id,
-        "reason": reason,
+        "reason": validated_reason,
         "rejection_tag": validated_tag,
         "approver": approver,
         "timestamp": datetime.now().isoformat()

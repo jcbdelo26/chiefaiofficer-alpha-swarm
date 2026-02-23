@@ -111,24 +111,24 @@ class MessagingStrategy:
             # =================================================================
             "tier1_angle_a": {
                 "name": "Executive Buy-In (Fractional CAIO Gap)",
-                "subject": "AI Roadmap for {company}",
+                "subject": "{first_name} - 90-day AI execution plan for {company}",
                 "body": """
 <p>Hi {first_name},</p>
 
-<p>Seeing a lot of {industry} firms stuck in "AI research mode" without moving to implementation.</p>
+<p>Given your role at {company}, quick context:</p>
 
-<p>Usually, it's because the CTO is buried in legacy tech and there's no dedicated AI lead to drive the strategy forward.</p>
+<p>Most teams are running AI experiments but still missing an operating cadence that turns pilots into measurable outcomes.</p>
 
-<p>We act as your Fractional Chief AI Officer to move {company} from curiosity to ROI—typically in 90 days.</p>
+<p>We step in as a Fractional Chief AI Officer and run a focused 90-day implementation sprint.</p>
 
 <p><strong>What that looks like:</strong></p>
 <ul>
 <li>Day 1: One-day M.A.P. Bootcamp (your team leaves with an AI-ready action plan)</li>
-<li>Days 2-90: We embed with your team, build the workflows, and measure results</li>
-<li>Guarantee: Measurable ROI, or you don't pay the next phase</li>
+<li>Days 2-30: prioritize 2-3 high-impact workflows and assign owners</li>
+<li>Days 31-90: deploy, measure, and hand off a repeatable operating playbook</li>
 </ul>
 
-<p>Worth a brief chat on how we're doing this for similar {industry} companies?</p>
+<p>If useful, I can share the same checklist we use with similar teams in {industry}.</p>
 
 <p>Best,<br>
 <strong>Dani Apgar</strong><br>

@@ -87,22 +87,22 @@ class CampaignCrafter:
     # =========================================================================
     TEMPLATES = {
         "t1_executive_buyin": {
-            "subject_a": "AI Roadmap for {{lead.company}}",
-            "subject_b": "Quick question regarding {{lead.company}}'s AI strategy",
+            "subject_a": "{{lead.first_name}} - 90-day AI execution plan for {{lead.company}}",
+            "subject_b": "{{lead.company}}: practical AI roadmap for this quarter",
             "body": """Hi {{lead.first_name}},
 
-Seeing a lot of {{lead.industry}} firms stuck in "AI research mode" without moving to implementation.
+{% if lead.title %}Given your role as {{lead.title}} at {{lead.company}}, quick context:{% else %}Quick context on {{lead.company}}:{% endif %}
 
-Usually, it's because the CTO is buried in legacy tech and there's no dedicated AI lead to drive the strategy forward.
+Most teams are running AI experiments but still missing an operating cadence that turns pilots into measurable outcomes.
 
-We act as your Fractional Chief AI Officer to move {{lead.company}} from curiosity to ROI—typically in 90 days.
+We step in as a Fractional Chief AI Officer and run a focused 90-day implementation sprint.
 
-What that looks like:
+What that looks like in practice:
 - Day 1: One-day M.A.P. Bootcamp (your team leaves with an AI-ready action plan)
-- Days 2-90: We embed with your team, build the workflows, and measure results
-- Guarantee: Measurable ROI, or you don't pay the next phase
+- Days 2-30: prioritize 2-3 high-impact workflows and assign owners
+- Days 31-90: deploy, measure, and hand off a repeatable operating playbook
 
-Worth a brief chat on how we're doing this for similar {{lead.industry}} companies?
+If useful, I can share the same checklist we use with similar teams {% if lead.industry %}in {{lead.industry}}{% endif %}.
 
 Best,
 {{sender.name}}

@@ -2284,14 +2284,15 @@
 
             // Save email ID before closing modal (closeModal sets currentEmailId to null)
             const emailId = currentEmailId;
-            const feedback = document.getElementById('feedbackInput').value;
+            const feedback = (document.getElementById('feedbackInput')?.value || '').trim();
             const rejectionTag = (document.getElementById('rejectionTagInput')?.value || '').trim();
             if (!rejectionTag) {
                 alert('Select a rejection tag before rejecting this email.');
                 return;
             }
             if (!feedback) {
-                if (!confirm("Reject without feedback? The AI won't learn why.")) return;
+                alert('Add a short rejection reason so the system can learn.');
+                return;
             }
 
             const token = getToken({ promptFallback: true });
@@ -2299,7 +2300,7 @@
             try {
                 const params = new URLSearchParams();
                 if (token) params.set('token', token);
-                if (feedback) params.set('reason', feedback);
+                params.set('reason', feedback);
                 params.set('rejection_tag', rejectionTag);
 
                 const response = await fetch(`/api/emails/${emailId}/reject?${params.toString()}`, {

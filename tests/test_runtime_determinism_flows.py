@@ -188,6 +188,42 @@ async def test_reject_email_requires_structured_rejection_tag(monkeypatch, tmp_p
 
 
 @pytest.mark.asyncio
+async def test_reject_email_requires_reason_feedback(monkeypatch, tmp_path: Path):
+    from dashboard import health_app
+
+    _disable_shadow_queue_redis(monkeypatch)
+    monkeypatch.setattr(health_app, "PROJECT_ROOT", tmp_path)
+
+    shadow_dir = tmp_path / ".hive-mind" / "shadow_mode_emails"
+    shadow_dir.mkdir(parents=True, exist_ok=True)
+    (shadow_dir / "email_004.json").write_text(
+        json.dumps(
+            {
+                "email_id": "email_004",
+                "status": "pending",
+                "to": "missingreason@example.com",
+                "subject": "Needs reject reason",
+                "body": "Body",
+                "tier": "tier_1",
+                "angle": "General",
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(HTTPException) as exc:
+        await health_app.reject_email(
+            email_id="email_004",
+            reason="",
+            rejection_tag="tone_style_issue",
+            approver="head_of_sales",
+            auth=True,
+        )
+    assert exc.value.status_code == 422
+    assert "reason is required" in str(exc.value.detail)
+
+
+@pytest.mark.asyncio
 async def test_rejection_tags_endpoint_exposes_backend_taxonomy(monkeypatch, tmp_path: Path):
     from dashboard import health_app
 
@@ -199,6 +235,42 @@ async def test_rejection_tags_endpoint_exposes_backend_taxonomy(monkeypatch, tmp
     ids = {entry.get("id") for entry in payload["tags"]}
     assert "tone_style_issue" in ids
     assert "queue_hygiene_non_actionable" in ids
+
+
+@pytest.mark.asyncio
+async def test_email_history_includes_rejection_feedback_fields(monkeypatch, tmp_path: Path):
+    from dashboard import health_app
+
+    _disable_shadow_queue_redis(monkeypatch)
+    monkeypatch.setattr(health_app, "PROJECT_ROOT", tmp_path)
+
+    shadow_dir = tmp_path / ".hive-mind" / "shadow_mode_emails"
+    shadow_dir.mkdir(parents=True, exist_ok=True)
+    (shadow_dir / "email_hist_001.json").write_text(
+        json.dumps(
+            {
+                "email_id": "email_hist_001",
+                "status": "rejected",
+                "to": "hist@example.com",
+                "subject": "AI Roadmap for ExampleCo",
+                "rejected_at": "2026-02-23T16:25:01.921351",
+                "rejected_by": "dashboard_user",
+                "rejection_reason": "Too generic for this role",
+                "rejection_tag": "personalization_mismatch",
+                "feedback": "Need role-specific opening",
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    payload = await health_app.get_email_history(limit=20, auth=True)
+    assert payload["count"] == 1
+    item = payload["emails"][0]
+    assert item["email_id"] == "email_hist_001"
+    assert item["status"] == "rejected"
+    assert item["rejection_reason"] == "Too generic for this role"
+    assert item["rejection_tag"] == "personalization_mismatch"
+    assert item["feedback"] == "Need role-specific opening"
 
 
 @pytest.mark.asyncio
