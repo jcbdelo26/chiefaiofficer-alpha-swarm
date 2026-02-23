@@ -65,6 +65,48 @@ Primary runbook: `docs/PTO_GTM_SAFE_TRAINING_EVAL_REGIMEN.md`.
   - observed repeated `POST /inngest?fnId=caio-alpha-swarm-pipeline-scan&stepId=step` -> `500`
   - observed repeated `POST /api/errors/frontend` -> `401` (tokenless frontend reporter traffic)
   - no active GHL upsert/send failures in current window because queue is empty.
+- [x] Patch deploy + supervised approval verification cycle completed:
+  - deployed commit: `424c2e3` (crafter rejection-feedback learning + tracker updates)
+  - post-deploy smoke: `passed=true` (production)
+  - supervised pipeline run:
+    - command: `echo yes | python execution/run_pipeline.py --mode production --source "wpromote" --limit 2`
+    - run_id: `run_20260224_033405_857508`
+    - result: `6/6 PASS`, generated `2` Tier_1 cards
+  - copy verification:
+    - Andrew card now renders acronym style personalization: `Given your role as CRO at Wpromote, quick context:`
+  - approval verification:
+    - approved `pipeline_camp_20260224_033411_andrew_mahr_81b54b`
+    - API result: `Email approved (GHL contact unresolved)` (not yet `Email sent via GHL`)
+    - queue moved from `2` -> `1` pending after approval.
+- [x] Immediate follow-up diagnostic (GHL unresolved isolation) completed:
+  - approved card in Redis confirms:
+    - `send_error`: `GHL contact upsert failed: GHL API error: 400 - {'error': 'Contact with id search not found', 'status': 400}`
+    - `contact_resolution.resolved=false`
+  - runtime env in production context is present (`GHL_API_KEY`, `GHL_PROD_API_KEY`, `GHL_LOCATION_ID` all set).
+  - direct GHL API probe (production env):
+    - `GET /contacts/search` -> `400 Contact with id search not found` (**current code path**)
+    - `GET /contacts?locationId=...&query=...` -> `200` (valid contact query path)
+    - `POST /contacts/` -> `201` (contact create permitted)
+  - send-path probe shows secondary gate:
+    - `send_email` can return `Outside working hours. Next window: ...` when approval is outside configured send window.
+
+### Root Cause (Unresolved on Approval)
+
+1. Primary: contact lookup endpoint mismatch in `core/ghl_outreach.py` (`/contacts/search` is invalid in this GHL API profile).
+2. Secondary: even after contact resolution is fixed, approvals outside send window can still return non-sent outcomes.
+
+### Exact PTO Actions to Flip Next Approval to `Email sent via GHL`
+
+1. **Engineering hotfix deploy required first**:
+   - update contact lookup from `GET /contacts/search` to `GET /contacts` with `locationId + query`.
+   - deploy to Railway production.
+2. **Approve during send window**:
+   - run approval within active send hours (or ask engineering to make send-window configurable/bypass for supervised sends).
+3. **Post-hotfix verification ritual**:
+   - run pipeline (`--source "wpromote" --limit 2`)
+   - approve one Tier_1 card
+   - expected API response: `Email sent via GHL`
+   - confirm message appears in GHL conversation thread.
 
 ### PTO Fix Checklist: Approvals -> `Email sent via GHL`
 

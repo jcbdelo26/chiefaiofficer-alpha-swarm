@@ -263,9 +263,11 @@ class GHLOutreachClient:
         if not email_norm:
             return None
 
+        # GHL contact search is served via /contacts with locationId + query.
+        # /contacts/search returns 400 on this API profile ("Contact with id search not found").
         result = await self._request(
             "GET",
-            "/contacts/search",
+            "/contacts",
             params={"locationId": self.location_id, "query": email_norm},
         )
         contacts = result.get("contacts") or []
@@ -408,11 +410,17 @@ class GHLOutreachClient:
         daily_remaining = self.config.daily_limit - self.usage.get_today_sends()
         if count > daily_remaining:
             return False, f"Daily limit reached ({self.usage.get_today_sends()}/{self.config.daily_limit})"
-        
-        if not self.config.is_within_working_hours():
+
+        override_send_window = str(
+            os.getenv("SUPERVISED_SEND_WINDOW_OVERRIDE")
+            or os.getenv("GHL_SUPERVISED_WINDOW_OVERRIDE")
+            or ""
+        ).strip().lower() in {"1", "true", "yes", "on"}
+
+        if not override_send_window and not self.config.is_within_working_hours():
             next_window = self.config.next_send_window()
             return False, f"Outside working hours. Next window: {next_window.strftime('%Y-%m-%d %H:%M')}"
-        
+
         return True, "OK"
     
     def track_send(self, contact_id: str, template_id: str, count: int = 1):
