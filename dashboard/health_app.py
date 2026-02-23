@@ -61,6 +61,43 @@ DASHBOARD_TOKEN_QUERY_PARAM = "token"
 DASHBOARD_TOKEN_HEADER = "X-Dashboard-Token"
 _AUTH_WARNING_EMITTED = False
 
+# Structured rejection taxonomy for HoS review decisions.
+# Keys are stable identifiers used in analytics/training.
+REJECTION_TAGS: Dict[str, str] = {
+    "personalization_mismatch": "Personalization mismatch",
+    "icp_mismatch": "ICP mismatch",
+    "campaign_mismatch": "Campaign mismatch",
+    "tone_style_issue": "Tone/style issue",
+    "factual_inaccuracy": "Factual inaccuracy",
+    "weak_subject": "Weak subject line",
+    "weak_cta": "Weak CTA",
+    "length_issue": "Length/structure issue",
+    "compliance_issue": "Compliance issue",
+    "placeholder_or_rendering_issue": "Placeholder/rendering issue",
+    "queue_hygiene_non_actionable": "Queue hygiene non-actionable",
+    "other": "Other",
+}
+
+
+def _validate_rejection_tag(rejection_tag: Optional[str]) -> str:
+    if isinstance(rejection_tag, str):
+        normalized = rejection_tag.strip().lower()
+    else:
+        normalized = ""
+    if not normalized:
+        allowed = ", ".join(sorted(REJECTION_TAGS.keys()))
+        raise HTTPException(
+            status_code=422,
+            detail=f"rejection_tag is required. Allowed tags: {allowed}",
+        )
+    if normalized not in REJECTION_TAGS:
+        allowed = ", ".join(sorted(REJECTION_TAGS.keys()))
+        raise HTTPException(
+            status_code=422,
+            detail=f"Invalid rejection_tag '{normalized}'. Allowed tags: {allowed}",
+        )
+    return normalized
+
 
 def _categorize_rejection(reason: str) -> str:
     """Categorize rejection reason for ML training patterns."""
@@ -1802,6 +1839,7 @@ async def approve_email(
 async def reject_email(
     email_id: str,
     reason: Optional[str] = Query(None, description="Reason for rejection"),
+    rejection_tag: Optional[str] = Query(None, description="Structured rejection taxonomy tag"),
     approver: str = Query("dashboard_user", description="Who is rejecting"),
     auth: bool = Depends(require_auth)
 ):
@@ -1843,11 +1881,14 @@ async def reject_email(
     if email_data.get("status") == "rejected":
         raise HTTPException(status_code=400, detail="Email already rejected")
 
+    validated_tag = _validate_rejection_tag(rejection_tag)
+
     # Update status
     email_data["status"] = "rejected"
     email_data["rejected_at"] = datetime.now().isoformat()
     email_data["rejected_by"] = approver
     email_data["rejection_reason"] = reason or "No reason provided"
+    email_data["rejection_tag"] = validated_tag
 
     # Save updated data — Redis + filesystem
     try:
@@ -1856,6 +1897,7 @@ async def reject_email(
             "rejected_at": email_data.get("rejected_at"),
             "rejected_by": approver,
             "rejection_reason": email_data.get("rejection_reason"),
+            "rejection_tag": validated_tag,
         })
     except Exception:
         pass
@@ -1884,7 +1926,9 @@ async def reject_email(
             "learning_signals": {
                 "was_edited": False,
                 "had_feedback": bool(reason),
-                "rejection_category": _categorize_rejection(reason) if reason else "no_reason"
+                "rejection_tag": validated_tag,
+                "rejection_category": validated_tag,
+                "rejection_category_heuristic": _categorize_rejection(reason) if reason else "no_reason",
             }
         }
         with open(training_log, "a") as fp:
@@ -1902,6 +1946,7 @@ async def reject_email(
                 "action": "rejected",
                 "approver": approver,
                 "reason": reason,
+                "rejection_tag": validated_tag,
                 "timestamp": datetime.now().isoformat(),
                 "recipient": email_data.get("to"),
                 "subject": email_data.get("subject")
@@ -1913,8 +1958,17 @@ async def reject_email(
         "status": "rejected",
         "email_id": email_id,
         "reason": reason,
+        "rejection_tag": validated_tag,
         "approver": approver,
         "timestamp": datetime.now().isoformat()
+    }
+
+
+@app.get("/api/rejection-tags")
+async def get_rejection_tags(auth: bool = Depends(require_auth)):
+    """Return supported structured rejection tags for UI and tooling."""
+    return {
+        "tags": [{"id": key, "label": label} for key, label in REJECTION_TAGS.items()]
     }
 
 

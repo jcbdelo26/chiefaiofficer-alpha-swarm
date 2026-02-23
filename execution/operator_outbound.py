@@ -215,31 +215,82 @@ class OperatorOutbound:
     # Ramp configuration (supervised go-live)
     # -------------------------------------------------------------------------
 
-    def _get_ramp_status(self) -> Dict[str, Any]:
-        """
-        Check if ramp mode is active.
+    @staticmethod
+    def _report_live_dispatch_count(entry: Dict[str, Any]) -> int:
+        """Best-effort dispatched volume extraction from an OperatorReport dict."""
+        total = 0
+        try:
+            instantly = entry.get("instantly_report") or {}
+            heyreach = entry.get("heyreach_report") or {}
+            total += int(instantly.get("total_dispatched") or 0)
+            total += int(heyreach.get("total_dispatched") or 0)
+            total += int(entry.get("cadence_dispatched") or 0)
+            total += int(entry.get("revival_dispatched") or 0)
+        except Exception:
+            return 0
+        return total
 
-        Ramp mode enforces reduced volume and tier restrictions during the
-        first N supervised days of live sends (configured in production.json).
-
-        Returns dict with: active (bool), day (int), remaining_days (int),
-        email_limit_override (int), tier_filter (str).
+    def _count_clean_supervised_days(
+        self,
+        *,
+        required: int,
+        lookback_days: int,
+        min_date: Optional[date] = None,
+    ) -> Dict[str, Any]:
         """
-        ramp_cfg = self._operator_config.get("ramp", {})
-        result = {
-            "enabled": ramp_cfg.get("enabled", False),
-            "active": False,
-            "day": 0,
-            "remaining_days": 0,
-            "email_limit_override": None,
-            "tier_filter": None,
+        Count unique clean supervised live-send days from OPERATOR dispatch history.
+
+        Clean day criteria:
+        - report is live (`dry_run=False`)
+        - report is not pending approval
+        - report has no errors
+        - report dispatched at least one action/email/message
+        """
+        clean_dates: Set[str] = set()
+        today = date.today()
+        cutoff = today - timedelta(days=max(0, lookback_days))
+
+        for entry in self.get_dispatch_history(limit=2000):
+            if not isinstance(entry, dict):
+                continue
+            if entry.get("dry_run", True):
+                continue
+            if entry.get("pending_approval"):
+                continue
+            if entry.get("errors"):
+                continue
+            if self._report_live_dispatch_count(entry) <= 0:
+                continue
+
+            stamp = entry.get("completed_at") or entry.get("started_at") or ""
+            if not stamp:
+                continue
+            day_str = str(stamp)[:10]
+            try:
+                day_value = datetime.strptime(day_str, "%Y-%m-%d").date()
+            except Exception:
+                continue
+
+            if day_value < cutoff:
+                continue
+            if min_date and day_value < min_date:
+                continue
+
+            clean_dates.add(day_str)
+            if len(clean_dates) >= required:
+                # No need to scan more once required threshold is reached.
+                break
+
+        ordered = sorted(clean_dates)
+        return {
+            "clean_days_completed": len(ordered),
+            "clean_days_dates": ordered,
         }
 
-        if not ramp_cfg.get("enabled", False):
-            return result
-
+    def _calendar_ramp_status(self, ramp_cfg: Dict[str, Any], result: Dict[str, Any]) -> Dict[str, Any]:
+        """Backward-compatible date-window ramp behavior."""
         start_str = ramp_cfg.get("start_date", "")
-        ramp_days = ramp_cfg.get("ramp_days", 3)
+        ramp_days = int(ramp_cfg.get("ramp_days", 3) or 3)
 
         if not start_str:
             return result
@@ -263,6 +314,81 @@ class OperatorOutbound:
                 result["tier_filter"] = ramp_cfg.get("tier_filter", "tier_1")
         except ValueError:
             logger.warning("Invalid ramp start_date: %s", start_str)
+
+        return result
+
+    def _get_ramp_status(self) -> Dict[str, Any]:
+        """
+        Check if ramp mode is active.
+
+        Ramp mode enforces reduced volume and tier restrictions during the
+        first N supervised days of live sends (configured in production.json).
+
+        Returns dict with: active (bool), day (int), remaining_days (int),
+        email_limit_override (int), tier_filter (str).
+        """
+        ramp_cfg = self._operator_config.get("ramp", {})
+        mode = str(ramp_cfg.get("mode") or "clean_days").strip().lower()
+        result = {
+            "enabled": ramp_cfg.get("enabled", False),
+            "mode": mode,
+            "active": False,
+            "day": 0,
+            "remaining_days": 0,
+            "email_limit_override": None,
+            "tier_filter": None,
+            "clean_days_required": int(ramp_cfg.get("clean_days_required") or ramp_cfg.get("ramp_days") or 3),
+            "clean_days_completed": 0,
+            "clean_days_dates": [],
+        }
+
+        if not ramp_cfg.get("enabled", False):
+            return result
+
+        if mode in {"calendar", "date_window"}:
+            return self._calendar_ramp_status(ramp_cfg, result)
+
+        # Recommended mode: ramp remains active until N clean supervised LIVE days complete.
+        required = max(1, int(ramp_cfg.get("clean_days_required") or ramp_cfg.get("ramp_days") or 3))
+        lookback_days = max(1, int(ramp_cfg.get("clean_days_lookback_days") or 45))
+        start_str = str(ramp_cfg.get("start_date") or "").strip()
+        start_date: Optional[date] = None
+        if start_str:
+            try:
+                start_date = datetime.strptime(start_str, "%Y-%m-%d").date()
+            except ValueError:
+                logger.warning("Invalid ramp start_date: %s", start_str)
+
+        today = date.today()
+        if start_date and today < start_date:
+            # Not started yet: still enforce restrictive ramp limits.
+            result["active"] = True
+            result["day"] = 0
+            result["remaining_days"] = required
+            result["email_limit_override"] = ramp_cfg.get("email_daily_limit_override", 5)
+            result["tier_filter"] = ramp_cfg.get("tier_filter", "tier_1")
+            return result
+
+        progress = self._count_clean_supervised_days(
+            required=required,
+            lookback_days=lookback_days,
+            min_date=start_date,
+        )
+        completed = int(progress.get("clean_days_completed") or 0)
+        result["clean_days_required"] = required
+        result["clean_days_completed"] = completed
+        result["clean_days_dates"] = progress.get("clean_days_dates") or []
+
+        if completed < required:
+            result["active"] = True
+            result["day"] = completed + 1
+            result["remaining_days"] = required - completed
+            result["email_limit_override"] = ramp_cfg.get("email_daily_limit_override", 5)
+            result["tier_filter"] = ramp_cfg.get("tier_filter", "tier_1")
+        else:
+            result["active"] = False
+            result["day"] = required
+            result["remaining_days"] = 0
 
         return result
 

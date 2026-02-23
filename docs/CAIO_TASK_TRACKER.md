@@ -1,8 +1,61 @@
 # CAIO Alpha Swarm — Unified Task Tracker
 
-**Last Updated**: 2026-02-17
+**Last Updated**: 2026-02-23
 **Source**: `CAIO_IMPLEMENTATION_PLAN.md` (v4.5) + Production Cutover Results
-**Quick Nav**: [Phase 0](#phase-0-foundation-lock--complete) | [Phase 1](#phase-1-live-pipeline-validation--complete) | [Phase 2](#phase-2-supervised-burn-in--complete) | [Phase 3](#phase-3-expand--harden--complete) | **[Phase 4 (YOU ARE HERE)](#phase-4-autonomy-graduation--in-progress)** | [Phase 5](#phase-5-optimize--scale-post-autonomy)
+**Quick Nav**: **[Weekly Focus (YOU ARE HERE)](#weekly-focus-week-of-2026-02-23-pto-gtm-execution)** | [Phase 0](#phase-0-foundation-lock--complete) | [Phase 1](#phase-1-live-pipeline-validation--complete) | [Phase 2](#phase-2-supervised-burn-in--complete) | [Phase 3](#phase-3-expand--harden--complete) | [Phase 4](#phase-4-autonomy-graduation--in-progress) | [Phase 5](#phase-5-optimize--scale-post-autonomy)
+
+---
+
+## Weekly Focus (Week of 2026-02-23): PTO/GTM Execution
+
+This section is the operating tracker for this week and aligns with the supervised go-live model.
+Primary runbook: `docs/PTO_GTM_SAFE_TRAINING_EVAL_REGIMEN.md`.
+
+### Patch + Code Status (this week)
+
+- [x] Structured rejection taxonomy implemented in backend (`/api/emails/{id}/reject` requires `rejection_tag`).
+- [x] Structured rejection UI implemented (`/sales` reject flow requires selecting a rejection tag).
+- [x] Rejection taxonomy API added (`GET /api/rejection-tags`) and UI now loads tags from backend to prevent drift.
+- [x] Ramp logic upgraded to clean-days mode in OPERATOR (`mode: clean_days`, `clean_days_required: 3`).
+- [x] Deterministic stale-card filtering active in pending queue (`stale_gt_72h` exclusion path).
+- [x] Targeted regression tests pass locally:
+  - `tests/test_runtime_determinism_flows.py`
+  - `tests/test_operator_ramp_logic.py`
+- [ ] Deploy current patch set to Railway.
+- [ ] Run post-deploy smoke matrix on staging + production.
+- [ ] Run supervised live cycle and capture HoS approval/rejection tags.
+
+### Ramp Logic (recommended and now coded)
+
+- Mode: `clean_days`
+- Graduation rule: ramp remains active until **3 clean supervised LIVE days** are recorded.
+- Clean day definition: live run, no pending-approval hold, no errors, and at least one actual dispatch.
+- Until graduation: keep `tier_1` filter and conservative daily cap.
+
+### Approval SLA (operational suggestion for PTO/GTM + HoS)
+
+- New pending card first review SLA: **within 30 minutes** during active send windows.
+- Final decision SLA (approve/reject with tag): **within 2 hours**.
+- If SLA breached: card remains pending but is included in queue diagnostics and should be reviewed before next live cycle.
+
+### Operational Ownership (confirmed)
+
+- Daily supervised review window: **15:00 EST**.
+- Daily HoS approver owner: **PTO (you)**.
+- SLA owner for unresolved pending cards: **PTO (you)**.
+- Escalation channel for smoke/gate failures: **Slack**.
+
+### Stale Card Policy (best-fit default)
+
+- Cards older than `PENDING_QUEUE_MAX_AGE_HOURS` (default 72h) are auto-excluded from actionable queue.
+- Use structured rejection tag `queue_hygiene_non_actionable` when cleaning non-actionable queue items.
+- Run hygiene cleanup once before each supervised live cycle when drift/noise appears.
+
+### PTO/GTM Role Clarity
+
+- You are the go/no-go owner for supervised live cycles.
+- HoS is quality approver for messaging.
+- Engineering/Codex owns deterministic controls, tests, and regression gates.
 
 ---
 

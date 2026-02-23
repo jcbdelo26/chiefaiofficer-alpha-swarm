@@ -486,11 +486,14 @@
         "state_file": ".hive-mind/operator_state.json",
         "ramp": {
             "enabled": true,
+            "mode": "clean_days",
             "email_daily_limit_override": 5,
             "tier_filter": "tier_1",
             "start_date": "2026-02-18",
             "ramp_days": 3,
-            "note": "Supervised ramp-up: 5 emails/day, tier_1 only (C-Suite at agencies/consulting/law). After 3 clean days, set enabled=false to unlock 25/day + all tiers."
+            "clean_days_required": 3,
+            "clean_days_lookback_days": 45,
+            "note": "Supervised ramp-up: 5 emails/day, tier_1 only. Graduation is based on clean supervised LIVE dispatch days (not calendar days). Keep enabled=true; ramp auto-deactivates after clean_days_required is reached."
         }
     },
     "cadence": {

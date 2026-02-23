@@ -847,6 +847,24 @@
             margin-top: 4px;
         }
 
+        .feedback-select {
+            width: 100%;
+            background: var(--bg-dark);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 10px 12px;
+            font-family: inherit;
+            margin-top: 4px;
+        }
+
+        .field-help {
+            display: block;
+            margin-top: 6px;
+            color: var(--text-muted);
+            font-size: 12px;
+        }
+
         /* SIDEBAR LAYOUT */
         .sidebar-card {
             background: var(--bg-card);
@@ -1579,6 +1597,7 @@
         function promptForDashboardToken() {
             const token = getToken({ promptFallback: true, forcePrompt: true });
             if (token) {
+                loadRejectionTagOptions({ token, silent: true });
                 fetchPendingEmails({ silent: false });
             }
         }
@@ -1598,6 +1617,30 @@
             }
             params.set('_ts', String(Date.now()));
             return `/api/pending-emails?${params.toString()}`;
+        }
+
+        async function loadRejectionTagOptions({ token = '', silent = true } = {}) {
+            try {
+                const authToken = token || getToken({ promptFallback: false });
+                const query = authToken ? `?token=${encodeURIComponent(authToken)}` : '';
+                const response = await fetch(`/api/rejection-tags${query}`, {
+                    headers: buildAuthHeaders({ 'Accept': 'application/json' }, authToken)
+                });
+                if (!response.ok) {
+                    throw new Error(`Failed to load rejection tags (${response.status})`);
+                }
+                const data = await response.json();
+                if (Array.isArray(data.tags) && data.tags.length > 0) {
+                    rejectionTagOptions = data.tags
+                        .filter((tag) => tag && tag.id)
+                        .map((tag) => ({ id: String(tag.id), label: String(tag.label || tag.id) }));
+                }
+            } catch (error) {
+                rejectionTagOptions = [...REJECTION_TAG_OPTIONS];
+                if (!silent) {
+                    showToast(`Using fallback rejection tags: ${error.message}`);
+                }
+            }
         }
 
         function normalizeTierValue(tier = 'tier_3') {
@@ -1687,6 +1730,28 @@
             'Copyright © 2026 Chief AI Officer. All rights reserved',
             'Reply STOP to unsubscribe.',
         ].join('\n');
+
+        const REJECTION_TAG_OPTIONS = [
+            { id: 'personalization_mismatch', label: 'Personalization mismatch' },
+            { id: 'icp_mismatch', label: 'ICP mismatch' },
+            { id: 'campaign_mismatch', label: 'Campaign mismatch' },
+            { id: 'tone_style_issue', label: 'Tone/style issue' },
+            { id: 'factual_inaccuracy', label: 'Factual inaccuracy' },
+            { id: 'weak_subject', label: 'Weak subject line' },
+            { id: 'weak_cta', label: 'Weak CTA' },
+            { id: 'length_issue', label: 'Length/structure issue' },
+            { id: 'compliance_issue', label: 'Compliance issue' },
+            { id: 'placeholder_or_rendering_issue', label: 'Placeholder/rendering issue' },
+            { id: 'other', label: 'Other' },
+        ];
+        let rejectionTagOptions = [...REJECTION_TAG_OPTIONS];
+
+        function renderRejectionTagOptions() {
+            const options = rejectionTagOptions.map(
+                (item) => `<option value="${escapeHtml(item.id)}">${escapeHtml(item.label)}</option>`
+            ).join('');
+            return `<option value="">Select required rejection tag...</option>${options}`;
+        }
 
         function stripLegacySignatureFooter(rawText = '') {
             let cleaned = String(rawText || '');
@@ -1921,6 +1986,7 @@
         }
 
         function startAutoRefresh() {
+            loadRejectionTagOptions({ silent: true });
             fetchPendingEmails({ silent: false });
             setInterval(() => {
                 fetchPendingEmails({ silent: true });
@@ -2095,6 +2161,13 @@
                         <label>Feedback for AI (Help the Agents Learn)</label>
                         <textarea id="feedbackInput" class="feedback-input" placeholder="e.g. 'Good angle, but make the intro shorter next time' or 'This person is not a decision maker'"></textarea>
                     </div>
+                    <div class="email-preview-field">
+                        <label>Rejection Tag (Required to Reject)</label>
+                        <select id="rejectionTagInput" class="feedback-select">
+                            ${renderRejectionTagOptions()}
+                        </select>
+                        <small class="field-help">Choose a structured reason tag before rejecting so QA/training remains deterministic.</small>
+                    </div>
                 </div>
                 <div class="modal-sidebar">
                     <div class="sidebar-title">Lead Insights</div>
@@ -2212,6 +2285,11 @@
             // Save email ID before closing modal (closeModal sets currentEmailId to null)
             const emailId = currentEmailId;
             const feedback = document.getElementById('feedbackInput').value;
+            const rejectionTag = (document.getElementById('rejectionTagInput')?.value || '').trim();
+            if (!rejectionTag) {
+                alert('Select a rejection tag before rejecting this email.');
+                return;
+            }
             if (!feedback) {
                 if (!confirm("Reject without feedback? The AI won't learn why.")) return;
             }
@@ -2221,7 +2299,8 @@
             try {
                 const params = new URLSearchParams();
                 if (token) params.set('token', token);
-                params.set('reason', feedback);
+                if (feedback) params.set('reason', feedback);
+                params.set('rejection_tag', rejectionTag);
 
                 const response = await fetch(`/api/emails/${emailId}/reject?${params.toString()}`, {
                     method: 'POST',

@@ -4,6 +4,7 @@
 **Primary audience**: Non-technical PTO / GTM lead
 **Source of truth**: `CAIO_IMPLEMENTATION_PLAN.md` (v4.5) + current deployed checks
 **Latest deploy**: commit `0f0e0a9` (2026-02-19)
+**Weekly execution runbook**: `docs/PTO_GTM_SAFE_TRAINING_EVAL_REGIMEN.md`
 
 ---
 
@@ -183,4 +184,3 @@ Execution path:
 3. Click "Approve & Send" on each quality card.
 4. Check GHL for sent conversation evidence.
 5. Log results in this document under Day 2.
-

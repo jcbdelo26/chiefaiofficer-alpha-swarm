@@ -7,10 +7,12 @@ from __future__ import annotations
 
 import json
 import importlib.util
+from datetime import datetime, timedelta, timezone
 from types import SimpleNamespace
 from pathlib import Path
 
 import pytest
+from fastapi import HTTPException
 from starlette.responses import Response
 
 
@@ -124,6 +126,7 @@ async def test_queue_lifecycle_has_consistent_audit_logs(monkeypatch, tmp_path: 
     reject_result = await health_app.reject_email(
         email_id="email_002",
         reason="Tone is too aggressive.",
+        rejection_tag="tone_style_issue",
         approver="head_of_sales",
         auth=True,
     )
@@ -132,6 +135,7 @@ async def test_queue_lifecycle_has_consistent_audit_logs(monkeypatch, tmp_path: 
     rejected_payload = json.loads(reject_email_path.read_text(encoding="utf-8"))
     assert rejected_payload["status"] == "rejected"
     assert rejected_payload["rejected_by"] == "head_of_sales"
+    assert rejected_payload["rejection_tag"] == "tone_style_issue"
 
     approval_audit = tmp_path / ".hive-mind" / "audit" / "email_approvals.jsonl"
     feedback_audit = tmp_path / ".hive-mind" / "audit" / "agent_feedback.jsonl"
@@ -146,6 +150,55 @@ async def test_queue_lifecycle_has_consistent_audit_logs(monkeypatch, tmp_path: 
     assert any(line.get("email_id") == "email_002" and line.get("action") == "rejected" for line in approval_lines)
     assert any(line.get("email_id") == "email_001" and "approved" in line.get("action", "") for line in feedback_lines)
     assert any(line.get("email_id") == "email_002" and line.get("action") == "rejected" for line in feedback_lines)
+
+
+@pytest.mark.asyncio
+async def test_reject_email_requires_structured_rejection_tag(monkeypatch, tmp_path: Path):
+    from dashboard import health_app
+
+    _disable_shadow_queue_redis(monkeypatch)
+    monkeypatch.setattr(health_app, "PROJECT_ROOT", tmp_path)
+
+    shadow_dir = tmp_path / ".hive-mind" / "shadow_mode_emails"
+    shadow_dir.mkdir(parents=True, exist_ok=True)
+    (shadow_dir / "email_003.json").write_text(
+        json.dumps(
+            {
+                "email_id": "email_003",
+                "status": "pending",
+                "to": "missingtag@example.com",
+                "subject": "Needs reject tag",
+                "body": "Body",
+                "tier": "tier_1",
+                "angle": "General",
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(HTTPException) as exc:
+        await health_app.reject_email(
+            email_id="email_003",
+            reason="No structured tag selected",
+            approver="head_of_sales",
+            auth=True,
+        )
+    assert exc.value.status_code == 422
+    assert "rejection_tag is required" in str(exc.value.detail)
+
+
+@pytest.mark.asyncio
+async def test_rejection_tags_endpoint_exposes_backend_taxonomy(monkeypatch, tmp_path: Path):
+    from dashboard import health_app
+
+    _disable_shadow_queue_redis(monkeypatch)
+    monkeypatch.setattr(health_app, "PROJECT_ROOT", tmp_path)
+
+    payload = await health_app.get_rejection_tags(auth=True)
+    assert isinstance(payload.get("tags"), list)
+    ids = {entry.get("id") for entry in payload["tags"]}
+    assert "tone_style_issue" in ids
+    assert "queue_hygiene_non_actionable" in ids
 
 
 @pytest.mark.asyncio
@@ -533,6 +586,11 @@ async def test_pending_emails_filters_non_actionable_items(monkeypatch, tmp_path
     monkeypatch.setattr(health_app, "PROJECT_ROOT", tmp_path)
     monkeypatch.setenv("PENDING_QUEUE_ENFORCE_RAMP_TIER", "false")
     monkeypatch.setenv("PENDING_QUEUE_MAX_AGE_HOURS", "72")
+    now = datetime.now(timezone.utc)
+    ts_keep = now.isoformat()
+    ts_dup = (now - timedelta(minutes=30)).isoformat()
+    ts_placeholder = (now - timedelta(hours=1)).isoformat()
+    ts_stale = (now - timedelta(days=10)).isoformat()
 
     shadow_dir = tmp_path / ".hive-mind" / "shadow_mode_emails"
     shadow_dir.mkdir(parents=True, exist_ok=True)
@@ -547,7 +605,7 @@ async def test_pending_emails_filters_non_actionable_items(monkeypatch, tmp_path
                 "subject": "Roadmap intro",
                 "body": "Valid personalized body",
                 "tier": "tier_1",
-                "timestamp": "2026-02-18T12:00:00+00:00",
+                "timestamp": ts_keep,
             }
         ),
         encoding="utf-8",
@@ -563,7 +621,7 @@ async def test_pending_emails_filters_non_actionable_items(monkeypatch, tmp_path
                 "subject": "Roadmap intro",
                 "body": "Older duplicate body",
                 "tier": "tier_1",
-                "timestamp": "2026-02-18T11:30:00+00:00",
+                "timestamp": ts_dup,
             }
         ),
         encoding="utf-8",
@@ -579,7 +637,7 @@ async def test_pending_emails_filters_non_actionable_items(monkeypatch, tmp_path
                 "subject": "Placeholder draft",
                 "body": "No Body Content",
                 "tier": "tier_1",
-                "timestamp": "2026-02-18T11:00:00+00:00",
+                "timestamp": ts_placeholder,
             }
         ),
         encoding="utf-8",
@@ -595,7 +653,7 @@ async def test_pending_emails_filters_non_actionable_items(monkeypatch, tmp_path
                 "subject": "Very old draft",
                 "body": "Looks valid but is too old",
                 "tier": "tier_1",
-                "timestamp": "2026-01-01T11:00:00+00:00",
+                "timestamp": ts_stale,
             }
         ),
         encoding="utf-8",
