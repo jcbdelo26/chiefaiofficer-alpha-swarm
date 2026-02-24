@@ -93,6 +93,8 @@ def get_runtime_env_defaults(mode: str) -> Dict[str, str]:
         "DASHBOARD_QUERY_TOKEN_ENABLED": "true",
         "DASHBOARD_AUTH_ALLOWLIST": "/api/health,/api/health/ready,/api/health/live",
         "CORS_ALLOWED_ORIGINS": "http://localhost:8080,http://127.0.0.1:8080",
+        "CORS_ALLOWED_METHODS": "GET,POST,OPTIONS",
+        "CORS_ALLOWED_HEADERS": "Content-Type,X-Dashboard-Token",
     }
 
 

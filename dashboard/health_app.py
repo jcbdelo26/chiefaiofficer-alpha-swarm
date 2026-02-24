@@ -798,6 +798,30 @@ def _get_cors_allowed_origins() -> List[str]:
     origins = [origin.strip() for origin in raw.split(",") if origin.strip()]
     return origins or ["http://localhost:8080"]
 
+
+def _get_cors_allowed_methods() -> List[str]:
+    """
+    Return explicit CORS methods.
+
+    Default is least-privilege for dashboard/API usage.
+    Override with CORS_ALLOWED_METHODS=GET,POST,OPTIONS if needed.
+    """
+    raw = (os.getenv("CORS_ALLOWED_METHODS") or "GET,POST,OPTIONS").strip()
+    methods = [method.strip().upper() for method in raw.split(",") if method.strip()]
+    return methods or ["GET", "POST", "OPTIONS"]
+
+
+def _get_cors_allowed_headers() -> List[str]:
+    """
+    Return explicit CORS headers.
+
+    Default keeps protected API auth functional without wildcard exposure.
+    Override with CORS_ALLOWED_HEADERS=Content-Type,X-Dashboard-Token
+    """
+    raw = (os.getenv("CORS_ALLOWED_HEADERS") or "Content-Type,X-Dashboard-Token").strip()
+    headers = [header.strip() for header in raw.split(",") if header.strip()]
+    return headers or ["Content-Type", "X-Dashboard-Token"]
+
 # =============================================================================
 # APP SETUP
 # =============================================================================
@@ -812,8 +836,8 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=_get_cors_allowed_origins(),
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=_get_cors_allowed_methods(),
+    allow_headers=_get_cors_allowed_headers(),
 )
 
 # Enforce dashboard token for protected /api routes
