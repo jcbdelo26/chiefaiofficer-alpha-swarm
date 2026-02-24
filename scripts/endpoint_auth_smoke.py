@@ -60,7 +60,22 @@ def _build_url(base_url: str, path: str, params: Optional[Dict[str, str]] = None
     return f"{base}{clean_path}?{urlencode(params)}"
 
 
-def run_smoke(base_url: str, token: str, timeout_seconds: int = 20) -> Dict[str, object]:
+def _parse_bool(value: str) -> bool:
+    normalized = (value or "").strip().lower()
+    if normalized in {"1", "true", "yes", "on"}:
+        return True
+    if normalized in {"0", "false", "no", "off"}:
+        return False
+    raise ValueError(f"Invalid boolean value: {value!r}")
+
+
+def run_smoke(
+    base_url: str,
+    token: str,
+    timeout_seconds: int = 20,
+    *,
+    expect_query_token_enabled: bool = True,
+) -> Dict[str, object]:
     checks: list[CheckResult] = []
 
     unauth_status_url = _build_url(base_url, "/api/operator/status")
@@ -114,14 +129,24 @@ def run_smoke(base_url: str, token: str, timeout_seconds: int = 20) -> Dict[str,
 
     query_auth_url = _build_url(base_url, "/api/operator/status", {"token": token})
     status_code, error = _http_request(query_auth_url, timeout_seconds=timeout_seconds)
+    query_expectation = (
+        "non-401 with query token"
+        if expect_query_token_enabled
+        else "401 when query-token auth is disabled"
+    )
+    query_passed = (
+        (status_code is not None and status_code != 401)
+        if expect_query_token_enabled
+        else (status_code == 401)
+    )
     checks.append(
         CheckResult(
             name="protected_status_query_token",
             method="GET",
             url=query_auth_url,
             status=status_code,
-            passed=(status_code is not None and status_code != 401),
-            expectation="non-401 with query token",
+            passed=query_passed,
+            expectation=query_expectation,
             error=error,
         )
     )
@@ -144,16 +169,20 @@ def run_smoke(base_url: str, token: str, timeout_seconds: int = 20) -> Dict[str,
         )
     )
 
-    runtime_deps_url = _build_url(base_url, "/api/runtime/dependencies", {"token": token})
-    status_code, error = _http_request(runtime_deps_url, timeout_seconds=timeout_seconds)
+    runtime_deps_url = _build_url(base_url, "/api/runtime/dependencies")
+    status_code, error = _http_request(
+        runtime_deps_url,
+        headers={"X-Dashboard-Token": token},
+        timeout_seconds=timeout_seconds,
+    )
     checks.append(
         CheckResult(
-            name="runtime_dependencies_query_token",
+            name="runtime_dependencies_header_token",
             method="GET",
             url=runtime_deps_url,
             status=status_code,
             passed=(status_code is not None and status_code != 401),
-            expectation="non-401 runtime dependencies with token",
+            expectation="non-401 runtime dependencies with header token",
             error=error,
         )
     )
@@ -171,9 +200,19 @@ def main() -> int:
     parser.add_argument("--base-url", required=True, help="Deployed dashboard base URL.")
     parser.add_argument("--token", required=True, help="Dashboard auth token.")
     parser.add_argument("--timeout-seconds", type=int, default=20, help="HTTP timeout per request.")
+    parser.add_argument(
+        "--expect-query-token-enabled",
+        default="true",
+        help="Expected query-token auth state (true/false).",
+    )
     args = parser.parse_args()
 
-    summary = run_smoke(args.base_url, args.token, timeout_seconds=args.timeout_seconds)
+    summary = run_smoke(
+        args.base_url,
+        args.token,
+        timeout_seconds=args.timeout_seconds,
+        expect_query_token_enabled=_parse_bool(args.expect_query_token_enabled),
+    )
     print(json.dumps(summary, indent=2))
     return 0 if summary.get("passed") else 1
 

@@ -1,6 +1,6 @@
 # CAIO Alpha Swarm — Source of Truth Task Tracker
 
-**Last Updated (UTC):** 2026-02-24 13:20
+**Last Updated (UTC):** 2026-02-24 14:05
 **Primary Objective:** Safe progression from supervised Tier_1 live sends to full autonomy without security regressions.
 **Owner:** PTO/GTM (operational), Engineering (controls), HoS (message quality)
 
@@ -75,10 +75,16 @@
   - Current: APIs accept `?token=` and header token.
   - Risk: token leakage via browser history, logs, and copied URLs.
   - Owner: Engineering + PTO
-  - Required action:
-    1. Add env gate `DASHBOARD_QUERY_TOKEN_ENABLED`.
-    2. Set `false` in production after PTO confirms header-based flow works.
-    3. Mask token from request logs if query support remains.
+  - Progress:
+    1. [x] Added env gate `DASHBOARD_QUERY_TOKEN_ENABLED` (default `true`).
+    2. [x] Header token now has extraction priority over query token.
+    3. [x] Added smoke-script support for header-only mode:
+       - `scripts/endpoint_auth_smoke.py --expect-query-token-enabled <true|false>`
+       - `scripts/deployed_full_smoke_checklist.py --expect-query-token-enabled <true|false>`
+  - Remaining action:
+    1. Set `DASHBOARD_QUERY_TOKEN_ENABLED=false` in staging.
+    2. Run full smoke in header-only mode and validate `/sales` UX.
+    3. Promote to production after PTO confirmation.
 
 ## P1 (High-priority hardening)
 - [ ] **State-store cutover still has implicit fallback defaults**
@@ -110,7 +116,7 @@
 |---|---|---|---|---|
 | P0 | Enable strict webhook policy in staging + production | PTO + Eng | DONE | `WEBHOOK_SIGNATURE_REQUIRED=true` in both envs; strict smoke + full smoke pass |
 | P0 | Implement HeyReach strict auth strategy | Eng | IN_PROGRESS | strict mode rejects unsigned unless explicit allowlist strategy active |
-| P0 | Query-token deprecation plan + header-only test | PTO + Eng | TODO | `/sales` + API works header-only; query-token disabled in staging |
+| P0 | Query-token deprecation plan + header-only test | PTO + Eng | IN_PROGRESS | `/sales` + API works header-only; query-token disabled in staging |
 | P1 | Explicit Redis-only state env cutover | PTO + Eng | TODO | prod env has `STATE_DUAL_READ_ENABLED=false`, `STATE_FILE_FALLBACK_WRITE=false` |
 | P1 | CORS method/header tightening | Eng | TODO | smoke/auth tests pass with tightened policy |
 | P1 | Run supervised approval verification (real send proof) | PTO | IN_PROGRESS | approve 1 Tier_1 -> response `Email sent via GHL` + message visible in GHL conversation |
@@ -150,9 +156,9 @@ python scripts/webhook_strict_smoke.py --base-url <STAGING_URL> --dashboard-toke
     - unauthenticated Instantly/Clay/RB2B webhook probes blocked
     - bearer-authenticated Instantly/Clay webhook probes accepted
     - `deployed_full_smoke_checklist` -> pass
-- [ ] Follow-up hardening nuance (pending next deploy):
-  - runtime + webhook auth logic now enforce `HEYREACH_UNSIGNED_ALLOWLIST` consistently in code.
-  - run post-deploy strict smoke to confirm `provider_auth.heyreach` reflects allowlist state exactly.
+- [x] Follow-up hardening nuance validated post-deploy:
+  - runtime + webhook auth logic enforce `HEYREACH_UNSIGNED_ALLOWLIST` consistently.
+  - post-deploy strict smoke confirms `provider_auth.heyreach.unsigned_allowlisted=true` and readiness remains healthy.
 - [x] Transitional rollout guardrail applied:
   - `HEYREACH_UNSIGNED_ALLOWLIST=true` set in staging + production (no redeploy triggered via `--skip-deploys`).
   - next deploy will preserve runtime readiness while keeping HeyReach unsigned path explicitly controlled.
@@ -254,5 +260,6 @@ All must be true for go-live autonomy:
 - `42f829a` — strengthened Tier_1 opener and signal hooks.
 - `3bf089d` — GHL contact lookup fixed to `/contacts?locationId+query`; supervised send-window override support.
 - `d9ade64` — structured rejection tags + clean-day ramp gating.
-- Local (pending deploy) — HeyReach strict auth hardening with `HEYREACH_UNSIGNED_ALLOWLIST` gate + regression tests.
+- `5eaffac` — deployed HeyReach strict auth hardening (`HEYREACH_UNSIGNED_ALLOWLIST` gate) + regression tests; staging/prod strict smoke passed.
+- Local (pending deploy) — query-token gate (`DASHBOARD_QUERY_TOKEN_ENABLED`) + header-priority auth + smoke flags for header-only validation.
 

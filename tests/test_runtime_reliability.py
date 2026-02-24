@@ -275,6 +275,33 @@ def test_protected_api_endpoints_require_dashboard_token(monkeypatch):
     assert preflight.status_code != 401
 
 
+def test_query_token_can_be_disabled_while_header_token_remains_valid(monkeypatch):
+    from dashboard import health_app
+
+    monkeypatch.setenv("DASHBOARD_AUTH_TOKEN", "unit-test-token")
+    monkeypatch.setenv("DASHBOARD_AUTH_STRICT", "true")
+    monkeypatch.setenv("DASHBOARD_QUERY_TOKEN_ENABLED", "false")
+    monkeypatch.setenv("WEBHOOK_SIGNATURE_REQUIRED", "false")
+
+    client = TestClient(health_app.app)
+
+    query_auth_status = client.get("/api/operator/status?token=unit-test-token")
+    header_auth_status = client.get(
+        "/api/operator/status",
+        headers={"X-Dashboard-Token": "unit-test-token"},
+    )
+    runtime_deps_header = client.get(
+        "/api/runtime/dependencies",
+        headers={"X-Dashboard-Token": "unit-test-token"},
+    )
+
+    assert query_auth_status.status_code == 401
+    assert header_auth_status.status_code != 401
+    assert runtime_deps_header.status_code == 200
+    payload = runtime_deps_header.json()
+    assert payload.get("auth", {}).get("query_token_enabled") is False
+
+
 def test_legacy_sales_routes_redirect_to_canonical_sales_dashboard():
     from dashboard import health_app
 

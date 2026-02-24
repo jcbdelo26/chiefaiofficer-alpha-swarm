@@ -699,16 +699,43 @@ def _is_token_strict_mode() -> bool:
     return environment in {"production", "staging"}
 
 
+def _is_query_token_enabled() -> bool:
+    """
+    Whether ?token= query auth is accepted for protected APIs.
+
+    Default remains enabled for backwards compatibility. Prefer header token.
+    """
+    raw = (os.getenv("DASHBOARD_QUERY_TOKEN_ENABLED") or "").strip().lower()
+    if raw in {"1", "true", "yes", "on"}:
+        return True
+    if raw in {"0", "false", "no", "off"}:
+        return False
+    return True
+
+
+def _auth_error_detail() -> str:
+    if _is_query_token_enabled():
+        return (
+            "Unauthorized. Provide dashboard token via "
+            f"?{DASHBOARD_TOKEN_QUERY_PARAM}=... or {DASHBOARD_TOKEN_HEADER} header."
+        )
+    return (
+        "Unauthorized. Query-token auth is disabled. "
+        f"Provide dashboard token via {DASHBOARD_TOKEN_HEADER} header."
+    )
+
+
 def _extract_dashboard_token(request: Request) -> Optional[str]:
-    query_token = request.query_params.get(DASHBOARD_TOKEN_QUERY_PARAM)
-    if query_token:
-        return query_token
     header_token = (
         request.headers.get(DASHBOARD_TOKEN_HEADER)
         or request.headers.get(DASHBOARD_TOKEN_HEADER.lower())
     )
     if header_token:
         return header_token
+    if _is_query_token_enabled():
+        query_token = request.query_params.get(DASHBOARD_TOKEN_QUERY_PARAM)
+        if query_token:
+            return query_token
     return None
 
 
@@ -737,10 +764,7 @@ def require_auth(request: Request) -> bool:
     if not _token_is_valid(token):
         raise HTTPException(
             status_code=401,
-            detail=(
-                "Unauthorized. Provide dashboard token via "
-                f"?{DASHBOARD_TOKEN_QUERY_PARAM}=... or {DASHBOARD_TOKEN_HEADER} header."
-            ),
+            detail=_auth_error_detail(),
         )
     return True
 
@@ -757,12 +781,7 @@ class APIAuthMiddleware(BaseHTTPMiddleware):
             if not _token_is_valid(token):
                 return JSONResponse(
                     status_code=401,
-                    content={
-                        "detail": (
-                            "Unauthorized. Provide dashboard token via "
-                            f"?{DASHBOARD_TOKEN_QUERY_PARAM}=... or {DASHBOARD_TOKEN_HEADER} header."
-                        )
-                    },
+                    content={"detail": _auth_error_detail()},
                 )
         return await call_next(request)
 
@@ -1011,10 +1030,16 @@ async def health_check():
 @app.get("/api/runtime/dependencies")
 async def get_runtime_dependencies(auth: bool = Depends(require_auth)):
     """Runtime reliability health for Redis/Inngest dependency checks."""
-    return get_runtime_dependency_health(
+    payload = get_runtime_dependency_health(
         check_connections=True,
         inngest_route_mounted=INNGEST_ROUTE_MOUNTED,
     )
+    payload["auth"] = {
+        "strict_mode": _is_token_strict_mode(),
+        "query_token_enabled": _is_query_token_enabled(),
+        "token_header": DASHBOARD_TOKEN_HEADER,
+    }
+    return payload
 
 
 @app.get("/api/metrics")

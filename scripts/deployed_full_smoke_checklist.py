@@ -115,11 +115,17 @@ def run_full_smoke(
     *,
     timeout_seconds: int = 20,
     refresh_wait_seconds: int = 3,
+    expect_query_token_enabled: bool = True,
 ) -> Dict[str, Any]:
     checks: list[CheckResult] = []
 
     # Baseline auth checks (existing no-go gate)
-    auth_summary = run_auth_smoke(base_url, token, timeout_seconds=timeout_seconds)
+    auth_summary = run_auth_smoke(
+        base_url,
+        token,
+        timeout_seconds=timeout_seconds,
+        expect_query_token_enabled=expect_query_token_enabled,
+    )
     for item in auth_summary.get("checks", []):
         checks.append(
             CheckResult(
@@ -153,8 +159,12 @@ def run_full_smoke(
     )
 
     # Runtime dependencies should be callable and ideally ready=true
-    runtime_url = _build_url(base_url, "/api/runtime/dependencies", {"token": token})
-    status, payload, error = _http_request(runtime_url, timeout_seconds=timeout_seconds)
+    runtime_url = _build_url(base_url, "/api/runtime/dependencies")
+    status, payload, error = _http_request(
+        runtime_url,
+        headers={"X-Dashboard-Token": token},
+        timeout_seconds=timeout_seconds,
+    )
     runtime_json = _safe_json(payload)
     runtime_ready = bool(runtime_json.get("ready"))
     _record(
@@ -247,7 +257,7 @@ def run_full_smoke(
     )
 
     # Pending endpoint should refresh its timestamp across polls
-    pending_url = _build_url(base_url, "/api/pending-emails", {"token": token, "_ts": str(int(time.time() * 1000))})
+    pending_url = _build_url(base_url, "/api/pending-emails", {"_ts": str(int(time.time() * 1000))})
     status1, payload1, error1 = _http_request(
         pending_url,
         headers={"X-Dashboard-Token": token, "Accept": "application/json"},
@@ -263,7 +273,7 @@ def run_full_smoke(
     pending_url_2 = _build_url(
         base_url,
         "/api/pending-emails",
-        {"token": token, "_ts": str(int(time.time() * 1000))},
+        {"_ts": str(int(time.time() * 1000))},
     )
     status2, payload2, error2 = _http_request(
         pending_url_2,
@@ -336,6 +346,7 @@ def run_full_smoke(
         "base_url": base_url.rstrip("/"),
         "passed": passed,
         "refresh_wait_seconds": refresh_wait_seconds,
+        "expect_query_token_enabled": expect_query_token_enabled,
         "checks": [asdict(c) for c in checks],
     }
 
@@ -356,13 +367,27 @@ def main() -> int:
         default=3,
         help="Wait between two pending-emails polls.",
     )
+    parser.add_argument(
+        "--expect-query-token-enabled",
+        default="true",
+        help="Expected query-token auth state (true/false).",
+    )
     args = parser.parse_args()
+
+    normalized = (args.expect_query_token_enabled or "").strip().lower()
+    if normalized in {"1", "true", "yes", "on"}:
+        expect_query_enabled = True
+    elif normalized in {"0", "false", "no", "off"}:
+        expect_query_enabled = False
+    else:
+        raise SystemExit(f"Invalid --expect-query-token-enabled value: {args.expect_query_token_enabled!r}")
 
     summary = run_full_smoke(
         args.base_url,
         args.token,
         timeout_seconds=args.timeout_seconds,
         refresh_wait_seconds=args.refresh_wait_seconds,
+        expect_query_token_enabled=expect_query_enabled,
     )
     print(json.dumps(summary, indent=2))
     return 0 if summary.get("passed") else 1
