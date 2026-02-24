@@ -34,6 +34,9 @@ _BEARER_CAPABLE_PROVIDERS = {"instantly", "clay"}
 
 # Providers that have NO auth mechanism (no HMAC, no custom headers)
 _NO_AUTH_PROVIDERS = {"heyreach"}
+_UNSIGNED_PROVIDER_ALLOWLIST_ENV = {
+    "heyreach": "HEYREACH_UNSIGNED_ALLOWLIST",
+}
 
 
 def to_bool(value: Optional[str], default: bool = False) -> bool:
@@ -78,6 +81,7 @@ def get_runtime_env_defaults(mode: str) -> Dict[str, str]:
         "WEBHOOK_SIGNATURE_REQUIRED": required_default,
         "INSTANTLY_WEBHOOK_SECRET": "",
         "HEYREACH_WEBHOOK_SECRET": "",
+        "HEYREACH_UNSIGNED_ALLOWLIST": "false",
         "RB2B_WEBHOOK_SECRET": "",
         "CLAY_WEBHOOK_SECRET": "",
         "TRACE_ENVELOPE_FILE": f".hive-mind/traces/tool_trace_envelopes{trace_suffix}.jsonl",
@@ -226,11 +230,21 @@ def _webhook_signature_health() -> Dict[str, Any]:
         has_secret = bool((os.getenv(secret_env) or "").strip())
         has_bearer = provider in _BEARER_CAPABLE_PROVIDERS and bearer_token_set
         no_auth_available = provider in _NO_AUTH_PROVIDERS
+        unsigned_allowlist_env = _UNSIGNED_PROVIDER_ALLOWLIST_ENV.get(provider)
+        unsigned_allowlisted = (
+            no_auth_available
+            and bool(unsigned_allowlist_env)
+            and to_bool(os.getenv(unsigned_allowlist_env), default=False)
+        )
+        # Strict mode requires explicit allowlist for unsigned providers.
+        unsigned_allowed = no_auth_available and (not required or unsigned_allowlisted)
         provider_auth[provider] = {
             "hmac": has_secret,
             "bearer": has_bearer,
             "no_auth_provider": no_auth_available,
-            "authed": has_secret or has_bearer or no_auth_available,
+            "unsigned_allowlist_env": unsigned_allowlist_env,
+            "unsigned_allowlisted": unsigned_allowlisted,
+            "authed": has_secret or has_bearer or unsigned_allowed,
         }
 
     unauthed = [p for p, info in provider_auth.items() if not info["authed"]]

@@ -43,10 +43,14 @@ WEBHOOK_BEARER_TOKEN=<LONG_RANDOM_SECRET>
 INSTANTLY_WEBHOOK_SECRET=<optional_if_using_hmac>
 RB2B_WEBHOOK_SECRET=<optional_if_using_hmac>
 CLAY_WEBHOOK_SECRET=<optional_if_using_hmac>
+HEYREACH_UNSIGNED_ALLOWLIST=<true_or_false>
 ```
 
 Notes:
 - If you do not manage HMAC signatures for Instantly/RB2B/Clay, bearer token fallback is required.
+- HeyReach does not support custom webhook headers. In strict mode:
+  - set `HEYREACH_UNSIGNED_ALLOWLIST=true` as a temporary controlled bypass, or
+  - keep it `false` only when protected ingress/signature strategy is implemented.
 - Keep `DASHBOARD_AUTH_STRICT=true`, `REDIS_REQUIRED=true`, `INNGEST_REQUIRED=true`.
 
 ---
@@ -139,4 +143,3 @@ python scripts/webhook_strict_smoke_matrix.py `
   --production-webhook-required false `
   --production-webhook-bearer-token <PRODUCTION_WEBHOOK_BEARER_TOKEN>
 ```
-

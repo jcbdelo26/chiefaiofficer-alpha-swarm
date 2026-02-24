@@ -15,6 +15,9 @@ from fastapi import HTTPException
 
 _TRUE_VALUES = {"1", "true", "yes", "on"}
 _FALSE_VALUES = {"0", "false", "no", "off"}
+_UNSIGNED_PROVIDER_ALLOWLIST_ENV = {
+    "heyreach": "HEYREACH_UNSIGNED_ALLOWLIST",
+}
 
 
 def is_webhook_signature_strict_mode() -> bool:
@@ -44,6 +47,20 @@ def get_webhook_signature_status(
         "secret_configured": bool((os.getenv(secret_env) or "").strip()),
         "bearer_configured": bool((os.getenv(bearer_env) or "").strip()),
     }
+
+
+def is_unsigned_webhook_provider_allowlisted(provider: str) -> bool:
+    """
+    Return whether an unsigned provider is explicitly allowlisted.
+
+    This is a temporary escape hatch for providers that cannot yet attach
+    signatures/headers. Keep disabled unless ingress controls are in place.
+    """
+    provider_key = (provider or "").strip().lower()
+    env_name = _UNSIGNED_PROVIDER_ALLOWLIST_ENV.get(provider_key)
+    if not env_name:
+        return False
+    return (os.getenv(env_name) or "").strip().lower() in _TRUE_VALUES
 
 
 def _normalize_signature(signature: Optional[str]) -> str:
@@ -155,6 +172,10 @@ def require_webhook_auth(
         token = auth[7:].strip()
         if not hmac.compare_digest(token, bearer_token):
             raise HTTPException(status_code=401, detail="Invalid bearer token")
+        return
+
+    # Layer 2.5: explicit allowlist for unsigned provider paths.
+    if is_unsigned_webhook_provider_allowlisted(provider):
         return
 
     # Layer 3: Nothing configured

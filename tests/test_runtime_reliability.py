@@ -105,6 +105,45 @@ def test_runtime_dependency_health_webhooks_required_with_secrets_passes(monkeyp
     assert health["dependencies"]["webhooks"]["ready"] is True
 
 
+def test_runtime_dependency_health_heyreach_unsigned_requires_explicit_allowlist(
+    monkeypatch,
+):
+    monkeypatch.setenv("REDIS_REQUIRED", "false")
+    monkeypatch.setenv("INNGEST_REQUIRED", "false")
+    monkeypatch.setenv("WEBHOOK_SIGNATURE_REQUIRED", "true")
+    monkeypatch.setenv("INSTANTLY_WEBHOOK_SECRET", "instantly-secret")
+    monkeypatch.setenv("RB2B_WEBHOOK_SECRET", "rb2b-secret")
+    monkeypatch.setenv("CLAY_WEBHOOK_SECRET", "clay-secret")
+    monkeypatch.delenv("HEYREACH_WEBHOOK_SECRET", raising=False)
+    monkeypatch.delenv("HEYREACH_UNSIGNED_ALLOWLIST", raising=False)
+
+    health = get_runtime_dependency_health(
+        check_connections=False,
+        inngest_route_mounted=False,
+    )
+
+    assert health["ready"] is False
+    assert "heyreach" in health["dependencies"]["webhooks"]["unauthed_providers"]
+    assert (
+        health["dependencies"]["webhooks"]["provider_auth"]["heyreach"]["unsigned_allowlisted"]
+        is False
+    )
+
+    monkeypatch.setenv("HEYREACH_UNSIGNED_ALLOWLIST", "true")
+    allowlisted_health = get_runtime_dependency_health(
+        check_connections=False,
+        inngest_route_mounted=False,
+    )
+
+    assert allowlisted_health["ready"] is True
+    assert (
+        allowlisted_health["dependencies"]["webhooks"]["provider_auth"]["heyreach"][
+            "unsigned_allowlisted"
+        ]
+        is True
+    )
+
+
 def test_merge_runtime_env_values_respects_existing_and_overrides():
     merged = merge_runtime_env_values(
         mode="production",

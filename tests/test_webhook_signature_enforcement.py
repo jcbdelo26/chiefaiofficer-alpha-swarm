@@ -101,6 +101,32 @@ def test_heyreach_webhook_allows_unsigned_payload_when_non_strict(monkeypatch):
     assert response.status_code == 200
 
 
+def test_heyreach_webhook_strict_rejects_unsigned_without_allowlist(monkeypatch):
+    monkeypatch.setenv("WEBHOOK_SIGNATURE_REQUIRED", "true")
+    monkeypatch.delenv("HEYREACH_WEBHOOK_SECRET", raising=False)
+    monkeypatch.delenv("HEYREACH_BEARER_TOKEN", raising=False)
+    monkeypatch.delenv("HEYREACH_UNSIGNED_ALLOWLIST", raising=False)
+
+    from webhooks.heyreach_webhook import router
+
+    client = _build_client(router)
+    response = client.post("/webhooks/heyreach", json={"eventType": "UNKNOWN"})
+    assert response.status_code == 503
+
+
+def test_heyreach_webhook_strict_allows_unsigned_with_allowlist(monkeypatch):
+    monkeypatch.setenv("WEBHOOK_SIGNATURE_REQUIRED", "true")
+    monkeypatch.delenv("HEYREACH_WEBHOOK_SECRET", raising=False)
+    monkeypatch.delenv("HEYREACH_BEARER_TOKEN", raising=False)
+    monkeypatch.setenv("HEYREACH_UNSIGNED_ALLOWLIST", "true")
+
+    from webhooks.heyreach_webhook import router
+
+    client = _build_client(router)
+    response = client.post("/webhooks/heyreach", json={"eventType": "UNKNOWN"})
+    assert response.status_code == 200
+
+
 def test_rb2b_and_clay_fail_closed_when_strict_without_secret(monkeypatch):
     monkeypatch.setenv("WEBHOOK_SIGNATURE_REQUIRED", "true")
 

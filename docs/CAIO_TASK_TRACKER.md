@@ -1,6 +1,6 @@
 # CAIO Alpha Swarm — Source of Truth Task Tracker
 
-**Last Updated (UTC):** 2026-02-24 09:15
+**Last Updated (UTC):** 2026-02-24 13:20
 **Primary Objective:** Safe progression from supervised Tier_1 live sends to full autonomy without security regressions.
 **Owner:** PTO/GTM (operational), Engineering (controls), HoS (message quality)
 
@@ -47,22 +47,29 @@
 ## 2) Security + Production Risk Register
 
 ## P0 (Blockers before full autonomy)
-- [ ] **Webhook strict enforcement is disabled in production env**
-  - Current: `WEBHOOK_SIGNATURE_REQUIRED=false`
-  - Risk: webhook auth can fail open or be policy-inconsistent.
-  - Owner: PTO + Engineering
-  - Required action: set to `true` in production + staging after provider strategy is finalized.
+- [x] **Webhook strict enforcement enabled in staging + production**
+  - Current: `WEBHOOK_SIGNATURE_REQUIRED=true` in staging and production.
+  - Validation:
+    - `python scripts/webhook_strict_smoke.py --base-url <env_url> --dashboard-token <token> --expect-webhook-required true --webhook-bearer-token <bearer>`
+    - `python scripts/deployed_full_smoke_checklist.py --base-url <env_url> --token <token>`
+  - Notes:
+    - rollback commands were prepared before production flip and saved to local ops temp (`caio_prod_webhook_rollback.ps1`).
 
 - [ ] **HeyReach auth model is not cryptographically enforced**
   - Current code marks HeyReach as `no_auth_provider` and effectively treats it as authenticated in health checks.
   - Risk: spoofable webhook events unless protected by trusted ingress controls.
   - Owner: Engineering
-  - Required action:
-    1. Add strict policy: unsigned providers are `unhealthy` in strict mode unless explicitly allowed via dedicated override env.
-    2. Implement one of:
-       - trusted reverse-proxy verification + injected bearer header, or
-       - ingress IP allowlist + explicit `HEYREACH_UNSIGNED_ALLOWLIST=true` audit mode.
-    3. Add tests for strict-mode rejection path.
+  - Progress:
+    1. [x] Added strict policy in code: unsigned HeyReach is `unhealthy` in strict mode unless explicitly allowlisted via `HEYREACH_UNSIGNED_ALLOWLIST=true`.
+    2. [x] Added enforcement path in webhook auth helper (`require_webhook_auth`) with explicit unsigned-provider allowlist gate.
+    3. [x] Added/updated tests:
+       - `tests/test_runtime_reliability.py`
+       - `tests/test_webhook_signature_enforcement.py`
+       - local result: `22 passed`.
+  - Remaining action:
+    - deploy patch + set final strategy:
+      - secure ingress + `HEYREACH_UNSIGNED_ALLOWLIST=false`, or
+      - temporary controlled audit mode with `HEYREACH_UNSIGNED_ALLOWLIST=true`.
 
 - [ ] **Dashboard query token compatibility still enabled**
   - Current: APIs accept `?token=` and header token.
@@ -101,8 +108,8 @@
 
 | Priority | Task | Owner | Status | Exit Criteria |
 |---|---|---|---|---|
-| P0 | Enable strict webhook policy in staging | PTO + Eng | TODO | `WEBHOOK_SIGNATURE_REQUIRED=true` in staging; webhook tests pass |
-| P0 | Implement HeyReach strict auth strategy | Eng | TODO | strict mode rejects unsigned unless explicit allowlist strategy active |
+| P0 | Enable strict webhook policy in staging + production | PTO + Eng | DONE | `WEBHOOK_SIGNATURE_REQUIRED=true` in both envs; strict smoke + full smoke pass |
+| P0 | Implement HeyReach strict auth strategy | Eng | IN_PROGRESS | strict mode rejects unsigned unless explicit allowlist strategy active |
 | P0 | Query-token deprecation plan + header-only test | PTO + Eng | TODO | `/sales` + API works header-only; query-token disabled in staging |
 | P1 | Explicit Redis-only state env cutover | PTO + Eng | TODO | prod env has `STATE_DUAL_READ_ENABLED=false`, `STATE_FILE_FALLBACK_WRITE=false` |
 | P1 | CORS method/header tightening | Eng | TODO | smoke/auth tests pass with tightened policy |
@@ -120,7 +127,7 @@ Staging validation command:
 python scripts/webhook_strict_smoke.py --base-url <STAGING_URL> --dashboard-token <STAGING_DASHBOARD_AUTH_TOKEN> --expect-webhook-required true --webhook-bearer-token <WEBHOOK_BEARER_TOKEN>
 ```
 
-### 3.2 Staging Strict Rollout Execution (2026-02-24)
+### 3.2 Staging + Production Strict Rollout Execution (2026-02-24)
 - [x] Baseline staging checks passed before change:
   - `webhook_strict_smoke --expect-webhook-required false` -> pass
   - `deployed_full_smoke_checklist` -> pass
@@ -132,9 +139,23 @@ python scripts/webhook_strict_smoke.py --base-url <STAGING_URL> --dashboard-toke
   - unauthenticated Instantly/Clay/RB2B webhook probes blocked
   - bearer-authenticated Instantly/Clay webhook probes accepted
   - `deployed_full_smoke_checklist` -> pass
-- [ ] Follow-up hardening nuance:
-  - runtime `provider_auth.heyreach` currently reports `authed=true` while strict HeyReach no-auth probe returns `503` (provider has no signature/header path).
-  - engineering should align runtime health semantics with strict enforcement behavior before production strict-mode promotion.
+- [x] Production strict rollout executed:
+  - baseline prod `webhook_strict_smoke --expect-webhook-required false` -> pass
+  - baseline prod `deployed_full_smoke_checklist` -> pass
+  - prod env updated:
+    - `WEBHOOK_SIGNATURE_REQUIRED=true`
+    - `WEBHOOK_BEARER_TOKEN` preserved
+  - post-change prod strict validation:
+    - `webhook_strict_smoke --expect-webhook-required true --webhook-bearer-token <...>` -> pass
+    - unauthenticated Instantly/Clay/RB2B webhook probes blocked
+    - bearer-authenticated Instantly/Clay webhook probes accepted
+    - `deployed_full_smoke_checklist` -> pass
+- [ ] Follow-up hardening nuance (pending next deploy):
+  - runtime + webhook auth logic now enforce `HEYREACH_UNSIGNED_ALLOWLIST` consistently in code.
+  - run post-deploy strict smoke to confirm `provider_auth.heyreach` reflects allowlist state exactly.
+- [x] Transitional rollout guardrail applied:
+  - `HEYREACH_UNSIGNED_ALLOWLIST=true` set in staging + production (no redeploy triggered via `--skip-deploys`).
+  - next deploy will preserve runtime readiness while keeping HeyReach unsigned path explicitly controlled.
 
 ---
 
@@ -206,7 +227,7 @@ python -m pytest -q \
 
 ## 6) Inputs Needed From PTO (Current)
 
-- [ ] Confirm webhook hardening rollout window for staging then production.
+- [x] Webhook strict rollout completed in staging + production.
 - [ ] Approve disabling query-token mode in production after header-token verification.
 - [ ] Confirm state-store final cutover values:
   - `STATE_DUAL_READ_ENABLED=false`
@@ -233,4 +254,5 @@ All must be true for go-live autonomy:
 - `42f829a` — strengthened Tier_1 opener and signal hooks.
 - `3bf089d` — GHL contact lookup fixed to `/contacts?locationId+query`; supervised send-window override support.
 - `d9ade64` — structured rejection tags + clean-day ramp gating.
+- Local (pending deploy) — HeyReach strict auth hardening with `HEYREACH_UNSIGNED_ALLOWLIST` gate + regression tests.
 
