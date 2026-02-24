@@ -24,6 +24,7 @@ Primary runbook: `docs/PTO_GTM_SAFE_TRAINING_EVAL_REGIMEN.md`.
 - [x] Deploy current patch set to Railway.
 - [x] Run post-deploy smoke matrix on staging + production.
 - [x] Crafter now ingests rejection feedback and normalizes executive title personalization (e.g., `Chief Revenue Officer (CRO)` -> `CRO`) in `execution/crafter_campaign.py`.
+- [x] Tier_1 opener hardening: hook normalization now strips raw dict payloads from tech-stack signals and generates human-readable openers only.
 - [ ] Run supervised live cycle and capture HoS approval/rejection tags after fresh post-patch generation.
 
 ### Execution Log (2026-02-23 EST / 2026-02-24 UTC)
@@ -108,6 +109,27 @@ Primary runbook: `docs/PTO_GTM_SAFE_TRAINING_EVAL_REGIMEN.md`.
    - expected API response: `Email sent via GHL`
    - confirm message appears in GHL conversation thread.
 
+- [x] Hotfix deployed + ritual verified:
+  - deployed commit: `3bf089d`
+  - `core/ghl_outreach.py` contact lookup switched to `GET /contacts` with `locationId + query`.
+  - temporary supervised send-window override enabled in production:
+    - `SUPERVISED_SEND_WINDOW_OVERRIDE=true`
+  - ritual run:
+    - `echo yes | python execution/run_pipeline.py --mode production --source "wpromote" --limit 2`
+    - run_id: `run_20260224_061614_24f2b4`
+  - approval result:
+    - `pipeline_camp_20260224_061621_andrew_mahr_c3ed4b` -> **`Email sent via GHL`**
+  - Redis state proof:
+    - `status=sent_via_ghl`
+    - `sent_via_ghl=true`
+    - `contact_resolution.resolved=true`, `created=true`
+    - `send_error=None`
+
+- [x] Tier_1 personalization readability patch prepared for deploy:
+  - `execution/segmentor_classify.py` now normalizes technology objects (e.g., Apollo dict payloads) to clean names before hook generation.
+  - `execution/crafter_campaign.py` now maps hook categories to natural opener lines and avoids role-label/dict-style opener text.
+  - expected result on new pending cards: no raw dict literals and no weak opener phrase pattern.
+
 ### PTO Fix Checklist: Approvals -> `Email sent via GHL`
 
 Use this exact checklist before next supervised approval cycle.
@@ -118,7 +140,7 @@ Use this exact checklist before next supervised approval cycle.
    - `DASHBOARD_AUTH_TOKEN` is current and used in UI/API checks.
    - keep strict runtime flags enabled: `DASHBOARD_AUTH_STRICT=true`, `REDIS_REQUIRED=true`, `INNGEST_REQUIRED=true`.
 2. GHL API permission scope on the key:
-   - Contacts read/search (`GET /contacts/search` used by auto-resolve).
+   - Contacts read/search (`GET /contacts` with `locationId + query` used by auto-resolve).
    - Contacts create/update (`POST /contacts/` used by auto-upsert).
    - Conversations/messages send (`POST /conversations/messages` used for actual email send).
 3. GHL location/email readiness:

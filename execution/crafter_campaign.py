@@ -683,6 +683,30 @@ Chief AI Officer Inc. | 5700 Harper Dr, Suite 210, Albuquerque, NM 87109"""
         engagement_content = (engagement_content or "").strip()
         hooks = [str(h).strip() for h in (hooks or []) if str(h).strip()]
 
+        def _hook_based_opening(hook: str) -> str:
+            lowered = hook.lower()
+            if ":" in hook:
+                payload = hook.split(":", 1)[1].strip()
+            else:
+                payload = ""
+
+            if lowered.startswith("tech stack signal:") and payload:
+                return (
+                    f"Noticed {company_name} already uses {payload}, "
+                    "which usually makes implementation move faster."
+                )
+            if lowered.startswith("recent comment topic:") and payload:
+                return f"Your recent point on \"{self._truncate_phrase(payload, max_words=8)}\" stood out to me."
+            if lowered.startswith("attended ") and payload:
+                return f"Noticed you were at {payload}, and I thought this would be relevant for {company_name}."
+            if lowered.startswith("visited ") and payload:
+                return f"Saw activity from {company_name} around {payload}, so I wanted to share one practical idea."
+            if lowered.startswith("downloaded/engaged with ") and payload:
+                return f"Given your recent interest in {payload}, I wanted to share a practical next step for {company_name}."
+            if lowered.startswith("team scale signal:") and payload:
+                return f"With team scale at {payload}, execution speed usually depends on operating cadence more than tooling."
+            return ""
+
         if source_type == "demo_requester":
             return f"Saw inbound interest from {company_name}, so I wanted to send a practical next-step idea."
         if source_type == "website_visitor":
@@ -700,8 +724,24 @@ Chief AI Officer Inc. | 5700 Harper Dr, Suite 210, Albuquerque, NM 87109"""
             return f"Saw your recent LinkedIn engagement and wanted to share a practical idea for {company_name}."
         if source_type in {"group_member", "webinar_registrant", "content_downloader"} and source_name:
             return f"Given your recent activity around {source_name}, I wanted to share one concrete idea for {company_name}."
-        if hooks:
-            return f"One thing that stood out: {self._truncate_phrase(hooks[0], max_words=12)}."
+
+        for hook in hooks:
+            hook_opening = _hook_based_opening(hook)
+            if hook_opening:
+                return hook_opening
+
+        non_role_hooks = []
+        role_prefixes = (
+            "executive buyer role:",
+            "operational decision-maker role:",
+            "vp-level strategic role:",
+        )
+        for hook in hooks:
+            if hook.lower().startswith(role_prefixes):
+                continue
+            non_role_hooks.append(hook)
+        if non_role_hooks:
+            return f"One thing that stood out: {self._truncate_phrase(non_role_hooks[0], max_words=12)}."
         if industry:
             return f"Working with teams in {industry}, we keep seeing the same execution gap show up."
         return f"Wanted to share one practical AI execution idea for {company_name}."

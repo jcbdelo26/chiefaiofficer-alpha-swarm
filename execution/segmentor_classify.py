@@ -648,6 +648,26 @@ class LeadSegmentor:
             if len(words) <= max_words:
                 return " ".join(words)
             return " ".join(words[:max_words]) + "..."
+
+        def _normalize_technology_name(value: Any) -> str:
+            """Normalize technology entries coming from mixed enrichment payloads."""
+            raw = value
+            if isinstance(value, dict):
+                raw = (
+                    value.get("name")
+                    or value.get("technology")
+                    or value.get("tech")
+                    or value.get("vendor")
+                    or value.get("uid")
+                    or ""
+                )
+            name = str(raw or "").strip()
+            if not name:
+                return ""
+            lowered = name.lower()
+            if lowered in {"ai", "other", "unknown", "n/a", "na", "none"}:
+                return ""
+            return name
         
         # Source-based hooks
         source_type = str(lead.get("source_type", "")).strip().lower()
@@ -689,7 +709,19 @@ class LeadSegmentor:
         company_data = lead.get("company", {})
         technologies = company_data.get("technologies") or []
         if isinstance(technologies, list) and technologies:
-            top_tech = [str(t).strip() for t in technologies if str(t).strip()][:2]
+            top_tech: List[str] = []
+            seen_tech = set()
+            for item in technologies:
+                tech_name = _normalize_technology_name(item)
+                if not tech_name:
+                    continue
+                key = tech_name.lower()
+                if key in seen_tech:
+                    continue
+                seen_tech.add(key)
+                top_tech.append(tech_name)
+                if len(top_tech) >= 2:
+                    break
             if top_tech:
                 hooks.append(f"Tech stack signal: {', '.join(top_tech)}")
 
