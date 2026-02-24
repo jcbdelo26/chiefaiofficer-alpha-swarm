@@ -1,6 +1,6 @@
 # CAIO Alpha Swarm — Source of Truth Task Tracker
 
-**Last Updated (UTC):** 2026-02-24 14:35
+**Last Updated (UTC):** 2026-02-24 14:59
 **Primary Objective:** Safe progression from supervised Tier_1 live sends to full autonomy without security regressions.
 **Owner:** PTO/GTM (operational), Engineering (controls), HoS (message quality)
 
@@ -10,7 +10,7 @@
 
 ### 1.1 Deployment + Runtime
 - Production app: `https://caio-swarm-dashboard-production.up.railway.app`
-- Latest deployed commit: `165c753` (docs), latest functional patch: `d9b8c63` (Tier_1 personalization normalization)
+- Latest deployed commit: `f1cb70a` (webhook/header-token smoke compatibility), latest functional patch: `d9b8c63` (Tier_1 personalization normalization)
 - Runtime health: `ready=true`
 - Redis required and healthy: `REDIS_REQUIRED=true`
 - Inngest required and healthy: `INNGEST_REQUIRED=true`
@@ -71,8 +71,8 @@
       - secure ingress + `HEYREACH_UNSIGNED_ALLOWLIST=false`, or
       - temporary controlled audit mode with `HEYREACH_UNSIGNED_ALLOWLIST=true`.
 
-- [ ] **Dashboard query token compatibility still enabled**
-  - Current: APIs accept `?token=` and header token.
+- [x] **Dashboard query token deprecation completed**
+  - Current: header token auth is enforced for protected API routes; query-token auth is disabled in staging and production.
   - Risk: token leakage via browser history, logs, and copied URLs.
   - Owner: Engineering + PTO
   - Progress:
@@ -81,27 +81,34 @@
     3. [x] Added smoke-script support for header-only mode:
        - `scripts/endpoint_auth_smoke.py --expect-query-token-enabled <true|false>`
        - `scripts/deployed_full_smoke_checklist.py --expect-query-token-enabled <true|false>`
-  - Remaining action:
+  - Rollout actions:
     1. [x] Set `DASHBOARD_QUERY_TOKEN_ENABLED=false` in staging.
     2. [x] Ran full smoke in header-only mode and validated `/sales` API wiring.
-    3. [ ] Promote to production after PTO confirmation.
+    3. [x] Set `DASHBOARD_QUERY_TOKEN_ENABLED=false` in production and validated:
+       - `python scripts/deployed_full_smoke_checklist.py --base-url https://caio-swarm-dashboard-production.up.railway.app --token <PROD_DASHBOARD_AUTH_TOKEN> --expect-query-token-enabled false`
+       - `python scripts/webhook_strict_smoke.py --base-url https://caio-swarm-dashboard-production.up.railway.app --dashboard-token <PROD_DASHBOARD_AUTH_TOKEN> --expect-webhook-required true --webhook-bearer-token <PROD_WEBHOOK_BEARER_TOKEN>`
 
 ## P1 (High-priority hardening)
-- [ ] **State-store cutover still has implicit fallback defaults**
-  - Current defaults in code: `STATE_DUAL_READ_ENABLED=true`, `STATE_FILE_FALLBACK_WRITE=true` if env not set.
-  - Risk: hidden drift between Redis and file state after restart/cutover.
-  - Owner: Engineering
-  - Required action:
-    - set explicit production env:
-      - `STATE_BACKEND=redis`
-      - `STATE_DUAL_READ_ENABLED=false` (after one stable release)
-      - `STATE_FILE_FALLBACK_WRITE=false`
+- [x] **State-store cutover env flags finalized in production**
+  - Current production env:
+    - `STATE_BACKEND=redis`
+    - `STATE_DUAL_READ_ENABLED=false`
+    - `STATE_FILE_FALLBACK_WRITE=false`
+  - Verification:
+    - deployed smoke (production) passed
+    - webhook strict smoke (production) passed
 
-- [ ] **CORS is origin-scoped but method/header policy is broad**
-  - Current: `allow_methods=["*"]`, `allow_headers=["*"]`, `allow_credentials=True`.
-  - Risk: wider browser surface than needed.
+- [x] **CORS method/header policy tightened**
+  - Current:
+    - `allow_methods` is explicit via `CORS_ALLOWED_METHODS` (default `GET,POST,OPTIONS`)
+    - `allow_headers` is explicit via `CORS_ALLOWED_HEADERS` (default `Content-Type,X-Dashboard-Token`)
+    - `allow_credentials=True` retained for authenticated dashboard browser flows
   - Owner: Engineering
-  - Required action: restrict to required methods/headers only (`GET,POST,OPTIONS`; `Content-Type,X-Dashboard-Token`).
+  - Verification:
+    - targeted regression tests passed (`40 passed`)
+    - staging deployed smoke passed (`--expect-query-token-enabled false`)
+    - production deployed smoke passed (`--expect-query-token-enabled false`)
+    - webhook strict smoke matrix passed (staging + production)
 
 ## P2 (Stability/maintenance)
 - [ ] Migrate deprecated FastAPI `on_event` to lifespan handlers.
@@ -116,9 +123,9 @@
 |---|---|---|---|---|
 | P0 | Enable strict webhook policy in staging + production | PTO + Eng | DONE | `WEBHOOK_SIGNATURE_REQUIRED=true` in both envs; strict smoke + full smoke pass |
 | P0 | Implement HeyReach strict auth strategy | Eng | IN_PROGRESS | strict mode rejects unsigned unless explicit allowlist strategy active |
-| P0 | Query-token deprecation plan + header-only test | PTO + Eng | IN_PROGRESS | staging header-only validated; pending production flip |
-| P1 | Explicit Redis-only state env cutover | PTO + Eng | TODO | prod env has `STATE_DUAL_READ_ENABLED=false`, `STATE_FILE_FALLBACK_WRITE=false` |
-| P1 | CORS method/header tightening | Eng | TODO | smoke/auth tests pass with tightened policy |
+| P0 | Query-token deprecation plan + header-only test | PTO + Eng | DONE | staging + production header-only validation passing (`expect-query-token-enabled false`) |
+| P1 | Explicit Redis-only state env cutover | PTO + Eng | DONE | prod env has `STATE_DUAL_READ_ENABLED=false`, `STATE_FILE_FALLBACK_WRITE=false`; deployed smoke passing |
+| P1 | CORS method/header tightening | Eng | DONE | explicit methods/headers deployed; smoke/auth checks passing in staging + production |
 | P1 | Run supervised approval verification (real send proof) | PTO | IN_PROGRESS | approve 1 Tier_1 -> response `Email sent via GHL` + message visible in GHL conversation |
 | P1 | Rejection-tag learning loop review | HoS + PTO | TODO | top reject tags reviewed; crafter tuning PR merged |
 | P2 | Lifespan + utcnow cleanup | Eng | TODO | warning class reduced in CI/test output |
@@ -171,6 +178,10 @@ python scripts/webhook_strict_smoke.py --base-url <STAGING_URL> --dashboard-toke
   - env: `DASHBOARD_QUERY_TOKEN_ENABLED=false` (staging)
   - `python scripts/deployed_full_smoke_checklist.py --base-url https://caio-swarm-dashboard-staging.up.railway.app --token <STAGING_DASHBOARD_AUTH_TOKEN> --expect-query-token-enabled false` -> pass
   - `python scripts/webhook_strict_smoke.py --base-url https://caio-swarm-dashboard-staging.up.railway.app --dashboard-token <STAGING_DASHBOARD_AUTH_TOKEN> --expect-webhook-required true --webhook-bearer-token <STAGING_WEBHOOK_BEARER_TOKEN>` -> pass
+- [x] Production header-only auth validation (query-token disabled):
+  - env: `DASHBOARD_QUERY_TOKEN_ENABLED=false` (production)
+  - `python scripts/deployed_full_smoke_checklist.py --base-url https://caio-swarm-dashboard-production.up.railway.app --token <PROD_DASHBOARD_AUTH_TOKEN> --expect-query-token-enabled false` -> pass
+  - `python scripts/webhook_strict_smoke.py --base-url https://caio-swarm-dashboard-production.up.railway.app --dashboard-token <PROD_DASHBOARD_AUTH_TOKEN> --expect-webhook-required true --webhook-bearer-token <PROD_WEBHOOK_BEARER_TOKEN>` -> pass
 
 ---
 
@@ -243,8 +254,8 @@ python -m pytest -q \
 ## 6) Inputs Needed From PTO (Current)
 
 - [x] Webhook strict rollout completed in staging + production.
-- [ ] Approve disabling query-token mode in production after header-token verification.
-- [ ] Confirm state-store final cutover values:
+- [x] Query-token mode disabled in production after header-token verification.
+- [x] State-store final cutover values confirmed in production:
   - `STATE_DUAL_READ_ENABLED=false`
   - `STATE_FILE_FALLBACK_WRITE=false`
 - [ ] Confirm token rotation date for `DASHBOARD_AUTH_TOKEN` after rollout.
@@ -256,8 +267,8 @@ python -m pytest -q \
 All must be true for go-live autonomy:
 - [ ] 3 clean supervised live days in a row (no gate failures, no unresolved sends).
 - [ ] Webhook strict mode enabled with no unsigned-provider blind spots.
-- [ ] Header-only auth model validated; query-token disabled in production.
-- [ ] Redis-only state cutover complete; no file-fallback writes.
+- [x] Header-only auth model validated; query-token disabled in production.
+- [x] Redis-only state cutover complete; no file-fallback writes.
 - [ ] Replay gate >= 0.95 and critical pytest pack green on release branch.
 - [ ] HoS quality metrics stable (rejection ratio and personalization quality trending positive).
 
@@ -265,11 +276,12 @@ All must be true for go-live autonomy:
 
 ## 8) Change Log (Most Recent)
 
+- `21993cd` — CORS hardening: explicit `CORS_ALLOWED_METHODS` / `CORS_ALLOWED_HEADERS` defaults; deployed and smoke-validated on staging + production.
+- `f1cb70a` — smoke hardening: `webhook_strict_smoke.py` uses header-token runtime auth path (query-token-independent).
 - `d9b8c63` — personalization: normalized Tier_1 hooks + human-readable opener text.
 - `42f829a` — strengthened Tier_1 opener and signal hooks.
 - `3bf089d` — GHL contact lookup fixed to `/contacts?locationId+query`; supervised send-window override support.
 - `d9ade64` — structured rejection tags + clean-day ramp gating.
 - `5eaffac` — deployed HeyReach strict auth hardening (`HEYREACH_UNSIGNED_ALLOWLIST` gate) + regression tests; staging/prod strict smoke passed.
 - `00bb12e` — deployed query-token gate (`DASHBOARD_QUERY_TOKEN_ENABLED`) + header-priority auth + smoke flags for header-only validation.
-- Local (pending deploy) — `scripts/webhook_strict_smoke.py` updated to authenticate runtime dependency check via header token (query-token-independent).
 
