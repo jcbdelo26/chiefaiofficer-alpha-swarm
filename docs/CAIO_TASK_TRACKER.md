@@ -1,6 +1,6 @@
 # CAIO Alpha Swarm — Source of Truth Task Tracker
 
-**Last Updated (UTC):** 2026-02-24 16:53
+**Last Updated (UTC):** 2026-02-24 17:21
 **Primary Objective:** Safe progression from supervised Tier_1 live sends to full autonomy without security regressions.
 **Owner:** PTO/GTM (operational), Engineering (controls), HoS (message quality)
 
@@ -20,6 +20,8 @@
 ### 1.2 Quality + Reliability Gates (Latest Local/Deployed Checks)
 - Replay harness: `50/50 pass`, `pass_rate=1.0` (`scripts/replay_harness.py --min-pass-rate 0.95`)
 - Smoke checklist (production): `passed=true`
+- Deployed full-smoke matrix (staging + production, header-only mode): `passed=true` with `--expect-query-token-enabled false`
+- Deployed full-smoke matrix with HeyReach hard-auth required: `passed=false` (expected while `HEYREACH_UNSIGNED_ALLOWLIST=true`)
 - Targeted pytest packs run and passing:
   - `tests/test_instantly_webhook_auth.py`
   - `tests/test_runtime_determinism_flows.py`
@@ -56,7 +58,7 @@
     - rollback commands were prepared before production flip and saved to local ops temp (`caio_prod_webhook_rollback.ps1`).
 
 - [ ] **HeyReach auth model is not cryptographically enforced**
-  - Current code marks HeyReach as `no_auth_provider` and effectively treats it as authenticated in health checks.
+  - Current deployed env still uses temporary unsigned allowlist mode (`HEYREACH_UNSIGNED_ALLOWLIST=true`).
   - Risk: spoofable webhook events unless protected by trusted ingress controls.
   - Owner: Engineering
   - Progress:
@@ -69,9 +71,16 @@
     4. [x] Added HeyReach bearer-auth strict path (`HEYREACH_BEARER_TOKEN`) in runtime health and webhook tests.
        - allows strict-mode auth without unsigned allowlist when trusted ingress can inject `Authorization: Bearer ...`.
        - local verification: `25 passed` for runtime/webhook auth pack.
+    5. [x] Added deployed smoke hard-auth gate:
+       - `scripts/deployed_full_smoke_checklist.py --require-heyreach-hard-auth`
+       - `scripts/deployed_full_smoke_matrix.py --require-heyreach-hard-auth`
+       - runtime output now reports explicit blocker details (`heyreach_unsigned_allowlisted=true`) in each environment.
   - Remaining action:
     - configure and validate final strategy:
-      - secure ingress + set `HEYREACH_BEARER_TOKEN` + set `HEYREACH_UNSIGNED_ALLOWLIST=false`, then validate with strict smoke, or
+      - secure ingress + set `HEYREACH_BEARER_TOKEN` + set `HEYREACH_UNSIGNED_ALLOWLIST=false`, then validate with strict smoke **and** full smoke hard-auth gate:
+        - `python scripts/webhook_strict_smoke_matrix.py ... --require-heyreach-hard-auth`
+        - `python scripts/deployed_full_smoke_matrix.py ... --require-heyreach-hard-auth`
+      - after this gate is green in staging + production, mark this item DONE.
       - keep temporary controlled audit mode with `HEYREACH_UNSIGNED_ALLOWLIST=true` until ingress path is ready.
   - Tracker note:
     - Temporary HeyReach allowlist mode active until March 10, 2026. Owner: PTO.
@@ -116,8 +125,12 @@
     - webhook strict smoke matrix passed (staging + production)
 
 ## P2 (Stability/maintenance)
-- [ ] Migrate deprecated FastAPI `on_event` to lifespan handlers.
+- [x] Migrate deprecated FastAPI `on_event` to lifespan handlers.
+  - `dashboard/health_app.py` now uses FastAPI `lifespan` startup/shutdown management.
 - [ ] Replace `datetime.utcnow()` usage with timezone-aware UTC.
+  - Incremental progress:
+    - `execution/run_pipeline.py` updated to timezone-aware UTC timestamps.
+    - `execution/rl_engine.py` updated to timezone-aware UTC timestamps.
 - [ ] Remove stale references in docs/env templates (`PROXYCURL_API_KEY` in `.env.example` no longer part of primary path).
 
 ---
@@ -133,7 +146,7 @@
 | P1 | CORS method/header tightening | Eng | DONE | explicit methods/headers deployed; smoke/auth checks passing in staging + production |
 | P1 | Run supervised approval verification (real send proof) | PTO | IN_PROGRESS | approve 1 Tier_1 -> response `Email sent via GHL` + message visible in GHL conversation |
 | P1 | Rejection-tag learning loop review | HoS + PTO | TODO | top reject tags reviewed; crafter tuning PR merged |
-| P2 | Lifespan + utcnow cleanup | Eng | TODO | warning class reduced in CI/test output |
+| P2 | Lifespan + utcnow cleanup | Eng | IN_PROGRESS | no `@app.on_event` usage and utcnow deprecation warnings reduced in critical runtime paths |
 
 ### 3.1 Webhook Strict Rollout Package (Implemented)
 - Added strict webhook rollout runbook: `docs/STAGING_WEBHOOK_STRICT_MODE_ROLLOUT.md`
@@ -281,6 +294,8 @@ All must be true for go-live autonomy:
 
 ## 8) Change Log (Most Recent)
 
+- `UNRELEASED` — P2 reliability cleanup: migrated `dashboard/health_app.py` from deprecated `@app.on_event` hooks to FastAPI lifespan; moved critical pipeline timestamps (`execution/run_pipeline.py`, `execution/rl_engine.py`) to timezone-aware UTC.
+- `UNRELEASED` — smoke gate hardening: `deployed_full_smoke_checklist.py` and `deployed_full_smoke_matrix.py` now support `--require-heyreach-hard-auth` to fail when unsigned HeyReach allowlist is still active.
 - `21993cd` — CORS hardening: explicit `CORS_ALLOWED_METHODS` / `CORS_ALLOWED_HEADERS` defaults; deployed and smoke-validated on staging + production.
 - `f1cb70a` — smoke hardening: `webhook_strict_smoke.py` uses header-token runtime auth path (query-token-independent).
 - `d9b8c63` — personalization: normalized Tier_1 hooks + human-readable opener text.

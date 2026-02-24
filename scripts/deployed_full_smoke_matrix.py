@@ -55,6 +55,11 @@ def main() -> int:
             "(true/false). Use false when DASHBOARD_QUERY_TOKEN_ENABLED=false."
         ),
     )
+    parser.add_argument(
+        "--require-heyreach-hard-auth",
+        action="store_true",
+        help="Fail unless HeyReach webhook auth is explicit (no unsigned allowlist path).",
+    )
     args = parser.parse_args()
     try:
         expect_query_token_enabled = _parse_bool(args.expect_query_token_enabled)
@@ -67,6 +72,7 @@ def main() -> int:
         timeout_seconds=args.timeout_seconds,
         refresh_wait_seconds=args.refresh_wait_seconds,
         expect_query_token_enabled=expect_query_token_enabled,
+        require_heyreach_hard_auth=bool(args.require_heyreach_hard_auth),
     )
     production = run_full_smoke(
         args.production_url,
@@ -74,6 +80,7 @@ def main() -> int:
         timeout_seconds=args.timeout_seconds,
         refresh_wait_seconds=args.refresh_wait_seconds,
         expect_query_token_enabled=expect_query_token_enabled,
+        require_heyreach_hard_auth=bool(args.require_heyreach_hard_auth),
     )
 
     summary = {

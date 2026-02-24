@@ -24,7 +24,7 @@ import json
 import uuid
 import argparse
 import asyncio
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, Any, List, Optional
 from dataclasses import dataclass, asdict, field
@@ -69,6 +69,11 @@ try:
     CONTEXT_AVAILABLE = True
 except ImportError:
     CONTEXT_AVAILABLE = False
+
+
+def _utc_now() -> datetime:
+    """Return timezone-aware UTC datetime."""
+    return datetime.now(timezone.utc)
 
 
 class PipelineMode(Enum):
@@ -177,7 +182,7 @@ class UnifiedPipeline:
         self.current_run = PipelineRun(
             run_id=self.run_id,
             mode=self.mode,
-            started_at=datetime.utcnow().isoformat()
+            started_at=_utc_now().isoformat()
         )
         
         console.print(Panel(
@@ -255,7 +260,7 @@ class UnifiedPipeline:
                 
                 progress.advance(task)
         
-        self.current_run.completed_at = datetime.utcnow().isoformat()
+        self.current_run.completed_at = _utc_now().isoformat()
         self.current_run.total_leads_processed = len(self.segmented)
         self.current_run.total_campaigns_created = len(self.campaigns)
         self.current_run.total_errors = sum(len(s.errors) for s in self.current_run.stages)
@@ -581,7 +586,7 @@ class UnifiedPipeline:
                     "lead_count": len(leads),
                     "leads": leads,
                     "status": "draft",
-                    "created_at": datetime.utcnow().isoformat(),
+                    "created_at": _utc_now().isoformat(),
                     "subject_line": f"[{campaign_type.replace('_', ' ').title()}] Personalized outreach",
                     "sequence_steps": 3
                 }
@@ -729,8 +734,8 @@ class UnifiedPipeline:
                     "direction": "outbound",
                     "delivery_platform": "ghl",
                     "delivery_path": "dashboard_approval_direct",
-                    "timestamp": datetime.utcnow().isoformat() + "+00:00",
-                    "created_at": datetime.utcnow().isoformat() + "+00:00",
+                    "timestamp": _utc_now().isoformat(),
+                    "created_at": _utc_now().isoformat(),
                     "recipient_data": {
                         "name": lead.get("name", ""),
                         "company": company_name,

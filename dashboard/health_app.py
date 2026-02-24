@@ -22,6 +22,7 @@ import json
 import hmac
 import asyncio
 import logging
+from contextlib import asynccontextmanager, suppress
 from uuid import uuid4
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
@@ -826,10 +827,36 @@ def _get_cors_allowed_headers() -> List[str]:
 # APP SETUP
 # =============================================================================
 
+@asynccontextmanager
+async def app_lifespan(app: FastAPI):
+    """
+    Start/stop background monitor tasks using FastAPI lifespan.
+
+    Replaces deprecated startup/shutdown event handlers.
+    """
+    monitor = get_health_monitor()
+    monitor_task = asyncio.create_task(monitor.start())
+    broadcast_task = asyncio.create_task(health_broadcast_loop())
+
+    app.state.health_monitor_task = monitor_task
+    app.state.health_broadcast_task = broadcast_task
+
+    try:
+        yield
+    finally:
+        await monitor.stop()
+        for task in (broadcast_task, monitor_task):
+            if task and not task.done():
+                task.cancel()
+            with suppress(asyncio.CancelledError):
+                await task
+
+
 app = FastAPI(
     title="CAIO Swarm Health Dashboard",
     description="Real-time health monitoring for the unified agent swarm",
-    version="1.0.0"
+    version="1.0.0",
+    lifespan=app_lifespan,
 )
 
 app.add_middleware(
@@ -906,24 +933,6 @@ async def health_broadcast_loop():
                 })
             except Exception as e:
                 logger.error("Broadcast error: %s", e)
-
-
-@app.on_event("startup")
-async def startup_event():
-    """Start background tasks on app startup."""
-    # Start the health monitor
-    monitor = get_health_monitor()
-    asyncio.create_task(monitor.start())
-    
-    # Start broadcast loop
-    asyncio.create_task(health_broadcast_loop())
-
-
-@app.on_event("shutdown")
-async def shutdown_event():
-    """Cleanup on shutdown."""
-    monitor = get_health_monitor()
-    await monitor.stop()
 
 
 # =============================================================================

@@ -116,6 +116,7 @@ def run_full_smoke(
     timeout_seconds: int = 20,
     refresh_wait_seconds: int = 3,
     expect_query_token_enabled: bool = True,
+    require_heyreach_hard_auth: bool = False,
 ) -> Dict[str, Any]:
     checks: list[CheckResult] = []
 
@@ -176,6 +177,47 @@ def run_full_smoke(
         passed=(status == 200 and runtime_ready),
         expectation="200 with ready=true",
         details={"ready": runtime_ready},
+        error=error,
+    )
+
+    # Optional no-go: fail unless HeyReach is authenticated without unsigned allowlist.
+    provider_auth = (
+        runtime_json.get("dependencies", {})
+        .get("webhooks", {})
+        .get("provider_auth", {})
+    )
+    heyreach_auth = provider_auth.get("heyreach") if isinstance(provider_auth, dict) else {}
+    heyreach_hmac = bool((heyreach_auth or {}).get("hmac"))
+    heyreach_bearer = bool((heyreach_auth or {}).get("bearer"))
+    heyreach_unsigned_allowlisted = bool((heyreach_auth or {}).get("unsigned_allowlisted"))
+    heyreach_authed = bool((heyreach_auth or {}).get("authed"))
+    heyreach_hard_auth_ok = (
+        bool(status == 200)
+        and heyreach_authed
+        and (heyreach_hmac or heyreach_bearer)
+        and not heyreach_unsigned_allowlisted
+    )
+    _record(
+        checks,
+        name="runtime_heyreach_hard_auth",
+        method="GET",
+        url=runtime_url,
+        status=status,
+        passed=(heyreach_hard_auth_ok if require_heyreach_hard_auth else True),
+        expectation=(
+            "HeyReach uses explicit auth (hmac/bearer) and unsigned allowlist is disabled"
+            if require_heyreach_hard_auth
+            else "check skipped (require_heyreach_hard_auth=false)"
+        ),
+        details={
+            "required": require_heyreach_hard_auth,
+            "heyreach_authed": heyreach_authed,
+            "heyreach_hmac": heyreach_hmac,
+            "heyreach_bearer": heyreach_bearer,
+            "heyreach_unsigned_allowlisted": heyreach_unsigned_allowlisted,
+            "bearer_env": (heyreach_auth or {}).get("bearer_env"),
+            "unsigned_allowlist_env": (heyreach_auth or {}).get("unsigned_allowlist_env"),
+        },
         error=error,
     )
 
@@ -347,6 +389,7 @@ def run_full_smoke(
         "passed": passed,
         "refresh_wait_seconds": refresh_wait_seconds,
         "expect_query_token_enabled": expect_query_token_enabled,
+        "require_heyreach_hard_auth": require_heyreach_hard_auth,
         "checks": [asdict(c) for c in checks],
     }
 
@@ -372,6 +415,11 @@ def main() -> int:
         default="true",
         help="Expected query-token auth state (true/false).",
     )
+    parser.add_argument(
+        "--require-heyreach-hard-auth",
+        action="store_true",
+        help="Fail unless HeyReach has explicit auth (hmac/bearer) with allowlist disabled.",
+    )
     args = parser.parse_args()
 
     normalized = (args.expect_query_token_enabled or "").strip().lower()
@@ -388,6 +436,7 @@ def main() -> int:
         timeout_seconds=args.timeout_seconds,
         refresh_wait_seconds=args.refresh_wait_seconds,
         expect_query_token_enabled=expect_query_enabled,
+        require_heyreach_hard_auth=bool(args.require_heyreach_hard_auth),
     )
     print(json.dumps(summary, indent=2))
     return 0 if summary.get("passed") else 1

@@ -23,7 +23,7 @@ import sys
 import json
 import random
 import math
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, List, Any, Optional, Tuple
 from dataclasses import dataclass, asdict, field
@@ -35,6 +35,11 @@ from rich.console import Console
 from rich.table import Table
 
 console = Console()
+
+
+def _utc_now() -> datetime:
+    """Return timezone-aware UTC datetime."""
+    return datetime.now(timezone.utc)
 
 
 @dataclass
@@ -174,7 +179,7 @@ class RLEngine:
         source_type = source_map.get(source_type, "unknown")
         
         # Time context
-        now = datetime.utcnow()
+        now = _utc_now()
         day_of_week = now.weekday()
         hour = now.hour
         
@@ -313,7 +318,7 @@ class RLEngine:
             action=action,
             reward=reward,
             next_state=next_state,
-            timestamp=datetime.utcnow().isoformat()
+            timestamp=_utc_now().isoformat()
         )
         
         self.experience_buffer.append(experience)
@@ -400,7 +405,7 @@ class RLEngine:
             "episode_rewards": self.episode_rewards[-1000:],
             "action_counts": dict(self.action_counts),
             "epsilon": self.epsilon,
-            "saved_at": datetime.utcnow().isoformat(),
+            "saved_at": _utc_now().isoformat(),
             "version": "1.0.0"
         }
         
