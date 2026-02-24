@@ -144,6 +144,33 @@ def test_runtime_dependency_health_heyreach_unsigned_requires_explicit_allowlist
     )
 
 
+def test_runtime_dependency_health_heyreach_bearer_passes_without_allowlist(
+    monkeypatch,
+):
+    monkeypatch.setenv("REDIS_REQUIRED", "false")
+    monkeypatch.setenv("INNGEST_REQUIRED", "false")
+    monkeypatch.setenv("WEBHOOK_SIGNATURE_REQUIRED", "true")
+    monkeypatch.setenv("INSTANTLY_WEBHOOK_SECRET", "instantly-secret")
+    monkeypatch.setenv("RB2B_WEBHOOK_SECRET", "rb2b-secret")
+    monkeypatch.setenv("CLAY_WEBHOOK_SECRET", "clay-secret")
+    monkeypatch.delenv("HEYREACH_WEBHOOK_SECRET", raising=False)
+    monkeypatch.setenv("HEYREACH_BEARER_TOKEN", "heyreach-bearer-token")
+    monkeypatch.setenv("HEYREACH_UNSIGNED_ALLOWLIST", "false")
+
+    health = get_runtime_dependency_health(
+        check_connections=False,
+        inngest_route_mounted=False,
+    )
+
+    assert health["ready"] is True
+    heyreach = health["dependencies"]["webhooks"]["provider_auth"]["heyreach"]
+    assert heyreach["hmac"] is False
+    assert heyreach["bearer"] is True
+    assert heyreach["bearer_env"] == "HEYREACH_BEARER_TOKEN"
+    assert heyreach["unsigned_allowlisted"] is False
+    assert heyreach["authed"] is True
+
+
 def test_merge_runtime_env_values_respects_existing_and_overrides():
     merged = merge_runtime_env_values(
         mode="production",

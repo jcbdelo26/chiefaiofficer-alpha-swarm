@@ -1,6 +1,6 @@
 # CAIO Alpha Swarm — Source of Truth Task Tracker
 
-**Last Updated (UTC):** 2026-02-24 16:07
+**Last Updated (UTC):** 2026-02-24 16:53
 **Primary Objective:** Safe progression from supervised Tier_1 live sends to full autonomy without security regressions.
 **Owner:** PTO/GTM (operational), Engineering (controls), HoS (message quality)
 
@@ -66,10 +66,13 @@
        - `tests/test_runtime_reliability.py`
        - `tests/test_webhook_signature_enforcement.py`
        - local result: `22 passed`.
+    4. [x] Added HeyReach bearer-auth strict path (`HEYREACH_BEARER_TOKEN`) in runtime health and webhook tests.
+       - allows strict-mode auth without unsigned allowlist when trusted ingress can inject `Authorization: Bearer ...`.
+       - local verification: `25 passed` for runtime/webhook auth pack.
   - Remaining action:
-    - deploy patch + set final strategy:
-      - secure ingress + `HEYREACH_UNSIGNED_ALLOWLIST=false`, or
-      - temporary controlled audit mode with `HEYREACH_UNSIGNED_ALLOWLIST=true`.
+    - configure and validate final strategy:
+      - secure ingress + set `HEYREACH_BEARER_TOKEN` + set `HEYREACH_UNSIGNED_ALLOWLIST=false`, then validate with strict smoke, or
+      - keep temporary controlled audit mode with `HEYREACH_UNSIGNED_ALLOWLIST=true` until ingress path is ready.
   - Tracker note:
     - Temporary HeyReach allowlist mode active until March 10, 2026. Owner: PTO.
 

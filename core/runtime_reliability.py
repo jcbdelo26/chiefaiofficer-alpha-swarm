@@ -29,8 +29,14 @@ _WEBHOOK_SECRET_ENV_BY_PROVIDER = {
     "clay": "CLAY_WEBHOOK_SECRET",
 }
 
-# Providers that support custom HTTP headers (can use bearer token as fallback)
-_BEARER_CAPABLE_PROVIDERS = {"instantly", "clay"}
+# Provider-specific bearer token envs for header-auth fallback.
+# Instantly/Clay use the shared WEBHOOK_BEARER_TOKEN. HeyReach requires
+# a dedicated token (typically injected by trusted ingress middleware).
+_WEBHOOK_BEARER_ENV_BY_PROVIDER = {
+    "instantly": "WEBHOOK_BEARER_TOKEN",
+    "clay": "WEBHOOK_BEARER_TOKEN",
+    "heyreach": "HEYREACH_BEARER_TOKEN",
+}
 
 # Providers that have NO auth mechanism (no HMAC, no custom headers)
 _NO_AUTH_PROVIDERS = {"heyreach"}
@@ -81,6 +87,7 @@ def get_runtime_env_defaults(mode: str) -> Dict[str, str]:
         "WEBHOOK_SIGNATURE_REQUIRED": required_default,
         "INSTANTLY_WEBHOOK_SECRET": "",
         "HEYREACH_WEBHOOK_SECRET": "",
+        "HEYREACH_BEARER_TOKEN": "",
         "HEYREACH_UNSIGNED_ALLOWLIST": "false",
         "RB2B_WEBHOOK_SECRET": "",
         "CLAY_WEBHOOK_SECRET": "",
@@ -222,16 +229,17 @@ def _webhook_signature_health() -> Dict[str, Any]:
         environment = (os.getenv("ENVIRONMENT") or "").strip().lower()
         required = environment in {"staging", "production"}
 
-    bearer_token_set = bool((os.getenv("WEBHOOK_BEARER_TOKEN") or "").strip())
+    global_bearer_token_set = bool((os.getenv("WEBHOOK_BEARER_TOKEN") or "").strip())
 
     # A provider is "authed" if:
     # 1. Its HMAC secret is configured, OR
-    # 2. It supports custom headers AND the bearer token is configured, OR
+    # 2. It supports bearer auth and provider bearer token is configured, OR
     # 3. It has no auth mechanism at all (e.g. HeyReach) — accepted as-is
     provider_auth = {}
     for provider, secret_env in _WEBHOOK_SECRET_ENV_BY_PROVIDER.items():
         has_secret = bool((os.getenv(secret_env) or "").strip())
-        has_bearer = provider in _BEARER_CAPABLE_PROVIDERS and bearer_token_set
+        bearer_env = _WEBHOOK_BEARER_ENV_BY_PROVIDER.get(provider, "WEBHOOK_BEARER_TOKEN")
+        has_bearer = bool((os.getenv(bearer_env) or "").strip())
         no_auth_available = provider in _NO_AUTH_PROVIDERS
         unsigned_allowlist_env = _UNSIGNED_PROVIDER_ALLOWLIST_ENV.get(provider)
         unsigned_allowlisted = (
@@ -244,6 +252,7 @@ def _webhook_signature_health() -> Dict[str, Any]:
         provider_auth[provider] = {
             "hmac": has_secret,
             "bearer": has_bearer,
+            "bearer_env": bearer_env,
             "no_auth_provider": no_auth_available,
             "unsigned_allowlist_env": unsigned_allowlist_env,
             "unsigned_allowlisted": unsigned_allowlisted,
@@ -274,7 +283,7 @@ def _webhook_signature_health() -> Dict[str, Any]:
         "status": status,
         "message": message,
         "provider_auth": provider_auth,
-        "bearer_token_configured": bearer_token_set,
+        "bearer_token_configured": global_bearer_token_set,
         "unauthed_providers": unauthed,
     }
 
