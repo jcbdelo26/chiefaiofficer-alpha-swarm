@@ -22,6 +22,10 @@
 - Smoke checklist (production): `passed=true`
 - Deployed full-smoke matrix (staging + production, header-only mode): `passed=true` with `--expect-query-token-enabled false`
 - Deployed full-smoke matrix with HeyReach hard-auth required: `passed=false` (expected while `HEYREACH_UNSIGNED_ALLOWLIST=true`)
+- Post-push verification (2026-02-24 UTC):
+  - `deployed_full_smoke_matrix.py --expect-query-token-enabled false` -> `passed=true`
+  - `deployed_full_smoke_matrix.py --expect-query-token-enabled false --require-heyreach-hard-auth` -> `passed=false`
+    - blocker in both envs: `runtime_heyreach_hard_auth` reports `heyreach_unsigned_allowlisted=true`
 - Targeted pytest packs run and passing:
   - `tests/test_instantly_webhook_auth.py`
   - `tests/test_runtime_determinism_flows.py`
@@ -294,6 +298,7 @@ All must be true for go-live autonomy:
 
 ## 8) Change Log (Most Recent)
 
+- `4992d69` — hardening patch pushed: FastAPI lifespan migration (`dashboard/health_app.py`), timezone-aware UTC updates in critical runtime paths (`execution/run_pipeline.py`, `execution/rl_engine.py`), and smoke matrix hard-auth enforcement option.
 - `UNRELEASED` — P2 reliability cleanup: migrated `dashboard/health_app.py` from deprecated `@app.on_event` hooks to FastAPI lifespan; moved critical pipeline timestamps (`execution/run_pipeline.py`, `execution/rl_engine.py`) to timezone-aware UTC.
 - `UNRELEASED` — smoke gate hardening: `deployed_full_smoke_checklist.py` and `deployed_full_smoke_matrix.py` now support `--require-heyreach-hard-auth` to fail when unsigned HeyReach allowlist is still active.
 - `21993cd` — CORS hardening: explicit `CORS_ALLOWED_METHODS` / `CORS_ALLOWED_HEADERS` defaults; deployed and smoke-validated on staging + production.
