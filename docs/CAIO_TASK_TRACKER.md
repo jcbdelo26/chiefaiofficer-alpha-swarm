@@ -1,6 +1,6 @@
 # CAIO Alpha Swarm — Source of Truth Task Tracker
 
-**Last Updated (UTC):** 2026-02-24 14:05
+**Last Updated (UTC):** 2026-02-24 14:20
 **Primary Objective:** Safe progression from supervised Tier_1 live sends to full autonomy without security regressions.
 **Owner:** PTO/GTM (operational), Engineering (controls), HoS (message quality)
 
@@ -162,6 +162,11 @@ python scripts/webhook_strict_smoke.py --base-url <STAGING_URL> --dashboard-toke
 - [x] Transitional rollout guardrail applied:
   - `HEYREACH_UNSIGNED_ALLOWLIST=true` set in staging + production (no redeploy triggered via `--skip-deploys`).
   - next deploy will preserve runtime readiness while keeping HeyReach unsigned path explicitly controlled.
+- [x] Post-deploy verification on commit `00bb12e`:
+  - staging strict smoke: pass
+  - production strict smoke: pass
+  - staging full smoke (`--expect-query-token-enabled true`): pass
+  - production full smoke (`--expect-query-token-enabled true`): pass
 
 ---
 
@@ -261,5 +266,5 @@ All must be true for go-live autonomy:
 - `3bf089d` — GHL contact lookup fixed to `/contacts?locationId+query`; supervised send-window override support.
 - `d9ade64` — structured rejection tags + clean-day ramp gating.
 - `5eaffac` — deployed HeyReach strict auth hardening (`HEYREACH_UNSIGNED_ALLOWLIST` gate) + regression tests; staging/prod strict smoke passed.
-- Local (pending deploy) — query-token gate (`DASHBOARD_QUERY_TOKEN_ENABLED`) + header-priority auth + smoke flags for header-only validation.
+- `00bb12e` — deployed query-token gate (`DASHBOARD_QUERY_TOKEN_ENABLED`) + header-priority auth + smoke flags for header-only validation.
 
