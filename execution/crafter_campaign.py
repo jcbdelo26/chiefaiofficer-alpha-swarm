@@ -99,6 +99,9 @@ class CampaignCrafter:
         "chief people officer": "CPO",
         "chief human resources officer": "CHRO",
     }
+    WEAK_OPENING_PATTERNS = [
+        r"(?im)^\s*Given your role as .+?,\s*quick context:\s*$",
+    ]
 
     # =========================================================================
     # 11 HoS-Approved Email Angles (Fractional Chief AI Officer + M.A.P. Framework)
@@ -109,7 +112,7 @@ class CampaignCrafter:
             "subject_b": "{{lead.company}}: practical AI roadmap for this quarter",
             "body": """Hi {{lead.first_name}},
 
-{% if lead.title %}Given your role as {{lead.title}} at {{lead.company}}, quick context:{% else %}Quick context on {{lead.company}}:{% endif %}
+{{lead.personalization_opening}}
 
 Most teams are running AI experiments but still missing an operating cadence that turns pilots into measurable outcomes.
 
@@ -648,6 +651,73 @@ Chief AI Officer Inc. | 5700 Harper Dr, Suite 210, Albuquerque, NM 87109"""
             company = company.get("name") or company.get("company_name") or "your company"
         return str(company or "your company").strip()
 
+    @staticmethod
+    def _truncate_phrase(value: str, max_words: int = 10) -> str:
+        """Keep personalization snippets concise and human-readable."""
+        words = [w for w in (value or "").split() if w]
+        if not words:
+            return ""
+        if len(words) <= max_words:
+            return " ".join(words)
+        return " ".join(words[:max_words]) + "..."
+
+    def _build_t1_personalization_opening(
+        self,
+        *,
+        company_name: str,
+        industry: str,
+        source_type: str,
+        source_name: str,
+        hooks: List[str],
+        engagement_content: str,
+    ) -> str:
+        """
+        Build a natural, signal-based opening line.
+
+        Avoids weak AI-detectable constructs like:
+        "Given your role as <title> at <company>, quick context:"
+        """
+        source_type = (source_type or "").strip().lower()
+        source_name = (source_name or "").strip()
+        industry = (industry or "").strip()
+        engagement_content = (engagement_content or "").strip()
+        hooks = [str(h).strip() for h in (hooks or []) if str(h).strip()]
+
+        if source_type == "demo_requester":
+            return f"Saw inbound interest from {company_name}, so I wanted to send a practical next-step idea."
+        if source_type == "website_visitor":
+            if source_name:
+                return f"Noticed activity from {company_name} around {source_name}, so I thought this was worth sharing."
+            return f"Noticed recent activity from {company_name}, so I wanted to share one practical idea."
+        if source_type == "event_attendee" and source_name:
+            return f"Noticed you were at {source_name}, and I thought this may be relevant for {company_name}."
+        if source_type == "competitor_follower" and source_name:
+            return f"Saw your team tracks {source_name}, and one execution pattern may be useful for {company_name}."
+        if source_type == "post_commenter":
+            if engagement_content:
+                snippet = self._truncate_phrase(engagement_content, max_words=8)
+                return f"Your recent point on \"{snippet}\" stood out, so I wanted to share something practical."
+            return f"Saw your recent LinkedIn engagement and wanted to share a practical idea for {company_name}."
+        if source_type in {"group_member", "webinar_registrant", "content_downloader"} and source_name:
+            return f"Given your recent activity around {source_name}, I wanted to share one concrete idea for {company_name}."
+        if hooks:
+            return f"One thing that stood out: {self._truncate_phrase(hooks[0], max_words=12)}."
+        if industry:
+            return f"Working with teams in {industry}, we keep seeing the same execution gap show up."
+        return f"Wanted to share one practical AI execution idea for {company_name}."
+
+    def _sanitize_weak_openings(self, text: str, company_name: str) -> str:
+        """Remove known weak/AI-detectable opener patterns from generated body text."""
+        cleaned = str(text or "")
+        replacement = (
+            f"Wanted to share one practical AI execution idea for {company_name}."
+            if company_name else
+            "Wanted to share one practical AI execution idea."
+        )
+        for pattern in self.WEAK_OPENING_PATTERNS:
+            cleaned = re.sub(pattern, replacement, cleaned)
+        return cleaned
+
     def _select_template(self, lead: Dict[str, Any]) -> str:
         """Select appropriate template based on lead ICP tier and source."""
         source_type = lead.get("source_type", "")
@@ -695,6 +765,19 @@ Chief AI Officer Inc. | 5700 Harper Dr, Suite 210, Albuquerque, NM 87109"""
         company_name = self._resolve_company_name(lead)
         raw_title = lead.get("title", "")
         normalized_title = self._normalize_title_for_personalization(raw_title)
+        industry_value = lead.get("industry", lead.get("company", {}).get("industry", "") if isinstance(lead.get("company"), dict) else "")
+        source_type = lead.get("source_type", "")
+        source_name = lead.get("source_name", "")
+        hooks = lead.get("personalization_hooks", [])
+        engagement_content = lead.get("engagement_content", "")
+        personalization_opening = self._build_t1_personalization_opening(
+            company_name=company_name,
+            industry=str(industry_value or ""),
+            source_type=str(source_type or ""),
+            source_name=str(source_name or ""),
+            hooks=hooks if isinstance(hooks, list) else [],
+            engagement_content=str(engagement_content or ""),
+        )
 
         return {
             "lead": {
@@ -706,21 +789,22 @@ Chief AI Officer Inc. | 5700 Harper Dr, Suite 210, Albuquerque, NM 87109"""
                 "title_for_personalization": normalized_title,
                 "company": company_name,
                 "location": lead.get("location", ""),
-                "industry": lead.get("industry", lead.get("company", {}).get("industry", "") if isinstance(lead.get("company"), dict) else ""),
+                "industry": industry_value,
+                "personalization_opening": personalization_opening,
             },
             "source": {
-                "type": lead.get("source_type", ""),
-                "name": lead.get("source_name", ""),
+                "type": source_type,
+                "name": source_name,
                 "url": lead.get("source_url", "")
             },
             "engagement": {
                 "action": lead.get("engagement_action", ""),
-                "content": lead.get("engagement_content", ""),
+                "content": engagement_content,
                 "timestamp": lead.get("engagement_timestamp", "")
             },
             "context": {
                 "competitor": lead.get("source_name", "competitors"),
-                "topics": lead.get("personalization_hooks", []),
+                "topics": hooks if isinstance(hooks, list) else [],
                 "pain_points": [],
                 "angle": lead.get("recommended_campaign", ""),
                 "original_subject": lead.get("original_subject", "my earlier note"),
@@ -783,6 +867,7 @@ Chief AI Officer Inc. | 5700 Harper Dr, Suite 210, Albuquerque, NM 87109"""
         subject_a = self._render_template(template["subject_a"], variables)
         subject_b = self._render_template(template["subject_b"], variables)
         body = self._render_template(template["body"], variables)
+        body = self._sanitize_weak_openings(body, company_name=variables["lead"].get("company", ""))
         body = enforce_text_signature(body)
 
         return {
@@ -817,6 +902,12 @@ Chief AI Officer Inc. | 5700 Harper Dr, Suite 210, Albuquerque, NM 87109"""
             body_b=self._render_template(template["body"], variables),
             personalization_level=3
         ))
+        sequence[-1].body_a = self._sanitize_weak_openings(
+            sequence[-1].body_a, company_name=variables["lead"].get("company", "")
+        )
+        sequence[-1].body_b = self._sanitize_weak_openings(
+            sequence[-1].body_b, company_name=variables["lead"].get("company", "")
+        )
         sequence[-1].body_a = enforce_text_signature(sequence[-1].body_a)
         sequence[-1].body_b = enforce_text_signature(sequence[-1].body_b)
 

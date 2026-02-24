@@ -638,37 +638,97 @@ class LeadSegmentor:
             return "nurture_sequence"
     
     def generate_personalization_hooks(self, lead: Dict[str, Any]) -> List[str]:
-        """Generate personalization hooks for campaigns."""
-        hooks = []
+        """Generate concrete personalization hooks for campaigns."""
+        hooks: List[str] = []
+        
+        def _compact(text: str, max_words: int = 10) -> str:
+            words = [w for w in str(text or "").split() if w]
+            if not words:
+                return ""
+            if len(words) <= max_words:
+                return " ".join(words)
+            return " ".join(words[:max_words]) + "..."
         
         # Source-based hooks
-        source_type = lead.get("source_type", "")
-        source_name = lead.get("source_name", "")
+        source_type = str(lead.get("source_type", "")).strip().lower()
+        source_name = str(lead.get("source_name", "")).strip()
+        engagement_content = str(lead.get("engagement_content", "")).strip()
         
         if source_type == "post_commenter":
-            hooks.append(f"Reference their comment on LinkedIn")
+            if engagement_content:
+                hooks.append(f"Recent comment topic: {_compact(engagement_content, max_words=8)}")
+            else:
+                hooks.append("Recent LinkedIn engagement")
         elif source_type == "event_attendee":
-            hooks.append(f"Mention {source_name} event they attended")
+            if source_name:
+                hooks.append(f"Attended {source_name}")
+            else:
+                hooks.append("Recent event attendance")
         elif source_type == "competitor_follower":
-            hooks.append(f"Reference their interest in {source_name}")
+            if source_name:
+                hooks.append(f"Tracks competitor ecosystem: {source_name}")
+            else:
+                hooks.append("Competitor ecosystem interest")
         elif source_type == "group_member":
-            hooks.append(f"Connect as fellow {source_name} member")
+            if source_name:
+                hooks.append(f"Member of {source_name}")
+            else:
+                hooks.append("Professional community member")
+        elif source_type == "website_visitor":
+            if source_name:
+                hooks.append(f"Visited {source_name} page")
+            else:
+                hooks.append("Recent website activity")
+        elif source_type == "content_downloader":
+            if source_name:
+                hooks.append(f"Downloaded/engaged with {source_name}")
+            else:
+                hooks.append("Recent content engagement")
         
         # Company-based hooks
         company_data = lead.get("company", {})
-        if company_data.get("technologies"):
-            hooks.append("Reference their tech stack")
-        if company_data.get("revenue_estimate", 0) > 10_000_000:
-            hooks.append("Mention growth stage messaging")
+        technologies = company_data.get("technologies") or []
+        if isinstance(technologies, list) and technologies:
+            top_tech = [str(t).strip() for t in technologies if str(t).strip()][:2]
+            if top_tech:
+                hooks.append(f"Tech stack signal: {', '.join(top_tech)}")
+
+        revenue_estimate = company_data.get("revenue_estimate", 0) or 0
+        try:
+            revenue_estimate = float(revenue_estimate)
+        except (TypeError, ValueError):
+            revenue_estimate = 0
+        if revenue_estimate > 10_000_000:
+            hooks.append("Growth-stage org with scale pressure")
+
+        employee_count = company_data.get("employee_count") or lead.get("company_size") or 0
+        try:
+            employee_count = int(str(employee_count).replace(",", "").replace("+", ""))
+        except (TypeError, ValueError):
+            employee_count = 0
+        if employee_count >= 150:
+            hooks.append(f"Team scale signal: {employee_count} employees")
         
         # Title-based hooks
-        title = lead.get("title", "").lower()
+        title_raw = str(lead.get("title", "")).strip()
+        title = title_raw.lower()
         if "cro" in title or "chief" in title:
-            hooks.append("Use executive-level messaging")
+            hooks.append(f"Executive buyer role: {title_raw}")
         elif "director" in title:
-            hooks.append("Focus on operational value")
+            hooks.append(f"Operational decision-maker role: {title_raw}")
+        elif "vp" in title or "vice president" in title:
+            hooks.append(f"VP-level strategic role: {title_raw}")
         
-        return hooks
+        # Keep hooks unique and deterministic for downstream templates.
+        deduped: List[str] = []
+        seen = set()
+        for hook in hooks:
+            key = hook.lower()
+            if key in seen:
+                continue
+            seen.add(key)
+            deduped.append(hook)
+        return deduped[:6]
     
     def segment_lead(self, lead: Dict[str, Any]) -> SegmentedLead:
         """Segment and score a single lead."""
