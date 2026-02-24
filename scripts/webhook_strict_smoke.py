@@ -104,9 +104,10 @@ def run_webhook_strict_smoke(
 ) -> Dict[str, object]:
     checks: list[CheckResult] = []
 
-    runtime_url = _build_url(base_url, "/api/runtime/dependencies", {"token": dashboard_token})
+    runtime_url = _build_url(base_url, "/api/runtime/dependencies")
     runtime_status, runtime_error, runtime_body = _http_request(
         runtime_url,
+        headers={"X-Dashboard-Token": dashboard_token},
         timeout_seconds=timeout_seconds,
     )
     runtime_json = _decode_json(runtime_body) or {}
@@ -304,4 +305,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

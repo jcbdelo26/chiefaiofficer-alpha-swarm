@@ -1,6 +1,6 @@
 # CAIO Alpha Swarm — Source of Truth Task Tracker
 
-**Last Updated (UTC):** 2026-02-24 14:20
+**Last Updated (UTC):** 2026-02-24 14:35
 **Primary Objective:** Safe progression from supervised Tier_1 live sends to full autonomy without security regressions.
 **Owner:** PTO/GTM (operational), Engineering (controls), HoS (message quality)
 
@@ -82,9 +82,9 @@
        - `scripts/endpoint_auth_smoke.py --expect-query-token-enabled <true|false>`
        - `scripts/deployed_full_smoke_checklist.py --expect-query-token-enabled <true|false>`
   - Remaining action:
-    1. Set `DASHBOARD_QUERY_TOKEN_ENABLED=false` in staging.
-    2. Run full smoke in header-only mode and validate `/sales` UX.
-    3. Promote to production after PTO confirmation.
+    1. [x] Set `DASHBOARD_QUERY_TOKEN_ENABLED=false` in staging.
+    2. [x] Ran full smoke in header-only mode and validated `/sales` API wiring.
+    3. [ ] Promote to production after PTO confirmation.
 
 ## P1 (High-priority hardening)
 - [ ] **State-store cutover still has implicit fallback defaults**
@@ -116,7 +116,7 @@
 |---|---|---|---|---|
 | P0 | Enable strict webhook policy in staging + production | PTO + Eng | DONE | `WEBHOOK_SIGNATURE_REQUIRED=true` in both envs; strict smoke + full smoke pass |
 | P0 | Implement HeyReach strict auth strategy | Eng | IN_PROGRESS | strict mode rejects unsigned unless explicit allowlist strategy active |
-| P0 | Query-token deprecation plan + header-only test | PTO + Eng | IN_PROGRESS | `/sales` + API works header-only; query-token disabled in staging |
+| P0 | Query-token deprecation plan + header-only test | PTO + Eng | IN_PROGRESS | staging header-only validated; pending production flip |
 | P1 | Explicit Redis-only state env cutover | PTO + Eng | TODO | prod env has `STATE_DUAL_READ_ENABLED=false`, `STATE_FILE_FALLBACK_WRITE=false` |
 | P1 | CORS method/header tightening | Eng | TODO | smoke/auth tests pass with tightened policy |
 | P1 | Run supervised approval verification (real send proof) | PTO | IN_PROGRESS | approve 1 Tier_1 -> response `Email sent via GHL` + message visible in GHL conversation |
@@ -167,6 +167,10 @@ python scripts/webhook_strict_smoke.py --base-url <STAGING_URL> --dashboard-toke
   - production strict smoke: pass
   - staging full smoke (`--expect-query-token-enabled true`): pass
   - production full smoke (`--expect-query-token-enabled true`): pass
+- [x] Staging header-only auth validation (query-token disabled):
+  - env: `DASHBOARD_QUERY_TOKEN_ENABLED=false` (staging)
+  - `python scripts/deployed_full_smoke_checklist.py --base-url https://caio-swarm-dashboard-staging.up.railway.app --token <STAGING_DASHBOARD_AUTH_TOKEN> --expect-query-token-enabled false` -> pass
+  - `python scripts/webhook_strict_smoke.py --base-url https://caio-swarm-dashboard-staging.up.railway.app --dashboard-token <STAGING_DASHBOARD_AUTH_TOKEN> --expect-webhook-required true --webhook-bearer-token <STAGING_WEBHOOK_BEARER_TOKEN>` -> pass
 
 ---
 
@@ -267,4 +271,5 @@ All must be true for go-live autonomy:
 - `d9ade64` — structured rejection tags + clean-day ramp gating.
 - `5eaffac` — deployed HeyReach strict auth hardening (`HEYREACH_UNSIGNED_ALLOWLIST` gate) + regression tests; staging/prod strict smoke passed.
 - `00bb12e` — deployed query-token gate (`DASHBOARD_QUERY_TOKEN_ENABLED`) + header-priority auth + smoke flags for header-only validation.
+- Local (pending deploy) — `scripts/webhook_strict_smoke.py` updated to authenticate runtime dependency check via header token (query-token-independent).
 
