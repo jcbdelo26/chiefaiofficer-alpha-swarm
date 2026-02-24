@@ -129,6 +129,18 @@ Primary runbook: `docs/PTO_GTM_SAFE_TRAINING_EVAL_REGIMEN.md`.
   - `execution/segmentor_classify.py` now normalizes technology objects (e.g., Apollo dict payloads) to clean names before hook generation.
   - `execution/crafter_campaign.py` now maps hook categories to natural opener lines and avoids role-label/dict-style opener text.
   - expected result on new pending cards: no raw dict literals and no weak opener phrase pattern.
+- [x] Tier_1 personalization readability patch deployed + verified:
+  - deployed commit: `d9b8c63`
+  - supervised run:
+    - command: `echo yes | python execution/run_pipeline.py --mode production --source "wpromote" --limit 2`
+    - run_id: `run_20260224_163335_c95a0d`
+    - result: `6/6 PASS`, generated `2` Tier_1 pending cards
+  - pending-card opener verification (production `/api/pending-emails`):
+    - weak phrase (`Given your role as ... quick context:`): `0` hits
+    - raw dict literal (e.g., `{'uid': ...}`) in opener/body: `0` hits
+    - sample opener now: `Noticed Wpromote already uses 6sense, Adobe, which usually makes implementation move faster.`
+  - queue trace confirms current actionable state:
+    - `total_pending=2`, `ghl_targeted=2`, `auto_resolve_on_approve=2`, `ready_for_live_send=0`
 
 ### PTO Fix Checklist: Approvals -> `Email sent via GHL`
 
