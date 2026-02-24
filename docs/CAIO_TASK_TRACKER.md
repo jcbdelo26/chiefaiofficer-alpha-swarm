@@ -1,6 +1,6 @@
 # CAIO Alpha Swarm — Source of Truth Task Tracker
 
-**Last Updated (UTC):** 2026-02-24 14:59
+**Last Updated (UTC):** 2026-02-24 16:07
 **Primary Objective:** Safe progression from supervised Tier_1 live sends to full autonomy without security regressions.
 **Owner:** PTO/GTM (operational), Engineering (controls), HoS (message quality)
 
@@ -70,6 +70,8 @@
     - deploy patch + set final strategy:
       - secure ingress + `HEYREACH_UNSIGNED_ALLOWLIST=false`, or
       - temporary controlled audit mode with `HEYREACH_UNSIGNED_ALLOWLIST=true`.
+  - Tracker note:
+    - Temporary HeyReach allowlist mode active until March 10, 2026. Owner: PTO.
 
 - [x] **Dashboard query token deprecation completed**
   - Current: header token auth is enforced for protected API routes; query-token auth is disabled in staging and production.
