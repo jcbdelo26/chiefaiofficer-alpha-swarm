@@ -120,6 +120,22 @@ Staging validation command:
 python scripts/webhook_strict_smoke.py --base-url <STAGING_URL> --dashboard-token <STAGING_DASHBOARD_AUTH_TOKEN> --expect-webhook-required true --webhook-bearer-token <WEBHOOK_BEARER_TOKEN>
 ```
 
+### 3.2 Staging Strict Rollout Execution (2026-02-24)
+- [x] Baseline staging checks passed before change:
+  - `webhook_strict_smoke --expect-webhook-required false` -> pass
+  - `deployed_full_smoke_checklist` -> pass
+- [x] Staging env updated:
+  - `WEBHOOK_SIGNATURE_REQUIRED=true`
+  - `WEBHOOK_BEARER_TOKEN` set/rotated for staging
+- [x] Post-change strict validation passed:
+  - `webhook_strict_smoke --expect-webhook-required true --webhook-bearer-token <...>` -> pass
+  - unauthenticated Instantly/Clay/RB2B webhook probes blocked
+  - bearer-authenticated Instantly/Clay webhook probes accepted
+  - `deployed_full_smoke_checklist` -> pass
+- [ ] Follow-up hardening nuance:
+  - runtime `provider_auth.heyreach` currently reports `authed=true` while strict HeyReach no-auth probe returns `503` (provider has no signature/header path).
+  - engineering should align runtime health semantics with strict enforcement behavior before production strict-mode promotion.
+
 ---
 
 ## 4) Operational Ritual (Daily Supervised Window)
