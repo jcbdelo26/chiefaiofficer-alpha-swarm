@@ -1,719 +1,210 @@
-# CAIO Alpha Swarm — Unified Task Tracker
+# CAIO Alpha Swarm — Source of Truth Task Tracker
 
-**Last Updated**: 2026-02-24
-**Source**: `CAIO_IMPLEMENTATION_PLAN.md` (v4.5) + Production Cutover Results
-**Quick Nav**: **[Weekly Focus (YOU ARE HERE)](#weekly-focus-week-of-2026-02-23-pto-gtm-execution)** | [Phase 0](#phase-0-foundation-lock--complete) | [Phase 1](#phase-1-live-pipeline-validation--complete) | [Phase 2](#phase-2-supervised-burn-in--complete) | [Phase 3](#phase-3-expand--harden--complete) | [Phase 4](#phase-4-autonomy-graduation--in-progress) | [Phase 5](#phase-5-optimize--scale-post-autonomy)
+**Last Updated (UTC):** 2026-02-24 09:15
+**Primary Objective:** Safe progression from supervised Tier_1 live sends to full autonomy without security regressions.
+**Owner:** PTO/GTM (operational), Engineering (controls), HoS (message quality)
 
 ---
 
-## Weekly Focus (Week of 2026-02-23): PTO/GTM Execution
+## 1) Current Assessed State (Validated)
 
-This section is the operating tracker for this week and aligns with the supervised go-live model.
-Primary runbook: `docs/PTO_GTM_SAFE_TRAINING_EVAL_REGIMEN.md`.
+### 1.1 Deployment + Runtime
+- Production app: `https://caio-swarm-dashboard-production.up.railway.app`
+- Latest deployed commit: `165c753` (docs), latest functional patch: `d9b8c63` (Tier_1 personalization normalization)
+- Runtime health: `ready=true`
+- Redis required and healthy: `REDIS_REQUIRED=true`
+- Inngest required and healthy: `INNGEST_REQUIRED=true`
+- Dashboard auth strict: `DASHBOARD_AUTH_STRICT=true`
+- Supervised send-window override: `SUPERVISED_SEND_WINDOW_OVERRIDE=false`
 
-### Patch + Code Status (this week)
-
-- [x] Structured rejection taxonomy implemented in backend (`/api/emails/{id}/reject` requires `rejection_tag`).
-- [x] Structured rejection UI implemented (`/sales` reject flow requires selecting a rejection tag).
-- [x] Rejection taxonomy API added (`GET /api/rejection-tags`) and UI now loads tags from backend to prevent drift.
-- [x] Ramp logic upgraded to clean-days mode in OPERATOR (`mode: clean_days`, `clean_days_required: 3`).
-- [x] Deterministic stale-card filtering active in pending queue (`stale_gt_72h` exclusion path).
-- [x] Targeted regression tests pass locally:
+### 1.2 Quality + Reliability Gates (Latest Local/Deployed Checks)
+- Replay harness: `50/50 pass`, `pass_rate=1.0` (`scripts/replay_harness.py --min-pass-rate 0.95`)
+- Smoke checklist (production): `passed=true`
+- Targeted pytest packs run and passing:
+  - `tests/test_instantly_webhook_auth.py`
   - `tests/test_runtime_determinism_flows.py`
-  - `tests/test_operator_ramp_logic.py`
-- [x] Deploy current patch set to Railway.
-- [x] Run post-deploy smoke matrix on staging + production.
-- [x] Crafter now ingests rejection feedback and normalizes executive title personalization (e.g., `Chief Revenue Officer (CRO)` -> `CRO`) in `execution/crafter_campaign.py`.
-- [x] Tier_1 opener hardening: hook normalization now strips raw dict payloads from tech-stack signals and generates human-readable openers only.
-- [ ] Run supervised live cycle and capture HoS approval/rejection tags after fresh post-patch generation.
+  - `tests/test_webhook_signature_enforcement.py`
+  - `tests/test_operator_batch_snapshot_integrity.py`
+  - `tests/test_operator_dedup_and_send_path.py`
+- Combined result in latest session: `32 tests passed`
 
-### Execution Log (2026-02-23 EST / 2026-02-24 UTC)
-
-- [x] Deployed patch commit `d9ade64` to `main` (Railway auto-deploy).
-- [x] Post-deploy smoke matrix passed on staging + production.
-- [x] Production pre-flight smoke passed (`scripts/deployed_full_smoke_checklist.py`).
-- [x] Production queue trace captured before run (0 actionable pending).
-- [x] Supervised generation run completed:
-  - Command: `echo yes | python execution/run_pipeline.py --mode production --source "wpromote" --limit 2`
-  - Run ID: `run_20260224_000856_3e4b9b`
-  - Result: `6/6 PASS`, `2` Tier_1 pending cards generated.
-- [x] Post-run queue trace validated:
+### 1.3 Live Queue + Supervised State
+- Pending queue trace (production):
   - `total_pending=2`
   - `ghl_targeted=2`
-  - `ready_for_live_send=0`
   - `auto_resolve_on_approve=2`
-- [x] Operator dry-run validated:
-  - Command: `python -m execution.operator_outbound --motion outbound --dry-run --json`
-  - Result: no errors; waiting on approvals (expected).
-- [x] HoS rejected 2 Tier_1 emails in dashboard (no written reason captured in previous flow).
-- [x] Patch applied for stronger learning loop:
-  - `/api/emails/history` now returns `feedback`, `rejection_reason`, `rejection_tag`.
-  - Reject flow now requires both structured `rejection_tag` and non-empty `reason`.
-  - Tier_1 executive template updated to role-aware, less-generic subject/body.
-- [x] Supervised regeneration run completed after copy patch:
-  - Command: `echo yes | python execution/run_pipeline.py --mode production --source "wpromote" --limit 2`
-  - Run ID: `run_20260224_003326_6354d2`
-  - Result: `2` fresh Tier_1 pending cards with updated copy.
-- [x] Production post-check validated:
-  - `/api/pending-emails` => `count=0`
-  - queue debug shows Redis-backed stale exclusion working (`stale_gt_72h` only, no active actionable cards)
-  - `/api/health/ready` => `200`
-  - `scripts/trace_outbound_ghl_queue.py` => `total_pending=0`, `ghl_targeted=0`
-  - `scripts/deployed_full_smoke_checklist.py` => `passed=true` on production (`/sales` polling wiring + auth matrix + pending refresh checks all green)
-- [x] Focused Railway log diagnostic completed:
-  - captured explicit reject feedback in production logs requiring acronym title style for personalization:
-    - "Always summarize job titles as CRO and do not display the full title as Chief Revenue Officer."
-  - observed repeated `POST /inngest?fnId=caio-alpha-swarm-pipeline-scan&stepId=step` -> `500`
-  - observed repeated `POST /api/errors/frontend` -> `401` (tokenless frontend reporter traffic)
-  - no active GHL upsert/send failures in current window because queue is empty.
-- [x] Patch deploy + supervised approval verification cycle completed:
-  - deployed commit: `424c2e3` (crafter rejection-feedback learning + tracker updates)
-  - post-deploy smoke: `passed=true` (production)
-  - supervised pipeline run:
-    - command: `echo yes | python execution/run_pipeline.py --mode production --source "wpromote" --limit 2`
-    - run_id: `run_20260224_033405_857508`
-    - result: `6/6 PASS`, generated `2` Tier_1 cards
-  - copy verification:
-    - Andrew card now renders acronym style personalization: `Given your role as CRO at Wpromote, quick context:`
-  - approval verification:
-    - approved `pipeline_camp_20260224_033411_andrew_mahr_81b54b`
-    - API result: `Email approved (GHL contact unresolved)` (not yet `Email sent via GHL`)
-    - queue moved from `2` -> `1` pending after approval.
-- [x] Immediate follow-up diagnostic (GHL unresolved isolation) completed:
-  - approved card in Redis confirms:
-    - `send_error`: `GHL contact upsert failed: GHL API error: 400 - {'error': 'Contact with id search not found', 'status': 400}`
-    - `contact_resolution.resolved=false`
-  - runtime env in production context is present (`GHL_API_KEY`, `GHL_PROD_API_KEY`, `GHL_LOCATION_ID` all set).
-  - direct GHL API probe (production env):
-    - `GET /contacts/search` -> `400 Contact with id search not found` (**current code path**)
-    - `GET /contacts?locationId=...&query=...` -> `200` (valid contact query path)
-    - `POST /contacts/` -> `201` (contact create permitted)
-  - send-path probe shows secondary gate:
-    - `send_email` can return `Outside working hours. Next window: ...` when approval is outside configured send window.
-
-### Root Cause (Unresolved on Approval)
-
-1. Primary: contact lookup endpoint mismatch in `core/ghl_outreach.py` (`/contacts/search` is invalid in this GHL API profile).
-2. Secondary: even after contact resolution is fixed, approvals outside send window can still return non-sent outcomes.
-
-### Exact PTO Actions to Flip Next Approval to `Email sent via GHL`
-
-1. **Engineering hotfix deploy required first**:
-   - update contact lookup from `GET /contacts/search` to `GET /contacts` with `locationId + query`.
-   - deploy to Railway production.
-2. **Approve during send window**:
-   - run approval within active send hours (or ask engineering to make send-window configurable/bypass for supervised sends).
-3. **Post-hotfix verification ritual**:
-   - run pipeline (`--source "wpromote" --limit 2`)
-   - approve one Tier_1 card
-   - expected API response: `Email sent via GHL`
-   - confirm message appears in GHL conversation thread.
-
-- [x] Hotfix deployed + ritual verified:
-  - deployed commit: `3bf089d`
-  - `core/ghl_outreach.py` contact lookup switched to `GET /contacts` with `locationId + query`.
-  - temporary supervised send-window override enabled in production:
-    - `SUPERVISED_SEND_WINDOW_OVERRIDE=true`
-  - ritual run:
-    - `echo yes | python execution/run_pipeline.py --mode production --source "wpromote" --limit 2`
-    - run_id: `run_20260224_061614_24f2b4`
-  - approval result:
-    - `pipeline_camp_20260224_061621_andrew_mahr_c3ed4b` -> **`Email sent via GHL`**
-  - Redis state proof:
-    - `status=sent_via_ghl`
-    - `sent_via_ghl=true`
-    - `contact_resolution.resolved=true`, `created=true`
-    - `send_error=None`
-
-- [x] Tier_1 personalization readability patch prepared for deploy:
-  - `execution/segmentor_classify.py` now normalizes technology objects (e.g., Apollo dict payloads) to clean names before hook generation.
-  - `execution/crafter_campaign.py` now maps hook categories to natural opener lines and avoids role-label/dict-style opener text.
-  - expected result on new pending cards: no raw dict literals and no weak opener phrase pattern.
-- [x] Tier_1 personalization readability patch deployed + verified:
-  - deployed commit: `d9b8c63`
-  - supervised run:
-    - command: `echo yes | python execution/run_pipeline.py --mode production --source "wpromote" --limit 2`
-    - run_id: `run_20260224_163335_c95a0d`
-    - result: `6/6 PASS`, generated `2` Tier_1 pending cards
-  - pending-card opener verification (production `/api/pending-emails`):
-    - weak phrase (`Given your role as ... quick context:`): `0` hits
-    - raw dict literal (e.g., `{'uid': ...}`) in opener/body: `0` hits
-    - sample opener now: `Noticed Wpromote already uses 6sense, Adobe, which usually makes implementation move faster.`
-  - queue trace confirms current actionable state:
-    - `total_pending=2`, `ghl_targeted=2`, `auto_resolve_on_approve=2`, `ready_for_live_send=0`
-
-### PTO Fix Checklist: Approvals -> `Email sent via GHL`
-
-Use this exact checklist before next supervised approval cycle.
-
-1. Environment inputs (Railway production variables):
-   - `GHL_API_KEY` (or `GHL_PROD_API_KEY`) is set and current.
-   - `GHL_LOCATION_ID` matches the live sub-account where messages must send.
-   - `DASHBOARD_AUTH_TOKEN` is current and used in UI/API checks.
-   - keep strict runtime flags enabled: `DASHBOARD_AUTH_STRICT=true`, `REDIS_REQUIRED=true`, `INNGEST_REQUIRED=true`.
-2. GHL API permission scope on the key:
-   - Contacts read/search (`GET /contacts` with `locationId + query` used by auto-resolve).
-   - Contacts create/update (`POST /contacts/` used by auto-upsert).
-   - Conversations/messages send (`POST /conversations/messages` used for actual email send).
-3. GHL location/email readiness:
-   - sending mailbox/domain for the target location is connected and healthy.
-   - outbound email channel is enabled for that location.
-4. Pre-flight commands (run before approvals):
-   - `python scripts/trace_outbound_ghl_queue.py --base-url https://caio-swarm-dashboard-production.up.railway.app --token <DASHBOARD_AUTH_TOKEN>`
-   - `railway logs --lines 800 | Select-String -Pattern "GHL contact upsert failed|GHL Send Failed|Email approved \\(GHL contact unresolved\\)|Email sent via GHL" -CaseSensitive:$false`
-5. Approval-time verification:
-   - approve from `/sales`, then confirm response text is `Email sent via GHL` (not `GHL contact unresolved`).
-   - confirm message appears in GHL conversation thread for the approved contact.
-6. If unresolved persists:
-   - verify contact email exists and is valid.
-   - validate `GHL_LOCATION_ID` is correct for the approving environment (staging vs production mismatch is a common root cause).
-   - rotate `GHL_API_KEY` and re-test with one Tier_1 approval.
-
-### Next Manual Gate (PTO @ 15:00 EST)
-
-- Open `/sales?token=<DASHBOARD_AUTH_TOKEN>#emails`
-- Review and decide the 2 cards (approve/reject with structured tag).
-- If approved, execute live dispatch:
-  - `python -m execution.operator_outbound --motion outbound --live`
-- Verify sent messages in GHL conversations for approved contacts.
-- Log approval/rejection counts and tags in this tracker.
-
-### Ramp Logic (recommended and now coded)
-
-- Mode: `clean_days`
-- Graduation rule: ramp remains active until **3 clean supervised LIVE days** are recorded.
-- Clean day definition: live run, no pending-approval hold, no errors, and at least one actual dispatch.
-- Until graduation: keep `tier_1` filter and conservative daily cap.
-
-### Approval SLA (operational suggestion for PTO/GTM + HoS)
-
-- New pending card first review SLA: **within 30 minutes** during active send windows.
-- Final decision SLA (approve/reject with tag): **within 2 hours**.
-- If SLA breached: card remains pending but is included in queue diagnostics and should be reviewed before next live cycle.
-
-### Operational Ownership (confirmed)
-
-- Daily supervised review window: **15:00 EST**.
-- Daily HoS approver owner: **PTO (you)**.
-- SLA owner for unresolved pending cards: **PTO (you)**.
-- Escalation channel for smoke/gate failures: **Slack**.
-
-### Stale Card Policy (best-fit default)
-
-- Cards older than `PENDING_QUEUE_MAX_AGE_HOURS` (default 72h) are auto-excluded from actionable queue.
-- Use structured rejection tag `queue_hygiene_non_actionable` when cleaning non-actionable queue items.
-- Run hygiene cleanup once before each supervised live cycle when drift/noise appears.
-
-### PTO/GTM Role Clarity
-
-- You are the go/no-go owner for supervised live cycles.
-- HoS is quality approver for messaging.
-- Engineering/Codex owns deterministic controls, tests, and regression gates.
+  - `ready_for_live_send=0`
+- Latest supervised generation run:
+  - command: `echo yes | python execution/run_pipeline.py --mode production --source "wpromote" --limit 2`
+  - run_id: `run_20260224_163335_c95a0d`
+- Tier_1 opener fix verified on fresh cards:
+  - weak opener phrase hits: `0`
+  - raw dict literal hits: `0`
+  - sample: `Noticed Wpromote already uses 6sense, Adobe, which usually makes implementation move faster.`
 
 ---
 
-## Progress Overview
+## 2) Security + Production Risk Register
 
-```
-Phase 0: Foundation Lock          [##########] 100%  COMPLETE
-Phase 1: Live Pipeline Validation [##########] 100%  COMPLETE
-Phase 2: Supervised Burn-In       [##########] 100%  COMPLETE
-Phase 3: Expand & Harden          [##########] 100%  COMPLETE
-Phase 4: Autonomy Graduation      [#########.]  98%  <<< YOU ARE HERE
-Phase 5: Optimize & Scale         [----------]   0%  FUTURE
+## P0 (Blockers before full autonomy)
+- [ ] **Webhook strict enforcement is disabled in production env**
+  - Current: `WEBHOOK_SIGNATURE_REQUIRED=false`
+  - Risk: webhook auth can fail open or be policy-inconsistent.
+  - Owner: PTO + Engineering
+  - Required action: set to `true` in production + staging after provider strategy is finalized.
+
+- [ ] **HeyReach auth model is not cryptographically enforced**
+  - Current code marks HeyReach as `no_auth_provider` and effectively treats it as authenticated in health checks.
+  - Risk: spoofable webhook events unless protected by trusted ingress controls.
+  - Owner: Engineering
+  - Required action:
+    1. Add strict policy: unsigned providers are `unhealthy` in strict mode unless explicitly allowed via dedicated override env.
+    2. Implement one of:
+       - trusted reverse-proxy verification + injected bearer header, or
+       - ingress IP allowlist + explicit `HEYREACH_UNSIGNED_ALLOWLIST=true` audit mode.
+    3. Add tests for strict-mode rejection path.
+
+- [ ] **Dashboard query token compatibility still enabled**
+  - Current: APIs accept `?token=` and header token.
+  - Risk: token leakage via browser history, logs, and copied URLs.
+  - Owner: Engineering + PTO
+  - Required action:
+    1. Add env gate `DASHBOARD_QUERY_TOKEN_ENABLED`.
+    2. Set `false` in production after PTO confirms header-based flow works.
+    3. Mask token from request logs if query support remains.
+
+## P1 (High-priority hardening)
+- [ ] **State-store cutover still has implicit fallback defaults**
+  - Current defaults in code: `STATE_DUAL_READ_ENABLED=true`, `STATE_FILE_FALLBACK_WRITE=true` if env not set.
+  - Risk: hidden drift between Redis and file state after restart/cutover.
+  - Owner: Engineering
+  - Required action:
+    - set explicit production env:
+      - `STATE_BACKEND=redis`
+      - `STATE_DUAL_READ_ENABLED=false` (after one stable release)
+      - `STATE_FILE_FALLBACK_WRITE=false`
+
+- [ ] **CORS is origin-scoped but method/header policy is broad**
+  - Current: `allow_methods=["*"]`, `allow_headers=["*"]`, `allow_credentials=True`.
+  - Risk: wider browser surface than needed.
+  - Owner: Engineering
+  - Required action: restrict to required methods/headers only (`GET,POST,OPTIONS`; `Content-Type,X-Dashboard-Token`).
+
+## P2 (Stability/maintenance)
+- [ ] Migrate deprecated FastAPI `on_event` to lifespan handlers.
+- [ ] Replace `datetime.utcnow()` usage with timezone-aware UTC.
+- [ ] Remove stale references in docs/env templates (`PROXYCURL_API_KEY` in `.env.example` no longer part of primary path).
+
+---
+
+## 3) This Week Execution Board (PTO/GTM + Engineering)
+
+| Priority | Task | Owner | Status | Exit Criteria |
+|---|---|---|---|---|
+| P0 | Enable strict webhook policy in staging | PTO + Eng | TODO | `WEBHOOK_SIGNATURE_REQUIRED=true` in staging; webhook tests pass |
+| P0 | Implement HeyReach strict auth strategy | Eng | TODO | strict mode rejects unsigned unless explicit allowlist strategy active |
+| P0 | Query-token deprecation plan + header-only test | PTO + Eng | TODO | `/sales` + API works header-only; query-token disabled in staging |
+| P1 | Explicit Redis-only state env cutover | PTO + Eng | TODO | prod env has `STATE_DUAL_READ_ENABLED=false`, `STATE_FILE_FALLBACK_WRITE=false` |
+| P1 | CORS method/header tightening | Eng | TODO | smoke/auth tests pass with tightened policy |
+| P1 | Run supervised approval verification (real send proof) | PTO | IN_PROGRESS | approve 1 Tier_1 -> response `Email sent via GHL` + message visible in GHL conversation |
+| P1 | Rejection-tag learning loop review | HoS + PTO | TODO | top reject tags reviewed; crafter tuning PR merged |
+| P2 | Lifespan + utcnow cleanup | Eng | TODO | warning class reduced in CI/test output |
+
+---
+
+## 4) Operational Ritual (Daily Supervised Window)
+
+**Schedule:** 15:00 EST (PTO owner)
+
+### Pre-flight (must pass)
+```powershell
+python scripts/deployed_full_smoke_checklist.py --base-url https://caio-swarm-dashboard-production.up.railway.app --token <DASHBOARD_AUTH_TOKEN>
+python scripts/trace_outbound_ghl_queue.py --base-url https://caio-swarm-dashboard-production.up.railway.app --token <DASHBOARD_AUTH_TOKEN>
 ```
 
-**Autonomy Score**: ~98/100
-**Production Runs**: 33+ (22 fully clean, last 10 consecutive 6/6 PASS)
-**Monthly Spend**: ~$662/mo (Clay $499 + Apollo $49 + Railway $5 + Instantly $30 + HeyReach $79)
-**Latest Deployed Commit**: `0f0e0a9` (2026-02-19) — Compliance footer fix + Dashboard v3.0 + P0 checks
-
----
-
-## Phase 0: Foundation Lock — COMPLETE
-
-All core infrastructure deployed and validated. Nothing to do here.
-
-<details>
-<summary>Click to expand completed tasks</summary>
-
-- [x] 12-agent architecture (Queen + 11 agents) — all instantiated
-- [x] 6-stage pipeline (scrape/enrich/segment/craft/approve/send) — `execution/run_pipeline.py`
-- [x] FastAPI dashboard on port 8080 — `dashboard/health_app.py`
-- [x] Redis (Upstash) integration — 62ms from Railway
-- [x] Inngest event-driven functions — 5 functions mounted (incl. daily_decay_detection)
-- [x] Railway deployment — auto-deploy on git push
-- [x] Safety controls (shadow mode, EMERGENCY_STOP) — `config/production.json`
-- [x] Gatekeeper approve/reject/edit flows — full audit trail in `.hive-mind/audit/`
-- [x] Circuit breaker system — `core/circuit_breaker.py`
-- [x] Context zone monitoring (SMART/CAUTION/DUMB/CRITICAL)
-
-</details>
-
----
-
-## Phase 1: Live Pipeline Validation — COMPLETE
-
-Sandbox pipeline validated end-to-end (3 consecutive clean runs, 0 errors).
-
-<details>
-<summary>Click to expand completed tasks</summary>
-
-- [x] Pipeline run: `competitor_gong` — 5 leads, 6/6 PASS, 7ms
-- [x] Pipeline run: `event_saastr` — 5 leads, 6/6 PASS, 7ms
-- [x] Pipeline run: `default` — 10 leads, 6/6 PASS, 9ms
-
-</details>
-
----
-
-## Phase 2: Supervised Burn-In — COMPLETE
-
-Production pipeline validated with real Apollo data. All critical blockers resolved.
-
-<details>
-<summary>Click to expand completed tasks</summary>
-
-### Blockers Resolved
-- [x] LinkedIn Scraper 403 -> replaced with Apollo.io People Search + Match
-- [x] Clay API v1 deprecated -> replaced with direct Apollo.io enrichment
-- [x] Slack alerting -> webhook configured, WARNING + CRITICAL alerts working
-
-### Production Results (Real Data)
-- [x] Scrape: 5 leads via Apollo People Search (7.3s)
-- [x] Enrich: 5/5 via Apollo People Match (4.7s)
-- [x] Segment: ICP scoring with real data (9ms)
-- [x] Craft: 1 campaign created (56ms)
-- [x] Approve: Auto-approve (0ms)
-- [x] Send: 5 emails queued to shadow_mode_emails (2ms)
-- [x] **Total: 6/6 PASS in 12.1s**
-
-### Bugfixes
-- [x] Apollo `reveal_phone_number` requires `webhook_url` — removed from payload
-- [x] Segmentor `NoneType.lower()` crash — null-safe `(x or "").lower()` pattern
-- [x] Segmentor `employee_count` None crash — safe dict access
-- [x] Segmentor email resolution — fallback chain: work_email -> verified_email -> top-level
-- [x] Send stage broken Instantly import — rewrote to shadow queue
-- [x] CampaignCrafter `first_name` missing — name normalization added
-- [x] Circuit breaker silent state changes — wired to Slack alerts
-- [x] Pipeline stage failures silent — wired to Slack WARNING/CRITICAL
-
-</details>
-
----
-
-## Phase 3: Expand & Harden — COMPLETE
-
-<details>
-<summary>Click to expand completed tasks</summary>
-
-### Enrichment & Pipeline
-- [x] Apollo two-step flow (Search -> Match) — free search + 1 credit/reveal
-- [x] Enrichment provider research (28+ providers)
-- [x] Proxycurl removal (scraper + enricher) — shutting down Jul 2026
-- [x] BetterContact fallback code — async polling in `enricher_clay_waterfall.py`
-- [x] Clay removed from pipeline enrichment — `lead_id` not accessible in callback
-- [x] `/webhooks/clay` simplified — RB2B visitor path only
-- [x] Pipeline waterfall: Apollo -> BetterContact -> mock/skip
-
-### Stability
-- [x] Send stage rewrite — shadow mode queue for HoS dashboard
-- [x] Pipeline alerts -> Slack — stage failures WARNING, exceptions CRITICAL
-- [x] Circuit breaker alerts -> Slack — OPEN/recovery transitions
-- [x] 3 consecutive clean production runs — 6/6 PASS x 3
-- [x] 20-lead scale test — 19 enriched, 2 campaigns, 68.4s, 0 errors
-- [x] Dashboard API E2E test — approve/reject/pending flows verified
-- [x] 10+ consecutive clean production runs — ACHIEVED
-
-### Integrations
-- [x] Google Calendar setup guide
-- [x] GHL Calendar integration — replaced Google Calendar, zero new dependencies
-- [x] Instantly V2 API migration — server.py, dispatcher, webhooks, MCP server
-- [x] Multi-channel cadence research
-
-### Deferred from Phase 3
-- [ ] BetterContact subscription — activate when Apollo miss rate justifies $15/mo
-- [ ] ZeroBounce email verification — add when real sends begin (Phase 4E)
-
-</details>
-
----
-
-## Phase 4: Autonomy Graduation — IN PROGRESS
-
-### <<< YOU ARE HERE <<<
-
-**Overall Phase 4 Progress**: 98% — All code built + production cutover complete. Only operational steps remain.
-
-```
-4A: Domain & Instantly Go-Live      [##########] 100%  COMPLETE
-4B: HeyReach LinkedIn Integration   [########--]  80%  CODE DONE, WEBHOOKS REGISTERED, AWAITING WARMUP
-4C: OPERATOR Agent Activation       [##########] 100%  COMPLETE
-4D: Multi-Channel Cadence           [##########] 100%  COMPLETE
-4E: Supervised Live Sends           [#########-]  90%  RAMP DAY 2, COMPLIANCE PASS, AWAITING HoS SEND
-4F: Monaco Signal Loop              [##########] 100%  COMPLETE
-4G: Production Hardening (P0)       [##########] 100%  COMPLETE (commit 746d347)
+### Supervised generation
+```powershell
+echo yes | python execution/run_pipeline.py --mode production --source "wpromote" --limit 2
 ```
 
----
+### HoS review and decision
+- Review only fresh Tier_1 in `/sales`.
+- Reject requires structured tag + reason.
+- Approve exactly one card for verification when needed.
 
-### 4A: Domain & Instantly Go-Live — COMPLETE
-
-<details>
-<summary>Click to expand (15 tasks done)</summary>
-
-- [x] Instantly V2 API migration (server.py, dispatcher, webhooks)
-- [x] Fix `email_list` bug in `create_campaign()` — sending accounts passed in payload
-- [x] Multi-account rotation config — 6 accounts, round-robin
-- [x] Domain strategy config in `production.json`
-- [x] Generate Instantly V2 API key — working
-- [x] Set `INSTANTLY_API_KEY` (V2) in Railway — confirmed
-- [x] Deploy V2 code to Railway — commit `53ab1c1`
-- [x] 6 cold outreach domains DNS verified — all 100% health
-- [x] Instantly warm-up complete — 100% health across all 6 accounts
-- [x] Fix production.json domain mismatch — actual chris.d@ accounts
-- [x] GHL dedicated domain (`chiefai.ai`) — Stage 1 warmup (8%)
-- [x] Send 1 internal test campaign — `test_internal_v2_20260215` active
-- [x] Register Instantly webhooks — 4/4 (reply, bounce, open, unsubscribe)
-
-**Domains**: chiefaiofficerai.com, chiefaiofficerconsulting.com, chiefaiofficerguide.com, chiefaiofficerlabs.com, chiefaiofficerresources.com, chiefaiofficersolutions.com — all chris.d@, all 100% health.
-
-</details>
+### Post-approval proof
+- API response must be: `Email sent via GHL`
+- Verify the message in GHL conversation thread for that contact.
+- Record outcome in this tracker.
 
 ---
 
-### 4B: HeyReach LinkedIn Integration — AWAITING WARMUP
+## 5) Safe Training + Evaluation Regimen (Until Autonomy)
 
-**Code + infra done**. Remaining: LinkedIn warm-up (4 weeks) + shadow test (5 profiles).
+## 5.1 Training lane policy
+- Continue Tier_1 supervised only.
+- Keep daily volume conservative (`<=5/day`) until clean-day threshold reached.
+- Maintain 2-hour approval SLA for actionable pending cards.
 
-<details>
-<summary>Click to expand completed tasks</summary>
-
-#### Code (DONE)
-- [x] `execution/heyreach_dispatcher.py` — API client + lead-list-first safety, 20/day ceiling, CLI
-- [x] `webhooks/heyreach_webhook.py` — 11 event handlers, JSONL logging, follow-up flags, Slack alerts
-- [x] Mount HeyReach webhook in `dashboard/health_app.py`
-- [x] `scripts/register_heyreach_webhooks.py` — CRUD utility
-
-#### Infrastructure (DONE)
-- [x] `HEYREACH_API_KEY` set in Railway — verified working (19 campaigns visible)
-- [x] 3 CAIO campaign templates created (tier_1: 334314, tier_2: 334364, tier_3: 334381)
-- [x] 4 webhooks registered via HeyReach UI
-- [x] Bidirectional HeyReach <-> Instantly sync configured
-- [x] Campaign IDs mapped in `config/production.json`
-- [x] Signal loop wired into HeyReach webhook handlers
-
-</details>
-
-#### Remaining (USER ACTION)
-
-| # | Action | Time | How |
-|---|--------|------|-----|
-| 1 | Connect LinkedIn account + start warm-up | 10 min | HeyReach -> Accounts -> Add LinkedIn -> warm 4 weeks |
-| 2 | Shadow test with 5 internal LinkedIn profiles | 15 min | Add 5 test profiles -> verify events flow to dashboard |
-
----
-
-### 4C: OPERATOR Agent Activation — COMPLETE
-
-<details>
-<summary>Click to expand (13 tasks done)</summary>
-
-- [x] `execution/operator_outbound.py` — OperatorOutbound class with CLI
-- [x] `execution/operator_revival_scanner.py` — RevivalScanner
-- [x] Wire InstantlyDispatcher + HeyReachDispatcher under OPERATOR
-- [x] Three-layer dedup: daily state + signal loop + shadow flags
-- [x] 3 revival statuses added to `core/lead_signals.py` (21 total)
-- [x] Operator config in `config/production.json`
-- [x] ICP tier -> channel routing (tier_1/2: email+LinkedIn, tier_3: email only)
-- [x] 4 `/api/operator/*` dashboard endpoints
-- [x] GATEKEEPER approval gate — batch approval before live dispatch
-- [x] Update agent registry + permissions
-
-</details>
-
----
-
-### 4D: Multi-Channel Cadence — COMPLETE
-
-<details>
-<summary>Click to expand (9 tasks done)</summary>
-
-- [x] `execution/cadence_engine.py` — CadenceEngine (8-step, 21-day)
-- [x] Cadence config in `production.json`
-- [x] `dispatch_cadence()` motion in OPERATOR
-- [x] 4 `/api/cadence/*` dashboard endpoints
-- [x] CRAFTER follow-up templates (value_followup, social_proof, breakup, close)
-- [x] Auto-enroll from pipeline dispatch
-- [ ] Phone/GHL calls — deferred
-
-</details>
-
----
-
-### 4E: Supervised Live Sends — RAMP DAY 2, COMPLIANCE PASS
-
-**All code deployed. 2 real emails compliance-PASS, awaiting HoS review and send.**
-
-#### Infrastructure (ALL DONE)
-- [x] Instantly V2 timezone fix (`America/Detroit`)
-- [x] Cadence engine encoding fix (Unicode -> ASCII)
-- [x] Ramp configuration (5/day, tier_1, 3 days)
-- [x] Ramp wired into OPERATOR agent
-- [x] Pipeline body extraction fix (per-lead sequences)
-- [x] Mid-market scrape targets (apollo.io default)
-- [x] HoS Dashboard v3.0 with 4-tab UI (Overview, Email Queue, Campaigns, Settings)
-- [x] Backend compliance checks (Reply STOP, signature, CTA, footer) on every pending email
-- [x] "Reply STOP to unsubscribe." added to canonical text + HTML footer (commit `0f0e0a9`)
-- [x] Refresh heartbeat + compliance indicators in approval modal
-- [x] Deployed to Railway (`0f0e0a9`, 2026-02-19)
-
-#### Go-Live Checklist (Operational — User Action Required)
-
-| # | Step | Command / Action | Status |
-|---|------|-----------------|--------|
-| 1 | Run pipeline (mid-market) | `echo yes \| python execution/run_pipeline.py --mode production` | READY |
-| 2 | Review leads in HoS dashboard | Open `/sales` -> review tier_1 leads | READY |
-| 3 | Approve tier_1 leads | Click "Approve & Send" per lead | WAITING for Step 1 |
-| 4 | First live dispatch | `python -m execution.operator_outbound --motion outbound --live` | WAITING for Step 3 |
-| 5 | Approve GATEKEEPER batch | `/api/operator/approve-batch/{id}` | WAITING for Step 4 |
-| 6 | Activate DRAFTED campaigns | Instantly dashboard -> Activate | WAITING for Step 5 |
-| 7 | 3 supervised days | Monitor 5 emails/day, check KPIs daily | WAITING for Step 6 |
-| 8 | Graduate to full autonomy | Set `ramp.enabled: false` -> 25/day + all tiers | WAITING for Step 7 |
-
-#### KPI Targets
-
-| Metric | Target | Red Flag | Source |
-|--------|--------|----------|--------|
-| ICP Match Rate | >= 80% | < 60% | Pipeline segmentation |
-| Email Open Rate | >= 50% | < 30% | Instantly analytics |
-| Reply Rate | >= 8% | 0 after 15 sends | Instantly + HeyReach |
-| Bounce Rate | < 5% | > 10% | Instantly analytics |
-| Unsubscribe Rate | < 2% | > 5% | Instantly webhooks |
-
----
-
-### 4F: Monaco Signal Loop — COMPLETE
-
-<details>
-<summary>Click to expand (10 tasks done)</summary>
-
-- [x] Signal Loop Engine — `core/lead_signals.py` (21 statuses)
-- [x] Unified Activity Timeline — `core/activity_timeline.py`
-- [x] "Why This Score" Explainability in segmentor
-- [x] Leads Dashboard at `/leads`
-- [x] 6 leads API endpoints + 4 cadence API endpoints
-- [x] Instantly webhooks wired to signal loop (4 handlers)
-- [x] HeyReach webhooks wired to signal loop (4 handlers)
-- [x] Bootstrap lead data (15 leads from shadow emails)
-- [x] Daily decay detection cron (Inngest, 10 AM UTC)
-
-</details>
-
----
-
-### 4G: Production Hardening (P0) — COMPLETE
-
-**Deployed**: Commit `746d347` — 22 files, 3,064 insertions, 592 deletions.
-
-| Patch | What | Key Files |
-|-------|------|-----------|
-| P0-A | API auth middleware (strict token auth on all `/api/*` routes) | `dashboard/health_app.py` |
-| P0-B | Gatekeeper snapshot integrity (immutable batch scope) | `execution/operator_outbound.py` |
-| P0-C | Dedup corrections (canonical email keys, GHL-sent exclusion) | `operator_outbound.py`, `instantly_dispatcher.py`, `heyreach_dispatcher.py` |
-| P0-D | Redis state store (dual-read cutover, distributed locks) | `core/state_store.py`, `scripts/migrate_file_state_to_redis.py` |
-| P0-E | Escalation regression fix (deterministic Level 1/2/3) | `core/notifications.py` |
-
-#### Production Gates — ALL PASS
-
-| Gate | Result |
-|------|--------|
-| Runtime env validation (staging + production) | PASS |
-| Endpoint auth smoke (6/6 checks) | PASS |
-| Redis state migration | ok: true (2 items) |
-| Replay harness (50 golden set cases) | 100% pass (avg 4.54/5) |
-| Critical pytest pack (60 tests) | 0 failures |
-
-#### Post-P0 Cutover Steps — REVALIDATION REQUIRED
-- [x] CORS_ALLOWED_ORIGINS set (Railway domain only)
-- [ ] Rotate staging+production `DASHBOARD_AUTH_TOKEN` (previous value appeared in documentation history)
-- [x] DASHBOARD_AUTH_STRICT=true in Railway
-- [ ] Re-run auth smoke on staging+production URLs using newly rotated tokens
-- [x] Redis migration executed successfully
-- [x] Replay harness gate passed
-
----
-
-## Recommended Next Steps (Priority Order)
-
-### IMMEDIATE: First Live Dispatch (Steps 1-5 can happen TODAY)
-
-| # | Task | How | Time |
-|---|------|-----|------|
-| 1 | **Rotate dashboard tokens** | Update Railway staging+production `DASHBOARD_AUTH_TOKEN`, redeploy both | 5 min |
-| 2 | **Re-run endpoint auth smoke** | `python scripts/endpoint_auth_smoke.py --base-url "https://<env-domain>" --token "<new-token>"` | 2 min |
-| 3 | **Run fresh pipeline** | `echo yes \| python execution/run_pipeline.py --mode production` | 30-60s |
-| 4 | **Approve tier_1 leads** | HoS dashboard at `/sales` -> review -> Approve | 5 min |
-| 5 | **First live dispatch** | `python -m execution.operator_outbound --motion outbound --live` | 1 min |
-| 6 | **Approve GATEKEEPER batch** | `/api/operator/approve-batch/{id}` (Slack notifies) | 1 min |
-| 7 | **Activate Instantly campaign** | Instantly dashboard -> find DRAFTED campaign -> Activate | 1 min |
-
-### SHORT-TERM: 3-Day Supervised Ramp (Days 1-3)
-
-| # | Task | When |
-|---|------|------|
-| 8 | Monitor Day 1 KPIs (opens, replies, bounces) | Day 1 EOD |
-| 9 | Repeat pipeline -> dispatch -> approve cycle | Days 2-3 |
-| 10 | Graduate: `ramp.enabled: false` in production.json | Day 3 EOD (if KPIs pass) |
-
-### PARALLEL: LinkedIn Warmup (Can start NOW, runs 4 weeks)
-
-| # | Task | When |
-|---|------|------|
-| 11 | Connect LinkedIn in HeyReach | NOW |
-| 12 | Start LinkedIn warmup (5/day, 4 weeks) | NOW |
-| 13 | Shadow test with 5 internal profiles | After warmup starts |
-| 14 | Enable LinkedIn in cadence steps 2/4/6 | After 4 weeks |
-
-### POST-GRADUATION: Full Autonomy Config
-
-```json
-// After 3 clean supervised days:
-"operator.ramp.enabled": false           // Unlocks 25/day + all tiers
-"operator.gatekeeper_required": false    // Optional: skip batch approval
-
-// After LinkedIn warmup (4 weeks):
-// HeyReach sends active in cadence steps 2/4/6
+## 5.2 Evaluation gates (required)
+- Replay gate every release:
+```powershell
+python scripts/replay_harness.py --min-pass-rate 0.95
 ```
-
-### OPTIONAL: Quality Improvements
-
-| # | Task | Impact |
-|---|------|--------|
-| 15 | Activate BetterContact ($15/mo) | Better email quality on Apollo misses |
-| 16 | Add ZeroBounce verification | Reduces bounce rate |
-| 17 | Custom scrape targets per ICP vertical | Higher lead quality |
-| 18 | Remove file-based state fallback | Cleaner Redis-only state (after 1 week stability) |
-| 19 | Enforce webhook signature/secret checks on non-API webhooks | Prevents forged webhook events |
-
-### Phase 5 Triggers (FUTURE)
-
-| Task | Trigger |
-|------|---------|
-| Self-learning ICP calibration | 2 weeks of live send data |
-| Multi-source intent fusion | 30 days of send data |
-| A/B testing infrastructure | 30 days of send data |
-| Enrichment result caching | Apollo credits running low |
-| CRO Copilot | Lead volume > 500 |
-
----
-
-## Architecture Overview
-
+- Critical regression pack:
+```powershell
+python -m pytest -q \
+  tests/test_gatekeeper_integration.py \
+  tests/test_runtime_reliability.py \
+  tests/test_runtime_determinism_flows.py \
+  tests/test_trace_envelope_and_hardening.py \
+  tests/test_replay_harness_assets.py \
+  tests/test_operator_batch_snapshot_integrity.py \
+  tests/test_operator_dedup_and_send_path.py \
+  tests/test_state_store_redis_cutover.py \
+  tests/test_webhook_signature_enforcement.py
 ```
-                    +----------------------------------+
-                    |   6-STAGE PIPELINE               |
-                    | Scrape -> Enrich -> Segment ->    |
-                    | Craft -> Approve -> Send          |
-                    +----------------+-----------------+
-                                     |
-                    +----------------v-----------------+
-                    |   SHADOW QUEUE (.hive-mind/)      |
-                    |   Shadow emails + dispatch logs   |
-                    +----------------+-----------------+
-                                     |
-            +------------------------+------------------------+
-            |                        |                        |
-    +-------v-------+       +-------v-------+       +--------v------+
-    |   Instantly    |       |   HeyReach    |       |    GHL        |
-    |   (Email)      |       |  (LinkedIn)   |       |   (Nurture)   |
-    |   V2 LIVE      |       |  CODE BUILT   |       |   ACTIVE      |
-    +-------+-------+       +-------+-------+       +---------------+
-            |                        |
-    +-------v-------+       +-------v-------+
-    |   Webhooks     |       |   Webhooks    |
-    | open/reply/    |       | connect/reply/|
-    | bounce/unsub   |       | campaign done |
-    +-------+-------+       +-------+-------+
-            |                        |
-            +------------+-----------+
-                         |
-         +---------------v-----------------+  <-- Phase 4F (DONE)
-         |   LEAD SIGNAL LOOP              |
-         |   core/lead_signals.py          |
-         |   21 statuses, decay scan       |
-         +---------------+-----------------+
-                         |
-         +---------------v-----------------+  <-- Phase 4F (DONE)
-         |   ACTIVITY TIMELINE             |
-         |   core/activity_timeline.py     |
-         |   All channels -> 1 timeline    |
-         +---------------+-----------------+
-                         |
-         +---------------v-----------------+  <-- Phase 4F (DONE)
-         |   LEADS DASHBOARD (/leads)      |
-         |   Pipeline flow + timeline      |
-         |   + "Why This Score"            |
-         +----------------------------------+
-```
+- Deployment should be blocked if pass rate drops below threshold.
+
+## 5.3 Edge-case set to keep running
+- EMERGENCY_STOP during live dispatch.
+- Re-run executed batch must not resend.
+- Queue drift after approval must not alter execution scope.
+- `sent_via_ghl` items must never route to Instantly/HeyReach.
+- CORS preflight on protected APIs.
+- Redis lock contention on concurrent live motion.
+- Cadence dry-run must not mutate persistent state.
+- Unmapped/unknown campaign cards should be auto-separated from dispatchable queue.
 
 ---
 
-## Safety Controls (Active — 8 Layers)
+## 6) Inputs Needed From PTO (Current)
 
-| Layer | Control | Status | What It Does |
-|-------|---------|--------|-------------|
-| 1 | `EMERGENCY_STOP` env var | `false` | Kills ALL outbound instantly |
-| 2 | API auth middleware | **ACTIVE** (P0-A) | 401 on unauthenticated `/api/*` calls |
-| 3 | CORS lockdown | **ACTIVE** (P0-A) | Only Railway domain accepted |
-| 4 | GATEKEEPER gate | **ACTIVE** | Live dispatch requires batch approval |
-| 5 | Ramp mode | **ACTIVE** | 5/day, tier_1 only, 3 days |
-| 6 | `--dry-run` default | **ACTIVE** | OPERATOR requires `--live` flag |
-| 7 | Campaigns DRAFTED | Built-in | Instantly V2 creates as status=0 |
-| 8 | Shadow mode | **ACTIVE** | Emails -> `.hive-mind/shadow_mode_emails/` |
+- [ ] Confirm webhook hardening rollout window for staging then production.
+- [ ] Approve disabling query-token mode in production after header-token verification.
+- [ ] Confirm state-store final cutover values:
+  - `STATE_DUAL_READ_ENABLED=false`
+  - `STATE_FILE_FALLBACK_WRITE=false`
+- [ ] Confirm token rotation date for `DASHBOARD_AUTH_TOKEN` after rollout.
 
 ---
 
-## Key Files Quick Reference
+## 7) Full-Autonomy Go/No-Go Criteria
 
-| Category | File | Purpose |
-|----------|------|---------|
-| **Pipeline** | `execution/run_pipeline.py` | 6-stage pipeline runner |
-| | `execution/hunter_scrape_followers.py` | Apollo lead discovery |
-| | `execution/enricher_clay_waterfall.py` | Apollo + BetterContact enrichment |
-| | `execution/segmentor_classify.py` | ICP scoring + "Why This Score" |
-| **OPERATOR** | `execution/operator_outbound.py` | Unified dispatch: outbound + cadence + revival |
-| | `execution/operator_revival_scanner.py` | GHL contact mining for re-engagement |
-| | `execution/cadence_engine.py` | 21-day Email + LinkedIn cadence scheduler |
-| **Dispatch** | `execution/instantly_dispatcher.py` | Shadow -> Instantly campaigns |
-| | `execution/heyreach_dispatcher.py` | Lead-list-first LinkedIn dispatch |
-| **Webhooks** | `webhooks/instantly_webhook.py` | Email open/reply/bounce/unsub |
-| | `webhooks/heyreach_webhook.py` | 11 LinkedIn events |
-| **Signal Loop** | `core/lead_signals.py` | Lead status engine + decay detection |
-| | `core/activity_timeline.py` | Per-lead event aggregation |
-| **Security** | `dashboard/health_app.py` | FastAPI + auth middleware + all routes |
-| | `core/state_store.py` | Redis state backend (NEW in 4G) |
-| **Config** | `config/production.json` | Safety controls, ramp, cadence, domains |
-| **Scripts** | `scripts/endpoint_auth_smoke.py` | Auth smoke test (6 checks) |
-| | `scripts/migrate_file_state_to_redis.py` | File -> Redis migration |
-| | `scripts/validate_runtime_env.py` | Runtime env validator |
-| **Docs** | `CAIO_IMPLEMENTATION_PLAN.md` | Full implementation plan (v4.5) |
-| | `docs/CODEX_HANDOFF.md` | Codex review handoff |
+All must be true for go-live autonomy:
+- [ ] 3 clean supervised live days in a row (no gate failures, no unresolved sends).
+- [ ] Webhook strict mode enabled with no unsigned-provider blind spots.
+- [ ] Header-only auth model validated; query-token disabled in production.
+- [ ] Redis-only state cutover complete; no file-fallback writes.
+- [ ] Replay gate >= 0.95 and critical pytest pack green on release branch.
+- [ ] HoS quality metrics stable (rejection ratio and personalization quality trending positive).
 
 ---
 
-## Dashboards Quick Reference
+## 8) Change Log (Most Recent)
 
-| Dashboard | URL | Purpose |
-|-----------|-----|---------|
-| System Health | `/` | Agent status, circuit breakers, context zones |
-| Scorecard | `/scorecard` | Pipeline run history, stage pass/fail |
-| Head of Sales | `/sales` | Email approval queue (approve/reject/edit) |
-| Leads Signal Loop | `/leads` | Pipeline funnel, lead list, timeline, decay scan |
+- `d9b8c63` — personalization: normalized Tier_1 hooks + human-readable opener text.
+- `42f829a` — strengthened Tier_1 opener and signal hooks.
+- `3bf089d` — GHL contact lookup fixed to `/contacts?locationId+query`; supervised send-window override support.
+- `d9ade64` — structured rejection tags + clean-day ramp gating.
 
----
-
-*This tracker is the single source of truth for CAIO Alpha Swarm development status.*
-*For full implementation details, see `CAIO_IMPLEMENTATION_PLAN.md` (v4.5).*
-*For Codex review, see `docs/CODEX_HANDOFF.md`.*
-*For signal loop activation, see `docs/MONACO_SIGNAL_LOOP_GUIDE.md`.*
