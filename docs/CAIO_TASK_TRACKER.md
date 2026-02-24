@@ -110,6 +110,16 @@
 | P1 | Rejection-tag learning loop review | HoS + PTO | TODO | top reject tags reviewed; crafter tuning PR merged |
 | P2 | Lifespan + utcnow cleanup | Eng | TODO | warning class reduced in CI/test output |
 
+### 3.1 Webhook Strict Rollout Package (Implemented)
+- Added strict webhook rollout runbook: `docs/STAGING_WEBHOOK_STRICT_MODE_ROLLOUT.md`
+- Added strict webhook validation script (single env): `scripts/webhook_strict_smoke.py`
+- Added strict webhook validation script (staging + production): `scripts/webhook_strict_smoke_matrix.py`
+
+Staging validation command:
+```powershell
+python scripts/webhook_strict_smoke.py --base-url <STAGING_URL> --dashboard-token <STAGING_DASHBOARD_AUTH_TOKEN> --expect-webhook-required true --webhook-bearer-token <WEBHOOK_BEARER_TOKEN>
+```
+
 ---
 
 ## 4) Operational Ritual (Daily Supervised Window)
