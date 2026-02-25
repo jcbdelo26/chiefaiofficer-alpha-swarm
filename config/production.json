@@ -4,24 +4,6 @@
     "version": "1.0.0",
     "created_at": "2026-01-23",
     "external_apis_enabled": true,
-    "mock_services": {
-        "ghl": {
-            "enabled": false,
-            "url": null
-        },
-        "rb2b": {
-            "enabled": true,
-            "url": "http://localhost:8000/mock/rb2b"
-        },
-        "instantly": {
-            "enabled": false,
-            "url": null
-        },
-        "clay": {
-            "enabled": false,
-            "url": null
-        }
-    },
     "external_apis": {
         "ghl": {
             "enabled": true,

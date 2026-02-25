@@ -255,7 +255,7 @@ def main():
         if members:
             output_path = scraper.save_members(members)
             console.print(f"\n[bold green]✅ Group scraping complete![/bold green]")
-            console.print(f"Next step: python execution/enricher_clay_waterfall.py --input {output_path}")
+            console.print(f"Next step: python execution/enricher_waterfall.py --input {output_path}")
         else:
             console.print("\n[yellow]No members scraped. Full implementation requires browser automation.[/yellow]")
             

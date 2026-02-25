@@ -43,7 +43,6 @@ from core import context_manager
 from core import grounding_chain
 from core import feedback_collector
 from core import verification_hooks
-from core import guardrails
 from core import sentiment_analyzer
 from core import call_coach
 from core import agent_monitor
@@ -105,7 +104,6 @@ __all__ = [
     "grounding_chain",
     "feedback_collector",
     "verification_hooks",
-    "guardrails",
     "sentiment_analyzer",
     "call_coach",
     "agent_monitor",

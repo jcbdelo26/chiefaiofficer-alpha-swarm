@@ -552,7 +552,7 @@ def main():
             output_path = scraper.save_leads(leads)
             console.print(f"\n[bold green]✅ Scraping complete![/bold green]")
             console.print(f"Next step: Run enrichment with:")
-            console.print(f"  python execution/enricher_clay_waterfall.py --input {output_path}")
+            console.print(f"  python execution/enricher_waterfall.py --input {output_path}")
         else:
             console.print("\n[yellow]No leads scraped. Check APOLLO_API_KEY in .env[/yellow]")
             

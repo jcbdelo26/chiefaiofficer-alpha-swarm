@@ -502,454 +502,66 @@ Pass criteria:
 
 ---
 
-## 🛡️ Unified Guardrails System (CRITICAL)
+## Unified Guardrails System (CRITICAL)
 
-The Unified Guardrails System provides enterprise-grade protection for all 12 agents in the swarm.
+**ALL actions must go through `core/unified_guardrails.py`. Direct API calls are PROHIBITED.**
 
-### Architecture
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    UNIFIED GUARDRAILS                        │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐       │
-│  │ CircuitBreaker│  │ RateLimiter │  │PermissionMgr│       │
-│  └──────────────┘  └──────────────┘  └──────────────┘       │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐       │
-│  │ GroundingVal │  │ ActionValid │  │  HookSystem  │       │
-│  └──────────────┘  └──────────────┘  └──────────────┘       │
-└─────────────────────────────────────────────────────────────┘
-```
+Key files: `core/unified_guardrails.py`, `core/agent_action_permissions.json`, `core/ghl_execution_gateway.py`, `core/circuit_breaker.py`
 
-### Key Files
-| File | Purpose |
-|------|---------|
-| `core/unified_guardrails.py` | **Main guardrails system** |
-| `core/agent_action_permissions.json` | **JSON config for all 12 agents** |
-| `core/ghl_execution_gateway.py` | Single entry point for GHL actions |
-| `core/circuit_breaker.py` | Failure protection (3-trip, 5min reset) |
-| `core/self_annealing.py` | Learning from outcomes |
+### Agent Permission Matrix
+| Agent | Can Approve | Key Actions |
+|-------|-------------|-------------|
+| UNIFIED_QUEEN | Yes (weight: 3) | All actions |
+| GATEKEEPER | Yes (weight: 2) | send_email, bulk_send |
+| OPERATOR | No | dispatch_outbound, dispatch_cadence, dispatch_revival, instantly_*, heyreach_* |
+| HUNTER/ENRICHER/SEGMENTOR/CRAFTER | No | Lead gen actions |
+| SCOUT/COACH/PIPER/SCHEDULER/RESEARCHER | No | Pipeline/read actions |
 
-### Agent Permission Matrix (12 Agents)
-| Agent | Role | Can Approve | Key Actions |
-|-------|------|-------------|-------------|
-| UNIFIED_QUEEN | Orchestrator | ✅ (weight: 3) | All actions |
-| HUNTER | Lead Gen | ❌ | scrape, create_contact |
-| ENRICHER | Lead Gen | ❌ | update_contact, add_tag |
-| SEGMENTOR | Lead Gen | ❌ | score, classify |
-| CRAFTER | Lead Gen | ❌ | get_templates, create_task |
-| GATEKEEPER | Approval | ✅ (weight: 2) | send_email, bulk_send |
-| SCOUT | Pipeline | ❌ | read_pipeline, search |
-| OPERATOR | Unified Outbound (3 motions) | ❌ | dispatch_outbound, dispatch_cadence, dispatch_revival, instantly_*, heyreach_* |
-| COACH | Pipeline | ❌ | update_contact |
-| PIPER | Pipeline | ❌ | update_opportunity |
-| SCHEDULER | Scheduling | ❌ | calendar_ops |
-| RESEARCHER | Research | ❌ | read-only |
+### Outbound Volume Limits (OPERATOR manages via `execution/operator_outbound.py`)
+| Channel | Daily Limit | Platform |
+|---------|------------|----------|
+| Cold Email | 25/day | Instantly V2 (6 warmed domains) |
+| LinkedIn | 5/day → 20/day | HeyReach (4-week warmup) |
+| Revival | 5/day | Instantly (warm domains) |
 
-### Outbound Volume Limits (Warmup-Aware)
+**Three-Layer Dedup**: `OperatorDailyState` (no same-lead twice/day) → `LeadStatusManager` (no bounced/unsub) → Shadow `dispatched_to_*` flags (no cross-channel)
 
-Managed by OPERATOR via `WarmupSchedule` in `execution/operator_outbound.py`.
-
-| Channel | Daily Limit | Platform | Notes |
-|---------|------------|----------|-------|
-| Cold Email (Instantly) | 25/day | Instantly V2 | 6 warmed domains, round-robin |
-| LinkedIn (HeyReach) | 5/day (warmup) → 20/day | HeyReach | 4-week warmup, then full volume |
-| Revival Email | 5/day | Instantly (warm domains) | GHL nurture domains, separate budget |
-| **Total** | **35/day** (warmup) → **50/day** | | |
-
-**Three-Layer Dedup** (prevents double-dispatch):
-1. `OperatorDailyState.leads_dispatched` — same lead not dispatched twice/day
-2. `LeadStatusManager` terminal check — no re-engaging bounced/unsubscribed
-3. Shadow email `dispatched_to_*` flags — no cross-channel double-dispatch
-
-### Risk Levels & Grounding Requirements
-| Risk Level | Requires Grounding | Requires Approval |
-|------------|-------------------|-------------------|
-| LOW | ❌ | ❌ |
-| MEDIUM | ❌ | ❌ |
-| HIGH | ✅ | ❌ |
-| CRITICAL | ✅ | ✅ |
-
-### Grounding Evidence Format
-```python
-grounding_evidence = {
-    "source": "supabase",     # Where data came from
-    "data_id": "lead_123",    # Specific record ID
-    "verified_at": "2026-01-21T10:30:00Z"  # Must be <1 hour old
-}
-```
-
-### Using Unified Guardrails (REQUIRED)
-```python
-from core.unified_guardrails import UnifiedGuardrails, ActionType
-
-guardrails = UnifiedGuardrails()
-
-# Execute with full protection
-result = await guardrails.execute_with_guardrails(
-    agent_name="GATEKEEPER",
-    action_type=ActionType.SEND_EMAIL,
-    action_fn=send_email_function,
-    parameters={'contact_id': '...', 'subject': '...'},
-    grounding_evidence={'source': 'supabase', 'data_id': 'lead_123', 'verified_at': '...'}
-)
-```
-
-### Blocked Operations (NEVER ALLOWED)
-- `bulk_delete` - Permanently blocked for data safety
-- `export_all_contacts` - Blocked for GDPR compliance
-- `mass_unsubscribe` - Requires manual intervention
-
-> ⚠️ **ALL actions must go through UnifiedGuardrails. Direct API calls are PROHIBITED.**
+Risk: LOW/MEDIUM = auto-approve, HIGH = grounding required, CRITICAL = grounding + approval. Blocked forever: `bulk_delete`, `export_all_contacts`, `mass_unsubscribe`.
 
 ---
 
----
+## Integration Gateway
 
-## 🌐 Unified Integration Gateway (NEW)
+Centralized API gateway: `core/unified_integration_gateway.py`. Health monitor: `core/unified_health_monitor.py`.
 
-Centralized API management for ALL external integrations.
-
-### Architecture
-```
-┌──────────────────────────────────────────────────────────────────┐
-│                 UNIFIED INTEGRATION GATEWAY                       │
-│  ┌────────────┐  ┌────────────┐  ┌────────────┐  ┌────────────┐  │
-│  │    GHL     │  │  Instantly │  │  HeyReach  │  │   Clay     │  │
-│  │   Adapter  │  │  V2 API   │  │  LinkedIn  │  │  Adapter   │  │
-│  └────────────┘  └────────────┘  └────────────┘  └────────────┘  │
-│  ┌────────────┐  ┌────────────┐  ┌────────────┐  ┌────────────┐  │
-│  │  Apollo    │  │  Supabase  │  │   RB2B     │  │  Webhook   │  │
-│  │   Adapter  │  │  Adapter   │  │  Adapter   │  │  Ingress   │  │
-│  └────────────┘  └────────────┘  └────────────┘  └────────────┘  │
-└──────────────────────────────────────────────────────────────────┘
-```
-
-### Key Files
-| File | Purpose |
-|------|---------|
-| `core/unified_integration_gateway.py` | **Centralized API gateway** |
-| `mcp-servers/google-calendar-mcp/` | Google Calendar MCP server |
-| `core/unified_health_monitor.py` | Real-time health monitoring |
-| `dashboard/health_app.py` | Health dashboard API |
-
-### Usage
-```python
-from core.unified_integration_gateway import get_gateway
-
-gateway = get_gateway()
-
-# Execute through gateway (automatic guardrails, rate limiting, circuit breakers)
-result = await gateway.execute(
-    integration="google_calendar",
-    action="create_event",
-    params={"title": "Meeting", "start_time": "...", "end_time": "..."},
-    agent="SCHEDULER",
-    grounding_evidence={"source": "supabase", "data_id": "lead_123", "verified_at": "..."}
-)
-```
-
-### Supported Integrations
 | Integration | Rate Limit | Key Actions |
 |-------------|------------|-------------|
 | ghl | 150/day | send_email, create_contact, trigger_workflow, calendar_ops |
-| instantly | 25/day (warmup-aware) | create_campaign, add_leads, activate, pause |
-| heyreach | 300/min API, 5-20/day sends | add_leads_to_campaign, get_campaigns |
+| instantly | 25/day (warmup) | create_campaign, add_leads, activate |
+| heyreach | 300/min API, 5-20/day sends | add_leads_to_campaign |
 | apollo | 200/hour | people_search, people_match |
-| clay | 500/hour | enrich_contact (RB2B visitors only) |
 | supabase | 5000/hour | query, insert, update |
 | rb2b | webhook-based | visitor_id (inbound only) |
 
----
-
-## Calendar (GHL-backed, replaced Google Calendar)
-
-Calendar operations use GHL Calendar API via `mcp-servers/ghl-mcp/calendar_client.py` (drop-in replacement for Google Calendar MCP). Guardrails in `mcp-servers/google-calendar-mcp/guardrails.py` (shared, backend-agnostic).
-
-### Tools Available
-| Tool | Description | Guardrails |
-|------|-------------|------------|
-| `get_availability` | Check calendar availability | Rate limit: 100/hr |
-| `create_event` | Create event with Zoom link | No double-booking, working hours only |
-| `update_event` | Modify existing event | Buffer validation |
-| `delete_event` | Cancel event | Attendee notification |
-| `find_available_slots` | Find meeting slots | 15-min buffer enforced |
-
-### Calendar Guardrails
-- Working hours: 9 AM - 6 PM (configurable)
-- Minimum buffer: 15 minutes between meetings
-- Max duration: 2 hours
-- No weekend booking (unless explicitly allowed)
-- No double-booking (mutex lock)
-- GHL Calendar ID: `2tqUa6LBhhrT7Y99YVyD`
+Calendar: GHL Calendar API via `mcp-servers/ghl-mcp/calendar_client.py`. ID: `2tqUa6LBhhrT7Y99YVyD`. Working hours 9-6, 15-min buffer, no double-booking.
 
 ---
 
-## 📊 Health Dashboard
+## Health Dashboard
 
-### Start Dashboard
-```bash
-cd chiefaiofficer-alpha-swarm
-uvicorn dashboard.health_app:app --host 0.0.0.0 --port 8080
-```
+`dashboard/health_app.py` — FastAPI on port 8080. 4 tabs: System Health (`/`), Scorecard (`/scorecard`), Head of Sales (`/sales`), Lead Signals (`/leads`).
 
-### Endpoints (50+)
-
-**Pages**:
-| Route | Page |
-|-------|------|
-| `GET /` | System Health dashboard |
-| `GET /scorecard` | Precision Scorecard (12 metrics) |
-| `GET /sales` | Head of Sales email approval queue (v2.4 — live RAMP MODE banner from `/api/operator/status`) |
-| `GET /leads` | Lead Signal Loop + Activity Timeline |
-
-**Health & System**:
-| Endpoint | Description |
-|----------|-------------|
-| `GET /api/health` | Full health status + runtime deps |
-| `GET /api/health/ready` | Kubernetes readiness probe |
-| `GET /api/agents` | All 12 agent statuses |
-| `GET /api/integrations` | Integration status |
-| `GET /api/guardrails` | Rate limits & circuit breakers |
-| `GET /api/scorecard` | Precision Scorecard summary |
-| `WS /ws` | Real-time WebSocket updates |
-
-**Email Queue (Head of Sales)** — reads from Redis via `core/shadow_queue.py`:
-| Endpoint | Description |
-|----------|-------------|
-| `GET /api/pending-emails` | Pending emails (Redis primary, filesystem fallback) |
-| `POST /api/emails/{id}/approve` | Approve email — syncs status to Redis + disk |
-| `POST /api/emails/{id}/reject` | Reject email — syncs status to Redis + disk |
-
-**Lead Signal Loop**:
-| Endpoint | Description |
-|----------|-------------|
-| `GET /api/leads` | All tracked leads with status |
-| `GET /api/leads/funnel` | Pipeline funnel counts |
-| `GET /api/leads/status-summary` | Leads by engagement status |
-| `GET /api/leads/{email}/timeline` | Unified activity timeline |
-| `POST /api/leads/detect-decay` | Run ghosting/stall detection |
-| `POST /api/leads/bootstrap` | Seed lead status from shadow emails |
-
-**OPERATOR Agent**:
-| Endpoint | Description |
-|----------|-------------|
-| `GET /api/operator/status` | Today's state + warmup schedule |
-| `GET /api/operator/revival-candidates` | Preview revival candidates |
-| `POST /api/operator/trigger` | Trigger dispatch (dry_run, motion) |
-| `GET /api/operator/history` | Last 50 dispatch logs |
-
-**Cadence Engine**:
-| Endpoint | Description |
-|----------|-------------|
-| `GET /api/cadence/summary` | Enrolled, active, completed, due today |
-| `GET /api/cadence/due` | Actions due today |
-| `GET /api/cadence/leads` | All cadence states (filter by status) |
-| `POST /api/cadence/sync` | Sync with signal loop (auto-exit) |
-
-**Webhooks (Mounted)**:
-| Endpoint | Source |
-|----------|--------|
-| `POST /webhooks/clay` | RB2B visitor enrichment |
-| `POST /webhooks/instantly/*` | Instantly campaign events |
-| `POST /webhooks/heyreach/*` | HeyReach LinkedIn events |
-| `POST /inngest` | Inngest task scheduler |
+Key API groups: `/api/health`, `/api/agents`, `/api/pending-emails` (Redis via `shadow_queue.py`), `/api/emails/{id}/approve|reject`, `/api/leads/*` (signal loop + funnel + timeline), `/api/operator/*` (status + trigger + history), `/api/cadence/*` (summary + due + sync). Webhooks: `/webhooks/clay`, `/webhooks/instantly/*`, `/webhooks/heyreach/*`.
 
 ---
 
-## 📦 Product Context System (NEW)
+## Product Context
 
-Centralized product knowledge for all agents from the ChiefAIOfficer.com pitchdeck.
-
-### Key Files
-| File | Purpose |
-|------|---------|
-| `core/product_context.py` | **Product context provider** |
-| `.hive-mind/knowledge/company/product_offerings.json` | Full product catalog JSON |
-| `.hive-mind/knowledge/company/sales_context.md` | Sales context for agents |
-
-### Product Offerings
-| Product | Price | Duration |
-|---------|-------|----------|
-| AI Opportunity Audit | $10,000 | 2-4 weeks |
-| AI Executive Certification Workshop | $12,000 | 1 day |
-| On-Site Plan (DIY) | $14,500/mo | Ongoing |
-| Enterprise Plan (Done For You) | Custom | Ongoing |
-| AI Consulting | $800/hr | 10hr min |
-
-### Using Product Context
-```python
-from core.product_context import get_product_context
-
-ctx = get_product_context()
-
-# Get all products
-products = ctx.get_products()
-
-# Get agent-specific context
-agent_ctx = ctx.get_agent_context("CRAFTER")
-
-# Format for prompt injection
-prompt_ctx = ctx.format_for_prompt("CRAFTER")
-
-# Check lead qualification
-result = ctx.check_qualification(lead_data)
-```
-
-### Agent Context Injection
-Each agent receives tailored product context:
-- **CRAFTER/COACH**: Full product details, pricing, ROI, case studies
-- **ENRICHER/SEGMENTOR**: ICP criteria, disqualifiers
-- **GATEKEEPER**: Pricing, guarantees for approval
-- **SCHEDULER**: CTAs, booking links
-
-### Self-Annealing Integration
-Product knowledge is automatically seeded into the reasoning bank on startup:
-- Products → "insight" patterns (searchable by similarity)
-- Typical Results → "success" patterns
-- Disqualifiers → "failure" patterns
-- M.A.P. Framework → "insight" patterns
-
-### Key CTAs
-- **Executive Briefing**: https://caio.cx/ai-exec-briefing-call
-- **AI Readiness Assessment**: https://ai-readiness-assessment-549851735707.us-west1.run.app/
-
-### Typical Results (Quote These)
-- 20-30% operational cost reduction
-- 40%+ efficiency improvement
-- 62.5% administrative time reduction
-- 60% capacity increase
-
-### Guarantee
-> "Measured ROI, or you don't pay the next phase"
+`core/product_context.py` — centralized product knowledge from ChiefAIOfficer.com pitchdeck. Products: AI Opportunity Audit ($10K), AI Exec Workshop ($12K), On-Site Plan ($14.5K/mo), Enterprise (custom), Consulting ($800/hr). Key CTAs: [Executive Briefing](https://caio.cx/ai-exec-briefing-call), [AI Readiness Assessment](https://ai-readiness-assessment-549851735707.us-west1.run.app/). Guarantee: "Measured ROI, or you don't pay the next phase." Typical results: 20-30% cost reduction, 40%+ efficiency, 62.5% admin time reduction.
 
 ---
 
-## 🔄 Swarm Coordination (Day 8)
+## Website Intent Monitor
 
-Centralized swarm lifecycle with heartbeats, auto-restart, and worker scaling (2-12). Key file: `core/swarm_coordination.py`, state: `.hive-mind/swarm_state.json`.
-
-
----
-
-## LLM Routing Gateway
-
-Task-aware LLM routing for cost optimization (`core/llm_routing_gateway.py`).
-
-Key files: `core/llm_routing_gateway.py`, `core/agent_llm_mixin.py`. Routes: Claude (planning/orchestration), Gemini Flash (creative/email copy), GPT-4o (API integrations). Env vars: `ANTHROPIC_API_KEY`, `GOOGLE_API_KEY`, `OPENAI_API_KEY`.
-
----
-
-## 🌐 Website Intent Monitor (Blog Triggers + Warm Connections)
-
-Monitors RB2B visitors for high-intent blog page visits and detects warm connections with our sales team.
-
-### Architecture
-```
-RB2B Webhook → Website Intent Monitor → Match Triggers → Find Connections
-                                              ↓                    ↓
-                                        Calculate Intent    Check Team Network
-                                              ↓                    ↓
-                                        Generate Email (Gemini) ← Personalize
-                                              ↓
-                                    Queue for GATEKEEPER Approval
-```
-
-### Key Files
-| File | Purpose |
-|------|---------|
-| `core/website_intent_monitor.py` | **Main monitoring engine** |
-| `.hive-mind/knowledge/templates/blog_triggered_emails.json` | Email templates |
-| `.hive-mind/gatekeeper_queue/` | Pending email approvals |
-
-### Blog Trigger Rules
-| Category | URL Pattern | Intent Boost | Template |
-|----------|-------------|--------------|----------|
-| AI Case Study | `/blog.*p&g.*product` | +25 | `case_study_pg` |
-| ROI Metrics | `/blog.*roi\|efficiency` | +20 | `roi_focused` |
-| Sales AI | `/blog.*sales.*ai` | +30 | `sales_ai` |
-| Implementation | `/blog.*implementation` | +35 | `implementation_ready` |
-
-### Connection Matching
-The system checks visitors against team members' work history:
-```python
-# Team network is configured in website_intent_monitor.py
-TEAM_NETWORK = {
-    "dani_apgar": {
-        "name": "Dani Apgar",
-        "previous_companies": [
-            {"name": "Gong", "domain": "gong.io"},
-            {"name": "Outreach", "domain": "outreach.io"},
-            {"name": "Salesforce", "domain": "salesforce.com"},
-        ]
-    }
-}
-```
-
-Connection types detected:
-- **FORMER_COLLEAGUE**: Visitor worked at same company, same time
-- **SAME_PREVIOUS_COMPANY**: Visitor at company where team member worked
-- **MUTUAL_CONNECTION**: Known LinkedIn connection
-
-### Usage
-```python
-from core.website_intent_monitor import get_website_monitor
-
-monitor = get_website_monitor()
-
-# Process RB2B webhook
-result = await monitor.process_visitor({
-    "email": "todd@acme.com",
-    "first_name": "Todd",
-    "company_name": "Acme Corp",
-    "job_title": "VP Sales",
-    "pages_viewed": ["/blog/how-pg-cut-product-development-time-22-percent-using-ai"],
-    "work_history": [{"company_name": "Gong", "company_domain": "gong.io"}]
-})
-
-# Result includes:
-# - intent_score: 75
-# - warm_connections: [WarmConnection(type=SAME_PREVIOUS_COMPANY, shared="Gong")]
-# - generated_email: {subject, body}
-# - queued_for_approval: True
-```
-
-### Adding Team Connections
-```python
-monitor.add_team_member_connection(
-    "dani_apgar",
-    company_name="HubSpot",
-    company_domain="hubspot.com",
-    years="2017-2019"
-)
-
-monitor.add_known_linkedin_connection(
-    "dani_apgar",
-    "https://linkedin.com/in/someconnection"
-)
-```
-
-### Sample Email Output
-```
-Subject: Quick thought on Acme Corp's development cycle
-
-Hi Todd,
-
-I saw you were reading our piece on how P&G cut product development time 
-by 22% using AI.
-
-Small world—my colleague Dani Apgar spent time at Gong as well.
-
-When VPs of Sales look at that example, it's usually because they're under 
-pressure to move faster—shorter cycles, better decisions, less drag between 
-teams—without blowing up headcount or process.
-
-Quick question: where are you seeing the most friction right now—speed to 
-execution, cross-team alignment, or insight visibility?
-
-Would later today or tomorrow work better?
-
-Kind regards,
-Dani Apgar
-```
-
-> ⚠️ **All blog-triggered emails require GATEKEEPER approval before sending.**
+`core/website_intent_monitor.py` — monitors RB2B visitors for high-intent blog views, detects warm connections with team network, generates personalized emails via Gemini, queues for GATEKEEPER approval. Blog triggers: case studies (+25), ROI (+20), sales AI (+30), implementation (+35). Connection types: FORMER_COLLEAGUE, SAME_PREVIOUS_COMPANY, MUTUAL_CONNECTION. All blog-triggered emails require GATEKEEPER approval.
 

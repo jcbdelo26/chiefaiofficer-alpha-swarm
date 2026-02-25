@@ -212,7 +212,7 @@ def main():
         if attendees:
             output_path = scraper.save_attendees(attendees)
             console.print(f"\n[bold green]✅ Event scraping complete![/bold green]")
-            console.print(f"Next step: python execution/enricher_clay_waterfall.py --input {output_path}")
+            console.print(f"Next step: python execution/enricher_waterfall.py --input {output_path}")
         else:
             console.print("\n[yellow]No attendees scraped. Full implementation requires browser automation.[/yellow]")
             

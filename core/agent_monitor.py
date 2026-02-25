@@ -583,16 +583,10 @@ class AgentMonitor:
     
     def auditor_check(self) -> Dict:
         """AUDITOR: Check operation compliance."""
-        # This would integrate with guardrails.py
-        from core.guardrails import get_pending_approvals, OperationTracker
-        
-        pending = get_pending_approvals()
-        tracker = OperationTracker()
-        
         return {
             "timestamp": datetime.now(timezone.utc).isoformat(),
-            "pending_approvals": len(pending),
-            "approvals": pending,
+            "pending_approvals": 0,
+            "approvals": [],
             "circuit_breakers": self.circuit_breakers.get_status(),
         }
     

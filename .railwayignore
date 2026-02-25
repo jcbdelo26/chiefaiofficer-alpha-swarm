@@ -27,6 +27,9 @@ node_modules/
 .hive-mind/scraped/
 .hive-mind/enriched/
 .hive-mind/knowledge/
+.hive-mind/intents/
+.hive-mind/replay_harness/
+.hive-mind/pipeline_runs/
 
 # NOTE: .hive-mind/shadow_mode_emails is implicitly ALLOWED because it is not listed.
 
