@@ -560,6 +560,12 @@ Chief AI Officer Inc. | 5700 Harper Dr, Suite 210, Albuquerque, NM 87109"""
             "calendar_link": "https://caio.cx/ai-exec-briefing-call"
         }
         self.feedback_profile = self._load_feedback_profile()
+        # Per-lead rejection memory for repeat prevention
+        try:
+            from core.rejection_memory import RejectionMemory
+            self._rejection_memory = RejectionMemory()
+        except Exception:
+            self._rejection_memory = None
 
     def _load_feedback_profile(self) -> Dict[str, Any]:
         """
@@ -759,37 +765,58 @@ Chief AI Officer Inc. | 5700 Harper Dr, Suite 210, Albuquerque, NM 87109"""
         return cleaned
 
     def _select_template(self, lead: Dict[str, Any]) -> str:
-        """Select appropriate template based on lead ICP tier and source."""
+        """Select appropriate template based on lead ICP tier and source.
+
+        If a lead was previously rejected, rotates away from the rejected
+        template to avoid producing identical output.
+        """
         source_type = lead.get("source_type", "")
         recommended = lead.get("recommended_campaign", "")
 
         # Use recommended campaign if it matches a valid template
         if recommended and recommended in self.TEMPLATES:
-            return recommended
+            candidate = recommended
+        elif source_type == "website_visitor":
+            candidate = "t1_value_first"
+        elif lead.get("hiring_signal"):
+            candidate = "t1_hiring_trigger"
+        elif "revops" in str(lead.get("title") or "").lower() or "revenue operations" in str(lead.get("title") or "").lower():
+            candidate = "t2_ops_efficiency"
+        else:
+            # Route by ICP tier
+            tier = lead.get("icp_tier", "tier_3")
+            TIER_TEMPLATES = {
+                "tier_1": ["t1_executive_buyin", "t1_industry_specific", "t1_value_first"],
+                "tier_2": ["t2_tech_stack", "t2_ops_efficiency", "t2_innovation_champion"],
+                "tier_3": ["t3_quick_win", "t3_time_savings", "t3_competitor_fomo", "t3_diy_resource"],
+            }
+            templates = TIER_TEMPLATES.get(tier, TIER_TEMPLATES["tier_3"])
+            idx = hash(lead.get("email", "")) % len(templates)
+            candidate = templates[idx]
 
-        # Website visitors keep their template
-        if source_type == "website_visitor":
-            return "t1_value_first"
+        # Rotate away from previously rejected templates for this lead
+        if self._rejection_memory:
+            try:
+                rejected_ids = self._rejection_memory.get_rejected_template_ids(
+                    lead.get("email", "")
+                )
+                if candidate in rejected_ids:
+                    tier = lead.get("icp_tier", "tier_3")
+                    TIER_TEMPLATES = {
+                        "tier_1": ["t1_executive_buyin", "t1_industry_specific", "t1_value_first"],
+                        "tier_2": ["t2_tech_stack", "t2_ops_efficiency", "t2_innovation_champion"],
+                        "tier_3": ["t3_quick_win", "t3_time_savings", "t3_competitor_fomo", "t3_diy_resource"],
+                    }
+                    alternatives = [
+                        t for t in TIER_TEMPLATES.get(tier, TIER_TEMPLATES["tier_3"])
+                        if t not in rejected_ids and t in self.TEMPLATES
+                    ]
+                    if alternatives:
+                        candidate = alternatives[0]
+            except Exception:
+                pass
 
-        # Hiring trigger detection
-        if lead.get("hiring_signal"):
-            return "t1_hiring_trigger"
-
-        # HoS feedback showed RevOps personas reject generic copy more often.
-        title_lower = str(lead.get("title") or "").lower()
-        if "revops" in title_lower or "revenue operations" in title_lower:
-            return "t2_ops_efficiency"
-
-        # Route by ICP tier
-        tier = lead.get("icp_tier", "tier_3")
-        TIER_TEMPLATES = {
-            "tier_1": ["t1_executive_buyin", "t1_industry_specific", "t1_value_first"],
-            "tier_2": ["t2_tech_stack", "t2_ops_efficiency", "t2_innovation_champion"],
-            "tier_3": ["t3_quick_win", "t3_time_savings", "t3_competitor_fomo", "t3_diy_resource"],
-        }
-        templates = TIER_TEMPLATES.get(tier, TIER_TEMPLATES["tier_3"])
-        idx = hash(lead.get("email", "")) % len(templates)
-        return templates[idx]
+        return candidate
 
     def _render_template(self, template_str: str, variables: Dict[str, Any]) -> str:
         """Render a Jinja2 template with variables."""
@@ -855,8 +882,18 @@ Chief AI Officer Inc. | 5700 Harper Dr, Suite 210, Albuquerque, NM 87109"""
                 "industry": lead.get("industry", ""),
                 "tech_stack": []
             },
-            "sender": self.sender_info
+            "sender": self.sender_info,
+            "rejection_context": self._get_lead_rejection_context(lead.get("email", "")),
         }
+
+    def _get_lead_rejection_context(self, lead_email: str) -> Dict[str, Any]:
+        """Get per-lead rejection context for template variable injection."""
+        if not self._rejection_memory or not lead_email:
+            return {}
+        try:
+            return self._rejection_memory.get_feedback_context(lead_email)
+        except Exception:
+            return {}
 
     def craft_cadence_followup(
         self,
@@ -914,10 +951,12 @@ Chief AI Officer Inc. | 5700 Harper Dr, Suite 210, Albuquerque, NM 87109"""
             "lead_id": lead.get("lead_id", ""),
             "email": lead.get("email", ""),
             "template": template_name,
+            "template_version": template_name,
             "subject_a": subject_a,
             "subject_b": subject_b,
             "body": body,
-            "personalization_level": 3 if lead.get("icp_tier") == "tier_1" else 2
+            "personalization_level": 3 if lead.get("icp_tier") == "tier_1" else 2,
+            "rejection_context": variables.get("rejection_context", {}),
         }
 
     def generate_sequence(self, lead: Dict[str, Any], template_name: str = None) -> List[EmailStep]:

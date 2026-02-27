@@ -78,3 +78,34 @@
 10. **`health_monitor.py` checks scraper readiness** via `_check_scraper_readiness()`. This validates cookie existence, length, and live session status.
 11. **Run `python execution/health_monitor.py --once`** before any production pipeline run to verify all APIs are reachable.
 
+---
+
+## 🧠 Skills Library
+
+**Location**: `.claude/skills/` in the workspace root (NOT inside `chiefaiofficer-alpha-swarm/`).
+
+A library of 26 SKILL.md files organized into 9 categories:
+
+| Directory | Key Skills |
+|-----------|-----------|
+| `02-development/` | tdd, mcp-builder, webapp-testing, changelog-generator |
+| `03-security/` | vibesec, systematic-debugging, defense-in-depth |
+| `05-business-marketing/` | lead-research-assistant, competitive-ads, content-research-writer |
+| `06-creative-media/` | brand-guidelines, theme-factory, canvas-design |
+| `07-productivity/` | file-organizer, invoice-organizer |
+| `09-workspace-meta/` | skill-creator, template-skill |
+
+### When to Read Skills
+
+- **Before building/deploying**: Read `vibesec` + `defense-in-depth`
+- **Before debugging**: Read `systematic-debugging`
+- **Before lead-gen tasks**: Read `lead-research-assistant`
+- **Before writing content**: Read `content-research-writer`
+- **When creating MCP servers**: Read `mcp-builder`
+
+### Always-Active Guardrails (from Skills)
+
+- Every external API call MUST have a timeout (≤30s)
+- Never hardcode secrets; use env vars
+- Reproduce bugs before attempting fixes
+- Write failing tests before fixing bugs

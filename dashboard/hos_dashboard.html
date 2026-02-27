@@ -1673,6 +1673,23 @@
             return `<span class="campaign-chip">Campaign: ${campaignType} (${campaignId})</span><span class="campaign-chip">Sync: ${syncState}</span>`;
         }
 
+        function formatProofLine(email) {
+            const status = String(email.proofStatus || 'not_started');
+            let label = 'Proof: Not started';
+            if (status === 'proved') label = 'Proof: Sent (proved)';
+            if (status === 'unresolved') label = 'Proof: Sent (unresolved)';
+            if (status === 'pending') label = 'Proof: Queued for proof';
+            const source = escapeHtml(email.proofSource || 'none');
+            return `<span class="campaign-chip">${escapeHtml(label)}</span><span class="campaign-chip">Source: ${source}</span>`;
+        }
+
+        function formatDeliverabilityLine(email) {
+            const risk = String(email.deliverabilityRisk || 'unknown').toLowerCase();
+            const reasons = Array.isArray(email.deliverabilityReasons) ? email.deliverabilityReasons : [];
+            const reasonText = reasons.length ? escapeHtml(reasons.join(', ')) : 'none';
+            return `<span class="campaign-chip">Deliverability: ${escapeHtml(risk)}</span><span class="campaign-chip">Reasons: ${reasonText}</span>`;
+        }
+
         function escapeHtml(value = '') {
             return String(value)
                 .replace(/&/g, '&amp;')
@@ -1962,6 +1979,13 @@
                         externalProvider: campaignRef.external_provider || '',
                         externalCampaignId: campaignRef.external_campaign_id || '',
                         externalCampaignName: campaignRef.external_campaign_name || '',
+                        proofStatus: e.proof_status || 'not_started',
+                        proofSource: e.proof_source || 'none',
+                        proofTimestamp: e.proof_timestamp || '',
+                        proofEvidenceId: e.proof_evidence_id || '',
+                        deliverabilityRisk: e.deliverability_risk || 'unknown',
+                        deliverabilityReasons: Array.isArray(e.deliverability_reasons) ? e.deliverability_reasons : [],
+                        modelRoute: e.model_route || 'unknown',
                         canary: !!e.canary,
                         complianceChecks: complianceChecks
                     };
@@ -2091,6 +2115,12 @@
                             <span>${formatCampaignLine(email)}</span>
                             <span>Origin: ${safeQueueOrigin}</span>
                         </div>
+                        <div class="email-meta" style="margin-top: 6px;">
+                            <span>${formatProofLine(email)}</span>
+                        </div>
+                        <div class="email-meta" style="margin-top: 6px;">
+                            <span>${formatDeliverabilityLine(email)}</span>
+                        </div>
                     </div>
                     <div class="email-actions">
                         <button class="btn-sm btn-preview" onclick="previewEmail('${safeId}')">Edit & Preview</button>
@@ -2151,6 +2181,13 @@
             const queueOrigin = escapeHtml(email.queueOrigin || 'unknown');
             const leadSourceClass = escapeHtml(email.leadSourceClass || 'unknown');
             const routingTargets = escapeHtml((email.routingTargets || []).join(', ') || 'none');
+            const proofStatus = escapeHtml(email.proofStatus || 'not_started');
+            const proofSource = escapeHtml(email.proofSource || 'none');
+            const proofTimestamp = escapeHtml(email.proofTimestamp || 'n/a');
+            const proofEvidenceId = escapeHtml(email.proofEvidenceId || 'n/a');
+            const deliverabilityRisk = escapeHtml(email.deliverabilityRisk || 'unknown');
+            const deliverabilityReasons = escapeHtml((email.deliverabilityReasons || []).join(', ') || 'none');
+            const modelRoute = escapeHtml(email.modelRoute || 'unknown');
             const checksHtml = renderSignalChecklist(email.copySignals || []);
 
             document.getElementById('emailPreviewBody').innerHTML = `
@@ -2229,6 +2266,34 @@
                     <div class="sidebar-field">
                         <label>Routing Targets</label>
                         <div class="value">${routingTargets}</div>
+                    </div>
+                    <div class="sidebar-field">
+                        <label>Proof Status</label>
+                        <div class="value">${proofStatus}</div>
+                    </div>
+                    <div class="sidebar-field">
+                        <label>Proof Source</label>
+                        <div class="value">${proofSource}</div>
+                    </div>
+                    <div class="sidebar-field">
+                        <label>Proof Timestamp</label>
+                        <div class="value">${proofTimestamp}</div>
+                    </div>
+                    <div class="sidebar-field">
+                        <label>Proof Evidence</label>
+                        <div class="value">${proofEvidenceId}</div>
+                    </div>
+                    <div class="sidebar-field">
+                        <label>Deliverability Risk</label>
+                        <div class="value">${deliverabilityRisk}</div>
+                    </div>
+                    <div class="sidebar-field">
+                        <label>Deliverability Reasons</label>
+                        <div class="value">${deliverabilityReasons}</div>
+                    </div>
+                    <div class="sidebar-field">
+                        <label>Model Route</label>
+                        <div class="value">${modelRoute}</div>
                     </div>
                     <div class="sidebar-field">
                         <label>Compliance (Backend Verified)</label>

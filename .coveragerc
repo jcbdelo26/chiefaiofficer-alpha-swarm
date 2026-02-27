@@ -1,0 +1,16 @@
+[run]
+source = core,execution
+omit =
+    */mcp-servers/*
+    */dashboard/*
+    */__pycache__/*
+    */tests/*
+    */scripts/*
+
+[report]
+fail_under = 40
+show_missing = true
+exclude_lines =
+    pragma: no cover
+    if __name__ == .__main__
+    raise NotImplementedError

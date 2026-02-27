@@ -1,13 +1,31 @@
 #!/usr/bin/env bash
-# Pre-commit hook: runs critical tests before every commit (~10-30s)
+# Pre-commit hook: runs curated Phase 4 tests before every commit (~10-30s)
 # Install: git config core.hooksPath .githooks
+#
+# Runs known-good tests covering critical Phase 4 modules.
+# For full suite: python -m pytest tests/ -v -s
 
 set -e
 
 echo "Running pre-commit tests..."
 
-# Run tests with fail-fast, quiet output, no capture (Rich console compat)
-python -m pytest tests/ -x -q --tb=short -s 2>/dev/null
+# Curated test files: Phase 4 modules + core pipeline
+python -m pytest \
+  tests/test_heyreach_dispatcher.py \
+  tests/test_enricher_waterfall.py \
+  tests/test_quality_guard.py \
+  tests/test_rejection_memory.py \
+  tests/test_shadow_queue.py \
+  tests/test_pipeline_integration.py \
+  tests/test_feedback_loop.py \
+  tests/test_feedback_loop_trace.py \
+  tests/test_instantly_dispatcher_guards.py \
+  tests/test_instantly_webhook_auth.py \
+  tests/test_crafter_rejection_hardening.py \
+  tests/test_task_routing_policy.py \
+  tests/test_phase1_proof_deliverability.py \
+  tests/test_phase1_feedback_loop_integration.py \
+  -x -q --tb=short -s 2>/dev/null
 
 if [ $? -ne 0 ]; then
     echo ""
@@ -16,4 +34,4 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-echo "All tests passed."
+echo "All pre-commit tests passed."

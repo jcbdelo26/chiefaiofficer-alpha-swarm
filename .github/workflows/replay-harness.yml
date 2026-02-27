@@ -24,3 +24,26 @@ jobs:
         run: |
           python --version
           python scripts/replay_harness.py --min-pass-rate 0.95
+
+  unit-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install pytest pytest-cov
+
+      - name: Run critical path tests with coverage
+        env:
+          PYTHONPATH: .
+        run: |
+          python -m pytest tests/test_shadow_queue.py tests/test_enricher_waterfall.py tests/test_instantly_dispatcher_guards.py tests/test_rejection_memory.py tests/test_quality_guard.py -x -q --cov=core --cov=execution --cov-report=term-missing

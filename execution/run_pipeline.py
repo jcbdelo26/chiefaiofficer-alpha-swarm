@@ -406,7 +406,18 @@ class UnifiedPipeline:
         import time
         start = time.time()
         errors = []
-        
+
+        # CircuitBreaker pre-check: abort if enrichment API circuit is OPEN
+        try:
+            from core.circuit_breaker import get_registry
+            registry = get_registry()
+            if not registry.is_available("enrichment_api"):
+                errors.append("CircuitBreaker OPEN for enrichment_api — skipping enrichment stage")
+                self.enriched = [{**l, "enriched": False, "circuit_breaker": "OPEN"} for l in self.leads]
+                return StageResult("ENRICH", True, time.time() - start, errors)
+        except Exception:
+            pass  # CircuitBreaker not configured — proceed normally
+
         if self._is_safe_mode():
             from execution.generate_test_data import generate_enrichment_data
             self.enriched = []
@@ -762,6 +773,43 @@ class UnifiedPipeline:
                     "contact_id": lead.get("contact_id"),
                     "template_id": None,
                 }
+
+                # VerificationHooks: pre-send compliance + data quality check
+                try:
+                    from core.verification_hooks import VerificationHooks
+                    vh_report = VerificationHooks().run_all_verifications(
+                        lead=lead,
+                        email_content=body,
+                        agent_name="pipeline_send",
+                    )
+                    if hasattr(vh_report, "overall_status") and vh_report.overall_status == "failed":
+                        errors.append(
+                            f"VerificationHooks failed for {email_addr}: "
+                            f"{getattr(vh_report, 'summary', 'verification failed')}"
+                        )
+                        continue
+                except Exception as vh_exc:
+                    console.print(f"[yellow]VerificationHooks check failed for {email_addr} (proceeding): {vh_exc}[/yellow]")
+
+                # Quality guard: block drafts that fail personalization checks
+                try:
+                    from core.quality_guard import QualityGuard
+                    guard_result = QualityGuard().check(shadow_email)
+                    shadow_email["quality_guard_result"] = {
+                        "passed": guard_result["passed"],
+                        "rule_failures": guard_result.get("rule_failures", []),
+                        "rejection_memory_hit": guard_result.get("rejection_memory_hit", False),
+                    }
+                    shadow_email["draft_fingerprint"] = guard_result.get("draft_fingerprint", "")
+                    shadow_email["personalization_evidence"] = guard_result.get("personalization_evidence", [])
+                    if not guard_result["passed"]:
+                        errors.append(
+                            f"Quality guard blocked {email_addr}: "
+                            f"{guard_result.get('blocked_reason', 'unknown')}"
+                        )
+                        continue
+                except Exception as qg_exc:
+                    console.print(f"[yellow]Quality guard check failed for {email_addr} (proceeding): {qg_exc}[/yellow]")
 
                 # Write to Redis (for Railway dashboard) + local disk (for dev)
                 try:

@@ -1,6 +1,6 @@
 # CAIO Alpha Swarm — Unified Implementation Plan
 
-**Last Updated**: 2026-02-17 (v4.5 — HoS review integrated: critical pre-live fixes applied, regression tests added, replay/pytest gates revalidated)
+**Last Updated**: 2026-02-27 (v4.6 — Sprint 3: Clay fallback re-enabled, TDD testing complete, HeyReach tests, pre-commit hook)
 **Owner**: ChiefAIOfficer Production Team
 **AI**: Claude Opus 4.6
 
@@ -20,7 +20,7 @@ Phase 0: Foundation Lock          [##########] 100%  COMPLETE
 Phase 1: Live Pipeline Validation [##########] 100%  COMPLETE
 Phase 2: Supervised Burn-In       [##########] 100%  COMPLETE
 Phase 3: Expand & Harden          [##########] 100%  COMPLETE
-Phase 4: Autonomy Graduation      [#########.]  98%  IN PROGRESS (4A+4C+4D+4F+4G+4I COMPLETE, 4B infra done, 4E ramp active, 4H+4J in progress)
+Phase 4: Autonomy Graduation      [#########.]  98%  IN PROGRESS (4A+4C+4D+4F+4G+4I+4J+4K COMPLETE, 4B infra done, 4E ramp active, 4H in progress)
 ```
 
 ---
@@ -84,7 +84,7 @@ Production pipeline validated with real Apollo data. All critical blockers resol
 
 | Bug | Fix | File |
 |-----|-----|------|
-| Apollo `reveal_phone_number` requires `webhook_url` (400) | Removed `reveal_phone_number: True` from payload | `enricher_clay_waterfall.py` |
+| Apollo `reveal_phone_number` requires `webhook_url` (400) | Removed `reveal_phone_number: True` from payload | `enricher_waterfall.py` (formerly `enricher_clay_waterfall.py`) |
 | Segmentor `NoneType has no attribute 'lower'` | Changed to `(lead.get("title") or "").lower()` pattern | `segmentor_classify.py` (3 locations) |
 | Segmentor `employee_count` None crash | Changed to `lead.get("company", {}).get("employee_count") or 0` | `segmentor_classify.py` |
 | Segmentor email only checking `work_email` | Added fallback chain: `work_email` OR `verified_email` OR top-level `email` | `segmentor_classify.py` |
@@ -106,7 +106,7 @@ Production pipeline validated with real Apollo data. All critical blockers resol
 | Enrichment provider research (28+ providers) | DONE | [ENRICHMENT_PROVIDER_RESEARCH_2026.md](docs/research/ENRICHMENT_PROVIDER_RESEARCH_2026.md) |
 | Proxycurl removal from scraper | DONE | `_fetch_via_proxycurl` method deleted |
 | Proxycurl removal from enricher | DONE | All Proxycurl code replaced with BetterContact |
-| BetterContact fallback code integration | DONE | Async polling in `enricher_clay_waterfall.py` |
+| BetterContact fallback code integration | DONE | Async polling in `enricher_waterfall.py` (formerly `enricher_clay_waterfall.py`) |
 | Clay workbook research | DONE | Explorer plan active, async webhooks |
 | Multi-channel cadence research | DONE | [MULTI_CHANNEL_CADENCE_RESEARCH_2026.md](docs/research/MULTI_CHANNEL_CADENCE_RESEARCH_2026.md) |
 | Clay pipeline fallback — REMOVED | DONE | `lead_id` not accessible in Clay HTTP callback → 3-min guaranteed timeouts. Clay kept for RB2B visitor enrichment ONLY |
@@ -124,20 +124,21 @@ Production pipeline validated with real Apollo data. All critical blockers resol
 | Google Calendar setup guide | DONE | `docs/GOOGLE_CALENDAR_SETUP_GUIDE.md` + `scripts/setup_google_calendar.py` |
 | GHL Calendar integration | DONE | Replaced Google Calendar with GHL Calendar API in scheduler agent. Zero new dependencies. |
 
-### 3A-Assessment: Clay in Pipeline — REMOVED (RB2B Only)
+### 3A-Assessment: Clay in Pipeline — RE-ENABLED (Phase 4K)
 
-**Finding**: Clay HTTP API callback does NOT include the `lead_id` field that the pipeline enricher needs to correlate responses. This causes a guaranteed 3-minute timeout on every lead routed through Clay, making it unusable as a pipeline enrichment fallback.
+**Original finding**: Clay HTTP API callback does NOT include the `lead_id` field, causing guaranteed 3-minute timeouts. Clay was removed from pipeline in Phase 3.
 
-**Decision**: Clay REMOVED from pipeline enrichment waterfall. Clay Explorer ($499/mo) remains active and valuable for **RB2B visitor enrichment only** (visitor_id works in callbacks).
+**Resolution (Phase 4K, commit `a0d91b4`)**: Bypassed `lead_id` limitation using Redis LinkedIn URL correlation. Before sending to Clay, pipeline stores `linkedin_hash → {lead_id, request_id}` in Redis. Railway callback handler extracts LinkedIn URL from Clay response, looks up correlation, stores result for pipeline polling.
 
 **Pipeline enrichment waterfall (current)**:
 1. Apollo.io People Match (primary, synchronous, 1 credit/reveal)
 2. BetterContact (fallback, async polling — code ready, subscription pending)
-3. Mock/skip (graceful degradation)
+3. Clay Explorer (fallback, async callback + Redis correlation — feature-flagged `CLAY_PIPELINE_ENABLED`)
+4. Graceful skip (lead continues without enrichment)
 
 **Clay usage**:
-- RB2B visitors → Clay workbook webhook → enrichment columns → HTTP callback to `/webhooks/clay`
-- `/webhooks/clay` handler: RB2B visitor path only (pipeline lead path removed)
+- **Pipeline leads**: Waterfall position 3, Redis LinkedIn URL correlation, `/api/clay-callback` handler
+- **RB2B visitors**: Clay workbook webhook → enrichment columns → HTTP callback to `/webhooks/clay`
 
 ### Completed (Final)
 
@@ -627,9 +628,11 @@ QUEEN (orchestrator)
 
 **Test Gate**: 50/50 passing in 0.67s
 
-### 4J: TDD Critical Path Testing — IN PROGRESS
+### 4J: TDD Critical Path Testing — COMPLETE
 
 **Objective**: Close the 6 critical testing gaps identified in the TDD assessment before Phase 5 graduation. Shadow queue (3 production incidents, 0 tests), enricher parsers (0 tests), dispatcher guards (0 test coverage), pipeline integration (no inter-stage tests), feedback loop (module exists, 0 dedicated tests), coverage tracking (not configured).
+
+**Result**: 187 tests across 9 test files, all passing. Pre-commit hook enforces test gate on every commit.
 
 **Sprint 1 — Critical Path Tests (COMPLETE)**:
 
@@ -649,12 +652,12 @@ QUEEN (orchestrator)
 | Wire VerificationHooks into `_stage_send()` | DONE | ~15 lines | `execution/run_pipeline.py` |
 | Wire CircuitBreaker pre-check (ENRICH) | DONE | ~10 lines | `execution/run_pipeline.py` |
 
-**Sprint 3 — Hardening**:
+**Sprint 3 — Hardening (COMPLETE)**:
 
 | Task | Status | Target | Files |
 |------|--------|--------|-------|
-| Pre-commit hook for critical tests | TODO | <10s run | `.pre-commit-config.yaml` |
-| HeyReach dispatcher tests | TODO | 8-10 tests | `tests/test_heyreach_dispatcher.py` |
+| Pre-commit hook for critical tests | DONE | ~10s run | `.githooks/pre-commit` |
+| HeyReach dispatcher tests | DONE | 18 tests | `tests/test_heyreach_dispatcher.py` |
 
 ### Phase 4K: Clay Pipeline Enrichment Fallback — COMPLETE
 
@@ -723,7 +726,7 @@ QUEEN (orchestrator)
 | Service | Status | Notes |
 |---------|--------|-------|
 | **Apollo.io** | WORKING | People Search (free) + Match (1 credit/reveal) |
-| **Clay Explorer** | ACTIVE | $499/mo, 14K credits/mo. RB2B visitor enrichment ONLY (removed from pipeline). |
+| **Clay Explorer** | ACTIVE | $499/mo, 14K credits/mo. RB2B visitor enrichment + pipeline fallback (position 3, feature-flagged `CLAY_PIPELINE_ENABLED`). |
 | **BetterContact** | CODE READY | Async API integrated in enricher, no subscription yet (Clay preferred) |
 | **Slack Alerting** | WORKING | Webhook configured, WARNING + CRITICAL alerts |
 | **Redis (Upstash)** | WORKING | 62ms from Railway |
@@ -742,7 +745,7 @@ QUEEN (orchestrator)
 | Purpose | File |
 |---------|------|
 | Pipeline runner | `execution/run_pipeline.py` |
-| Enricher (Apollo + BetterContact fallback) | `execution/enricher_clay_waterfall.py` |
+| Enricher (Apollo + BetterContact + Clay fallback) | `execution/enricher_waterfall.py` |
 | Lead discovery (Apollo) | `execution/hunter_scrape_followers.py` |
 | ICP scoring | `execution/segmentor_classify.py` |
 | Dashboard + API | `dashboard/health_app.py` |
@@ -774,6 +777,9 @@ QUEEN (orchestrator)
 | **Enrichment sub-agents (signal extraction)** | `core/enrichment_sub_agents.py` |
 | **Feedback loop (outcome → learning bridge)** | `core/feedback_loop.py` |
 | Rejection hardening design doc | `docs/REJECTION_LOOP_HARDENING_PLAN.md` |
+| **Pre-commit hook (test gate)** | `.githooks/pre-commit` |
+| **HeyReach dispatcher tests (18 tests)** | `tests/test_heyreach_dispatcher.py` |
+| **Enricher waterfall tests (41 tests)** | `tests/test_enricher_waterfall.py` |
 | This plan | `CAIO_IMPLEMENTATION_PLAN.md` |
 
 ---
@@ -844,7 +850,8 @@ QUEEN (orchestrator)
 
 ---
 
-*Plan Version: 4.5*
+*Plan Version: 4.6*
 *Created: 2026-02-13*
-*Latest Patch Train Release: 2026-02-17 (P0-A..P0-E complete, production cutover deployed commit `746d347`, v4.5 deep-review + HoS fixes + strict webhook signature hardening + edge-case gate expansion applied)*
+*Latest Release: 2026-02-27 (commit `a0d91b4` — Sprint 3: Clay fallback re-enabled via Redis LinkedIn URL correlation, HeyReach dispatcher tests (18), pre-commit hook, TDD 4J COMPLETE with 187 tests)*
+*Previous Release: 2026-02-17 (P0-A..P0-E complete, v4.5 deep-review + HoS fixes + strict webhook signature hardening)*
 *Supersedes: v3.7, v3.6, Modernization Roadmap (implementation_plan.md.resolved), Original Path to Full Autonomy (f34646b2/task.md.resolved)*

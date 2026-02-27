@@ -22,12 +22,13 @@ def _api_get(
     *,
     include_non_dispatchable: bool = False,
 ) -> Dict[str, Any]:
-    params: Dict[str, Any] = {"token": token}
+    params: Dict[str, Any] = {}
     if include_non_dispatchable:
         params["include_non_dispatchable"] = "true"
     response = requests.get(
         f"{base_url.rstrip('/')}{path}",
-        params=params,
+        params=params or None,
+        headers={"X-Dashboard-Token": token},
         timeout=30,
     )
     response.raise_for_status()

@@ -130,7 +130,12 @@ def main() -> int:
         reason = f"Auto-cleanup non-actionable pending item: {', '.join(row['reasons'])}"
         resp = requests.post(
             f"{args.base_url.rstrip('/')}/api/emails/{email_id}/reject",
-            params={"token": args.token, "approver": "queue_hygiene_bot", "reason": reason},
+            params={
+                "token": args.token,
+                "approver": "queue_hygiene_bot",
+                "reason": reason,
+                "rejection_tag": "queue_hygiene_non_actionable",
+            },
             timeout=30,
         )
         if resp.status_code == 200:
@@ -144,4 +149,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

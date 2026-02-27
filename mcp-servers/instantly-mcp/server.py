@@ -205,7 +205,11 @@ class AsyncInstantlyClient:
                     async with session.patch(url, params=params, json=data) as response:
                         result = await self._handle_response(response)
                 elif method == "DELETE":
-                    async with session.delete(url, params=params, json=data) as response:
+                    # V2: Don't send JSON body on DELETE (Fastify rejects empty JSON)
+                    kwargs = {"params": params}
+                    if data is not None:
+                        kwargs["json"] = data
+                    async with session.delete(url, **kwargs) as response:
                         result = await self._handle_response(response)
                 else:
                     raise ValueError(f"Unsupported method: {method}")
@@ -490,45 +494,55 @@ class AsyncInstantlyClient:
         skip_duplicates: bool = True
     ) -> Dict[str, Any]:
         """
-        Add leads to a campaign (bulk).
+        Add leads to a campaign one at a time.
 
-        V2 changes:
-        - Endpoint: POST /leads/bulk (not /lead/add)
+        V2 changes (2026-02):
+        - Endpoint: POST /leads (single lead per call, /leads/bulk removed)
         - campaign_id is top-level "campaign" field
         - skip_if_in_workspace/skip_if_in_campaign replace skip_duplicates
         - custom_variables values must be scalar (string/number/boolean/null)
+        - custom_variables are stored in the lead's "payload" field (not "custom_variables")
+        - To update lead custom_variables after creation: PATCH /leads/{id} with {"custom_variables": {...}}
+        - Template merge tags like {{variable_name}} pull from the lead's payload keys
         """
-        formatted_leads = []
+        results = {"added": 0, "skipped": 0, "errors": [], "lead_ids": []}
+
         for lead in leads:
-            formatted = {
+            data: Dict[str, Any] = {
+                "campaign": campaign_id,
                 "email": lead["email"],
                 "first_name": lead.get("first_name", lead.get("firstName", "")),
                 "last_name": lead.get("last_name", lead.get("lastName", "")),
-                "company_name": lead.get("company_name", lead.get("company", lead.get("companyName", "")))
+                "company_name": lead.get("company_name", lead.get("company", lead.get("companyName", ""))),
+                "skip_if_in_workspace": skip_duplicates,
+                "skip_if_in_campaign": True,
             }
 
             # Custom variables (V2: values must be scalar)
             custom = lead.get("custom_variables", lead.get("customFields", {}))
             if custom:
-                # Ensure all values are scalar
                 sanitized = {}
                 for k, v in custom.items():
                     if isinstance(v, (str, int, float, bool)) or v is None:
                         sanitized[k] = v
                     else:
                         sanitized[k] = str(v)
-                formatted["custom_variables"] = sanitized
+                data["custom_variables"] = sanitized
 
-            formatted_leads.append(formatted)
+            result = await self._request("POST", "leads", data)
+            # _handle_response wraps success as {"success": True, "data": {...}}
+            resp_data = result.get("data", {}) if result.get("success") else {}
+            lead_id = resp_data.get("id") if isinstance(resp_data, dict) else None
+            if lead_id:
+                results["added"] += 1
+                results["lead_ids"].append(lead_id)
+            elif result.get("error"):
+                results["errors"].append({"email": lead["email"], "error": result["error"]})
+            else:
+                results["skipped"] += 1
 
-        data = {
-            "campaign": campaign_id,
-            "leads": formatted_leads,
-            "skip_if_in_workspace": skip_duplicates,
-            "skip_if_in_campaign": True,
-        }
-
-        return await self._request("POST", "leads/bulk", data)
+        results["success"] = results["added"] > 0 or (results["added"] == 0 and results["skipped"] > 0)
+        return results
 
     async def get_lead_status(
         self,

@@ -1,6 +1,6 @@
 # CAIO Alpha Swarm — Source of Truth Task Tracker
 
-**Last Updated (UTC):** 2026-02-24 17:21
+**Last Updated (UTC):** 2026-02-26 19:25
 **Primary Objective:** Safe progression from supervised Tier_1 live sends to full autonomy without security regressions.
 **Owner:** PTO/GTM (operational), Engineering (controls), HoS (message quality)
 
@@ -33,6 +33,17 @@
   - `tests/test_operator_batch_snapshot_integrity.py`
   - `tests/test_operator_dedup_and_send_path.py`
 - Combined result in latest session: `32 tests passed`
+- Phase-1 hardening TDD pack (latest local):
+  - `tests/test_phase1_proof_deliverability.py`
+  - `tests/test_phase1_feedback_loop_integration.py`
+  - `tests/test_task_routing_policy.py`
+  - `tests/test_runtime_reliability.py`
+  - combined result: `25 passed`
+- Phase-1 feedback + deliverability focused regression (latest local):
+  - `tests/test_phase1_proof_deliverability.py`
+  - `tests/test_phase1_feedback_loop_integration.py`
+  - `tests/test_feedback_loop_trace.py`
+  - combined result: `8 passed`
 
 ### 1.3 Live Queue + Supervised State
 - Pending queue trace (production):
@@ -149,6 +160,7 @@
 | P1 | Explicit Redis-only state env cutover | PTO + Eng | DONE | prod env has `STATE_DUAL_READ_ENABLED=false`, `STATE_FILE_FALLBACK_WRITE=false`; deployed smoke passing |
 | P1 | CORS method/header tightening | Eng | DONE | explicit methods/headers deployed; smoke/auth checks passing in staging + production |
 | P1 | Run supervised approval verification (real send proof) | PTO | IN_PROGRESS | approve 1 Tier_1 -> response `Email sent via GHL` + message visible in GHL conversation |
+| P1 | Phase-1 deterministic proof + deliverability + feedback-loop closure | Eng | IN_PROGRESS | approvals terminate as `sent_proved/sent_unresolved/blocked_deliverability`; feedback tuples persisted and visible in `/api/pending-emails` payload |
 | P1 | Rejection-tag learning loop review | HoS + PTO | TODO | top reject tags reviewed; crafter tuning PR merged |
 | P2 | Lifespan + utcnow cleanup | Eng | IN_PROGRESS | no `@app.on_event` usage and utcnow deprecation warnings reduced in critical runtime paths |
 
@@ -280,7 +292,10 @@ python -m pytest -q \
 - [x] State-store final cutover values confirmed in production:
   - `STATE_DUAL_READ_ENABLED=false`
   - `STATE_FILE_FALLBACK_WRITE=false`
-- [ ] Confirm token rotation date for `DASHBOARD_AUTH_TOKEN` after rollout.
+- [x] Input 1: HoS/PTO confirmation in GHL UI that approved Andrew message is visible in contact conversation (final supervised proof).
+- [ ] Input 2: Decision on remaining pending cards in `/sales` (approve/reject using required structured rejection tags).
+- [ ] Input 3: Final token-rotation date/time for `DASHBOARD_AUTH_TOKEN` (staging + production).
+- [x] Input 4: `scripts/trace_outbound_ghl_queue.py` updated for strict header-token auth (`X-Dashboard-Token`) and verified by test (`tests/test_trace_outbound_ghl_queue.py`).
 
 ---
 
@@ -298,6 +313,12 @@ All must be true for go-live autonomy:
 
 ## 8) Change Log (Most Recent)
 
+- `UNRELEASED` — Phase-1 feedback/deliverability patch:
+  - `core/deliverability_guard.py`: added deterministic recent hard-bounce memory gate from `DELIVERABILITY_BOUNCE_FILE` + `DELIVERABILITY_BOUNCE_LOOKBACK_DAYS`; high-risk bounce recipients now fail closed as `recent_hard_bounce`.
+  - `core/feedback_loop.py`: added trace-envelope emission for `record_email_outcome` (success/failure) for replay diagnostics.
+  - tests: `tests/test_phase1_proof_deliverability.py::test_deliverability_guard_blocks_recent_hard_bounce` and `tests/test_feedback_loop_trace.py::test_feedback_loop_emits_trace_envelope`.
+- `UNRELEASED` — Added PTO/GTM input completion runbook: `docs/PTO_GTM_INPUT_COMPLETION_RUNBOOK.md` (non-technical step-by-step for Inputs 1-4).
+- `UNRELEASED` — Fixed strict-auth queue trace client: `scripts/trace_outbound_ghl_queue.py` now sends `X-Dashboard-Token` header (no query-token auth); regression test passing in `tests/test_trace_outbound_ghl_queue.py`.
 - `4992d69` — hardening patch pushed: FastAPI lifespan migration (`dashboard/health_app.py`), timezone-aware UTC updates in critical runtime paths (`execution/run_pipeline.py`, `execution/rl_engine.py`), and smoke matrix hard-auth enforcement option.
 - `UNRELEASED` — P2 reliability cleanup: migrated `dashboard/health_app.py` from deprecated `@app.on_event` hooks to FastAPI lifespan; moved critical pipeline timestamps (`execution/run_pipeline.py`, `execution/rl_engine.py`) to timezone-aware UTC.
 - `UNRELEASED` — smoke gate hardening: `deployed_full_smoke_checklist.py` and `deployed_full_smoke_matrix.py` now support `--require-heyreach-hard-auth` to fail when unsigned HeyReach allowlist is still active.

@@ -17,6 +17,7 @@ from core.runtime_reliability import (
     apply_env_updates,
     get_runtime_dependency_health,
     merge_runtime_env_values,
+    get_runtime_env_defaults,
 )
 
 
@@ -188,6 +189,17 @@ def test_merge_runtime_env_values_respects_existing_and_overrides():
     assert merged["INNGEST_APP_ID"] == "custom-app-id"
     assert merged["REDIS_REQUIRED"] == "true"
     assert merged["INNGEST_REQUIRED"] == "true"
+
+
+def test_runtime_env_defaults_include_phase1_routing_and_proof_controls():
+    defaults = get_runtime_env_defaults("production")
+
+    assert defaults["LLM_ROUTE_HIVEMIND_PRIMARY"] == "opus-4.6"
+    assert defaults["LLM_ROUTE_DAILY_PRIMARY"] == "sonnet-4.5"
+    assert defaults["LLM_ROUTE_DETERMINISTIC_PRIMARY"] == "gpt-5.1-mini"
+    assert defaults["DELIVERABILITY_FAIL_CLOSED"] == "true"
+    assert defaults["PROOF_POLL_FALLBACK_ENABLED"] == "true"
+    assert defaults["PROOF_SLA_SECONDS"] == "900"
 
 
 def test_apply_env_updates_replaces_and_appends():

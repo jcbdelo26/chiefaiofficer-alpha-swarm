@@ -102,6 +102,17 @@ def get_runtime_env_defaults(mode: str) -> Dict[str, str]:
         "CORS_ALLOWED_ORIGINS": "http://localhost:8080,http://127.0.0.1:8080",
         "CORS_ALLOWED_METHODS": "GET,POST,OPTIONS",
         "CORS_ALLOWED_HEADERS": "Content-Type,X-Dashboard-Token",
+        # Phase-1 task-based model routing (primary + one fallback).
+        "LLM_ROUTE_HIVEMIND_PRIMARY": "opus-4.6",
+        "LLM_ROUTE_HIVEMIND_FALLBACK": "sonnet-4.5",
+        "LLM_ROUTE_DAILY_PRIMARY": "sonnet-4.5",
+        "LLM_ROUTE_DAILY_FALLBACK": "opus-4.6",
+        "LLM_ROUTE_DETERMINISTIC_PRIMARY": "gpt-5.1-mini",
+        "LLM_ROUTE_DETERMINISTIC_FALLBACK": "sonnet-4.5",
+        # Phase-1 proof + deliverability controls.
+        "DELIVERABILITY_FAIL_CLOSED": "true",
+        "PROOF_POLL_FALLBACK_ENABLED": "true",
+        "PROOF_SLA_SECONDS": "900",
     }
 
 

@@ -29,6 +29,39 @@ Phase 4E: Supervised Live Sends              RAMP MODE ACTIVE (5/day, tier_1, 3 
 Phase 4F: Monaco Signal Loop                 COMPLETE (lead_signals + activity_timeline + leads dashboard + decay cron)
 ```
 
+### Phase-1 Proof + Deliverability Hardening (2026-02-26)
+
+Locked behavior now implemented in `dashboard/health_app.py`:
+- Deterministic send outcomes for approvals: `sent_proved`, `sent_unresolved`, `blocked_deliverability`.
+- Proof engine enabled (`core/ghl_send_proof.py`):
+  - Primary: webhook evidence file
+  - Fallback: bounded GHL poll
+  - Output contract: `proof_status`, `proof_source`, `proof_timestamp`, `proof_evidence_id`.
+- Pre-send deliverability guard enabled (`core/deliverability_guard.py`):
+  - syntax + suppression + role/disposable checks
+  - high-risk blocks send when `DELIVERABILITY_FAIL_CLOSED=true`.
+- Feedback loop persistence enabled (`core/feedback_loop.py`):
+  - approval/rejection outcomes recorded as deterministic training tuples
+  - stores evidence fields (proof, risk, rejection tags, route) for replay/optimizer.
+- **Rejection memory gate** (`core/rejection_memory.py`):
+  - Per-lead rejection history (Redis + filesystem), 30-day TTL.
+  - Records: rejection tags, body fingerprints, feedback text, template IDs.
+  - `should_block_lead()`: blocks after 2 rejections unless new evidence.
+  - `is_repeat_draft()`: SHA-256 fingerprint match against prior rejected drafts.
+- **Pre-queue quality guard** (`core/quality_guard.py`):
+  - 5 deterministic rules: GUARD-001 (rejection count), GUARD-002 (repeat draft), GUARD-003 (evidence minimum), GUARD-004 (banned openers), GUARD-005 (generic density).
+  - Runs before `shadow_queue.push()` in `_stage_send()`.
+  - `QUALITY_GUARD_ENABLED=false` to bypass; `QUALITY_GUARD_MODE=soft` for log-only.
+  - Sub-agent enrichment fallback when evidence insufficient (`core/enrichment_sub_agents.py`).
+- **CRAFTER per-lead rejection context**: `rejection_context` in template variables, template rotation away from rejected template IDs.
+- Runtime route snapshot exposed in `/api/runtime/dependencies` under `llm_routing.task_routes`.
+
+Validation tests:
+- `tests/test_phase1_proof_deliverability.py`
+- `tests/test_phase1_feedback_loop_integration.py`
+- `tests/test_rejection_memory.py` (26 tests — per-lead memory, TTL, fingerprinting, Andrew/Celia replay)
+- `tests/test_quality_guard.py` (16 tests — all 5 guard rules, soft mode, disabled mode, replay scenarios)
+
 **Safety**: `actually_send: true` (informational), real control: `--live` CLI flag + `EMERGENCY_STOP` env var + `gatekeeper_required: true`.
 **Ramp Mode**: 5 emails/day, tier_1 only (C-Suite at agencies/consulting/law), 3 supervised days starting 2026-02-18. Set `operator.ramp.enabled: false` to graduate to 25/day.
 
@@ -134,6 +167,8 @@ chiefaiofficer-alpha-swarm/
 │   ├── lead_status/               # Signal loop state per lead (JSONL)
 │   ├── cadence_state/             # Cadence engine state per lead
 │   ├── audit/                     # Gatekeeper approval/rejection logs
+│   ├── rejection_memory/          # Per-lead rejection history (Redis primary, file fallback)
+│   ├── feedback_loop/             # Training tuples + policy deltas
 │   ├── operator_state.json        # OPERATOR daily state (dedup, counts)
 │   └── unsubscribes.jsonl         # Suppression list (append-only)
 ├── config/
@@ -564,4 +599,3 @@ Key API groups: `/api/health`, `/api/agents`, `/api/pending-emails` (Redis via `
 ## Website Intent Monitor
 
 `core/website_intent_monitor.py` — monitors RB2B visitors for high-intent blog views, detects warm connections with team network, generates personalized emails via Gemini, queues for GATEKEEPER approval. Blog triggers: case studies (+25), ROI (+20), sales AI (+30), implementation (+35). Connection types: FORMER_COLLEAGUE, SAME_PREVIOUS_COMPANY, MUTUAL_CONNECTION. All blog-triggered emails require GATEKEEPER approval.
-

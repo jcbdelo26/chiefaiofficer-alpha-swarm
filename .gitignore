@@ -65,6 +65,31 @@ token.json
 .hive-mind/intents/
 .hive-mind/replay_harness/
 .hive-mind/pipeline_runs/
+.hive-mind/alerts/
+.hive-mind/audit/
+.hive-mind/cadence_state/
+.hive-mind/execution_queue/
+.hive-mind/idempotency/
+.hive-mind/lead_status/
+.hive-mind/operator_batches/
+.hive-mind/rejection_memory/
+.hive-mind/traces/
+.hive-mind/instantly_events/
+.hive-mind/shadow_mode_emails/
+.hive-mind/shadow_mode_emails_archive_pre_hos/
+.hive-mind/reports/
+.hive-mind/scheduler/queue/
+
+# Runtime dispatch logs and state
+.hive-mind/heyreach_dispatch_log.jsonl
+.hive-mind/heyreach_dispatch_state.json
+.hive-mind/heyreach_events.jsonl
+.hive-mind/instantly_dispatch_log.jsonl
+.hive-mind/instantly_dispatch_state.json
+.hive-mind/operator_dispatch_log.jsonl
+.hive-mind/operator_state.json
+.hive-mind/campaign_fix_ref.json
+.hive-mind/test_leads_tier3.json
 
 # Debug artifacts
 temp_*.json
