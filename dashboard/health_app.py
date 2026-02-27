@@ -43,7 +43,11 @@ from core.precision_scorecard import get_scorecard, reset_scorecard
 from core.messaging_strategy import MessagingStrategy
 from core.signal_detector import SignalDetector
 from core.ghl_outreach import OutreachConfig, GHLOutreachClient, EmailTemplate, OutreachType
+from core.ghl_send_proof import GHLSendProofEngine
+from core.deliverability_guard import DeliverabilityGuard
+from core.feedback_loop import FeedbackLoop
 from core.email_signature import enforce_text_signature
+from core.task_routing_policy import get_task_routes, routes_ready
 from core.runtime_reliability import get_runtime_dependency_health
 from core.trace_envelope import (
     set_current_case_id,
@@ -188,6 +192,10 @@ def _pending_queue_include_non_dispatchable_default() -> bool:
     Default is false so supervised live-send queue stays clean/actionable.
     """
     return _env_bool("PENDING_QUEUE_INCLUDE_NON_DISPATCHABLE", False)
+
+
+def _phase1_llm_routes() -> Dict[str, Dict[str, str]]:
+    return get_task_routes()
 
 
 def _parse_iso_datetime(value: Any) -> Optional[datetime]:
@@ -1072,6 +1080,11 @@ async def get_runtime_dependencies(auth: bool = Depends(require_auth)):
         "query_token_enabled": _is_query_token_enabled(),
         "token_header": DASHBOARD_TOKEN_HEADER,
     }
+    routes = _phase1_llm_routes()
+    payload["llm_routing"] = {
+        "task_routes": routes,
+        "ready": routes_ready(routes),
+    }
     return payload
 
 
@@ -1569,6 +1582,17 @@ async def get_pending_emails(
             key: value for key, value in classifier.items() if key != "campaign_ref"
         }
         email_data["campaign_ref"] = classifier.get("campaign_ref", {})
+        email_data["proof_status"] = email_data.get("proof_status") or "not_started"
+        email_data["proof_source"] = email_data.get("proof_source") or "none"
+        email_data["proof_timestamp"] = email_data.get("proof_timestamp")
+        email_data["proof_evidence_id"] = email_data.get("proof_evidence_id")
+        email_data["deliverability_risk"] = email_data.get("deliverability_risk") or "unknown"
+        email_data["deliverability_reasons"] = email_data.get("deliverability_reasons") or []
+        email_data["model_route"] = (
+            email_data.get("model_route")
+            or email_data.get("routing_model")
+            or "unknown"
+        )
 
         # P0: Backend compliance checks — single source of truth for UI
         body_text = email_data.get("body") or ""
@@ -1742,6 +1766,14 @@ async def approve_email(
     
     formatted_response = "Email approved (simulated)"
     final_status = "approved"
+    email_data.setdefault("sent_via_ghl", False)
+    email_data.setdefault("proof_status", "not_started")
+    email_data.setdefault("proof_source", "none")
+    email_data.setdefault("proof_timestamp", None)
+    email_data.setdefault("proof_evidence_id", None)
+    email_data.setdefault("deliverability_risk", "unknown")
+    email_data.setdefault("deliverability_reasons", [])
+    email_data.setdefault("model_route", _phase1_llm_routes()["daily"]["primary"])
     
     if actually_send:
         try:
@@ -1779,8 +1811,25 @@ async def approve_email(
                     elif email_data.get("synthetic") or contact_id.startswith("synthetic_"):
                         formatted_response = "Email approved (Synthetic/Test skipped)"
                     else:
+                        guard = DeliverabilityGuard(
+                            fail_closed=_env_bool("DELIVERABILITY_FAIL_CLOSED", True)
+                        )
+                        verdict = guard.evaluate(recipient_email)
+                        email_data["deliverability_risk"] = verdict.get("risk_level", "unknown")
+                        email_data["deliverability_reasons"] = verdict.get("reasons", [])
+                        email_data["deliverability_recommended_tag"] = verdict.get("recommended_tag")
+                        if not verdict.get("allow_send", True):
+                            final_status = "blocked_deliverability"
+                            email_data["sent_via_ghl"] = False
+                            email_data["send_error"] = (
+                                f"Deliverability blocked: {', '.join(email_data['deliverability_reasons'])}"
+                            )
+                            formatted_response = "Blocked by deliverability guard"
+                            # Do not attempt outbound on blocked recipients.
+                            contact_id = ""
+
                         # Auto resolve/create GHL contact for real sends.
-                        if not contact_id and recipient_email:
+                        if final_status != "blocked_deliverability" and not contact_id and recipient_email:
                             recipient_data = email_data.get("recipient_data", {})
                             full_name = str(recipient_data.get("name") or "").strip()
                             first_name = full_name.split(None, 1)[0] if full_name else ""
@@ -1810,7 +1859,7 @@ async def approve_email(
                                 }
                                 email_data["send_error"] = f"GHL contact upsert failed: {err}"
 
-                        if contact_id:
+                        if final_status != "blocked_deliverability" and contact_id:
                             # Create temp template from the approved content
                             temp_template = EmailTemplate(
                                 id=f"approved_{email_id}",
@@ -1826,8 +1875,40 @@ async def approve_email(
                             if result.get("success"):
                                 email_data["sent_via_ghl"] = True
                                 email_data["ghl_message_id"] = result.get("message_id")
-                                final_status = "sent_via_ghl"
-                                formatted_response = "Email sent via GHL"
+                                proof_engine = GHLSendProofEngine(
+                                    proof_sla_seconds=int(os.getenv("PROOF_SLA_SECONDS", "900") or "900"),
+                                    poll_fallback_enabled=_env_bool("PROOF_POLL_FALLBACK_ENABLED", True),
+                                    evidence_file=PROJECT_ROOT / ".hive-mind" / "ghl_webhook_events.jsonl",
+                                )
+                                try:
+                                    proof = await proof_engine.resolve_proof(
+                                        client=client,
+                                        shadow_email_id=email_id,
+                                        recipient_email=recipient_email,
+                                        contact_id=contact_id,
+                                        send_result=result,
+                                    )
+                                except Exception:
+                                    proof = {
+                                        "proof_status": "unresolved",
+                                        "proof_source": "none",
+                                        "proof_timestamp": datetime.now(timezone.utc).isoformat(),
+                                        "proof_evidence_id": None,
+                                    }
+
+                                email_data["proof_status"] = proof.get("proof_status", "unresolved")
+                                email_data["proof_source"] = proof.get("proof_source", "none")
+                                email_data["proof_timestamp"] = proof.get("proof_timestamp")
+                                email_data["proof_evidence_id"] = proof.get("proof_evidence_id")
+
+                                if email_data["proof_status"] == "proved":
+                                    final_status = "sent_proved"
+                                    formatted_response = (
+                                        f"Email sent and proved via GHL ({email_data['proof_source']})"
+                                    )
+                                else:
+                                    final_status = "sent_unresolved"
+                                    formatted_response = "Email sent via GHL (proof unresolved)"
                             else:
                                 error_msg = result.get("error", "Unknown error")
                                 if "limit reached" in str(error_msg):
@@ -1839,7 +1920,7 @@ async def approve_email(
                                 else:
                                     # Other error - Fail hard
                                     raise Exception(f"GHL Send Failed: {error_msg}")
-                        else:
+                        elif final_status != "blocked_deliverability":
                             formatted_response = "Email approved (GHL contact unresolved)"
                 finally:
                     await client.close()
@@ -1873,6 +1954,14 @@ async def approve_email(
             "ghl_message_id": email_data.get("ghl_message_id"),
             "queued_for_send": email_data.get("queued_for_send"),
             "send_error": email_data.get("send_error"),
+            "proof_status": email_data.get("proof_status"),
+            "proof_source": email_data.get("proof_source"),
+            "proof_timestamp": email_data.get("proof_timestamp"),
+            "proof_evidence_id": email_data.get("proof_evidence_id"),
+            "deliverability_risk": email_data.get("deliverability_risk"),
+            "deliverability_reasons": email_data.get("deliverability_reasons"),
+            "deliverability_recommended_tag": email_data.get("deliverability_recommended_tag"),
+            "model_route": email_data.get("model_route"),
         })
     except Exception:
         pass  # Redis sync is best-effort; file is authoritative
@@ -1929,6 +2018,24 @@ async def approve_email(
             fp.write(json.dumps(learning_record) + "\n")
     except Exception as e:
         print(f"Warning: Failed to log training feedback: {e}")
+
+    # Persist deterministic learning tuple for optimizer/replay.
+    try:
+        loop = FeedbackLoop(storage_dir=PROJECT_ROOT / ".hive-mind" / "feedback_loop")
+        loop.record_email_outcome(
+            email_data=email_data,
+            outcome=final_status,
+            action="approve_email",
+            metadata={
+                "email_id": email_id,
+                "approver": approver,
+                "actually_send": bool(actually_send),
+                "edited": bool(edited_body),
+                "had_feedback": bool(feedback),
+            },
+        )
+    except Exception as exc:
+        logger.warning("Failed to persist feedback loop event on approval for %s: %s", email_id, exc)
     
     return {
         "status": "approved",
@@ -1993,6 +2100,7 @@ async def reject_email(
     email_data["rejected_by"] = approver
     email_data["rejection_reason"] = validated_reason
     email_data["rejection_tag"] = validated_tag
+    email_data["feedback"] = validated_reason
 
     # Save updated data — Redis + filesystem
     try:
@@ -2039,6 +2147,22 @@ async def reject_email(
             fp.write(json.dumps(learning_record) + "\n")
     except Exception as e:
         print(f"Warning: Failed to log training feedback: {e}")
+
+    # Persist deterministic learning tuple for optimizer/replay.
+    try:
+        loop = FeedbackLoop(storage_dir=PROJECT_ROOT / ".hive-mind" / "feedback_loop")
+        loop.record_email_outcome(
+            email_data=email_data,
+            outcome="rejected",
+            action="reject_email",
+            metadata={
+                "email_id": email_id,
+                "approver": approver,
+                "rejection_tag": validated_tag,
+            },
+        )
+    except Exception as exc:
+        logger.warning("Failed to persist feedback loop event on rejection for %s: %s", email_id, exc)
     
     # Log the rejection
     audit_log = PROJECT_ROOT / ".hive-mind" / "audit" / "email_approvals.jsonl"
@@ -2057,7 +2181,21 @@ async def reject_email(
             }) + "\n")
     except Exception:
         logger.warning("Failed to append rejection audit event for %s", email_id)
-    
+
+    # Record per-lead rejection memory for repeat prevention
+    try:
+        from core.rejection_memory import record_rejection as rm_record
+        rm_record(
+            lead_email=email_data.get("to", ""),
+            rejection_tag=validated_tag,
+            subject=email_data.get("subject", ""),
+            body=email_data.get("body", ""),
+            feedback_text=validated_reason,
+            template_id=email_data.get("template_version", email_data.get("template", "")),
+        )
+    except Exception as exc:
+        logger.warning("Failed to record rejection memory for %s: %s", email_id, exc)
+
     return {
         "status": "rejected",
         "email_id": email_id,
@@ -2295,19 +2433,106 @@ async def prepare_hot_leads_batch(
 
 
 # =============================================================================
-# CLAY ENRICHMENT CALLBACK (legacy — kept for backward compatibility)
+# CLAY ENRICHMENT CALLBACK (pipeline + legacy)
 # =============================================================================
 
+def _clay_redis_prefix() -> str:
+    """Redis prefix consistent with shadow_queue (CONTEXT_REDIS_PREFIX first)."""
+    return (os.getenv("CONTEXT_REDIS_PREFIX") or os.getenv("STATE_REDIS_PREFIX") or "caio").strip()
+
+
+def _normalize_linkedin_url(url: str) -> str:
+    """Normalize LinkedIn URL for consistent hashing."""
+    import hashlib
+    u = url.lower().strip().rstrip("/")
+    for pfx in ("https://www.", "http://www.", "https://", "http://"):
+        if u.startswith(pfx):
+            u = u[len(pfx):]
+            break
+    return u
+
+
 @app.post("/api/clay-callback")
-async def clay_enrichment_callback_legacy(request: Request):
+async def clay_enrichment_callback(request: Request):
     """
-    Legacy endpoint kept for backward compatibility.
-    The primary handler at POST /webhooks/clay handles RB2B visitor callbacks.
-    Pipeline leads use Apollo + BetterContact directly (no Clay).
+    Receives Clay workbook callback and stores result in Redis for pipeline pickup.
+
+    Pipeline flow:
+    1. Local pipeline sends lead to Clay workbook webhook, stores correlation
+       in Redis as {prefix}:clay:pipeline:{linkedin_hash} → {lead_id, request_id, ...}
+    2. Clay enriches and fires HTTP API callback to this endpoint
+    3. This handler extracts linkedin_url, looks up correlation, stores enriched
+       data in Redis as {prefix}:clay:result:{request_id}
+    4. Local pipeline polling loop picks up the result
     """
+    import hashlib
+
     data = await request.json()
-    logger.info("Legacy clay-callback received: %s", json.dumps(data)[:120])
-    return {"status": "received", "note": "Pipeline no longer uses Clay for enrichment. Use /webhooks/clay for RB2B visitors."}
+    logger.info("Clay callback received: %s", json.dumps(data)[:200])
+
+    # Extract LinkedIn URL from Clay response for correlation lookup
+    linkedin_url = (
+        data.get("linkedin_url") or data.get("person_linkedin_url") or ""
+    ).strip()
+
+    if not linkedin_url:
+        logger.warning("Clay callback missing linkedin_url — cannot correlate to pipeline lead")
+        return {"status": "received", "correlated": False, "reason": "no_linkedin_url"}
+
+    prefix = _clay_redis_prefix()
+    normalized = _normalize_linkedin_url(linkedin_url)
+    linkedin_hash = hashlib.sha256(normalized.encode()).hexdigest()[:32]
+    correlation_key = f"{prefix}:clay:pipeline:{linkedin_hash}"
+
+    # Try to get Redis client (same pattern as shadow_queue)
+    try:
+        import redis as _redis_mod
+        redis_url = (os.getenv("REDIS_URL") or "").strip()
+        if not redis_url:
+            logger.warning("Clay callback: REDIS_URL not set")
+            return {"status": "received", "correlated": False, "reason": "no_redis"}
+        r = _redis_mod.Redis.from_url(redis_url, decode_responses=True, socket_timeout=3)
+    except Exception as exc:
+        logger.error("Clay callback: Redis connect failed: %s", exc)
+        return {"status": "received", "correlated": False, "reason": "redis_error"}
+
+    # Look up correlation
+    try:
+        raw_correlation = r.get(correlation_key)
+    except Exception as exc:
+        logger.error("Clay callback: Redis GET failed: %s", exc)
+        return {"status": "received", "correlated": False, "reason": "redis_get_error"}
+
+    if not raw_correlation:
+        logger.info("Clay callback: no pipeline correlation for %s (may be RB2B visitor)", linkedin_url[:60])
+        return {"status": "received", "correlated": False, "reason": "no_correlation_found"}
+
+    try:
+        correlation = json.loads(raw_correlation)
+    except Exception:
+        logger.error("Clay callback: corrupt correlation data")
+        return {"status": "received", "correlated": False, "reason": "corrupt_correlation"}
+
+    request_id = correlation.get("request_id", "")
+    if not request_id:
+        logger.error("Clay callback: correlation missing request_id")
+        return {"status": "received", "correlated": False, "reason": "no_request_id"}
+
+    # Store enriched result for pipeline polling
+    result_key = f"{prefix}:clay:result:{request_id}"
+    try:
+        r.setex(result_key, 600, json.dumps(data))
+    except Exception as exc:
+        logger.error("Clay callback: failed to store result: %s", exc)
+        return {"status": "received", "correlated": False, "reason": "redis_set_error"}
+
+    logger.info("Clay callback correlated: request_id=%s, lead_id=%s", request_id, correlation.get("lead_id"))
+    return {
+        "status": "received",
+        "correlated": True,
+        "request_id": request_id,
+        "lead_id": correlation.get("lead_id"),
+    }
 
 
 # =============================================================================

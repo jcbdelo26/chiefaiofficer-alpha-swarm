@@ -8,16 +8,17 @@ Provider Priority (pipeline enrichment):
     1. Apollo.io (APOLLO_API_KEY) — People Match, 1 credit/lead, synchronous
     2. BetterContact (BETTERCONTACT_API_KEY) — Waterfall aggregator (20+ sources),
        async polling, pay-only-for-verified, $0.04-0.05/email
-    3. Mock/test mode — deterministic test data
+    3. Clay Explorer (CLAY_PIPELINE_ENABLED) — Deep enrichment fallback,
+       async callback via Redis email correlation, 2-5 credits/lead
+    4. Mock/test mode — deterministic test data
 
-Note: Clay Explorer is used exclusively for RB2B visitor enrichment
-(via core/clay_direct_enrichment.py), NOT for pipeline leads. The Clay
-webhook callback requires lead_id passthrough which is not configurable
-in Clay's HTTP API action columns, causing guaranteed 3-min timeouts.
-Apollo + BetterContact covers the pipeline waterfall adequately.
+Note: Clay's HTTP API callback doesn't pass lead_id through table columns.
+We bypass this limitation using Redis email correlation: store email→lead_id
+in Redis before sending to Clay, recover lead_id from callback email.
+Clay also used for RB2B visitor enrichment (core/clay_direct_enrichment.py).
 
 Provider History:
-    - Clay pipeline fallback: removed (lead_id not accessible in callback)
+    - Clay pipeline fallback: re-enabled via Redis email correlation (2026-02-27)
     - Clay API v1: deprecated early 2026 (404)
     - Proxycurl: removed (shutting down Jul 2026, sued by LinkedIn)
 
@@ -30,6 +31,7 @@ Test Mode (no real API calls):
     python execution/enricher_waterfall.py --linkedin-url "url" --name "John Doe" --company "Acme Inc" --test-mode
 """
 
+import hashlib
 import os
 import sys
 import json
@@ -38,6 +40,7 @@ import random
 from datetime import datetime
 from pathlib import Path
 from typing import List, Dict, Any, Optional
+from uuid import uuid4
 from dataclasses import dataclass, asdict, field
 
 # Add project root to path
@@ -135,21 +138,27 @@ class WaterfallEnricher:
             self.base_url = ""
             self.provider = "mock"
         else:
-            # Provider waterfall: Apollo → BetterContact → mock fallback
-            # Note: Clay Explorer removed from pipeline waterfall (lead_id not
-            # accessible in Clay HTTP callback — causes 3-min guaranteed timeouts).
-            # Clay is used exclusively for RB2B visitor enrichment via
-            # core/clay_direct_enrichment.py where visitor_id works.
+            # Provider waterfall: Apollo → BetterContact → Clay → mock fallback
+            # Clay uses Redis email correlation to bypass lead_id passthrough
+            # limitation in Clay HTTP API callback columns.
             self.apollo_key = os.getenv("APOLLO_API_KEY")
             self.bettercontact_key = os.getenv("BETTERCONTACT_API_KEY")
+            self.clay_key = os.getenv("CLAY_API_KEY", "").strip()
+            self.clay_webhook_url = os.getenv("CLAY_WORKBOOK_WEBHOOK_URL", "").strip()
+            self.clay_pipeline_enabled = os.getenv("CLAY_PIPELINE_ENABLED", "").strip().lower() in ("1", "true", "yes")
 
             if self.apollo_key:
                 self.provider = "apollo"
                 self.base_url = "https://api.apollo.io/api/v1"
                 self.api_key = self.apollo_key
                 console.print("[dim]Enrichment provider: Apollo.io[/dim]")
+                fallbacks = []
                 if self.bettercontact_key:
-                    console.print("[dim]Fallback chain: BetterContact[/dim]")
+                    fallbacks.append("BetterContact")
+                if self.clay_pipeline_enabled and self.clay_key and self.clay_webhook_url:
+                    fallbacks.append("Clay")
+                if fallbacks:
+                    console.print(f"[dim]Fallback chain: {' -> '.join(fallbacks)}[/dim]")
             elif self.bettercontact_key:
                 self.provider = "bettercontact"
                 self.base_url = "https://app.bettercontact.rocks/api/v2"
@@ -351,14 +360,20 @@ class WaterfallEnricher:
         """Internal method with retry logic. Routes to correct provider with fallback chain."""
         result = None
 
-        # Waterfall: Apollo (sync, fast) → BetterContact (async polling)
+        # Waterfall: Apollo (sync, fast) → BetterContact (async polling) → Clay (async callback)
         if self.provider == "apollo":
             result = self._enrich_via_apollo(lead_id, linkedin_url, name, company)
             if result is None and self.bettercontact_key:
                 console.print(f"[dim]  Apollo miss — falling back to BetterContact[/dim]")
                 result = self._enrich_via_bettercontact(lead_id, linkedin_url, name, company)
+            if result is None and self.clay_pipeline_enabled and self.clay_key and self.clay_webhook_url:
+                console.print(f"[dim]  Apollo+BC miss — falling back to Clay[/dim]")
+                result = self._enrich_via_clay(lead_id, linkedin_url, name, company)
         elif self.provider == "bettercontact":
             result = self._enrich_via_bettercontact(lead_id, linkedin_url, name, company)
+            if result is None and self.clay_pipeline_enabled and self.clay_key and self.clay_webhook_url:
+                console.print(f"[dim]  BC miss — falling back to Clay[/dim]")
+                result = self._enrich_via_clay(lead_id, linkedin_url, name, company)
         else:
             log_event(EventType.ENRICHMENT_FAILED, {
                 "lead_id": lead_id,
@@ -624,6 +639,195 @@ class WaterfallEnricher:
             enrichment_quality=quality,
             enriched_at=datetime.utcnow().isoformat(),
             enrichment_sources=["bettercontact"],
+            raw_enrichment=data,
+        )
+
+    # ── Clay Enrichment (Position 3 in Waterfall) ───────────────────
+
+    def _get_clay_redis(self):
+        """Get Redis client for Clay pipeline correlation. Reuses shadow_queue pattern."""
+        try:
+            import redis as _redis_mod
+        except Exception:
+            return None
+        url = (os.getenv("REDIS_URL") or "").strip()
+        if not url:
+            return None
+        try:
+            client = _redis_mod.Redis.from_url(
+                url, decode_responses=True, socket_connect_timeout=3, socket_timeout=3,
+            )
+            client.ping()
+            return client
+        except Exception:
+            return None
+
+    def _clay_redis_prefix(self) -> str:
+        """Redis prefix consistent with shadow_queue (CONTEXT_REDIS_PREFIX first)."""
+        return (os.getenv("CONTEXT_REDIS_PREFIX") or os.getenv("STATE_REDIS_PREFIX") or "caio").strip()
+
+    def _normalize_linkedin_url(self, url: str) -> str:
+        """Normalize LinkedIn URL for consistent hashing (strip www, trailing slash, protocol)."""
+        u = url.lower().strip().rstrip("/")
+        for prefix in ("https://www.", "http://www.", "https://", "http://"):
+            if u.startswith(prefix):
+                u = u[len(prefix):]
+                break
+        return u
+
+    def _enrich_via_clay(self, lead_id: str, linkedin_url: str, name: str = "", company: str = "") -> Optional[EnrichedLead]:
+        """
+        Enrich via Clay workbook webhook with Redis LinkedIn URL correlation.
+
+        Flow:
+        1. Store linkedin_hash→lead context in Redis (10-min TTL)
+        2. POST lead data to Clay workbook webhook
+        3. Poll Redis for callback result (8 × 15s = 2 min max)
+        4. Parse result → EnrichedLead
+
+        Clay callback arrives at Railway dashboard (/api/clay-callback),
+        which extracts the LinkedIn URL from the response, looks up the
+        correlation mapping, and stores the result in Redis for pickup.
+        """
+        import requests
+        import time
+
+        if not linkedin_url:
+            console.print(f"[dim]  Clay: no LinkedIn URL — skipping Clay fallback[/dim]")
+            return None
+
+        redis_client = self._get_clay_redis()
+        if redis_client is None:
+            console.print("[yellow]  Clay: Redis unavailable — skipping Clay fallback[/yellow]")
+            return None
+
+        prefix = self._clay_redis_prefix()
+
+        # Parse name
+        first_name, last_name = "", ""
+        if name:
+            parts = name.split(None, 1)
+            first_name = parts[0] if parts else ""
+            last_name = parts[1] if len(parts) >= 2 else ""
+
+        # LinkedIn URL is always available at enrichment time — use it for correlation
+        linkedin_normalized = self._normalize_linkedin_url(linkedin_url)
+        linkedin_hash = hashlib.sha256(linkedin_normalized.encode()).hexdigest()[:32]
+        request_id = f"clay_pipe_{uuid4().hex[:12]}"
+
+        # Step 1: Store correlation in Redis (10-min TTL)
+        correlation_key = f"{prefix}:clay:pipeline:{linkedin_hash}"
+        result_key = f"{prefix}:clay:result:{request_id}"
+        correlation_data = json.dumps({
+            "lead_id": lead_id,
+            "request_id": request_id,
+            "linkedin_url": linkedin_url,
+            "name": name,
+            "company": company,
+        })
+        try:
+            redis_client.setex(correlation_key, 600, correlation_data)
+        except Exception as exc:
+            console.print(f"[yellow]  Clay: Redis correlation store failed: {exc}[/yellow]")
+            return None
+
+        # Step 2: POST to Clay workbook webhook
+        payload = {
+            "request_id": request_id,
+            "linkedin_url": linkedin_url,
+            "first_name": first_name,
+            "last_name": last_name,
+            "full_name": name,
+            "company_name": company,
+            "source": "pipeline",
+            "priority": "normal",
+            "timestamp": datetime.utcnow().isoformat(),
+        }
+
+        try:
+            resp = requests.post(
+                self.clay_webhook_url,
+                json=payload,
+                headers={"Content-Type": "application/json"},
+                timeout=30,
+            )
+            if resp.status_code not in (200, 201, 202):
+                console.print(f"[yellow]  Clay: webhook POST failed ({resp.status_code})[/yellow]")
+                log_event(EventType.ENRICHMENT_FAILED, {"lead_id": lead_id, "reason": "clay_webhook_error", "status_code": resp.status_code})
+                return None
+        except Exception as exc:
+            console.print(f"[yellow]  Clay: webhook POST error: {exc}[/yellow]")
+            log_event(EventType.ENRICHMENT_FAILED, {"lead_id": lead_id, "reason": "clay_webhook_exception"})
+            return None
+
+        # Step 3: Poll Redis for callback result (max 2 min)
+        console.print(f"[dim]  Clay: polling for callback result (request {request_id[:16]}...)[/dim]")
+        for attempt in range(8):  # 8 × 15s = 2 min max
+            time.sleep(15)
+            try:
+                raw = redis_client.get(result_key)
+                if raw:
+                    clay_data = json.loads(raw)
+                    result = self._parse_clay_pipeline_response(lead_id, linkedin_url, clay_data)
+                    log_event(EventType.ENRICHMENT_COMPLETED, {
+                        "lead_id": lead_id,
+                        "linkedin_url": linkedin_url,
+                        "provider": "clay",
+                        "quality": result.enrichment_quality if result else 0,
+                    })
+                    return result
+            except Exception:
+                continue
+
+        # Timed out
+        console.print(f"[yellow]  Clay: timed out after 2 min for {linkedin_url}[/yellow]")
+        log_event(EventType.ENRICHMENT_FAILED, {"lead_id": lead_id, "reason": "clay_timeout"})
+        return None
+
+    def _parse_clay_pipeline_response(self, lead_id: str, linkedin_url: str, data: Dict[str, Any]) -> EnrichedLead:
+        """Parse Clay callback data into EnrichedLead schema.
+
+        Field mapping aligned with core/clay_direct_enrichment.py:552-574.
+        """
+        email = data.get("work_email") or data.get("email")
+        email_verified = bool(data.get("email_verified", False))
+
+        contact = EnrichedContact(
+            work_email=email,
+            personal_email=None,
+            phone=data.get("phone") or data.get("mobile_phone"),
+            mobile=data.get("mobile_phone") or data.get("phone"),
+            email_verified=email_verified,
+            email_confidence=90 if email_verified else 60 if email else 0,
+        )
+
+        company = EnrichedCompany(
+            name=data.get("company_name") or data.get("company", ""),
+            domain=data.get("company_domain") or data.get("website", ""),
+            linkedin_url=data.get("company_linkedin_url", ""),
+            description="",
+            employee_count=int(data.get("employee_count") or data.get("company_size") or 0),
+            employee_range="",
+            revenue_estimate=0,
+            revenue_range=str(data.get("revenue", "")),
+            industry=data.get("industry", ""),
+            founded=None,
+            headquarters="",
+            technologies=[],
+        )
+
+        intent = IntentSignals()
+        quality = self._calculate_quality(contact, company)
+
+        return EnrichedLead(
+            lead_id=lead_id,
+            linkedin_url=linkedin_url,
+            contact=contact,
+            company=company,
+            intent=intent,
+            enrichment_quality=quality,
+            enriched_at=datetime.utcnow().isoformat(),
+            enrichment_sources=["clay"],
             raw_enrichment=data,
         )
 

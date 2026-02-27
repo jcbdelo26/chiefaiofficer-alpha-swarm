@@ -1,6 +1,6 @@
 # CAIO Alpha Swarm — Unified Implementation Plan
 
-**Last Updated**: 2026-02-17 (v4.5 — Production cutover complete + deep review hardening follow-up: constant-time token checks, CORS preflight auth fix, token-redaction cleanup)
+**Last Updated**: 2026-02-17 (v4.5 — HoS review integrated: critical pre-live fixes applied, regression tests added, replay/pytest gates revalidated)
 **Owner**: ChiefAIOfficer Production Team
 **AI**: Claude Opus 4.6
 
@@ -20,7 +20,7 @@ Phase 0: Foundation Lock          [##########] 100%  COMPLETE
 Phase 1: Live Pipeline Validation [##########] 100%  COMPLETE
 Phase 2: Supervised Burn-In       [##########] 100%  COMPLETE
 Phase 3: Expand & Harden          [##########] 100%  COMPLETE
-Phase 4: Autonomy Graduation      [#########.]  98%  IN PROGRESS (4A+4C+4D+4F+4G COMPLETE, 4B infra done, 4E ramp active — awaiting first live dispatch)
+Phase 4: Autonomy Graduation      [#########.]  98%  IN PROGRESS (4A+4C+4D+4F+4G+4I COMPLETE, 4B infra done, 4E ramp active, 4H+4J in progress)
 ```
 
 ---
@@ -156,17 +156,18 @@ Production pipeline validated with real Apollo data. All critical blockers resol
 | ZeroBounce email verification layer | DEFERRED | Add when real sends begin (pre-send verification) |
 | Supabase Lead 360 view | DEFERRED | Need unified lead schema first |
 | Job change detection (Bombora/G2) | DEFERRED | Phase 5+ |
-| Clay pipeline enrichment fallback | CANCELLED | `lead_id` not accessible in HTTP callback → 3-min timeouts |
+| Clay pipeline enrichment fallback | RE-ENABLED | Redis LinkedIn URL correlation bypasses `lead_id` limitation (Phase 4K) |
 
 ---
 
 ### 3A: Enrichment Architecture — CURRENT
 
-**Pipeline Enrichment Waterfall (synchronous)**:
+**Pipeline Enrichment Waterfall**:
 ```
-Apollo.io People Match (primary, 1 credit/reveal)
+Apollo.io People Match (primary, sync, 1 credit/reveal)
   -> miss -> BetterContact async poll (fallback, code ready)
-    -> miss -> graceful skip (lead continues without enrichment)
+    -> miss -> Clay Explorer async callback (fallback, Redis LinkedIn correlation)
+      -> miss -> graceful skip (lead continues without enrichment)
 ```
 
 **Clay Explorer** ($499/mo, 14K credits/mo): Used for **RB2B visitor enrichment only**.
@@ -403,6 +404,58 @@ QUEEN (orchestrator)
 | Graduate: `ramp.enabled: false` → 25/day + all tiers | TODO | After 3 clean days |
 | Enable HeyReach LinkedIn sends (5 connections/day) | TODO | After LinkedIn warm-up complete |
 
+### HoS Deep Review Validation (commit `10cc82c` handoff verification)
+
+**Review context**: `docs/CODEX_HANDOFF_HOS_REVIEW.md` is dated 2026-02-18. Local code verification + fixes were executed on 2026-02-17 against the current working tree.
+
+#### Verified and Fixed (pre-live)
+
+| Item | Status | Outcome | Files |
+|------|--------|---------|-------|
+| B1 follow-up A/B subjects duplicated | FIXED | HoS follow-up templates now have distinct `subject_a` / `subject_b` variants; rendering uses fallback-safe key resolution | `execution/crafter_campaign.py` |
+| B5 intent+engagement score inflation | FIXED | Social engagement bonus now stays inside the 20-point intent cap (`intent_signals`) | `execution/segmentor_classify.py` |
+| B11 subdomain exclusion gap | FIXED | Recipient domain guard now matches apex + subdomains (e.g., `sub.domain.com` matches `domain.com`) | `execution/instantly_dispatcher.py` |
+| B22 cadence dry-run mutating state | FIXED | Dry-run cadence no longer marks steps done or saves daily state side effects | `execution/operator_outbound.py` |
+| B23 cadence auto-enroll channel gap | FIXED | Auto-enroll now supports first-touch status from Instantly and HeyReach | `execution/operator_outbound.py` |
+
+#### Verified as Not Reproducible / Already Covered
+
+| Item | Status | Notes |
+|------|--------|-------|
+| B10 `bulk_pause_all()` missing | NOT REPRODUCED | `AsyncInstantlyClient.bulk_pause_all()` exists in `mcp-servers/instantly-mcp/server.py` and is callable from dispatcher emergency-stop path |
+
+#### Residual Risk to Address Before Full-Autonomy (non-blocking for supervised ramp if monitored)
+
+| Risk | Severity | Recommended Action |
+|------|----------|--------------------|
+| `/sales` and `/leads` HTML routes are publicly reachable (API data still token-protected) | LOW-MEDIUM | Decide policy: keep internal-open + API-protected, or enforce token on page routes |
+
+#### HoS Regression Gate (added)
+
+| Gate | Command | Result |
+|------|---------|--------|
+| HoS regression tests | `python -m pytest -q tests/test_hos_integration_regressions.py` | **PASS** |
+| Webhook + edge-case hardening tests | `python -m pytest -q tests/test_webhook_signature_enforcement.py tests/test_hos_integration_regressions.py` | **PASS** |
+| Expanded critical pack (incl. HoS + auth + webhook hardening) | `python -m pytest -q tests/test_gatekeeper_integration.py tests/test_runtime_reliability.py tests/test_runtime_determinism_flows.py tests/test_trace_envelope_and_hardening.py tests/test_replay_harness_assets.py tests/test_operator_batch_snapshot_integrity.py tests/test_operator_dedup_and_send_path.py tests/test_state_store_redis_cutover.py tests/test_hos_integration_regressions.py tests/test_webhook_signature_enforcement.py tests/test_instantly_webhook_auth.py` | **PASS** (77 passed) |
+| Replay Gate | `python scripts/replay_harness.py --min-pass-rate 0.95` | **PASS** (50/50, `pass_rate=1.0`, `block_build=false`) |
+
+#### Pre-Live Evaluation + Edge-Case Matrix (must keep running before real live testing)
+
+| Edge Case | Status | Automated Coverage |
+|-----------|--------|--------------------|
+| `EMERGENCY_STOP` during live dispatch | COVERED | `tests/test_hos_integration_regressions.py::test_emergency_stop_blocks_live_dispatch_before_channel_calls` |
+| Subdomain exclusions (`user@sub.customer.com`) | COVERED | `tests/test_hos_integration_regressions.py::test_excluded_domain_guard_blocks_subdomains` |
+| Individual excluded email rejection | COVERED | `tests/test_hos_integration_regressions.py::test_excluded_email_guard_logs_structured_rejection` |
+| Cadence dry-run must not mutate state | COVERED | `tests/test_hos_integration_regressions.py::test_dispatch_cadence_dry_run_has_no_state_side_effects` |
+| Gatekeeper queue drift after approval | COVERED | `tests/test_operator_batch_snapshot_integrity.py::test_approved_batch_executes_only_frozen_scope` |
+| Re-run executed batch must not resend | COVERED | `tests/test_operator_batch_snapshot_integrity.py::test_approved_batch_executes_only_frozen_scope` |
+| `sent_via_ghl` excluded from Instantly/HeyReach | COVERED | `tests/test_operator_dedup_and_send_path.py::test_instantly_loader_excludes_sent_via_ghl`, `tests/test_hos_integration_regressions.py::test_heyreach_loader_excludes_sent_via_ghl` |
+| Query-token and header-token auth parity | COVERED | `tests/test_runtime_reliability.py::test_protected_api_endpoints_require_dashboard_token`, `tests/test_instantly_webhook_auth.py::test_instantly_control_endpoints_require_token_when_configured` |
+| CORS preflight (`OPTIONS`) on protected APIs | COVERED | `tests/test_runtime_reliability.py::test_protected_api_endpoints_require_dashboard_token` |
+| Redis lock contention on concurrent live motions | COVERED | `tests/test_state_store_redis_cutover.py::test_operator_lock_disallows_concurrent_live_runs` |
+| Intent-heavy + social-source score cap behavior | COVERED | `tests/test_hos_integration_regressions.py::test_intent_plus_engagement_respects_20_point_cap` |
+| Follow-up A/B subject variation rendering | COVERED | `tests/test_hos_integration_regressions.py::test_followup_subject_variants_are_distinct` |
+
 ### KPI Targets
 
 | Metric | Target | Measurement |
@@ -490,6 +543,8 @@ QUEEN (orchestrator)
 
 - [x] Add deterministic deployed auth smoke gate utility:
   - `python scripts/endpoint_auth_smoke.py --base-url "https://<env-domain>" --token "<DASHBOARD_AUTH_TOKEN>"`
+- [x] Add staging+production auth smoke matrix runner:
+  - `python scripts/endpoint_auth_smoke_matrix.py --staging-url "https://<staging-domain>" --staging-token "<staging-token>" --production-url "https://<prod-domain>" --production-token "<prod-token>"`
 - [x] Set production/staging `CORS_ALLOWED_ORIGINS` explicit allowlist (Railway domains only, wildcard removed).
 - [ ] Rotate staging+production `DASHBOARD_AUTH_TOKEN` (prior token appeared in docs history) and redeploy.
 - [ ] Re-run deployed endpoint auth smoke with rotated tokens:
@@ -510,6 +565,10 @@ QUEEN (orchestrator)
 | Constant-time token validation | DONE | Replaced string `==` token comparison with `hmac.compare_digest` in dashboard and Instantly control auth paths | `dashboard/health_app.py`, `webhooks/instantly_webhook.py` |
 | CORS preflight auth behavior | DONE | `OPTIONS` requests now bypass API auth middleware, preventing false 401s on browser preflight | `dashboard/health_app.py`, `tests/test_runtime_reliability.py` |
 | Instantly control auth regression tests | DONE | Added strict auth tests: query/header token success, strict fail-closed without token, legacy bypass rejection | `tests/test_instantly_webhook_auth.py` |
+| Non-API webhook signature enforcement | DONE | Added uniform strict-mode HMAC checks for `/webhooks/instantly/*`, `/webhooks/heyreach`, `/webhooks/rb2b`, and `/webhooks/clay`; fail-closed in strict mode when secrets missing | `core/webhook_security.py`, `webhooks/instantly_webhook.py`, `webhooks/heyreach_webhook.py`, `webhooks/rb2b_webhook.py` |
+| Deliverability rejection structured audit logs | DONE | Deliverability guard rejections now emit structured JSONL audit events with reason codes and lead identifiers | `execution/instantly_dispatcher.py` |
+| Runtime readiness webhook secret hard-fail | DONE | Runtime dependency health now includes webhook signature dependency and fails readiness in strict mode when required webhook secrets are missing | `core/runtime_reliability.py`, `tests/test_runtime_reliability.py` |
+| Edge-case regression coverage expansion | DONE | Added explicit tests for EMERGENCY_STOP live block, excluded individual email rejection audit, and HeyReach exclusion for `sent_via_ghl` | `tests/test_hos_integration_regressions.py`, `tests/test_webhook_signature_enforcement.py` |
 | Secret leakage cleanup in handoff docs | DONE | Redacted exposed dashboard token values and replaced with placeholders | `docs/CODEX_HANDOFF.md` |
 
 #### Deep review findings requiring PTO action before rigorous testing
@@ -526,13 +585,93 @@ QUEEN (orchestrator)
 - [ ] New production `DASHBOARD_AUTH_TOKEN` rotated and deployed
 - [ ] Re-run: `python scripts/endpoint_auth_smoke.py --base-url "https://<staging-domain>" --token "<new-staging-token>"`
 - [ ] Re-run: `python scripts/endpoint_auth_smoke.py --base-url "https://<prod-domain>" --token "<new-prod-token>"`
-- [ ] Confirm strict runtime flags remain enforced (`DASHBOARD_AUTH_STRICT=true`, `REDIS_REQUIRED=true`, `INNGEST_REQUIRED=true`)
+- [ ] (Recommended) Run one-shot matrix smoke:
+  - `python scripts/endpoint_auth_smoke_matrix.py --staging-url "https://<staging-domain>" --staging-token "<new-staging-token>" --production-url "https://<prod-domain>" --production-token "<new-prod-token>"`
+- [ ] Confirm strict runtime flags remain enforced (`DASHBOARD_AUTH_STRICT=true`, `REDIS_REQUIRED=true`, `INNGEST_REQUIRED=true`, `WEBHOOK_SIGNATURE_REQUIRED=true`)
+- [ ] Set production/staging webhook secrets:
+  - `INSTANTLY_WEBHOOK_SECRET`, `HEYREACH_WEBHOOK_SECRET`, `RB2B_WEBHOOK_SECRET`, `CLAY_WEBHOOK_SECRET`
 
 #### Remaining Recommended Engineering Next Steps (v4.5)
 
-- [ ] Add strict webhook authentication policy for non-API webhook routes (`/webhooks/heyreach`, `/webhooks/clay`, `/webhooks/rb2b`) with provider-supported signatures or shared-secret headers.
-- [ ] Add readiness hard-fail when required webhook secrets are missing in strict production mode.
+- [x] Add strict webhook authentication policy for non-API webhook routes (`/webhooks/heyreach`, `/webhooks/clay`, `/webhooks/rb2b`) with provider-supported signatures or shared-secret headers.
+- [x] Add readiness hard-fail when required webhook secrets are missing in strict production mode.
 - [ ] After 1 week stable Redis operations, disable file fallback (`STATE_DUAL_READ_ENABLED=false`) and remove file-write fallback in production.
+
+### 4I: Rejection Loop Hardening — COMPLETE
+
+**Objective**: Prevent the Andrew/Celia repeat-rejection pattern by adding per-lead rejection memory, pre-queue quality guards, and sub-agent enrichment to extract deeper personalization signals.
+
+**Root Cause**: CRAFTER used deterministic template selection (`hash(email) % len(templates)`) with no per-lead rejection history. Rejected drafts for the same lead were regenerated with the same template, same opener pattern, and no awareness of prior feedback.
+
+| Task | Status | Files |
+|------|--------|-------|
+| Per-lead rejection memory store (Redis + filesystem, 30-day TTL) | DONE | `core/rejection_memory.py` |
+| Pre-queue quality guard (5 deterministic rules, soft mode) | DONE | `core/quality_guard.py` |
+| Sub-agent enrichment (5 specialist pure-function signal extractors) | DONE | `core/enrichment_sub_agents.py` |
+| CRAFTER template rotation away from rejected templates | DONE | `execution/crafter_campaign.py` |
+| CRAFTER rejection context in template variables | DONE | `execution/crafter_campaign.py` |
+| Dashboard reject → rejection memory recording | DONE | `dashboard/health_app.py` |
+| Quality guard gate before `shadow_queue.push()` | DONE | `execution/run_pipeline.py` |
+| Rejection memory tests (26 tests) | DONE | `tests/test_rejection_memory.py` |
+| Quality guard tests (16 tests) | DONE | `tests/test_quality_guard.py` |
+| CRAFTER hardening + sub-agent tests (8 tests) | DONE | `tests/test_crafter_rejection_hardening.py` |
+
+**Quality Guard Rules**:
+- GUARD-001: Per-lead rejection count exceeds threshold → block (unless new evidence)
+- GUARD-002: Draft fingerprint (SHA-256) matches previously rejected draft → block
+- GUARD-003: Insufficient personalization evidence → sub-agent enrichment fallback → block if still insufficient
+- GUARD-004: Banned opener patterns (10 patterns) → block
+- GUARD-005: Generic AI phrase density > 40% of sentences → block
+
+**Env Vars**: `QUALITY_GUARD_ENABLED` (default: true), `QUALITY_GUARD_MODE` (soft = log-only), `REJECTION_MEMORY_TTL_DAYS` (default: 30), `REJECTION_MEMORY_MAX_REJECTIONS` (default: 3)
+
+**Test Gate**: 50/50 passing in 0.67s
+
+### 4J: TDD Critical Path Testing — IN PROGRESS
+
+**Objective**: Close the 6 critical testing gaps identified in the TDD assessment before Phase 5 graduation. Shadow queue (3 production incidents, 0 tests), enricher parsers (0 tests), dispatcher guards (0 test coverage), pipeline integration (no inter-stage tests), feedback loop (module exists, 0 dedicated tests), coverage tracking (not configured).
+
+**Sprint 1 — Critical Path Tests (COMPLETE)**:
+
+| Task | Status | Target | Files |
+|------|--------|--------|-------|
+| Shadow queue tests (dual-write, prefix regression) | DONE | 22 tests | `tests/test_shadow_queue.py` |
+| Enricher parser tests (Apollo + BetterContact) | DONE | 27 tests | `tests/test_enricher_waterfall.py` |
+| Dispatcher guard tests (4-layer deliverability) | DONE | 32 tests | `tests/test_instantly_dispatcher_guards.py` |
+| Coverage config + CI gate (40% threshold) | DONE | `.coveragerc` | `.coveragerc`, `.github/workflows/replay-harness.yml` |
+
+**Sprint 2 — Integration + Wiring (COMPLETE)**:
+
+| Task | Status | Target | Files |
+|------|--------|--------|-------|
+| Pipeline integration tests (stage boundaries) | DONE | 9 tests | `tests/test_pipeline_integration.py` |
+| Feedback loop tests (module exists, tests missing) | DONE | 15 tests | `tests/test_feedback_loop.py` |
+| Wire VerificationHooks into `_stage_send()` | DONE | ~15 lines | `execution/run_pipeline.py` |
+| Wire CircuitBreaker pre-check (ENRICH) | DONE | ~10 lines | `execution/run_pipeline.py` |
+
+**Sprint 3 — Hardening**:
+
+| Task | Status | Target | Files |
+|------|--------|--------|-------|
+| Pre-commit hook for critical tests | TODO | <10s run | `.pre-commit-config.yaml` |
+| HeyReach dispatcher tests | TODO | 8-10 tests | `tests/test_heyreach_dispatcher.py` |
+
+### Phase 4K: Clay Pipeline Enrichment Fallback — COMPLETE
+
+**Problem**: Clay was removed from pipeline waterfall because HTTP API callback doesn't pass `lead_id`, causing 3-min guaranteed timeouts.
+
+**Solution**: Redis LinkedIn URL correlation. Before sending to Clay, store `linkedin_hash → {lead_id, request_id}` in Redis. On callback, Railway dashboard extracts LinkedIn URL, looks up correlation, stores result for pipeline polling.
+
+**Waterfall position**: Apollo (sync, ~2s) → BetterContact (async, ~2min) → Clay (async, ~2min) → null
+
+**Feature flag**: `CLAY_PIPELINE_ENABLED=true` (disabled by default)
+
+**Files modified**:
+- `execution/enricher_waterfall.py` — Clay provider + parser + waterfall chain (~130 lines)
+- `dashboard/health_app.py` — Pipeline Clay callback handler with Redis correlation (~100 lines)
+- `tests/test_enricher_waterfall.py` — 14 Clay-specific tests (parser, normalization, integration)
+
+**Env vars**: `CLAY_API_KEY`, `CLAY_WORKBOOK_WEBHOOK_URL` (existing), `CLAY_PIPELINE_ENABLED` (new, default false)
 
 ---
 
@@ -630,6 +769,11 @@ QUEEN (orchestrator)
 | Leads Dashboard (pipeline visualization) | `dashboard/leads_dashboard.html` |
 | Agent permissions | `core/agent_action_permissions.json` |
 | Agent registry | `execution/unified_agent_registry.py` |
+| **Rejection memory (per-lead history)** | `core/rejection_memory.py` |
+| **Quality guard (pre-queue validator)** | `core/quality_guard.py` |
+| **Enrichment sub-agents (signal extraction)** | `core/enrichment_sub_agents.py` |
+| **Feedback loop (outcome → learning bridge)** | `core/feedback_loop.py` |
+| Rejection hardening design doc | `docs/REJECTION_LOOP_HARDENING_PLAN.md` |
 | This plan | `CAIO_IMPLEMENTATION_PLAN.md` |
 
 ---
@@ -694,11 +838,13 @@ QUEEN (orchestrator)
 | 2026-02-16 | HeyReach webhook CRUD is UI-only | Discovered via API probing (9 endpoint variations, all 404). Rewrote `register_heyreach_webhooks.py` to utility script. 4 webhooks created manually in HeyReach UI. |
 | 2026-02-16 | Wire Monaco signal loop into both webhook handlers | `LeadStatusManager` calls added to Instantly (reply/bounce/open/unsubscribe) and HeyReach (connection_sent/accepted, reply, campaign_completed). Engagement-driven lead status now flows from real webhook events. |
 | 2026-02-16 | HeyReach enabled in production.json | API key verified (HTTP 200), health endpoint confirms `api_key_configured: true`. 4/4 webhooks registered. `enabled: true` in config. |
+| 2026-02-17 | Apply HoS critical pre-live fixes + add regression gate | Fixed follow-up subject A/B bug, intent+engagement cap inflation, subdomain exclusion gap, cadence dry-run side effects, and cadence auto-enroll channel gap. Added `tests/test_hos_integration_regressions.py`; replay and expanded pytest gates passed. |
+| 2026-02-17 | Enforce strict non-API webhook signatures + readiness webhook dependency checks | Added shared webhook signature policy helper; enforced signed webhooks on Instantly/HeyReach/RB2B/Clay endpoints; runtime readiness now hard-fails in strict mode if required webhook secrets are missing. Added `tests/test_webhook_signature_enforcement.py` and expanded runtime reliability tests. |
 | 2026-02-18 | HoS Requirements Integration | Complete email system rewrite: 11 HoS-approved angles (4 T1, 3 T2, 4 T3), Fractional CAIO positioning, M.A.P.™ Framework, CAN-SPAM footer (5700 Harper Dr, Albuquerque), sender=Dani Apgar/Chief AI Officer, booking=caio.cx, ICP scoring multipliers (1.5x/1.2x), customer exclusion (7 domains + 27 emails), Guard 4 in dispatcher, Tier 1 target companies (agencies/consulting/staffing). |
 
 ---
 
 *Plan Version: 4.5*
 *Created: 2026-02-13*
-*Latest Patch Train Release: 2026-02-17 (P0-A..P0-E complete, production cutover deployed commit `746d347`, v4.5 deep-review hardening follow-up applied)*
+*Latest Patch Train Release: 2026-02-17 (P0-A..P0-E complete, production cutover deployed commit `746d347`, v4.5 deep-review + HoS fixes + strict webhook signature hardening + edge-case gate expansion applied)*
 *Supersedes: v3.7, v3.6, Modernization Roadmap (implementation_plan.md.resolved), Original Path to Full Autonomy (f34646b2/task.md.resolved)*

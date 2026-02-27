@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# Pre-commit hook: runs critical tests before every commit (~10-30s)
+# Install: git config core.hooksPath .githooks
+
+set -e
+
+echo "Running pre-commit tests..."
+
+# Run tests with fail-fast, quiet output, no capture (Rich console compat)
+python -m pytest tests/ -x -q --tb=short -s 2>/dev/null
+
+if [ $? -ne 0 ]; then
+    echo ""
+    echo "PRE-COMMIT HOOK FAILED: Tests must pass before committing."
+    echo "Run 'python -m pytest tests/ -v -s' for details."
+    exit 1
+fi
+
+echo "All tests passed."
