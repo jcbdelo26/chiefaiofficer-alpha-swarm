@@ -81,29 +81,52 @@ def _log_event(event_type: str, payload: Dict[str, Any]):
 
 
 def _extract_lead_info(payload: Dict[str, Any]) -> Dict[str, Any]:
-    """Extract lead details from webhook payload (HR-05: schema discovery).
+    """Extract lead details from webhook payload (HR-05: validated schema).
 
-    Field names are based on API patterns — not empirically validated.
-    The debug log below captures the full payload keys on every webhook
-    so the actual schema can be discovered from production logs.
+    HeyReach payloads use nested objects:
+    - lead: {profile_url, first_name, last_name, company_name, email_address, id, ...}
+    - campaign: {id, name, status}
+    - sender: {id, first_name, last_name, email_address, profile_url}
+    - Top-level: event_type, timestamp, correlation_id, connection_message
+
+    Validated against real payloads captured 2026-03-01.
     """
-    # HR-05: Log ALL top-level keys for schema discovery
     logger.info("HeyReach payload keys: %s", sorted(payload.keys()))
 
+    lead_data = payload.get("lead") or {}
+    campaign_data = payload.get("campaign") or {}
+    sender_data = payload.get("sender") or {}
+
     lead = {
-        "linkedin_url": payload.get("linkedInUrl", payload.get("linkedin_url", "")),
-        "first_name": payload.get("firstName", payload.get("first_name", "")),
-        "last_name": payload.get("lastName", payload.get("last_name", "")),
-        "company": payload.get("companyName", payload.get("company", "")),
-        "email": payload.get("email", ""),
-        "campaign_id": payload.get("campaignId", payload.get("campaign_id", "")),
-        "lead_id": payload.get("leadId", payload.get("lead_id", "")),
+        "linkedin_url": lead_data.get("profile_url", ""),
+        "first_name": lead_data.get("first_name", ""),
+        "last_name": lead_data.get("last_name", ""),
+        "full_name": lead_data.get("full_name", ""),
+        "company": lead_data.get("company_name", ""),
+        "company_url": lead_data.get("company_url", ""),
+        "email": lead_data.get("email_address", "") or lead_data.get("enriched_email", "") or "",
+        "position": lead_data.get("position", ""),
+        "location": lead_data.get("location", ""),
+        "campaign_id": str(campaign_data.get("id", "")),
+        "campaign_name": campaign_data.get("name", ""),
+        "lead_id": str(lead_data.get("id", "")),
+        "tags": lead_data.get("tags", []),
+        "sender_name": sender_data.get("full_name", ""),
+        "connection_message": payload.get("connection_message", ""),
+        "correlation_id": payload.get("correlation_id", ""),
     }
 
-    # HR-05: Log which fields matched vs. which are empty
-    empty_fields = [k for k, v in lead.items() if not v]
-    if empty_fields:
-        logger.warning("HeyReach lead extraction: empty fields %s — schema may differ", empty_fields)
+    # Log unknown top-level keys for ongoing schema discovery
+    known_keys = {"lead", "campaign", "sender", "event_type", "timestamp",
+                  "correlation_id", "connection_message", "message_text"}
+    unknown_keys = set(payload.keys()) - known_keys
+    if unknown_keys:
+        logger.info("HeyReach unknown payload keys: %s", sorted(unknown_keys))
+
+    # Warn on critical empty fields
+    critical = {k: v for k, v in lead.items() if k in ("linkedin_url", "email", "first_name") and not v}
+    if critical:
+        logger.warning("HeyReach lead extraction: empty critical fields %s", list(critical.keys()))
 
     return lead
 
@@ -149,13 +172,10 @@ async def heyreach_webhook(request: Request):
     except json.JSONDecodeError:
         raise HTTPException(status_code=400, detail="Invalid JSON")
 
-    # Extract event type — field name TBD (needs empirical validation)
-    event_type = (
-        payload.get("eventType")
-        or payload.get("event_type")
-        or payload.get("event")
-        or "UNKNOWN"
-    )
+    # Extract event type — HR-05 validated: field is "event_type" (snake_case lowercase)
+    # Normalize to UPPER_CASE for handler map lookup
+    raw_event = payload.get("event_type", "") or payload.get("eventType", "") or ""
+    event_type = raw_event.upper() if raw_event else "UNKNOWN"
 
     logger.info("HeyReach webhook: %s (payload size: %d bytes)", event_type, len(raw_body))
     _log_event(event_type, payload)
@@ -252,7 +272,8 @@ async def _handle_reply_received(event_type: str, payload: Dict, lead: Dict) -> 
     classified (interested/not interested/meeting request/objection).
     """
     name = f"{lead.get('first_name', '')} {lead.get('last_name', '')}".strip()
-    reply_text = payload.get("messageText", payload.get("message", ""))
+    # HR-05: real payload uses "message_text" (snake_case); keep camelCase fallback
+    reply_text = payload.get("message_text", "") or payload.get("messageText", "") or payload.get("message", "")
 
     logger.info("LinkedIn REPLY from %s: %s...", name, reply_text[:100] if reply_text else "(empty)")
 
@@ -365,7 +386,12 @@ async def _handle_campaign_completed(event_type: str, payload: Dict, lead: Dict)
 
 async def _handle_lead_tag_updated(event_type: str, payload: Dict, lead: Dict) -> Dict:
     """Track lead tag changes for status sync."""
-    tag = payload.get("tag", payload.get("tagName", "unknown"))
+    # HR-05: tags live in lead.tags array; also check top-level tag/tag_name
+    tag = payload.get("tag_name", "") or payload.get("tag", "") or payload.get("tagName", "")
+    if not tag:
+        # Fall back to lead's tags array
+        lead_tags = lead.get("tags", [])
+        tag = lead_tags[-1] if lead_tags else "unknown"
     logger.info("Lead tag updated: %s → %s", lead.get("linkedin_url"), tag)
     return {"action": "tag_logged", "tag": tag}
 
@@ -510,74 +536,3 @@ async def heyreach_webhook_health():
         "events_supported": list(EVENT_HANDLERS.keys()),
     }
 
-
-# =============================================================================
-# TEMPORARY: Webhook Payload Capture (HR-05 schema discovery)
-# Remove after real payloads are captured and schema is validated.
-# =============================================================================
-
-def _capture_to_redis(key: str, payload: Dict[str, Any]) -> bool:
-    """Store captured webhook payload to Redis with 24h TTL."""
-    try:
-        from core.shadow_queue import _get_redis
-        r = _get_redis()
-        if r:
-            r.set(key, json.dumps(payload, ensure_ascii=False), ex=86400)
-            return True
-    except Exception as e:
-        logger.warning("Failed to store webhook capture to Redis: %s", e)
-    return False
-
-
-def _read_captures_from_redis() -> list:
-    """Read all captured webhook payloads from Redis."""
-    try:
-        from core.shadow_queue import _get_redis
-        r = _get_redis()
-        if not r:
-            return []
-        keys = list(r.scan_iter("caio:debug:webhook_capture:*"))
-        captures = []
-        for key in sorted(keys):
-            raw = r.get(key)
-            if raw:
-                captures.append({
-                    "key": key if isinstance(key, str) else key.decode(),
-                    "payload": json.loads(raw),
-                })
-        return captures
-    except Exception as e:
-        logger.warning("Failed to read webhook captures: %s", e)
-        return []
-
-
-@router.post("/webhooks/heyreach/capture")
-async def heyreach_capture(request: Request):
-    """Temporary debug endpoint — captures raw HeyReach webhook payload to Redis.
-
-    No auth required (temporary, captures only to Redis with 24h TTL).
-    Used to discover actual HeyReach webhook field names for HR-05.
-    DELETE THIS ENDPOINT after schema is validated.
-    """
-    try:
-        raw_body = await request.body()
-        payload = json.loads(raw_body.decode("utf-8"))
-    except (json.JSONDecodeError, UnicodeDecodeError):
-        raise HTTPException(status_code=400, detail="Invalid JSON")
-
-    ts = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S_%f")
-    redis_key = f"caio:debug:webhook_capture:{ts}"
-    stored = _capture_to_redis(redis_key, payload)
-
-    logger.info(
-        "HR-05 CAPTURE: %d bytes, %d keys: %s (redis=%s)",
-        len(raw_body), len(payload), sorted(payload.keys()), stored,
-    )
-
-    return {
-        "status": "captured",
-        "redis_key": redis_key,
-        "stored": stored,
-        "payload_keys": sorted(payload.keys()),
-        "payload_size": len(raw_body),
-    }

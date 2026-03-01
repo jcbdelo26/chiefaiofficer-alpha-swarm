@@ -35,65 +35,104 @@ from webhooks.heyreach_webhook import (
 # =============================================================================
 
 class TestLeadInfoExtraction:
-    """Tests for HR-05: payload field extraction and schema discovery."""
+    """Tests for HR-05: payload field extraction — validated against real HeyReach payloads."""
 
-    def test_camelcase_fields_extracted(self):
-        """CamelCase field names (API convention) are extracted."""
-        payload = {
-            "linkedInUrl": "https://linkedin.com/in/johndoe",
-            "firstName": "John",
-            "lastName": "Doe",
-            "companyName": "Acme",
-            "email": "john@acme.com",
-            "campaignId": "camp_001",
-            "leadId": "lead_abc",
+    def _real_payload(self, **overrides):
+        """Build a realistic HeyReach nested payload (connection_request_accepted shape)."""
+        base = {
+            "connection_message": "Test Message",
+            "campaign": {"name": "CAIO Outreach", "id": 42, "status": None},
+            "sender": {
+                "id": 99, "first_name": "Chris", "last_name": "D",
+                "full_name": "Chris D", "email_address": "chris@test.com",
+                "profile_url": "https://linkedin.com/in/chrisd",
+            },
+            "lead": {
+                "id": "lead_abc", "profile_url": "https://linkedin.com/in/johndoe",
+                "first_name": "John", "last_name": "Doe", "full_name": "John Doe",
+                "location": "Miami, FL", "company_url": "https://acme.com",
+                "company_name": "Acme", "position": "CEO",
+                "email_address": "john@acme.com", "enriched_email": None,
+                "tags": ["hot-lead"], "lists": [],
+            },
+            "timestamp": "2026-03-01T19:26:58Z",
+            "event_type": "connection_request_accepted",
+            "correlation_id": "00000000-0000-0000-0000-000000000000",
         }
+        # Allow overriding nested keys via dot notation won't work here,
+        # but callers can override top-level or pass modified nested dicts
+        base.update(overrides)
+        return base
+
+    def test_nested_lead_fields_extracted(self):
+        """Real nested lead object fields are extracted correctly."""
+        payload = self._real_payload()
         lead = _extract_lead_info(payload)
         assert lead["linkedin_url"] == "https://linkedin.com/in/johndoe"
         assert lead["first_name"] == "John"
         assert lead["last_name"] == "Doe"
+        assert lead["full_name"] == "John Doe"
         assert lead["company"] == "Acme"
         assert lead["email"] == "john@acme.com"
-        assert lead["campaign_id"] == "camp_001"
+        assert lead["position"] == "CEO"
+        assert lead["location"] == "Miami, FL"
+
+    def test_campaign_fields_extracted(self):
+        """Campaign ID and name extracted from nested campaign object."""
+        payload = self._real_payload()
+        lead = _extract_lead_info(payload)
+        assert lead["campaign_id"] == "42"
+        assert lead["campaign_name"] == "CAIO Outreach"
+
+    def test_lead_id_extracted(self):
+        """Lead ID extracted from nested lead object."""
+        payload = self._real_payload()
+        lead = _extract_lead_info(payload)
         assert lead["lead_id"] == "lead_abc"
 
-    def test_snake_case_fallback(self):
-        """Snake_case field names (alternative) are extracted as fallback."""
-        payload = {
-            "linkedin_url": "https://linkedin.com/in/jane",
-            "first_name": "Jane",
-            "last_name": "Smith",
-            "company": "BigCorp",
-            "campaign_id": "camp_002",
-            "lead_id": "lead_xyz",
-        }
+    def test_sender_and_metadata_extracted(self):
+        """Sender name, connection message, and correlation ID extracted."""
+        payload = self._real_payload()
         lead = _extract_lead_info(payload)
-        assert lead["linkedin_url"] == "https://linkedin.com/in/jane"
-        assert lead["first_name"] == "Jane"
-        assert lead["company"] == "BigCorp"
+        assert lead["sender_name"] == "Chris D"
+        assert lead["connection_message"] == "Test Message"
+        assert lead["correlation_id"] == "00000000-0000-0000-0000-000000000000"
+
+    def test_tags_extracted_as_list(self):
+        """Tags array preserved from lead object."""
+        payload = self._real_payload()
+        lead = _extract_lead_info(payload)
+        assert lead["tags"] == ["hot-lead"]
+
+    def test_email_fallback_to_enriched(self):
+        """Falls back to enriched_email when email_address is empty."""
+        payload = self._real_payload()
+        payload["lead"]["email_address"] = ""
+        payload["lead"]["enriched_email"] = "enriched@acme.com"
+        lead = _extract_lead_info(payload)
+        assert lead["email"] == "enriched@acme.com"
 
     def test_missing_fields_default_empty(self):
-        """Missing fields default to empty string, no exceptions."""
+        """Missing/empty payload defaults to empty strings, no exceptions."""
         lead = _extract_lead_info({})
         assert lead["linkedin_url"] == ""
         assert lead["first_name"] == ""
         assert lead["email"] == ""
         assert lead["campaign_id"] == ""
+        assert lead["tags"] == []
 
-    def test_empty_fields_logged_as_warning(self):
-        """Empty fields trigger a warning log for schema discovery."""
+    def test_empty_critical_fields_logged_as_warning(self):
+        """Empty critical fields trigger a warning log."""
         with patch("webhooks.heyreach_webhook.logger") as mock_logger:
-            _extract_lead_info({"eventType": "TEST"})
-            # Should warn about empty fields
+            _extract_lead_info({"event_type": "test"})
             mock_logger.warning.assert_called()
             warning_msg = mock_logger.warning.call_args[0][0]
-            assert "empty fields" in warning_msg
+            assert "empty" in warning_msg.lower()
 
     def test_payload_keys_logged(self):
         """All top-level keys are logged for schema discovery."""
         with patch("webhooks.heyreach_webhook.logger") as mock_logger:
             _extract_lead_info({"foo": "bar", "baz": 123})
-            # Should log the keys
             info_calls = [c for c in mock_logger.info.call_args_list
                           if "payload keys" in str(c).lower()]
             assert len(info_calls) >= 1
@@ -194,7 +233,7 @@ class TestReplyHandler:
     async def test_reply_logged_with_classification_flag(self):
         """Reply handler classifies and returns sentiment."""
         lead = {"linkedin_url": "https://linkedin.com/in/test", "first_name": "Test", "last_name": "User", "email": "t@co.com"}
-        payload = {"messageText": "Sounds interesting, let's chat!"}
+        payload = {"message_text": "Sounds interesting, let's chat!"}
 
         with patch("webhooks.heyreach_webhook._slack_alert"), \
              patch("webhooks.heyreach_webhook._get_signal_manager") as mock_sm:
@@ -370,7 +409,7 @@ class TestReplyClassification:
             "last_name": "User",
             "email": "test@example.com",
         }
-        payload = {"messageText": "Yes, I'm interested! Tell me more."}
+        payload = {"message_text": "Yes, I'm interested! Tell me more."}
         with patch("webhooks.heyreach_webhook._slack_alert"), \
              patch("webhooks.heyreach_webhook._get_signal_manager") as mock_sm:
             mock_sm.return_value = MagicMock()
@@ -388,7 +427,7 @@ class TestReplyClassification:
             "last_name": "User",
             "email": "test@example.com",
         }
-        payload = {"messageText": "Not interested, please stop"}
+        payload = {"message_text": "Not interested, please stop"}
         mock_mgr = MagicMock()
         with patch("webhooks.heyreach_webhook._slack_alert"), \
              patch("webhooks.heyreach_webhook._get_signal_manager", return_value=mock_mgr):
