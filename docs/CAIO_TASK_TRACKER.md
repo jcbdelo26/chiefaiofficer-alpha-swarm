@@ -1,3 +1,6 @@
+> **DEPRECATED (2026-02-27)**: This file has been merged into `task.md` (project root).
+> All future updates go to `task.md` only. This file is kept for historical reference.
+
 # CAIO Alpha Swarm — Source of Truth Task Tracker
 
 **Last Updated (UTC):** 2026-02-26 19:25

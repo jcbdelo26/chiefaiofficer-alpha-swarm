@@ -19,7 +19,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from execution.instantly_dispatcher import InstantlyDispatcher, DailyCeilingTracker
+from execution.instantly_dispatcher import InstantlyDispatcher, DailyCeilingTracker, _atomic_json_write
 
 PROJECT_ROOT = Path(__file__).parent.parent
 
@@ -37,6 +37,8 @@ def dispatcher(tmp_path, monkeypatch):
     d.ceiling = DailyCeilingTracker.__new__(DailyCeilingTracker)
     d.ceiling.state_file = tmp_path / "dispatch_state.json"
     d.ceiling._state = {"date": date.today().isoformat(), "dispatched_count": 0, "dispatched_emails": [], "campaigns_created": []}
+    d.ceiling._redis = None
+    d.ceiling._redis_prefix = ""
     d.config = _load_production_config()
     d._client = None
     return d
@@ -263,18 +265,24 @@ class TestDailyCeiling:
         c = DailyCeilingTracker.__new__(DailyCeilingTracker)
         c.state_file = tmp_path / "state.json"
         c._state = {"date": date.today().isoformat(), "dispatched_count": 10, "dispatched_emails": [], "campaigns_created": []}
+        c._redis = None
+        c._redis_prefix = ""
         assert c.get_remaining(25) == 15
 
     def test_ceiling_exhausted(self, tmp_path):
         c = DailyCeilingTracker.__new__(DailyCeilingTracker)
         c.state_file = tmp_path / "state.json"
         c._state = {"date": date.today().isoformat(), "dispatched_count": 25, "dispatched_emails": [], "campaigns_created": []}
+        c._redis = None
+        c._redis_prefix = ""
         assert c.get_remaining(25) == 0
 
     def test_ceiling_record_increments(self, tmp_path):
         c = DailyCeilingTracker.__new__(DailyCeilingTracker)
         c.state_file = tmp_path / "state.json"
         c._state = {"date": date.today().isoformat(), "dispatched_count": 0, "dispatched_emails": [], "campaigns_created": []}
+        c._redis = None
+        c._redis_prefix = ""
         c.record_dispatch(5, ["e1", "e2", "e3", "e4", "e5"], "campaign_1")
         assert c.get_today_count() == 5
         assert c.get_remaining(25) == 20
@@ -317,3 +325,130 @@ class TestGuardInteraction:
             entries = [json.loads(line) for line in f if line.strip()]
         assert len(entries) >= 1
         assert entries[0]["reason_code"] == "excluded_recipient_domain"
+
+
+# ── Atomic JSON writes (XS-08) ─────────────────────────────────
+
+
+class TestAtomicJsonWrite:
+
+    def test_creates_file(self, tmp_path):
+        f = tmp_path / "test.json"
+        _atomic_json_write(f, {"a": 1})
+        assert f.exists()
+        assert json.loads(f.read_text())["a"] == 1
+
+    def test_overwrites_existing(self, tmp_path):
+        f = tmp_path / "test.json"
+        _atomic_json_write(f, {"v": 1})
+        _atomic_json_write(f, {"v": 2})
+        assert json.loads(f.read_text())["v"] == 2
+
+    def test_no_temp_files_left(self, tmp_path):
+        f = tmp_path / "test.json"
+        _atomic_json_write(f, {"ok": True})
+        assert len(list(tmp_path.glob("*.tmp"))) == 0
+
+    def test_ceiling_save_uses_atomic(self, tmp_path):
+        """DailyCeilingTracker._save() uses atomic write."""
+        c = DailyCeilingTracker.__new__(DailyCeilingTracker)
+        c.state_file = tmp_path / "state.json"
+        c._state = {"date": "2026-02-28", "dispatched_count": 3, "dispatched_emails": [], "campaigns_created": []}
+        c._redis = None
+        c._redis_prefix = ""
+        c._save()
+        assert c.state_file.exists()
+        data = json.loads(c.state_file.read_text())
+        assert data["dispatched_count"] == 3
+
+
+# ── Redis-backed daily ceiling (XS-03) ─────────────────────────
+
+
+class TestRedisDailyCeiling:
+    """Tests for XS-03: Redis-backed distributed ceiling."""
+
+    def _make_ceiling(self, tmp_path):
+        c = DailyCeilingTracker.__new__(DailyCeilingTracker)
+        c.state_file = tmp_path / "state.json"
+        c._state = {"date": date.today().isoformat(), "dispatched_count": 0, "dispatched_emails": [], "campaigns_created": []}
+        c._redis = None
+        c._redis_prefix = ""
+        return c
+
+    def test_redis_count_used_when_available(self, tmp_path):
+        """Redis count is preferred over file count."""
+        from unittest.mock import MagicMock
+        c = self._make_ceiling(tmp_path)
+        c._redis = MagicMock()
+        c._redis_prefix = "caio"
+        c._redis.get.return_value = "7"
+        assert c.get_remaining(25) == 18
+        assert c.get_today_count() == 7
+
+    def test_file_fallback_when_redis_returns_none(self, tmp_path):
+        """Falls back to file count when Redis returns None."""
+        c = self._make_ceiling(tmp_path)
+        c._state["dispatched_count"] = 12
+        # _redis is None — triggers file fallback
+        assert c.get_remaining(25) == 13
+        assert c.get_today_count() == 12
+
+    def test_file_fallback_on_redis_error(self, tmp_path):
+        """Falls back to file count on Redis exception."""
+        from unittest.mock import MagicMock
+        c = self._make_ceiling(tmp_path)
+        c._redis = MagicMock()
+        c._redis_prefix = "caio"
+        c._redis.get.side_effect = Exception("connection lost")
+        c._state["dispatched_count"] = 5
+        assert c.get_remaining(25) == 20
+
+    def test_incrby_called_on_record(self, tmp_path):
+        """record_dispatch calls Redis INCRBY."""
+        from unittest.mock import MagicMock
+        c = self._make_ceiling(tmp_path)
+        c._redis = MagicMock()
+        c._redis_prefix = "caio"
+        c.record_dispatch(3, ["e1", "e2", "e3"], "camp_v1")
+        c._redis.incrby.assert_called_once()
+        c._redis.expire.assert_called_once()
+
+    def test_local_state_always_updated(self, tmp_path):
+        """Local state updated even when Redis is available."""
+        from unittest.mock import MagicMock
+        c = self._make_ceiling(tmp_path)
+        c._redis = MagicMock()
+        c._redis_prefix = "caio"
+        c.record_dispatch(2, ["e1", "e2"], "camp_v1")
+        assert c._state["dispatched_count"] == 2
+        assert len(c._state["dispatched_emails"]) == 2
+
+    def test_survives_redis_write_failure(self, tmp_path):
+        """Redis INCRBY failure doesn't break record_dispatch."""
+        from unittest.mock import MagicMock
+        c = self._make_ceiling(tmp_path)
+        c._redis = MagicMock()
+        c._redis_prefix = "caio"
+        c._redis.incrby.side_effect = Exception("write failed")
+        c.record_dispatch(1, ["e1"], "camp_v1")
+        # Local state still updated
+        assert c._state["dispatched_count"] == 1
+
+    def test_redis_key_includes_date(self, tmp_path):
+        """Redis key contains today's date for automatic rollover."""
+        c = self._make_ceiling(tmp_path)
+        c._redis_prefix = "caio"
+        key = c._redis_key("count")
+        assert date.today().isoformat() in key
+        assert "instantly" in key
+
+    def test_zero_count_from_redis(self, tmp_path):
+        """Redis returning 0 (new day) is not treated as None."""
+        from unittest.mock import MagicMock
+        c = self._make_ceiling(tmp_path)
+        c._redis = MagicMock()
+        c._redis_prefix = "caio"
+        c._redis.get.return_value = None  # Key doesn't exist yet
+        assert c.get_today_count() == 0
+        assert c.get_remaining(25) == 25

@@ -215,7 +215,7 @@ class GatekeeperQueue:
     def queue_campaigns_from_file(self, input_file: Path) -> List[ReviewItem]:
         """Queue campaigns from a JSON file."""
         
-        console.print(f"\n[bold blue]🚪 GATEKEEPER: Queuing campaigns for review[/bold blue]")
+        console.print(f"\n[bold blue]* GATEKEEPER: Queuing campaigns for review[/bold blue]")
         
         with open(input_file) as f:
             data = json.load(f)
@@ -228,7 +228,7 @@ class GatekeeperQueue:
             queued.append(item)
             console.print(f"[dim]Queued: {item.campaign_name}[/dim]")
         
-        console.print(f"\n[green]✅ Queued {len(queued)} campaigns for review[/green]")
+        console.print(f"\n[green][OK] Queued {len(queued)} campaigns for review[/green]")
         
         return queued
     
@@ -246,7 +246,7 @@ class GatekeeperQueue:
                 self._save_queue()
                 self._update_avg_review_time(item)
                 
-                console.print(f"[green]✅ Approved: {item.campaign_name}[/green]")
+                console.print(f"[green][OK] Approved: {item.campaign_name}[/green]")
                 return item
         
         console.print(f"[red]Review ID not found: {review_id}[/red]")
@@ -268,7 +268,7 @@ class GatekeeperQueue:
                 self._update_avg_review_time(item)
                 self._record_rejection_learning(item, reason)
                 
-                console.print(f"[yellow]❌ Rejected: {item.campaign_name}[/yellow]")
+                console.print(f"[yellow][X] Rejected: {item.campaign_name}[/yellow]")
                 console.print(f"[dim]   Reason: {reason}[/dim]")
                 return item
         
@@ -291,7 +291,7 @@ class GatekeeperQueue:
                     item.email_preview["body"] = edits["body"][:500] + "..."
                 
                 self._save_queue()
-                console.print(f"[blue]✏️ Edited: {item.campaign_name}[/blue]")
+                console.print(f"[blue]** Edited: {item.campaign_name}[/blue]")
                 return item
         
         console.print(f"[red]Review ID not found: {review_id}[/red]")
@@ -371,7 +371,7 @@ class GatekeeperQueue:
 Pending: {stats['pending_count']} | Approved: {stats['approved_count']} | Rejected: {stats['rejected_count']}
 Approval Rate: {stats['approval_rate']:.0%} | Avg Review Time: {stats['avg_review_time_hours']:.1f}h
         """
-        console.print(Panel(stats_text.strip(), title="📊 Queue Statistics"))
+        console.print(Panel(stats_text.strip(), title="* Queue Statistics"))
         
         # Pending table
         if self.queue.pending:
@@ -625,7 +625,7 @@ class EnhancedGatekeeperQueue(GatekeeperQueue):
         # Notify dashboard
         await self._notify_websocket("item_rejected", item)
         
-        console.print(f"[yellow]⏰ Auto-rejected: {item.campaign_name} - {reason}[/yellow]")
+        console.print(f"[yellow][TIMEOUT] Auto-rejected: {item.campaign_name} - {reason}[/yellow]")
     
     async def handle_approval_response(
         self,
@@ -761,7 +761,7 @@ def create_dashboard_app():
 <!DOCTYPE html>
 <html>
 <head>
-    <title>🚪 GATEKEEPER - Campaign Review Dashboard</title>
+    <title>* GATEKEEPER - Campaign Review Dashboard</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -904,7 +904,7 @@ def create_dashboard_app():
 <body>
     <div class="container">
         <header>
-            <h1>🚪 GATEKEEPER</h1>
+            <h1>* GATEKEEPER</h1>
             <span>Campaign Review Dashboard</span>
         </header>
         
@@ -954,7 +954,7 @@ def create_dashboard_app():
                     
                     {% if item.semantic_anchors %}
                     <div class="semantic-anchors" style="background: rgba(124, 58, 237, 0.1); border: 1px solid rgba(124, 58, 237, 0.3); border-radius: 8px; padding: 12px; margin: 16px 0;">
-                        <div style="color: #a78bfa; font-weight: 600; font-size: 0.85rem; margin-bottom: 8px;">🔗 Context (from RPI workflow)</div>
+                        <div style="color: #a78bfa; font-weight: 600; font-size: 0.85rem; margin-bottom: 8px;">* Context (from RPI workflow)</div>
                         {% for anchor in item.semantic_anchors %}
                         <div style="color: #e0e0e0; font-size: 0.85rem; padding: 4px 0;">• {{ anchor }}</div>
                         {% endfor %}
@@ -963,16 +963,16 @@ def create_dashboard_app():
                     
                     <div class="actions">
                         <form action="/approve/{{ item.review_id }}" method="POST" style="display:inline;">
-                            <button type="submit" class="btn btn-approve">✓ Approve</button>
+                            <button type="submit" class="btn btn-approve">* Approve</button>
                         </form>
-                        <button class="btn btn-reject" onclick="showRejectModal('{{ item.review_id }}')">✗ Reject</button>
-                        <button class="btn btn-edit">✎ Edit</button>
+                        <button class="btn btn-reject" onclick="showRejectModal('{{ item.review_id }}')">* Reject</button>
+                        <button class="btn btn-edit">* Edit</button>
                     </div>
                 </div>
                 {% endfor %}
             {% else %}
                 <div class="empty-state">
-                    <h2>🎉 All caught up!</h2>
+                    <h2>* All caught up!</h2>
                     <p>No campaigns pending review.</p>
                 </div>
             {% endif %}
@@ -1037,7 +1037,7 @@ def create_dashboard_app():
 <!DOCTYPE html>
 <html>
 <head>
-    <title>🎫 HANDOFFS - Escalation Queue</title>
+    <title>* HANDOFFS - Escalation Queue</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -1186,7 +1186,7 @@ def create_dashboard_app():
 <body>
     <div class="container">
         <header>
-            <h1>🎫 HANDOFFS</h1>
+            <h1>* HANDOFFS</h1>
             <div>
                 <a href="/" class="nav-link">← Back to Campaigns</a>
                 <span style="color:#666;margin:0 10px;">|</span>
@@ -1245,17 +1245,17 @@ def create_dashboard_app():
                     
                     <div class="actions">
                         <form action="/handoffs/acknowledge/{{ h.handoff_id }}" method="POST" style="display:inline;">
-                            <button type="submit" class="btn btn-ack">✓ Acknowledge</button>
+                            <button type="submit" class="btn btn-ack">* Acknowledge</button>
                         </form>
                         <form action="/handoffs/close/{{ h.handoff_id }}" method="POST" style="display:inline;">
-                            <button type="submit" class="btn btn-close">✓ Close</button>
+                            <button type="submit" class="btn btn-close">* Close</button>
                         </form>
                     </div>
                 </div>
                 {% endfor %}
             {% else %}
                 <div class="empty-state">
-                    <h2>🎉 No pending handoffs!</h2>
+                    <h2>* No pending handoffs!</h2>
                     <p>All escalations have been handled.</p>
                 </div>
             {% endif %}
@@ -1332,7 +1332,7 @@ def create_dashboard_app():
 <!DOCTYPE html>
 <html>
 <head>
-    <title>📊 REPORTS - Alpha Swarm Analytics</title>
+    <title>* REPORTS - Alpha Swarm Analytics</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -1398,23 +1398,23 @@ def create_dashboard_app():
 <body>
     <div class="container">
         <header>
-            <h1>📊 REPORTS</h1>
+            <h1>* REPORTS</h1>
             <a href="/" class="nav-link">← Back to Dashboard</a>
         </header>
         
         <div class="report-cards">
             <div class="report-card daily">
-                <h2>📅 Daily Report</h2>
+                <h2>* Daily Report</h2>
                 <p>Leads scraped, enrichment rates, emails sent, replies received</p>
                 <a href="/reports/daily">View Today</a>
             </div>
             <div class="report-card weekly">
-                <h2>📈 Weekly Report</h2>
+                <h2>* Weekly Report</h2>
                 <p>ICP distribution, conversion funnel, AE approval trends</p>
                 <a href="/reports/weekly">View This Week</a>
             </div>
             <div class="report-card monthly">
-                <h2>📊 Monthly Report</h2>
+                <h2>* Monthly Report</h2>
                 <p>ROI analysis, campaign comparison, compliance audit</p>
                 <a href="/reports/monthly">View This Month</a>
             </div>
@@ -1428,7 +1428,7 @@ def create_dashboard_app():
 <!DOCTYPE html>
 <html>
 <head>
-    <title>📅 Daily Report - {{ report.date }}</title>
+    <title>* Daily Report - {{ report.date }}</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -1493,7 +1493,7 @@ def create_dashboard_app():
 <body>
     <div class="container">
         <header>
-            <h1>📅 Daily Report: {{ report.date }}</h1>
+            <h1>* Daily Report: {{ report.date }}</h1>
             <a href="/reports" class="nav-link">← Back to Reports</a>
         </header>
         
@@ -1517,7 +1517,7 @@ def create_dashboard_app():
         </div>
         
         <div class="section">
-            <h2>🕵️ Leads by Source</h2>
+            <h2>** Leads by Source</h2>
             <table>
                 <tr><th>Source</th><th>Count</th></tr>
                 {% for source, count in report.leads_scraped.by_source.items() %}
@@ -1529,7 +1529,7 @@ def create_dashboard_app():
         </div>
         
         <div class="section">
-            <h2>💎 Enrichment Stats</h2>
+            <h2>* Enrichment Stats</h2>
             <table>
                 <tr><th>Metric</th><th>Value</th></tr>
                 <tr><td>Completed</td><td>{{ report.enrichment.completed }}</td></tr>
@@ -1539,7 +1539,7 @@ def create_dashboard_app():
         </div>
         
         <div class="section">
-            <h2>📧 Email Stats</h2>
+            <h2>* Email Stats</h2>
             <table>
                 <tr><th>Metric</th><th>Value</th></tr>
                 <tr><td>Sent</td><td>{{ report.emails.sent }}</td></tr>
@@ -1550,7 +1550,7 @@ def create_dashboard_app():
         </div>
         
         <div class="section">
-            <h2>💬 Replies by Sentiment</h2>
+            <h2>* Replies by Sentiment</h2>
             <table>
                 <tr><th>Sentiment</th><th>Count</th></tr>
                 {% for sentiment, count in report.replies.by_sentiment.items() %}
@@ -1569,7 +1569,7 @@ def create_dashboard_app():
 <!DOCTYPE html>
 <html>
 <head>
-    <title>📈 Weekly Report - {{ report.week_start }} to {{ report.week_end }}</title>
+    <title>* Weekly Report - {{ report.week_start }} to {{ report.week_end }}</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -1625,12 +1625,12 @@ def create_dashboard_app():
 <body>
     <div class="container">
         <header>
-            <h1>📈 Weekly Report: {{ report.week_start }} to {{ report.week_end }}</h1>
+            <h1>* Weekly Report: {{ report.week_start }} to {{ report.week_end }}</h1>
             <a href="/reports" class="nav-link">← Back to Reports</a>
         </header>
         
         <div class="section">
-            <h2>📊 ICP Tier Distribution</h2>
+            <h2>* ICP Tier Distribution</h2>
             <table>
                 <tr><th>Tier</th><th>Count</th><th>Percentage</th></tr>
                 {% for tier, data in report.icp_tier_distribution.distribution.items() %}
@@ -1646,7 +1646,7 @@ def create_dashboard_app():
         </div>
         
         <div class="section">
-            <h2>🔄 Conversion Funnel</h2>
+            <h2>* Conversion Funnel</h2>
             <table>
                 <tr><th>Stage</th><th>Count</th><th>Visual</th></tr>
                 {% set max_val = [report.conversion_funnel.scraped, report.conversion_funnel.enriched, report.conversion_funnel.segmented, 1]|max %}
@@ -1689,7 +1689,7 @@ def create_dashboard_app():
         </div>
         
         <div class="section">
-            <h2>✅ AE Approval Trends</h2>
+            <h2>[OK] AE Approval Trends</h2>
             <table>
                 <tr><th>Metric</th><th>Value</th></tr>
                 <tr><td>Approved</td><td>{{ report.ae_approval_trends.approved }}</td></tr>
@@ -1708,7 +1708,7 @@ def create_dashboard_app():
         </div>
         
         <div class="section">
-            <h2>🎯 Performance vs Targets</h2>
+            <h2>* Performance vs Targets</h2>
             <table>
                 <tr><th>Metric</th><th>Actual</th><th>Target</th><th>Minimum</th><th>Status</th></tr>
                 {% for metric, data in report.performance_vs_targets.items() %}
@@ -1731,7 +1731,7 @@ def create_dashboard_app():
 <!DOCTYPE html>
 <html>
 <head>
-    <title>📊 Monthly Report - {{ report.month }}</title>
+    <title>* Monthly Report - {{ report.month }}</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -1788,12 +1788,12 @@ def create_dashboard_app():
 <body>
     <div class="container">
         <header>
-            <h1>📊 Monthly Report: {{ report.month }}</h1>
+            <h1>* Monthly Report: {{ report.month }}</h1>
             <a href="/reports" class="nav-link">← Back to Reports</a>
         </header>
         
         <div class="section">
-            <h2>💰 ROI Analysis</h2>
+            <h2>* ROI Analysis</h2>
             {% if report.roi_analysis.status == 'placeholder' %}
             <div class="placeholder">
                 {{ report.roi_analysis.note }}
@@ -1809,7 +1809,7 @@ def create_dashboard_app():
         </div>
         
         <div class="section">
-            <h2>📧 Campaign Performance</h2>
+            <h2>* Campaign Performance</h2>
             <p style="color: #888; margin-bottom: 12px;">{{ report.campaign_performance.campaign_count }} campaigns this month</p>
             <table>
                 <tr><th>Campaign</th><th>Sent</th><th>Open Rate</th><th>Reply Rate</th><th>Meetings</th></tr>
@@ -1828,7 +1828,7 @@ def create_dashboard_app():
         </div>
         
         <div class="section">
-            <h2>🛡️ Compliance Audit</h2>
+            <h2>** Compliance Audit</h2>
             <table>
                 <tr><th>Status</th><th>Total Violations</th></tr>
                 <tr>
@@ -1850,7 +1850,7 @@ def create_dashboard_app():
         </div>
         
         <div class="section">
-            <h2>🏥 System Health</h2>
+            <h2>* System Health</h2>
             <table>
                 <tr><th>Metric</th><th>Value</th></tr>
                 <tr>
@@ -1953,7 +1953,7 @@ def run_test_mode(input_file: Path, campaign_id: Optional[str] = None) -> Dict[s
     Returns:
         Test results dictionary
     """
-    console.print(f"\n[bold yellow]🧪 TEST MODE: Running gatekeeper workflow simulation[/bold yellow]")
+    console.print(f"\n[bold yellow]* TEST MODE: Running gatekeeper workflow simulation[/bold yellow]")
     
     base_path = Path(__file__).parent.parent / ".hive-mind" / "testing"
     base_path.mkdir(parents=True, exist_ok=True)
@@ -1977,7 +1977,7 @@ def run_test_mode(input_file: Path, campaign_id: Optional[str] = None) -> Dict[s
             "status": "success",
             "queue_path": str(gatekeeper.queue_path)
         })
-        console.print(f"[green]✓[/green] Test queue initialized at {gatekeeper.queue_path}")
+        console.print(f"[green]*[/green] Test queue initialized at {gatekeeper.queue_path}")
         
         # Step 2: Queue campaigns from input file
         with open(input_file) as f:
@@ -1991,7 +1991,7 @@ def run_test_mode(input_file: Path, campaign_id: Optional[str] = None) -> Dict[s
             if not campaigns:
                 results["errors"].append(f"Campaign ID '{campaign_id}' not found in input file")
                 results["success"] = False
-                console.print(f"[red]✗[/red] Campaign ID '{campaign_id}' not found")
+                console.print(f"[red]*[/red] Campaign ID '{campaign_id}' not found")
         
         queued_items = []
         for campaign in campaigns:
@@ -2004,7 +2004,7 @@ def run_test_mode(input_file: Path, campaign_id: Optional[str] = None) -> Dict[s
             "campaigns_queued": len(queued_items),
             "campaign_ids": [item.campaign_id for item in queued_items]
         })
-        console.print(f"[green]✓[/green] Queued {len(queued_items)} campaigns to test queue")
+        console.print(f"[green]*[/green] Queued {len(queued_items)} campaigns to test queue")
         
         # Step 3: Simulate approval workflow
         approved_items = []
@@ -2033,7 +2033,7 @@ def run_test_mode(input_file: Path, campaign_id: Optional[str] = None) -> Dict[s
             "approved_ids": [item.campaign_id for item in approved_items],
             "rejected_ids": [item.campaign_id for item in rejected_items]
         })
-        console.print(f"[green]✓[/green] Simulated workflow: {len(approved_items)} approved, {len(rejected_items)} rejected")
+        console.print(f"[green]*[/green] Simulated workflow: {len(approved_items)} approved, {len(rejected_items)} rejected")
         
         # Step 4: Verify dashboard accessibility
         dashboard_accessible = False
@@ -2046,7 +2046,7 @@ def run_test_mode(input_file: Path, campaign_id: Optional[str] = None) -> Dict[s
                 "flask_available": True,
                 "dashboard_would_be_accessible": True
             })
-            console.print(f"[green]✓[/green] Dashboard would be accessible (Flask is installed)")
+            console.print(f"[green]*[/green] Dashboard would be accessible (Flask is installed)")
         except ImportError:
             results["steps"].append({
                 "step": "verify_dashboard_accessibility",
@@ -2064,12 +2064,12 @@ def run_test_mode(input_file: Path, campaign_id: Optional[str] = None) -> Dict[s
             "status": "success",
             "stats": stats
         })
-        console.print(f"[green]✓[/green] Final stats: {stats['pending_count']} pending, {stats['approved_count']} approved, {stats['rejected_count']} rejected")
+        console.print(f"[green]*[/green] Final stats: {stats['pending_count']} pending, {stats['approved_count']} approved, {stats['rejected_count']} rejected")
         
     except Exception as e:
         results["success"] = False
         results["errors"].append(str(e))
-        console.print(f"[red]✗[/red] Test failed: {e}")
+        console.print(f"[red]*[/red] Test failed: {e}")
     
     results["completed_at"] = datetime.now(timezone.utc).isoformat()
     
@@ -2087,7 +2087,7 @@ def run_test_mode(input_file: Path, campaign_id: Optional[str] = None) -> Dict[s
             f"• Results: {results_path}\n"
             f"• Dashboard accessible: {'Yes' if dashboard_accessible else 'No (install Flask)'}\n\n"
             f"[dim]Production queue was not affected.[/dim]",
-            title="🧪 TEST MODE COMPLETE",
+            title="* TEST MODE COMPLETE",
             border_style="green"
         ))
     else:
@@ -2095,7 +2095,7 @@ def run_test_mode(input_file: Path, campaign_id: Optional[str] = None) -> Dict[s
             f"[red]Test completed with errors:[/red]\n\n"
             f"• Errors: {', '.join(results['errors'])}\n\n"
             f"[dim]Production queue was not affected.[/dim]",
-            title="🧪 TEST MODE FAILED",
+            title="* TEST MODE FAILED",
             border_style="red"
         ))
     
@@ -2131,7 +2131,7 @@ def main():
     if args.serve:
         app = create_dashboard_app()
         if app:
-            console.print(f"\n[bold green]🚪 GATEKEEPER Dashboard starting...[/bold green]")
+            console.print(f"\n[bold green]* GATEKEEPER Dashboard starting...[/bold green]")
             console.print(f"[dim]Open http://localhost:{args.port} in your browser[/dim]")
             app.run(host='0.0.0.0', port=args.port, debug=True)
         return

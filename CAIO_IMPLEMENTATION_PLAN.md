@@ -25,6 +25,19 @@ Phase 4: Autonomy Graduation      [#########.]  98%  IN PROGRESS (4A+4C+4D+4F+4G
 
 ---
 
+## Document Hierarchy (Source of Truth)
+
+| Document | Role | Update Trigger |
+|----------|------|----------------|
+| **This file** (`CAIO_IMPLEMENTATION_PLAN.md`) | Canonical roadmap — phases, architecture, history | Phase completion, major milestones |
+| `task.md` | Active sprint tracker — priorities, audit findings, go/no-go | Daily engineering work |
+| `CLAUDE.md` | Session config — mandatory reads, pitfalls, directives | Session protocol changes |
+| `docs/CAIO_CLAUDE_MEMORY.md` | Deployment runtime truth — verified URLs, smoke results | After each Railway deploy |
+
+**Rule**: Status lives in ONE place. `task.md` for current sprint. This file for overall progress. Don't duplicate.
+
+---
+
 ## Phase 0: Foundation Lock — COMPLETE
 
 All core infrastructure deployed and validated.

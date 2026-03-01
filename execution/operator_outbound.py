@@ -1080,6 +1080,10 @@ class OperatorOutbound:
                 report.errors.append(f"HeyReach dispatch error: {e}")
                 logger.error("HeyReach dispatch error: %s", e)
 
+            # --- XS-01: Partial dispatch detection ---
+            if not dry_run:
+                self._check_partial_dispatch(report)
+
             # --- Step 3: Auto-enroll dispatched leads into cadence ---
             if not dry_run:
                 try:
@@ -1091,10 +1095,18 @@ class OperatorOutbound:
                     report.errors.append(f"Cadence auto-enroll error: {e}")
                     logger.error("Cadence auto-enroll error: %s", e)
 
-            # Update state
-            state.last_run_at = datetime.now(timezone.utc).isoformat()
-            state.runs_today += 1
-            self._save_daily_state(state)
+            # XS-04: Verify lock still held before saving state
+            if lock_token and not self._state_store.verify_operator_lock("outbound", lock_token):
+                report.errors.append(
+                    "XS-04: Lock expired before state save — state NOT updated. "
+                    "Dispatch may have succeeded but counts are stale."
+                )
+                logger.error("XS-04: Lock expired mid-dispatch for outbound run %s", report.run_id)
+            else:
+                # Update state only while lock is confirmed held
+                state.last_run_at = datetime.now(timezone.utc).isoformat()
+                state.runs_today += 1
+                self._save_daily_state(state)
 
             report.completed_at = datetime.now(timezone.utc).isoformat()
             self._log_dispatch(report)
@@ -1107,6 +1119,51 @@ class OperatorOutbound:
         finally:
             if lock_token:
                 self._state_store.release_operator_lock("outbound", lock_token)
+
+    # -------------------------------------------------------------------------
+    # XS-01: Partial dispatch detection
+    # -------------------------------------------------------------------------
+
+    @staticmethod
+    def _check_partial_dispatch(report: "OperatorReport") -> bool:
+        """
+        Detect when one channel dispatched successfully while the other failed.
+        Appends XS-01 error to report and sends Slack alert.
+        Returns True if partial dispatch was detected.
+        """
+        instantly_dispatched = (report.instantly_report or {}).get("total_dispatched", 0)
+        heyreach_dispatched = (report.heyreach_report or {}).get("total_dispatched", 0)
+        instantly_failed = any("Instantly dispatch error:" in e for e in report.errors)
+        heyreach_failed = any("HeyReach dispatch error:" in e for e in report.errors)
+
+        if (instantly_dispatched > 0 and heyreach_failed) or \
+           (heyreach_dispatched > 0 and instantly_failed):
+            ok_channel = "Instantly" if instantly_dispatched > 0 else "HeyReach"
+            failed_channel = "HeyReach" if instantly_dispatched > 0 else "Instantly"
+            compensation_msg = (
+                f"PARTIAL DISPATCH: {ok_channel} succeeded ({instantly_dispatched} email, "
+                f"{heyreach_dispatched} linkedin) but {failed_channel} failed. "
+                f"Affected leads may have incomplete cadence coverage."
+            )
+            report.errors.append(f"XS-01: {compensation_msg}")
+            logger.warning("XS-01: %s", compensation_msg)
+
+            try:
+                from core.alerts import send_warning
+                send_warning(
+                    "Partial Dispatch Detected (XS-01)",
+                    compensation_msg,
+                    metadata={
+                        "instantly_dispatched": instantly_dispatched,
+                        "heyreach_dispatched": heyreach_dispatched,
+                        "run_id": report.run_id,
+                    },
+                    source="operator_outbound",
+                )
+            except ImportError:
+                pass
+            return True
+        return False
 
     # -------------------------------------------------------------------------
     # Auto-enroll dispatched leads into cadence
@@ -1364,9 +1421,14 @@ class OperatorOutbound:
                 report.errors.append(f"Revival scan error: {e}")
                 logger.error("Revival scan error: %s", e)
 
-            state.last_run_at = datetime.now(timezone.utc).isoformat()
-            state.runs_today += 1
-            self._save_daily_state(state)
+            # XS-04: Verify lock still held before saving state
+            if lock_token and not self._state_store.verify_operator_lock("revival", lock_token):
+                report.errors.append("XS-04: Lock expired before state save — revival state NOT updated.")
+                logger.error("XS-04: Lock expired mid-dispatch for revival run %s", report.run_id)
+            else:
+                state.last_run_at = datetime.now(timezone.utc).isoformat()
+                state.runs_today += 1
+                self._save_daily_state(state)
 
             report.completed_at = datetime.now(timezone.utc).isoformat()
             self._log_dispatch(report)
@@ -1531,9 +1593,14 @@ class OperatorOutbound:
                 logger.error("Cadence engine error: %s", e)
 
             if not dry_run:
-                state.last_run_at = datetime.now(timezone.utc).isoformat()
-                state.runs_today += 1
-                self._save_daily_state(state)
+                # XS-04: Verify lock still held before saving state
+                if lock_token and not self._state_store.verify_operator_lock("cadence", lock_token):
+                    report.errors.append("XS-04: Lock expired before state save — cadence state NOT updated.")
+                    logger.error("XS-04: Lock expired mid-dispatch for cadence run %s", report.run_id)
+                else:
+                    state.last_run_at = datetime.now(timezone.utc).isoformat()
+                    state.runs_today += 1
+                    self._save_daily_state(state)
 
             report.completed_at = datetime.now(timezone.utc).isoformat()
             self._log_dispatch(report)

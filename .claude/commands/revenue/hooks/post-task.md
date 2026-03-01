@@ -104,6 +104,12 @@ Returns JSON with:
 }
 ```
 
+## Task Context Source
+
+The post-task hook should reference `task.md` (project root) as the active sprint
+tracker for current priorities, audit findings, and sprint tasks. For full project
+roadmap, reference `CAIO_IMPLEMENTATION_PLAN.md`.
+
 ## See Also
 
 - `hook pre-task` - Pre-task setup

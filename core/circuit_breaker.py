@@ -97,6 +97,7 @@ class CircuitBreakerRegistry:
             ("supabase", 5, 30),
             ("clay_api", 5, 120),
             ("email_sending", 3, 600),
+            ("heyreach_api", 5, 120),
         ]
         for name, threshold, timeout in defaults:
             if name not in self.breakers:

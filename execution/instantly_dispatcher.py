@@ -22,6 +22,7 @@ import asyncio
 import argparse
 import platform
 import logging
+import tempfile
 from datetime import datetime, date, timezone
 from pathlib import Path
 from typing import Dict, Any, List, Optional
@@ -75,13 +76,38 @@ class DispatchReport:
 
 
 # =============================================================================
-# DAILY CEILING TRACKER
+# ATOMIC FILE WRITE (XS-08 fix — mirrors heyreach_dispatcher pattern)
+# =============================================================================
+
+def _atomic_json_write(file_path, data: dict, indent: int = 2) -> None:
+    """Write JSON atomically: temp file + os.replace() to prevent race corruption."""
+    file_path = Path(file_path)
+    dir_path = file_path.parent
+    dir_path.mkdir(parents=True, exist_ok=True)
+    fd, tmp_path = tempfile.mkstemp(dir=str(dir_path), suffix=".tmp")
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=indent, ensure_ascii=False)
+        os.replace(tmp_path, str(file_path))
+    except BaseException:
+        try:
+            os.unlink(tmp_path)
+        except OSError:
+            pass
+        raise
+
+
+# =============================================================================
+# DAILY CEILING TRACKER (XS-03: Redis-backed, distributed)
 # =============================================================================
 
 class DailyCeilingTracker:
     """
     Tracks how many emails have been dispatched to Instantly today.
     Enforced independently of Instantly's own config -- defense in depth.
+
+    XS-03: Redis-backed for distributed counting across processes.
+    Falls back to local JSON if Redis unavailable.
 
     State file: .hive-mind/instantly_dispatch_state.json
     """
@@ -90,7 +116,50 @@ class DailyCeilingTracker:
         self.state_file = PROJECT_ROOT / ".hive-mind" / "instantly_dispatch_state.json"
         self.state_file.parent.mkdir(parents=True, exist_ok=True)
         self._state: Dict[str, Any] = {}
+        self._redis = None
+        self._redis_prefix = ""
+        self._init_redis()
         self._load()
+
+    def _init_redis(self):
+        """Connect to Redis for distributed ceiling (matches shadow_queue.py pattern)."""
+        try:
+            import redis as redis_mod
+        except ImportError:
+            return
+        url = (os.getenv("REDIS_URL") or "").strip()
+        if not url:
+            return
+        try:
+            self._redis = redis_mod.Redis.from_url(
+                url, decode_responses=True,
+                socket_connect_timeout=2, socket_timeout=2,
+            )
+            self._redis.ping()
+            self._redis_prefix = (
+                os.getenv("CONTEXT_REDIS_PREFIX")
+                or os.getenv("STATE_REDIS_PREFIX")
+                or "caio"
+            ).strip()
+            logger.info("DailyCeilingTracker connected to Redis.")
+        except Exception as exc:
+            logger.warning("DailyCeilingTracker Redis connect failed: %s — file fallback.", exc)
+            self._redis = None
+
+    def _redis_key(self, suffix: str) -> str:
+        """Generate date-scoped Redis key for automatic daily rollover."""
+        return f"{self._redis_prefix}:ceiling:instantly:{date.today().isoformat()}:{suffix}"
+
+    def _redis_get_count(self) -> Optional[int]:
+        """Read current count from Redis. Returns None on failure (triggers file fallback)."""
+        if not self._redis:
+            return None
+        try:
+            val = self._redis.get(self._redis_key("count"))
+            return int(val) if val is not None else 0
+        except Exception as exc:
+            logger.warning("Redis ceiling read failed: %s", exc)
+            return None
 
     def _load(self):
         if self.state_file.exists():
@@ -112,13 +181,25 @@ class DailyCeilingTracker:
             self._save()
 
     def _save(self):
-        with open(self.state_file, "w", encoding="utf-8") as f:
-            json.dump(self._state, f, indent=2)
+        _atomic_json_write(self.state_file, self._state)
 
     def get_remaining(self, daily_limit: int) -> int:
+        redis_count = self._redis_get_count()
+        if redis_count is not None:
+            return max(0, daily_limit - redis_count)
         return max(0, daily_limit - self._state.get("dispatched_count", 0))
 
     def record_dispatch(self, count: int, email_ids: List[str], campaign_name: str):
+        # Redis: atomic increment
+        if self._redis:
+            try:
+                key = self._redis_key("count")
+                self._redis.incrby(key, count)
+                self._redis.expire(key, 90000)  # 25-hour TTL
+            except Exception as exc:
+                logger.warning("Redis ceiling increment failed: %s — file-only.", exc)
+
+        # Local state always kept in sync (for campaign naming + audit)
         self._state["dispatched_count"] = self._state.get("dispatched_count", 0) + count
         self._state["dispatched_emails"].extend(email_ids)
         self._state["campaigns_created"].append({
@@ -129,6 +210,9 @@ class DailyCeilingTracker:
         self._save()
 
     def get_today_count(self) -> int:
+        redis_count = self._redis_get_count()
+        if redis_count is not None:
+            return redis_count
         return self._state.get("dispatched_count", 0)
 
 
@@ -492,7 +576,7 @@ class InstantlyDispatcher:
     # -------------------------------------------------------------------------
 
     def _mark_email_dispatched(self, shadow_email: Dict, campaign_id: str, campaign_name: str):
-        """Update shadow email file with dispatch info."""
+        """Update shadow email file with dispatch info (atomic write — XS-08)."""
         file_path = shadow_email.get("_file_path")
         if not file_path:
             return
@@ -506,8 +590,7 @@ class InstantlyDispatcher:
             data["instantly_dispatched_at"] = datetime.now(timezone.utc).isoformat()
             data["status"] = "dispatched_to_instantly"
 
-            with open(file_path, "w", encoding="utf-8") as f:
-                json.dump(data, f, indent=2, ensure_ascii=False)
+            _atomic_json_write(file_path, data)
         except Exception as e:
             logger.error("Failed to mark email as dispatched: %s", e)
 

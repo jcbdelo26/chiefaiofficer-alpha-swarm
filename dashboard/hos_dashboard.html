@@ -1200,6 +1200,7 @@
                 <span>Swarm Active</span>
             </div>
             <span style="color: var(--text-secondary); font-size: 14px;">Dani Apgar</span>
+            <a href="/logout" style="color: var(--text-muted); font-size: 13px; text-decoration: none; margin-left: 8px;" title="Log out">[Logout]</a>
         </div>
     </nav>
 
@@ -1536,95 +1537,57 @@
         let lastRefreshAt = null;
         let refreshInFlight = false;
         const REFRESH_INTERVAL_MS = 15000;
-        const TOKEN_STORAGE_KEY = `caio_dashboard_token_${window.location.host}`;
-        const LEGACY_TOKEN_STORAGE_KEY = 'caio_dashboard_token';
-
-        let tokenPrompted = false;
         let authRequiredForQueue = false;
         let lastPendingFetchError = '';
         let hasSuccessfulQueueFetch = false;
 
-        function persistToken(token) {
-            if (!token) return;
-            localStorage.setItem(TOKEN_STORAGE_KEY, token);
-            localStorage.setItem(LEGACY_TOKEN_STORAGE_KEY, token);
-        }
-
-        function clearPersistedToken() {
-            localStorage.removeItem(TOKEN_STORAGE_KEY);
-            localStorage.removeItem(LEGACY_TOKEN_STORAGE_KEY);
-        }
-
-        function getToken({ promptFallback = false, forcePrompt = false } = {}) {
-            const urlParams = new URLSearchParams(window.location.search);
-            const tokenFromQuery = urlParams.get('token');
-            if (tokenFromQuery && tokenFromQuery.trim()) {
-                const normalized = tokenFromQuery.trim();
-                persistToken(normalized);
-                return normalized;
+        // --- Session-based auth (cookie sent automatically) ---
+        // Strip any leftover ?token= from URL for safety
+        (function cleanTokenFromUrl() {
+            const url = new URL(window.location.href);
+            if (url.searchParams.has('token')) {
+                url.searchParams.delete('token');
+                window.history.replaceState({}, '', url.pathname + url.search + url.hash);
             }
+            // Clean up legacy localStorage tokens
+            try {
+                localStorage.removeItem(`caio_dashboard_token_${window.location.host}`);
+                localStorage.removeItem('caio_dashboard_token');
+            } catch(e) { /* ignore */ }
+        })();
 
-            if (!forcePrompt) {
-                const tokenFromStorage = localStorage.getItem(TOKEN_STORAGE_KEY);
-                if (tokenFromStorage && tokenFromStorage.trim()) {
-                    return tokenFromStorage.trim();
-                }
-                const tokenFromLegacyStorage = localStorage.getItem(LEGACY_TOKEN_STORAGE_KEY);
-                if (tokenFromLegacyStorage && tokenFromLegacyStorage.trim()) {
-                    const normalized = tokenFromLegacyStorage.trim();
-                    localStorage.setItem(TOKEN_STORAGE_KEY, normalized);
-                    return normalized;
-                }
-            } else {
-                clearPersistedToken();
-                tokenPrompted = false;
-            }
-
-            if (promptFallback && !tokenPrompted) {
-                tokenPrompted = true;
-                const tokenFromPrompt = window.prompt('Enter dashboard token for protected API access:');
-                if (tokenFromPrompt && tokenFromPrompt.trim()) {
-                    const normalized = tokenFromPrompt.trim();
-                    persistToken(normalized);
-                    authRequiredForQueue = false;
-                    lastPendingFetchError = '';
-                    return normalized;
-                }
-            }
+        function getToken() {
+            // Session cookie handles auth — no token needed
             return '';
         }
 
-        function promptForDashboardToken() {
-            const token = getToken({ promptFallback: true, forcePrompt: true });
-            if (token) {
-                loadRejectionTagOptions({ token, silent: true });
-                fetchPendingEmails({ silent: false });
-            }
+        function handleAuthRedirect() {
+            window.location.href = '/login?next=' + encodeURIComponent(window.location.pathname + window.location.hash);
         }
 
-        function buildAuthHeaders(baseHeaders = {}, token = '') {
-            const headers = { ...baseHeaders };
-            if (token) {
-                headers['X-Dashboard-Token'] = token;
+        // Global 401 interceptor — redirect to login on any auth failure
+        const _originalFetch = window.fetch;
+        window.fetch = async function(...args) {
+            const response = await _originalFetch.apply(this, args);
+            if (response.status === 401) {
+                handleAuthRedirect();
             }
-            return headers;
+            return response;
+        };
+
+        function buildAuthHeaders(baseHeaders = {}) {
+            // Session cookie is sent automatically — no token header needed
+            return { ...baseHeaders };
         }
 
-        function buildPendingEmailsUrl(token = '') {
-            const params = new URLSearchParams();
-            if (token) {
-                params.set('token', token);
-            }
-            params.set('_ts', String(Date.now()));
-            return `/api/pending-emails?${params.toString()}`;
+        function buildPendingEmailsUrl() {
+            return `/api/pending-emails?_ts=${Date.now()}`
         }
 
-        async function loadRejectionTagOptions({ token = '', silent = true } = {}) {
+        async function loadRejectionTagOptions({ silent = true } = {}) {
             try {
-                const authToken = token || getToken({ promptFallback: false });
-                const query = authToken ? `?token=${encodeURIComponent(authToken)}` : '';
-                const response = await fetch(`/api/rejection-tags${query}`, {
-                    headers: buildAuthHeaders({ 'Accept': 'application/json' }, authToken)
+                const response = await fetch('/api/rejection-tags', {
+                    headers: buildAuthHeaders({ 'Accept': 'application/json' })
                 });
                 if (!response.ok) {
                     throw new Error(`Failed to load rejection tags (${response.status})`);
@@ -1909,26 +1872,15 @@
             if (refreshInFlight) return;
             refreshInFlight = true;
             try {
-                let token = getToken({ promptFallback: !silent });
-                let response = await fetch(buildPendingEmailsUrl(token), {
+                let response = await fetch(buildPendingEmailsUrl(), {
                     method: 'GET',
                     cache: 'no-store',
-                    headers: buildAuthHeaders({ 'Accept': 'application/json' }, token)
+                    headers: buildAuthHeaders({ 'Accept': 'application/json' })
                 });
 
                 if (response.status === 401) {
-                    authRequiredForQueue = true;
-                    lastPendingFetchError = 'Dashboard token missing or invalid. Open /sales?token=<DASHBOARD_AUTH_TOKEN> or click Re-enter Token.';
-                    clearPersistedToken();
-                }
-
-                if (response.status === 401 && !silent) {
-                    token = getToken({ promptFallback: true, forcePrompt: true });
-                    response = await fetch(buildPendingEmailsUrl(token), {
-                        method: 'GET',
-                        cache: 'no-store',
-                        headers: buildAuthHeaders({ 'Accept': 'application/json' }, token)
-                    });
+                    handleAuthRedirect();
+                    return;
                 }
 
                 if (!response.ok) {
@@ -2044,11 +1996,11 @@
             if (authRequiredForQueue) {
                 list.innerHTML = `
                     <div class="empty-state">
-                        <div class="icon">🔒</div>
-                        <h3>Authentication Required</h3>
-                        <p>${lastPendingFetchError || 'Dashboard token is required to load pending approvals.'}</p>
+                        <div class="icon">&#128274;</div>
+                        <h3>Session Expired</h3>
+                        <p>Your session has expired. Please log in again.</p>
                         <div style="margin-top: 12px;">
-                            <button class="btn-sm btn-secondary" onclick="promptForDashboardToken()">Re-enter Token</button>
+                            <button class="btn-sm btn-secondary" onclick="handleAuthRedirect()">Log In</button>
                         </div>
                     </div>
                 `;
@@ -2329,23 +2281,22 @@
 
             // Save email ID before closing modal (closeModal sets currentEmailId to null)
             const emailId = currentEmailId;
-            const token = getToken({ promptFallback: true });
             const email = pendingEmails.find(e => e.id === emailId) || {};
             const rawEditedBody = (document.getElementById('emailBodyInput')?.innerText || '').trim();
             const editedBody = formatCopyForApproval(rawEditedBody, email);
             const feedback = document.getElementById('feedbackInput').value;
 
             try {
-                const query = token ? `?token=${encodeURIComponent(token)}` : '';
-                const response = await fetch(`/api/emails/${emailId}/approve${query}`, {
+                const response = await fetch(`/api/emails/${emailId}/approve`, {
                     method: 'POST',
-                    headers: buildAuthHeaders({ 'Content-Type': 'application/json' }, token),
+                    headers: buildAuthHeaders({ 'Content-Type': 'application/json' }),
                     body: JSON.stringify({
                         edited_body: editedBody,
                         feedback: feedback
                     })
                 });
 
+                if (response.status === 401) { handleAuthRedirect(); return; }
                 if (!response.ok) {
                     const errorData = await response.json().catch(() => ({}));
                     throw new Error(errorData.detail || `Server error (${response.status})`);
@@ -2375,18 +2326,16 @@
                 return;
             }
 
-            const token = getToken({ promptFallback: true });
-
             try {
                 const params = new URLSearchParams();
-                if (token) params.set('token', token);
                 params.set('reason', feedback);
                 params.set('rejection_tag', rejectionTag);
 
                 const response = await fetch(`/api/emails/${emailId}/reject?${params.toString()}`, {
                     method: 'POST',
-                    headers: buildAuthHeaders({}, token)
+                    headers: buildAuthHeaders()
                 });
+                if (response.status === 401) { handleAuthRedirect(); return; }
                 if (!response.ok) {
                     const errorData = await response.json().catch(() => ({}));
                     throw new Error(errorData.detail || `Server error (${response.status})`);
@@ -2533,13 +2482,13 @@
             if (!confirm(`Approve ${lowPriorityEmails.length} low priority emails?`)) return;
 
             let approved = 0;
-            const token = getToken({ promptFallback: true });
+            const token = getToken();
             for (const email of lowPriorityEmails) {
                 try {
-                    const query = token ? `?token=${encodeURIComponent(token)}` : '';
+                    const query = '';
                     const response = await fetch(`/api/emails/${email.id}/approve${query}`, {
                         method: 'POST',
-                        headers: buildAuthHeaders({ 'Content-Type': 'application/json' }, token),
+                        headers: buildAuthHeaders({ 'Content-Type': 'application/json' }),
                         body: JSON.stringify({ feedback: 'bulk_approved_low_priority' })
                     });
                     if (response.ok) approved++;
@@ -2564,11 +2513,11 @@
 
         async function fetchOperatorStatus() {
             try {
-                const token = getToken({ promptFallback: false });
+                const token = getToken();
                 const params = new URLSearchParams();
-                if (token) params.set('token', token);
+                // token auth via session cookie (no query param needed)
                 const response = await fetch(`/api/operator/status?${params.toString()}`, {
-                    headers: buildAuthHeaders({}, token)
+                    headers: buildAuthHeaders()
                 });
                 if (!response.ok) return;
                 const data = await response.json();
@@ -2604,10 +2553,10 @@
         // ============================================================
         async function fetchScorecard() {
             try {
-                const token = getToken({ promptFallback: false });
-                const params = token ? `?token=${encodeURIComponent(token)}` : '';
+                const token = getToken();
+                const params = '';
                 const response = await fetch(`/api/scorecard${params}`, {
-                    headers: buildAuthHeaders({}, token)
+                    headers: buildAuthHeaders()
                 });
                 if (!response.ok) return;
                 const data = await response.json();
@@ -2658,10 +2607,10 @@
         // ============================================================
         async function fetchConstraint() {
             try {
-                const token = getToken({ promptFallback: false });
-                const params = token ? `?token=${encodeURIComponent(token)}` : '';
+                const token = getToken();
+                const params = '';
                 const response = await fetch(`/api/scorecard/constraint${params}`, {
-                    headers: buildAuthHeaders({}, token)
+                    headers: buildAuthHeaders()
                 });
                 if (!response.ok) return;
                 const data = await response.json();
@@ -2685,10 +2634,10 @@
         // ============================================================
         async function fetchAgents() {
             try {
-                const token = getToken({ promptFallback: false });
-                const params = token ? `?token=${encodeURIComponent(token)}` : '';
+                const token = getToken();
+                const params = '';
                 const response = await fetch(`/api/agents${params}`, {
-                    headers: buildAuthHeaders({}, token)
+                    headers: buildAuthHeaders()
                 });
                 if (!response.ok) return;
                 const data = await response.json();
@@ -2734,10 +2683,10 @@
 
         async function fetchFunnel() {
             try {
-                const token = getToken({ promptFallback: false });
-                const params = token ? `?token=${encodeURIComponent(token)}` : '';
+                const token = getToken();
+                const params = '';
                 const response = await fetch(`/api/leads/funnel${params}`, {
-                    headers: buildAuthHeaders({}, token)
+                    headers: buildAuthHeaders()
                 });
                 if (!response.ok) return;
                 const data = await response.json();
@@ -2786,12 +2735,12 @@
         // ============================================================
         async function fetchRecentActions() {
             try {
-                const token = getToken({ promptFallback: false });
+                const token = getToken();
                 const params = new URLSearchParams();
-                if (token) params.set('token', token);
+                // token auth via session cookie (no query param needed)
                 params.set('limit', '10');
                 const response = await fetch(`/api/actions?${params.toString()}`, {
-                    headers: buildAuthHeaders({}, token)
+                    headers: buildAuthHeaders()
                 });
                 if (!response.ok) return;
                 const data = await response.json();
@@ -2830,12 +2779,12 @@
         // ============================================================
         async function fetchReviewedHistory() {
             try {
-                const token = getToken({ promptFallback: false });
+                const token = getToken();
                 const params = new URLSearchParams();
-                if (token) params.set('token', token);
+                // token auth via session cookie (no query param needed)
                 params.set('include_non_dispatchable', 'true');
                 const response = await fetch(`/api/emails/history?${params.toString()}`, {
-                    headers: buildAuthHeaders({}, token)
+                    headers: buildAuthHeaders()
                 });
                 const container = document.getElementById('reviewedHistory');
                 if (!response.ok) {
@@ -2878,12 +2827,12 @@
         // ============================================================
         async function fetchOperatorHistory() {
             try {
-                const token = getToken({ promptFallback: false });
+                const token = getToken();
                 const params = new URLSearchParams();
-                if (token) params.set('token', token);
+                // token auth via session cookie (no query param needed)
                 params.set('limit', '50');
                 const response = await fetch(`/api/operator/history?${params.toString()}`, {
-                    headers: buildAuthHeaders({}, token)
+                    headers: buildAuthHeaders()
                 });
                 if (!response.ok) {
                     document.getElementById('dispatchTableBody').innerHTML = `<tr><td colspan="5" style="text-align:center; color: var(--text-muted); padding: 24px;">Unable to load dispatch history</td></tr>`;
@@ -2938,10 +2887,10 @@
         // ============================================================
         async function fetchCadenceSummary() {
             try {
-                const token = getToken({ promptFallback: false });
-                const params = token ? `?token=${encodeURIComponent(token)}` : '';
+                const token = getToken();
+                const params = '';
                 const response = await fetch(`/api/cadence/summary${params}`, {
-                    headers: buildAuthHeaders({}, token)
+                    headers: buildAuthHeaders()
                 });
                 if (!response.ok) return;
                 const data = await response.json();
@@ -2960,12 +2909,12 @@
 
         async function fetchCadenceLeads() {
             try {
-                const token = getToken({ promptFallback: false });
+                const token = getToken();
                 const params = new URLSearchParams();
-                if (token) params.set('token', token);
+                // token auth via session cookie (no query param needed)
                 params.set('status', 'active');
                 const response = await fetch(`/api/cadence/leads?${params.toString()}`, {
-                    headers: buildAuthHeaders({}, token)
+                    headers: buildAuthHeaders()
                 });
                 if (!response.ok) return;
                 const leads = await response.json();
@@ -3015,10 +2964,10 @@
         // ============================================================
         async function fetchQueueStatus() {
             try {
-                const token = getToken({ promptFallback: false });
-                const params = token ? `?token=${encodeURIComponent(token)}` : '';
+                const token = getToken();
+                const params = '';
                 const response = await fetch(`/api/queue-status${params}`, {
-                    headers: buildAuthHeaders({}, token)
+                    headers: buildAuthHeaders()
                 });
                 if (!response.ok) return;
                 const data = await response.json();
@@ -3038,10 +2987,10 @@
         async function fetchSettingsData() {
             // Fetch operator status for ramp info
             try {
-                const token = getToken({ promptFallback: false });
-                const params = token ? `?token=${encodeURIComponent(token)}` : '';
+                const token = getToken();
+                const params = '';
                 const response = await fetch(`/api/operator/status${params}`, {
-                    headers: buildAuthHeaders({}, token)
+                    headers: buildAuthHeaders()
                 });
                 if (response.ok) {
                     const data = await response.json();
@@ -3073,10 +3022,10 @@
 
             // Fetch dependencies
             try {
-                const token = getToken({ promptFallback: false });
-                const params = token ? `?token=${encodeURIComponent(token)}` : '';
+                const token = getToken();
+                const params = '';
                 const response = await fetch(`/api/runtime/dependencies${params}`, {
-                    headers: buildAuthHeaders({}, token)
+                    headers: buildAuthHeaders()
                 });
                 if (response.ok) {
                     const data = await response.json();
@@ -3099,10 +3048,10 @@
 
             // Fetch guardrails
             try {
-                const token = getToken({ promptFallback: false });
-                const params = token ? `?token=${encodeURIComponent(token)}` : '';
+                const token = getToken();
+                const params = '';
                 const response = await fetch(`/api/guardrails${params}`, {
-                    headers: buildAuthHeaders({}, token)
+                    headers: buildAuthHeaders()
                 });
                 if (response.ok) {
                     const data = await response.json();

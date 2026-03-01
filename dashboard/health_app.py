@@ -22,6 +22,7 @@ import json
 import hmac
 import asyncio
 import logging
+import tempfile
 from contextlib import asynccontextmanager, suppress
 from uuid import uuid4
 from datetime import datetime, timezone, timedelta
@@ -33,6 +34,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse, FileResponse, JSONResponse, RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.middleware.sessions import SessionMiddleware
 import uvicorn
 
 PROJECT_ROOT = Path(__file__).parent.parent
@@ -141,6 +143,24 @@ def _priority_to_tier(priority: Optional[str]) -> str:
     if p == "medium":
         return "tier_2"
     return "tier_3"
+
+
+def _atomic_json_write(file_path, data: dict, indent: int = 2) -> None:
+    """Write JSON atomically: temp file + os.replace() to prevent corruption (XS-06)."""
+    file_path = Path(file_path)
+    dir_path = file_path.parent
+    dir_path.mkdir(parents=True, exist_ok=True)
+    fd, tmp_path = tempfile.mkstemp(dir=str(dir_path), suffix=".tmp")
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=indent, ensure_ascii=False)
+        os.replace(tmp_path, str(file_path))
+    except BaseException:
+        try:
+            os.unlink(tmp_path)
+        except OSError:
+            pass
+        raise
 
 
 def _env_bool(name: str, default: bool) -> bool:
@@ -770,12 +790,16 @@ def _is_auth_exempt_path(path: str) -> bool:
 
 def require_auth(request: Request) -> bool:
     token = _extract_dashboard_token(request)
-    if not _token_is_valid(token):
-        raise HTTPException(
-            status_code=401,
-            detail=_auth_error_detail(),
-        )
-    return True
+    if _token_is_valid(token):
+        return True
+    # Fall back to session cookie auth for browser-originated requests
+    session = getattr(request, "session", {})
+    if session.get("authenticated"):
+        return True
+    raise HTTPException(
+        status_code=401,
+        detail=_auth_error_detail(),
+    )
 
 
 class APIAuthMiddleware(BaseHTTPMiddleware):
@@ -788,11 +812,70 @@ class APIAuthMiddleware(BaseHTTPMiddleware):
         if path.startswith("/api/") and not _is_auth_exempt_path(path):
             token = _extract_dashboard_token(request)
             if not _token_is_valid(token):
-                return JSONResponse(
-                    status_code=401,
-                    content={"detail": _auth_error_detail()},
-                )
+                # Fall back to session cookie auth for browser-originated API calls
+                session = getattr(request, "session", {})
+                if not session.get("authenticated"):
+                    return JSONResponse(
+                        status_code=401,
+                        content={"detail": _auth_error_detail()},
+                    )
         return await call_next(request)
+
+
+class DashboardAuthMiddleware(BaseHTTPMiddleware):
+    """Gate HTML dashboard pages behind login session."""
+
+    _EXEMPT_PREFIXES = ("/login", "/logout", "/static/", "/webhooks/", "/api/", "/ws", "/inngest")
+    _EXEMPT_EXACT = {"/favicon.ico"}
+
+    async def dispatch(self, request: Request, call_next):
+        path = _normalize_path(request.url.path)
+
+        # Skip exempt paths
+        if path in self._EXEMPT_EXACT:
+            return await call_next(request)
+        for prefix in self._EXEMPT_PREFIXES:
+            if path.startswith(prefix):
+                return await call_next(request)
+
+        # Check session
+        session = getattr(request, "session", {})
+        if session.get("authenticated"):
+            return await call_next(request)
+
+        # Redirect to login with next= for post-login redirect
+        next_url = request.url.path
+        query = request.url.query
+        if query:
+            next_url = f"{next_url}?{query}"
+        return RedirectResponse(url=f"/login?next={next_url}", status_code=302)
+
+
+# In-memory login rate limiter (IP -> list of failure timestamps)
+_LOGIN_FAIL_TRACKER: Dict[str, List[float]] = {}
+_LOGIN_RATE_LIMIT = 5          # max failures
+_LOGIN_RATE_WINDOW = 300.0     # 5-minute window
+
+
+def _check_login_rate_limit(ip: str) -> bool:
+    """Return True if the IP is rate-limited (too many failures)."""
+    import time
+    now = time.time()
+    failures = _LOGIN_FAIL_TRACKER.get(ip, [])
+    # Prune old entries
+    failures = [t for t in failures if now - t < _LOGIN_RATE_WINDOW]
+    _LOGIN_FAIL_TRACKER[ip] = failures
+    return len(failures) >= _LOGIN_RATE_LIMIT
+
+
+def _record_login_failure(ip: str) -> None:
+    import time
+    failures = _LOGIN_FAIL_TRACKER.setdefault(ip, [])
+    failures.append(time.time())
+
+
+def _clear_login_failures(ip: str) -> None:
+    _LOGIN_FAIL_TRACKER.pop(ip, None)
 
 
 def _get_cors_allowed_origins() -> List[str]:
@@ -867,6 +950,32 @@ app = FastAPI(
     lifespan=app_lifespan,
 )
 
+# Middleware ordering: Starlette processes LAST-added as OUTERMOST.
+# Desired request flow: CORS -> Session -> DashboardAuth -> APIAuth -> CorrelationID -> Route
+# So we add them in reverse order (innermost first).
+
+# Add correlation ID middleware for request tracing (innermost)
+app.add_middleware(CorrelationIDMiddleware)
+
+# Enforce dashboard token for protected /api routes
+app.add_middleware(APIAuthMiddleware)
+
+# Gate HTML dashboard pages behind login session
+app.add_middleware(DashboardAuthMiddleware)
+
+# Session middleware (signed cookies — populates request.session)
+_session_secret = (os.getenv("SESSION_SECRET_KEY") or os.getenv("DASHBOARD_AUTH_TOKEN") or "change-me-in-production").strip()
+_session_https_only = (os.getenv("ENVIRONMENT") or "").strip().lower() in ("production", "staging")
+app.add_middleware(
+    SessionMiddleware,
+    secret_key=_session_secret,
+    session_cookie="caio_session",
+    max_age=14 * 24 * 60 * 60,  # 14 days
+    same_site="lax",
+    https_only=_session_https_only,
+)
+
+# CORS (outermost — processes first)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_get_cors_allowed_origins(),
@@ -874,12 +983,6 @@ app.add_middleware(
     allow_methods=_get_cors_allowed_methods(),
     allow_headers=_get_cors_allowed_headers(),
 )
-
-# Enforce dashboard token for protected /api routes
-app.add_middleware(APIAuthMiddleware)
-
-# Add correlation ID middleware for request tracing
-app.add_middleware(CorrelationIDMiddleware)
 
 # Serve static files
 STATIC_DIR = Path(__file__).parent / "static"
@@ -954,6 +1057,168 @@ async def root():
     if index_path.exists():
         return FileResponse(index_path)
     return HTMLResponse("<h1>Health Dashboard</h1><p>Static files not found.</p>")
+
+
+# =============================================================================
+# LOGIN / LOGOUT
+# =============================================================================
+
+_LOGIN_PAGE_HTML = """<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Login - CAIO Dashboard</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: #0a0f1a;
+    color: #f9fafb;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .login-card {
+    background: #111827;
+    border: 1px solid #374151;
+    border-radius: 12px;
+    padding: 40px;
+    width: 100%;
+    max-width: 400px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.4);
+  }
+  .login-title {
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    text-align: center;
+  }
+  .login-subtitle {
+    font-size: 14px;
+    color: #9ca3af;
+    text-align: center;
+    margin-bottom: 28px;
+  }
+  label {
+    display: block;
+    font-size: 13px;
+    color: #9ca3af;
+    margin-bottom: 6px;
+  }
+  input[type="password"] {
+    width: 100%;
+    padding: 10px 14px;
+    background: #1f2937;
+    border: 1px solid #374151;
+    border-radius: 8px;
+    color: #f9fafb;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  input[type="password"]:focus {
+    border-color: #3b82f6;
+  }
+  button {
+    width: 100%;
+    padding: 10px 14px;
+    margin-top: 20px;
+    background: #3b82f6;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  button:hover { background: #2563eb; }
+  .error-msg {
+    margin-top: 16px;
+    padding: 10px 14px;
+    background: rgba(239,68,68,0.1);
+    border: 1px solid rgba(239,68,68,0.3);
+    border-radius: 8px;
+    color: #ef4444;
+    font-size: 13px;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+<div class="login-card">
+  <div class="login-title">CAIO Swarm Dashboard</div>
+  <div class="login-subtitle">Enter your dashboard token to continue</div>
+  <form method="POST" action="/login">
+    <input type="hidden" name="next" value="{next_url}">
+    <label for="token">Dashboard Token</label>
+    <input type="password" id="token" name="token" placeholder="Paste token here" autofocus required>
+    <button type="submit">Log In</button>
+  </form>
+  {error_html}
+</div>
+</body>
+</html>"""
+
+
+def _render_login_page(next_url: str = "/sales", error: str = "") -> HTMLResponse:
+    error_html = f'<div class="error-msg">{error}</div>' if error else ""
+    # Sanitize next_url to prevent open redirect — only allow relative paths
+    if not next_url.startswith("/"):
+        next_url = "/sales"
+    # Use .replace() instead of .format() to avoid conflicts with CSS curly braces
+    html = _LOGIN_PAGE_HTML.replace("{next_url}", next_url).replace("{error_html}", error_html)
+    return HTMLResponse(html)
+
+
+@app.get("/login")
+async def login_page(request: Request, next: str = "/sales"):
+    """Serve the login form. If already authenticated, redirect to target."""
+    session = getattr(request, "session", {})
+    if session.get("authenticated"):
+        target = next if next.startswith("/") else "/sales"
+        return RedirectResponse(url=target, status_code=302)
+    return _render_login_page(next_url=next)
+
+
+@app.post("/login")
+async def login_submit(request: Request):
+    """Validate token and create session."""
+    form = await request.form()
+    token = (form.get("token") or "").strip()
+    next_url = (form.get("next") or "/sales").strip()
+    if not next_url.startswith("/"):
+        next_url = "/sales"
+
+    client_ip = request.client.host if request.client else "unknown"
+
+    # Rate limit check
+    if _check_login_rate_limit(client_ip):
+        return HTMLResponse(
+            '<html><body style="background:#0a0f1a;color:#ef4444;display:flex;'
+            'align-items:center;justify-content:center;height:100vh;font-family:sans-serif">'
+            "<h2>Too many login attempts. Try again in a few minutes.</h2></body></html>",
+            status_code=429,
+        )
+
+    if _token_is_valid(token):
+        _clear_login_failures(client_ip)
+        request.session["authenticated"] = True
+        request.session["login_at"] = datetime.now(timezone.utc).isoformat()
+        return RedirectResponse(url=next_url, status_code=303)
+
+    _record_login_failure(client_ip)
+    return _render_login_page(next_url=next_url, error="Invalid token. Please try again.")
+
+
+@app.get("/logout")
+@app.post("/logout")
+async def logout(request: Request):
+    """Clear session and redirect to login."""
+    request.session.clear()
+    return RedirectResponse(url="/login", status_code=302)
 
 
 # =============================================================================
@@ -1875,6 +2140,13 @@ async def approve_email(
                             if result.get("success"):
                                 email_data["sent_via_ghl"] = True
                                 email_data["ghl_message_id"] = result.get("message_id")
+                                # XS-06: Persist sent_via_ghl immediately — before proof engine.
+                                # If proof or later steps crash, file still records the send.
+                                if email_file:
+                                    try:
+                                        _atomic_json_write(email_file, email_data)
+                                    except Exception:
+                                        logger.warning("XS-06: Failed to persist sent_via_ghl for %s", email_id)
                                 proof_engine = GHLSendProofEngine(
                                     proof_sla_seconds=int(os.getenv("PROOF_SLA_SECONDS", "900") or "900"),
                                     poll_fallback_enabled=_env_bool("PROOF_POLL_FALLBACK_ENABLED", True),
@@ -1967,8 +2239,7 @@ async def approve_email(
         pass  # Redis sync is best-effort; file is authoritative
     if email_file:
         try:
-            with open(email_file, "w") as fp:
-                json.dump(email_data, fp, indent=2)
+            _atomic_json_write(email_file, email_data)
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Failed to save approval: {e}")
 

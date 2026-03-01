@@ -192,4 +192,6 @@ async def test_dashboard_approval_marks_sent_via_ghl_terminal_status(monkeypatch
     assert result["status"] == "approved"
     stored = json.loads(email_path.read_text(encoding="utf-8"))
     assert stored["sent_via_ghl"] is True
-    assert stored["status"] == "sent_via_ghl"
+    # After XS-06 + proof engine integration, terminal status is proof-based:
+    # "sent_proved" (webhook confirmed) or "sent_unresolved" (proof pending)
+    assert stored["status"] in ("sent_proved", "sent_unresolved")

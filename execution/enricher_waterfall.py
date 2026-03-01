@@ -36,7 +36,9 @@ import os
 import sys
 import json
 import argparse
+import logging
 import random
+import threading
 from datetime import datetime
 from pathlib import Path
 from typing import List, Dict, Any, Optional
@@ -58,6 +60,44 @@ from core.event_log import log_event, EventType
 from core.context import estimate_tokens, get_context_zone, ContextZone
 
 console = Console()
+enrich_logger = logging.getLogger("enricher_waterfall")
+
+# XS-14: Overall enrichment timeout (seconds) — caps the entire waterfall chain
+ENRICHMENT_OVERALL_TIMEOUT = int(os.getenv("ENRICHMENT_OVERALL_TIMEOUT", "180"))
+
+
+class _EnrichmentTimeout(Exception):
+    """Raised when enrichment exceeds the overall timeout."""
+    pass
+
+
+def _run_with_timeout(func, timeout_seconds, *args, **kwargs):
+    """
+    XS-14: Run a synchronous function with an overall timeout.
+    Uses a daemon thread so the main thread isn't blocked forever.
+    Returns the function result, or None if timed out.
+    """
+    result_holder = [None]
+    error_holder = [None]
+
+    def target():
+        try:
+            result_holder[0] = func(*args, **kwargs)
+        except Exception as exc:
+            error_holder[0] = exc
+
+    thread = threading.Thread(target=target, daemon=True)
+    thread.start()
+    thread.join(timeout=timeout_seconds)
+
+    if thread.is_alive():
+        enrich_logger.warning(
+            "XS-14: Enrichment timed out after %ds — returning None", timeout_seconds
+        )
+        return None
+    if error_holder[0] is not None:
+        raise error_holder[0]
+    return result_holder[0]
 
 
 @dataclass
@@ -186,7 +226,14 @@ class WaterfallEnricher:
         if self.test_mode:
             return self._mock_enrich(lead_id, linkedin_url, name, company, buying_signals or [], original_lead or {})
 
-        return self._enrich_with_retry(lead_id, linkedin_url, name, company)
+        # XS-14: Overall timeout caps the entire waterfall chain
+        result = _run_with_timeout(
+            self._enrich_with_retry, ENRICHMENT_OVERALL_TIMEOUT,
+            lead_id, linkedin_url, name, company,
+        )
+        if result is None:
+            enrich_logger.info("Enrichment returned None for %s", lead_id)
+        return result
     
     def _mock_enrich(self, lead_id: str, linkedin_url: str, name: str, company: str,
                      buying_signals: List[str], original_lead: Dict[str, Any]) -> Optional[EnrichedLead]:

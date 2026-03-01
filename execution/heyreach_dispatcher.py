@@ -19,6 +19,7 @@ Usage:
 """
 
 import os
+import re
 import sys
 import json
 import uuid
@@ -26,9 +27,12 @@ import asyncio
 import argparse
 import platform
 import logging
+import tempfile
+import aiohttp
 from datetime import datetime, date, timezone
 from pathlib import Path
 from typing import Dict, Any, List, Optional
+from urllib.parse import quote as url_quote
 from dataclasses import dataclass, asdict, field
 
 PROJECT_ROOT = Path(__file__).parent.parent
@@ -44,6 +48,28 @@ console = Console(force_terminal=not _is_windows)
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("heyreach_dispatcher")
+
+
+def _atomic_json_write(file_path, data: dict, indent: int = 2) -> None:
+    """Write JSON atomically: temp file + os.replace() (HR-02).
+
+    Prevents corruption from crashes mid-write and reduces the race window
+    for concurrent read-modify-write operations to a single rename syscall.
+    """
+    file_path = Path(file_path)
+    dir_path = file_path.parent
+    fd, tmp_path = tempfile.mkstemp(dir=str(dir_path), suffix=".tmp")
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=indent, ensure_ascii=False)
+        os.replace(tmp_path, str(file_path))
+    except BaseException:
+        # Clean up temp file on any failure
+        try:
+            os.unlink(tmp_path)
+        except OSError:
+            pass
+        raise
 
 
 # =============================================================================
@@ -63,19 +89,38 @@ class HeyReachClient:
 
     BASE_URL = "https://api.heyreach.io/api/public"
 
+    # HTTP status codes safe to retry
+    _RETRYABLE_STATUSES = {429, 500, 502, 503, 504}
+
+    # LinkedIn profile URL pattern (HR-16)
+    _LINKEDIN_PROFILE_RE = re.compile(
+        r"^https?://(?:www\.)?linkedin\.com/in/[A-Za-z0-9\-_.%]+/?$"
+    )
+
     def __init__(self, api_key: str = ""):
         self.api_key = api_key or os.getenv("HEYREACH_API_KEY", "")
         self._session = None
+        self._max_retries = 2  # Default, overridden by config
+        # Circuit breaker integration
+        try:
+            from core.circuit_breaker import get_registry
+            self._cb_registry = get_registry()
+            self._cb_registry.register("heyreach_api", failure_threshold=5, recovery_timeout=120)
+        except ImportError:
+            self._cb_registry = None
 
     async def _get_session(self):
         if self._session is None:
-            import aiohttp
             self._session = aiohttp.ClientSession(
                 headers={
                     "X-API-KEY": self.api_key,
                     "Content-Type": "application/json",
                 },
-                timeout=aiohttp.ClientTimeout(total=20),
+                timeout=aiohttp.ClientTimeout(
+                    total=30,       # Overall cap
+                    connect=5,      # Connection timeout (HR-13)
+                    sock_read=15,   # Response body read timeout (HR-13)
+                ),
             )
         return self._session
 
@@ -84,23 +129,87 @@ class HeyReachClient:
             await self._session.close()
             self._session = None
 
-    async def _request(self, method: str, path: str, **kwargs) -> Dict[str, Any]:
-        """Make an API request with error handling."""
+    async def _request(self, method: str, path: str, max_retries: int = None, **kwargs) -> Dict[str, Any]:
+        """Make an API request with retry, circuit breaker, and error discrimination.
+
+        Addresses: HR-04 (retry), HR-08 (error types), HR-10 (circuit breaker),
+                   HR-13 (per-step timeout via session), HR-14 (JSON fallback).
+        """
+        max_retries = max_retries if max_retries is not None else self._max_retries
+
+        # Circuit breaker check (HR-10)
+        if self._cb_registry and not self._cb_registry.is_available("heyreach_api"):
+            return {"success": False, "error": "Circuit breaker OPEN for heyreach_api", "retryable": False}
+
         session = await self._get_session()
         url = f"{self.BASE_URL}{path}"
+        last_error = None
 
-        try:
-            async with session.request(method, url, **kwargs) as resp:
-                data = await resp.json()
-                if resp.status >= 400:
+        for attempt in range(max_retries + 1):
+            try:
+                async with session.request(method, url, **kwargs) as resp:
+                    # JSON parse with fallback (HR-14)
+                    try:
+                        data = await resp.json()
+                    except (aiohttp.ContentTypeError, json.JSONDecodeError):
+                        text = await resp.text()
+                        data = {"raw_response": text}
+
+                    if resp.status < 400:
+                        if self._cb_registry:
+                            self._cb_registry.record_success("heyreach_api")
+                        return {"success": True, "status": resp.status, "data": data}
+
+                    # HTTP error — classify (HR-08)
+                    error_msg = data.get("message", str(data)) if isinstance(data, dict) else str(data)
+
+                    if resp.status in self._RETRYABLE_STATUSES:
+                        last_error = f"HTTP {resp.status}: {error_msg}"
+                        if resp.status == 429:
+                            retry_after = int(resp.headers.get("Retry-After", str(2 ** attempt)))
+                            wait = min(retry_after, 60)
+                        else:
+                            wait = 2 ** attempt
+                        if attempt < max_retries:
+                            logger.warning("HeyReach %s %s -> %d (attempt %d/%d, retry in %ds)",
+                                           method, path, resp.status, attempt + 1, max_retries + 1, wait)
+                            await asyncio.sleep(wait)
+                            continue
+
+                    # Non-retryable HTTP error or retries exhausted
+                    if self._cb_registry:
+                        self._cb_registry.record_failure("heyreach_api", error=Exception(error_msg))
                     return {
                         "success": False,
                         "status": resp.status,
-                        "error": data.get("message", str(data)),
+                        "error": error_msg,
+                        "retryable": resp.status in self._RETRYABLE_STATUSES,
                     }
-                return {"success": True, "status": resp.status, "data": data}
-        except Exception as e:
-            return {"success": False, "error": str(e)}
+
+            except asyncio.TimeoutError:
+                last_error = f"Timeout on {method} {path} (attempt {attempt + 1})"
+                logger.warning(last_error)
+                if attempt < max_retries:
+                    await asyncio.sleep(2 ** attempt)
+                    continue
+
+            except aiohttp.ClientError as e:
+                last_error = f"Connection error: {e}"
+                logger.warning("HeyReach %s %s -> %s (attempt %d/%d)",
+                               method, path, e, attempt + 1, max_retries + 1)
+                if attempt < max_retries:
+                    await asyncio.sleep(2 ** attempt)
+                    continue
+
+            except Exception as e:
+                last_error = f"Unexpected error: {e}"
+                logger.error("HeyReach %s %s -> unexpected: %s", method, path, e)
+                break
+
+        # All retries exhausted
+        if self._cb_registry:
+            self._cb_registry.record_failure("heyreach_api", error=Exception(last_error or "unknown"))
+        return {"success": False, "error": last_error or "unknown error", "retryable": True}
 
     # --- Authentication ---
 
@@ -119,15 +228,15 @@ class HeyReachClient:
 
     async def get_campaign(self, campaign_id: str) -> Dict[str, Any]:
         """Get campaign details."""
-        return await self._request("GET", f"/campaign/GetById?campaignId={campaign_id}")
+        return await self._request("GET", f"/campaign/GetById?campaignId={url_quote(str(campaign_id), safe='')}")
 
     async def pause_campaign(self, campaign_id: str) -> Dict[str, Any]:
         """Pause a running campaign."""
-        return await self._request("POST", f"/campaign/Pause?campaignId={campaign_id}")
+        return await self._request("POST", f"/campaign/Pause?campaignId={url_quote(str(campaign_id), safe='')}")
 
     async def resume_campaign(self, campaign_id: str) -> Dict[str, Any]:
         """Resume a paused campaign. WARNING: This starts sending."""
-        return await self._request("POST", f"/campaign/Resume?campaignId={campaign_id}")
+        return await self._request("POST", f"/campaign/Resume?campaignId={url_quote(str(campaign_id), safe='')}")
 
     # --- Lead Lists (SAFE — no auto-send) ---
 
@@ -238,13 +347,46 @@ class HeyReachDispatchReport:
 # =============================================================================
 
 class LinkedInDailyCeiling:
-    """Tracks daily LinkedIn outreach volume. Separate from Instantly ceiling."""
+    """Tracks daily LinkedIn outreach volume (HR-03: Redis-backed, distributed).
+
+    Primary: Redis INCRBY for atomic, distributed counting.
+    Fallback: Local JSON file when Redis is unavailable.
+    Local _state always kept in sync for list naming and audit.
+    """
 
     def __init__(self):
         self.state_file = PROJECT_ROOT / ".hive-mind" / "heyreach_dispatch_state.json"
         self.state_file.parent.mkdir(parents=True, exist_ok=True)
         self._state: Dict[str, Any] = {}
+        self._redis = None
+        self._redis_prefix = ""
+        self._init_redis()
         self._load()
+
+    def _init_redis(self):
+        """Connect to Redis (matches shadow_queue.py pattern)."""
+        try:
+            import redis as redis_mod
+        except ImportError:
+            return
+        url = (os.getenv("REDIS_URL") or "").strip()
+        if not url:
+            return
+        try:
+            self._redis = redis_mod.Redis.from_url(
+                url, decode_responses=True, socket_connect_timeout=2, socket_timeout=2,
+            )
+            self._redis.ping()
+            self._redis_prefix = (
+                os.getenv("CONTEXT_REDIS_PREFIX") or os.getenv("STATE_REDIS_PREFIX") or "caio"
+            ).strip()
+            logger.info("LinkedInDailyCeiling connected to Redis.")
+        except Exception as exc:
+            logger.warning("LinkedInDailyCeiling Redis connect failed: %s — file fallback.", exc)
+            self._redis = None
+
+    def _redis_key(self, suffix: str) -> str:
+        return f"{self._redis_prefix}:ceiling:heyreach:{date.today().isoformat()}:{suffix}"
 
     def _load(self):
         if self.state_file.exists():
@@ -265,13 +407,37 @@ class LinkedInDailyCeiling:
             self._save()
 
     def _save(self):
-        with open(self.state_file, "w", encoding="utf-8") as f:
-            json.dump(self._state, f, indent=2)
+        _atomic_json_write(self.state_file, self._state)
+
+    def _redis_get_count(self) -> Optional[int]:
+        """Read today's count from Redis. Returns None if unavailable."""
+        if not self._redis:
+            return None
+        try:
+            val = self._redis.get(self._redis_key("count"))
+            return int(val) if val is not None else 0
+        except Exception as exc:
+            logger.warning("Redis ceiling read failed: %s", exc)
+            return None
 
     def get_remaining(self, daily_limit: int) -> int:
+        redis_count = self._redis_get_count()
+        if redis_count is not None:
+            return max(0, daily_limit - redis_count)
         return max(0, daily_limit - self._state.get("dispatched_count", 0))
 
     def record_dispatch(self, count: int, lead_ids: List[str], list_name: str):
+        # Redis: atomic increment (distributed-safe)
+        if self._redis:
+            try:
+                key = self._redis_key("count")
+                self._redis.incrby(key, count)
+                # 25-hour TTL — generous buffer past midnight rollover
+                self._redis.expire(key, 90000)
+            except Exception as exc:
+                logger.warning("Redis ceiling increment failed: %s — file-only.", exc)
+
+        # Local state: always updated (for list naming + audit)
         self._state["dispatched_count"] = self._state.get("dispatched_count", 0) + count
         self._state["dispatched_leads"].extend(lead_ids)
         self._state["lists_created"].append({
@@ -282,6 +448,9 @@ class LinkedInDailyCeiling:
         self._save()
 
     def get_today_count(self) -> int:
+        redis_count = self._redis_get_count()
+        if redis_count is not None:
+            return redis_count
         return self._state.get("dispatched_count", 0)
 
 
@@ -314,12 +483,51 @@ class HeyReachDispatcher:
         self.config = self._load_config()
         self._client = None
 
+    # HR-18: Required config keys for HeyReach dispatcher
+    _REQUIRED_CONFIG_KEYS = {
+        "external_apis.heyreach.enabled": bool,
+    }
+    _RECOMMENDED_CONFIG_KEYS = [
+        "external_apis.heyreach.retry_attempts",
+        "external_apis.heyreach.timeout_seconds",
+    ]
+
     def _load_config(self) -> Dict[str, Any]:
         config_path = PROJECT_ROOT / "config" / "production.json"
         if config_path.exists():
             with open(config_path, "r", encoding="utf-8") as f:
-                return json.load(f)
+                config = json.load(f)
+            self._validate_config(config)
+            return config
         return {}
+
+    def _validate_config(self, config: Dict[str, Any]) -> None:
+        """HR-18: Validate config schema at load time — warn on missing keys."""
+        for dotted_key, expected_type in self._REQUIRED_CONFIG_KEYS.items():
+            parts = dotted_key.split(".")
+            val = config
+            for part in parts:
+                if not isinstance(val, dict):
+                    val = None
+                    break
+                val = val.get(part)
+            if val is None:
+                logger.warning("HR-18: Required config key '%s' is missing", dotted_key)
+            elif not isinstance(val, expected_type):
+                logger.warning(
+                    "HR-18: Config key '%s' has wrong type: expected %s, got %s",
+                    dotted_key, expected_type.__name__, type(val).__name__,
+                )
+        for dotted_key in self._RECOMMENDED_CONFIG_KEYS:
+            parts = dotted_key.split(".")
+            val = config
+            for part in parts:
+                if not isinstance(val, dict):
+                    val = None
+                    break
+                val = val.get(part)
+            if val is None:
+                logger.info("HR-18: Recommended config key '%s' not set (using defaults)", dotted_key)
 
     def _is_heyreach_enabled(self) -> bool:
         return self.config.get("external_apis", {}).get("heyreach", {}).get("enabled", False)
@@ -334,6 +542,9 @@ class HeyReachDispatcher:
     async def _get_client(self) -> HeyReachClient:
         if self._client is None:
             self._client = HeyReachClient()
+            # Wire config retry settings (HR-04)
+            hr_config = self.config.get("external_apis", {}).get("heyreach", {})
+            self._client._max_retries = hr_config.get("retry_attempts", 2)
         return self._client
 
     # -------------------------------------------------------------------------
@@ -376,10 +587,14 @@ class HeyReachDispatcher:
                 if scope_enforced and shadow_email_id not in approved_scope:
                     continue
 
-                # Must have a LinkedIn URL
+                # Must have a valid LinkedIn profile URL (HR-16)
                 recipient = data.get("recipient_data", {})
                 linkedin_url = recipient.get("linkedin_url", "")
                 if not linkedin_url:
+                    continue
+                if not HeyReachClient._LINKEDIN_PROFILE_RE.match(linkedin_url):
+                    logger.warning("Skipping lead %s: invalid LinkedIn URL: %s",
+                                   email_file.name, linkedin_url)
                     continue
 
                 # Tier filter
@@ -451,16 +666,33 @@ class HeyReachDispatcher:
             data["heyreach_list_name"] = list_name
             data["heyreach_dispatched_at"] = datetime.now(timezone.utc).isoformat()
 
-            with open(file_path, "w", encoding="utf-8") as f:
-                json.dump(data, f, indent=2, ensure_ascii=False)
+            _atomic_json_write(file_path, data)
         except Exception as e:
             logger.error("Failed to mark lead as dispatched to HeyReach: %s", e)
 
     def _log_dispatch(self, result: HeyReachDispatchResult):
+        """Append dispatch result to JSONL log (HR-17: atomic line write)."""
         self.dispatch_log.parent.mkdir(parents=True, exist_ok=True)
         try:
-            with open(self.dispatch_log, "a", encoding="utf-8") as f:
-                f.write(json.dumps(asdict(result), default=str) + "\n")
+            # HR-17: Assemble complete line, write to temp, then atomic rename-append.
+            # This prevents partial lines from crash mid-write.
+            line = json.dumps(asdict(result), default=str) + "\n"
+            fd, tmp_path = tempfile.mkstemp(
+                dir=str(self.dispatch_log.parent), suffix=".tmplog"
+            )
+            try:
+                with os.fdopen(fd, "w", encoding="utf-8") as tmp_f:
+                    tmp_f.write(line)
+                # Append temp file content to log
+                with open(self.dispatch_log, "a", encoding="utf-8") as log_f:
+                    log_f.write(Path(tmp_path).read_text(encoding="utf-8"))
+                os.unlink(tmp_path)
+            except BaseException:
+                try:
+                    os.unlink(tmp_path)
+                except OSError:
+                    pass
+                raise
         except Exception as e:
             logger.error("Failed to write HeyReach dispatch log: %s", e)
 
@@ -591,9 +823,27 @@ class HeyReachDispatcher:
                     if not add_result.get("success"):
                         raise Exception(f"Add leads failed: {add_result.get('error')}")
 
-                    result.leads_added = len(heyreach_leads)
+                    # Validate ALL leads were accepted (HR-09)
+                    add_data = add_result.get("data", {})
+                    added_count = (
+                        add_data.get("addedCount")
+                        or add_data.get("leadsAdded")
+                        or add_data.get("count")
+                    )
+                    if added_count is not None and int(added_count) < len(heyreach_leads):
+                        rejected = len(heyreach_leads) - int(added_count)
+                        logger.warning(
+                            "HeyReach partial success: %d/%d leads added to '%s' (%d rejected)",
+                            int(added_count), len(heyreach_leads), list_name, rejected,
+                        )
+                        report.errors.append(
+                            f"Partial add: {added_count}/{len(heyreach_leads)} leads in '{list_name}'"
+                        )
+
+                    actual_added = int(added_count) if added_count is not None else len(heyreach_leads)
+                    result.leads_added = actual_added
                     result.status = "dispatched"
-                    report.total_dispatched += len(heyreach_leads)
+                    report.total_dispatched += actual_added
 
                     # Mark shadow emails
                     for lead in leads:

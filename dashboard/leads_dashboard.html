@@ -463,68 +463,37 @@
         let allLeads = [];
         let currentFilter = 'all';
 
-        let tokenPrompted = false;
+        // --- Session-based auth (cookie sent automatically) ---
+        // Strip leftover ?token= from URL and clean up legacy localStorage
+        (function cleanTokenFromUrl() {
+            const url = new URL(window.location.href);
+            if (url.searchParams.has('token')) {
+                url.searchParams.delete('token');
+                window.history.replaceState({}, '', url.pathname + url.search + url.hash);
+            }
+            try { localStorage.removeItem('caio_dashboard_token'); } catch(e) {}
+        })();
 
-        function getToken({ promptFallback = false } = {}) {
-            const urlParams = new URLSearchParams(window.location.search);
-            const tokenFromQuery = urlParams.get('token');
-            if (tokenFromQuery) {
-                localStorage.setItem('caio_dashboard_token', tokenFromQuery);
-                return tokenFromQuery;
+        // Global 401 interceptor — redirect to login on session expiry
+        const _originalFetch = window.fetch;
+        window.fetch = async function(...args) {
+            const response = await _originalFetch.apply(this, args);
+            if (response.status === 401) {
+                window.location.href = '/login?next=' + encodeURIComponent(window.location.pathname);
             }
-            const tokenFromStorage = localStorage.getItem('caio_dashboard_token');
-            if (tokenFromStorage) {
-                return tokenFromStorage;
-            }
-            if (promptFallback && !tokenPrompted) {
-                tokenPrompted = true;
-                const tokenFromPrompt = window.prompt('Enter dashboard token for protected API access:');
-                if (tokenFromPrompt && tokenFromPrompt.trim()) {
-                    const normalized = tokenFromPrompt.trim();
-                    localStorage.setItem('caio_dashboard_token', normalized);
-                    return normalized;
-                }
-            }
-            return '';
-        }
-
-        function buildAuthedUrl(url, token = '') {
-            const parsed = new URL(url, window.location.origin);
-            if (token && !parsed.searchParams.has('token')) {
-                parsed.searchParams.set('token', token);
-            }
-            return `${parsed.pathname}${parsed.search}`;
-        }
-
-        function buildAuthHeaders(baseHeaders = {}, token = '') {
-            const headers = { ...baseHeaders };
-            if (token) {
-                headers['X-Dashboard-Token'] = token;
-            }
-            return headers;
-        }
+            return response;
+        };
 
         async function fetchJSON(url, options = {}) {
             const method = options.method || 'GET';
             const body = options.body;
-            const promptFallback = options.promptFallback !== false;
             const baseHeaders = options.headers || {};
 
-            let token = getToken({ promptFallback });
-            let resp = await fetch(buildAuthedUrl(url, token), {
+            const resp = await fetch(url, {
                 method,
-                headers: buildAuthHeaders(baseHeaders, token),
+                headers: { ...baseHeaders },
                 body
             });
-
-            if (resp.status === 401 && !token) {
-                token = getToken({ promptFallback: true });
-                resp = await fetch(buildAuthedUrl(url, token), {
-                    method,
-                    headers: buildAuthHeaders(baseHeaders, token),
-                    body
-                });
-            }
 
             if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
             return resp.json();

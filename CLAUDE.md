@@ -12,12 +12,14 @@
 
 ### Mandatory Read Order (Every New Session)
 
-1. `CLAUDE.md`
-2. `docs/CAIO_CLAUDE_MEMORY.md` (living runtime truth)
-3. `CAIO_IMPLEMENTATION_PLAN.md` (v4.5)
-4. `docs/CAIO_UIUX_BULLETPROOF_HANDOFF_FOR_CLAUDE_2026-02-19.md` (UI/UX hardening handoff)
+1. `CLAUDE.md` (session config, pitfalls, directives)
+2. `task.md` (active sprint tracker — current priorities, audit findings, go/no-go)
+3. `docs/CAIO_CLAUDE_MEMORY.md` (living runtime truth)
+4. `CAIO_IMPLEMENTATION_PLAN.md` (v4.6 — canonical roadmap, phases, architecture)
+5. `docs/CAIO_UIUX_BULLETPROOF_HANDOFF_FOR_CLAUDE_2026-02-19.md` (UI/UX hardening handoff)
 
 ### Current Status (Phase 4: Autonomy Graduation — 98%)
+*For sprint-level details see `task.md`. For full roadmap see `CAIO_IMPLEMENTATION_PLAN.md`.*
 
 ```
 Phase 0-3: Foundation → Burn-In → Harden    COMPLETE (33+ pipeline runs, 10 consecutive 6/6 PASS)

@@ -81,11 +81,16 @@ def _log_event(event_type: str, payload: Dict[str, Any]):
 
 
 def _extract_lead_info(payload: Dict[str, Any]) -> Dict[str, Any]:
-    """Extract lead details from webhook payload."""
-    # HeyReach webhook payload format is not fully documented —
-    # these field names are based on API patterns and common conventions.
-    # Will need empirical validation via webhook.site.
-    return {
+    """Extract lead details from webhook payload (HR-05: schema discovery).
+
+    Field names are based on API patterns — not empirically validated.
+    The debug log below captures the full payload keys on every webhook
+    so the actual schema can be discovered from production logs.
+    """
+    # HR-05: Log ALL top-level keys for schema discovery
+    logger.info("HeyReach payload keys: %s", sorted(payload.keys()))
+
+    lead = {
         "linkedin_url": payload.get("linkedInUrl", payload.get("linkedin_url", "")),
         "first_name": payload.get("firstName", payload.get("first_name", "")),
         "last_name": payload.get("lastName", payload.get("last_name", "")),
@@ -94,6 +99,13 @@ def _extract_lead_info(payload: Dict[str, Any]) -> Dict[str, Any]:
         "campaign_id": payload.get("campaignId", payload.get("campaign_id", "")),
         "lead_id": payload.get("leadId", payload.get("lead_id", "")),
     }
+
+    # HR-05: Log which fields matched vs. which are empty
+    empty_fields = [k for k, v in lead.items() if not v]
+    if empty_fields:
+        logger.warning("HeyReach lead extraction: empty fields %s — schema may differ", empty_fields)
+
+    return lead
 
 
 def _slack_alert(title: str, message: str, level: str = "info", **kwargs):
@@ -145,7 +157,7 @@ async def heyreach_webhook(request: Request):
         or "UNKNOWN"
     )
 
-    logger.info("HeyReach webhook: %s", event_type)
+    logger.info("HeyReach webhook: %s (payload size: %d bytes)", event_type, len(raw_body))
     _log_event(event_type, payload)
 
     lead = _extract_lead_info(payload)
@@ -154,7 +166,12 @@ async def heyreach_webhook(request: Request):
     handler = EVENT_HANDLERS.get(event_type, _handle_unknown)
     result = await handler(event_type, payload, lead)
 
-    return {"status": "ok", "event": event_type, **result}
+    return {
+        "status": "ok",
+        "event": event_type,
+        "_debug": {"payload_keys": sorted(payload.keys()), "lead_extracted": lead},
+        **result,
+    }
 
 
 # =============================================================================
@@ -165,10 +182,14 @@ async def _handle_connection_request_sent(event_type: str, payload: Dict, lead: 
     """Track outreach progress."""
     logger.info("LinkedIn connection request sent to %s", lead.get("linkedin_url"))
 
-    # Signal loop: update lead engagement status
+    # Signal loop: update lead engagement status (HR-12: warn if no email)
+    email = lead.get("email", "")
+    if not email:
+        logger.warning("HR-12: No email for connection_sent — signal loop skipped (linkedin: %s)",
+                        lead.get("linkedin_url", "unknown"))
     try:
         _get_signal_manager().handle_linkedin_connection_sent(
-            lead.get("linkedin_url", ""), lead.get("email", "")
+            lead.get("linkedin_url", ""), email
         )
     except Exception as e:
         logger.error("Signal loop error (connection_sent): %s", e)
@@ -202,10 +223,14 @@ async def _handle_connection_accepted(event_type: str, payload: Dict, lead: Dict
     # Flag for warm follow-up — dispatcher can pick this up
     _flag_for_followup(lead, "connection_accepted")
 
-    # Signal loop: update lead engagement status
+    # Signal loop: update lead engagement status (HR-12: warn if no email)
+    email = lead.get("email", "")
+    if not email:
+        logger.warning("HR-12: No email for connection_accepted — signal loop skipped (linkedin: %s)",
+                        lead.get("linkedin_url", "unknown"))
     try:
         _get_signal_manager().handle_linkedin_connection_accepted(
-            lead.get("linkedin_url", ""), lead.get("email", "")
+            lead.get("linkedin_url", ""), email
         )
     except Exception as e:
         logger.error("Signal loop error (connection_accepted): %s", e)
@@ -239,10 +264,14 @@ async def _handle_reply_received(event_type: str, payload: Dict, lead: Dict) -> 
         metadata={**lead, "reply_text": reply_text},
     )
 
-    # Signal loop: update lead engagement status
+    # Signal loop: update lead engagement status (HR-12: warn if no email)
+    email = lead.get("email", "")
+    if not email:
+        logger.warning("HR-12: No email for reply — signal loop skipped (linkedin: %s)",
+                        lead.get("linkedin_url", "unknown"))
     try:
         _get_signal_manager().handle_linkedin_reply(
-            lead.get("linkedin_url", ""), reply_text, lead.get("email", "")
+            lead.get("linkedin_url", ""), reply_text, email
         )
     except Exception as e:
         logger.error("Signal loop error (linkedin_reply): %s", e)
@@ -317,8 +346,18 @@ async def _handle_lead_tag_updated(event_type: str, payload: Dict, lead: Dict) -
 
 
 async def _handle_unknown(event_type: str, payload: Dict, lead: Dict) -> Dict:
-    """Handle unrecognized event types."""
+    """Handle unrecognized event types (HR-21: alert on unknown)."""
     logger.warning("Unknown HeyReach event type: %s", event_type)
+
+    _slack_alert(
+        f"Unknown HeyReach Event: {event_type}",
+        f"Received unrecognized event type '{event_type}'.\n"
+        f"Payload keys: {sorted(payload.keys())}\n"
+        f"This may indicate a new HeyReach webhook event or a schema change.",
+        level="warning",
+        metadata={"event_type": event_type, "payload_keys": sorted(payload.keys())},
+    )
+
     return {"action": "unknown_event_logged"}
 
 
@@ -375,8 +414,20 @@ EVENT_HANDLERS = {
 @router.get("/webhooks/heyreach/health")
 async def heyreach_webhook_health():
     """Health check for HeyReach webhook router."""
+    from core.webhook_security import is_unsigned_webhook_provider_allowlisted
+
     api_key_set = bool(os.getenv("HEYREACH_API_KEY", ""))
     signature_status = get_webhook_signature_status("HEYREACH_WEBHOOK_SECRET")
+    unsigned_allowed = is_unsigned_webhook_provider_allowlisted("HeyReach")
+
+    # HR-11: Warn if unsigned webhooks are allowed in production
+    warnings = []
+    if unsigned_allowed:
+        warnings.append("HEYREACH_UNSIGNED_ALLOWLIST is TRUE — webhooks accept unsigned requests")
+    if not signature_status["secret_configured"] and not signature_status["bearer_configured"]:
+        if not unsigned_allowed:
+            warnings.append("No webhook auth configured (secret/bearer/allowlist)")
+
     return {
         "status": "healthy",
         "webhook": "heyreach",
@@ -384,5 +435,7 @@ async def heyreach_webhook_health():
         "secret_configured": signature_status["secret_configured"],
         "bearer_configured": signature_status["bearer_configured"],
         "signature_strict_mode": signature_status["strict_mode"],
+        "unsigned_allowlisted": unsigned_allowed,
+        "warnings": warnings,
         "events_supported": list(EVENT_HANDLERS.keys()),
     }

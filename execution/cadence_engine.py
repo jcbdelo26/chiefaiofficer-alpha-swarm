@@ -393,9 +393,21 @@ class CadenceEngine:
         result: str = "dispatched",
         metadata: Optional[Dict] = None,
     ):
-        """Record a completed step and advance to next."""
+        """Record a completed step and advance to next (XS-05: idempotent)."""
         state = self._load_lead_state(email)
         if not state or state.status != "active":
+            return
+
+        # XS-05: Idempotency — prevent duplicate step completion from webhook retries
+        already_done = any(
+            sc.get("step") == step_num and sc.get("action") == result
+            for sc in state.steps_completed
+        )
+        if already_done:
+            logger.warning(
+                "Cadence step %d already done for %s (action=%s) — ignoring duplicate",
+                step_num, email, result,
+            )
             return
 
         _, steps = self.get_cadence_definition(state.cadence_id)

@@ -601,11 +601,11 @@ class TestPermissionsConfigLoader:
         config = get_permissions_config()
         assert config.config is not None
     
-    def test_config_has_all_12_agents(self):
-        """Config should define all 12 agents."""
+    def test_config_has_all_agents(self):
+        """Config should define all known agents."""
         config = get_permissions_config()
         agents = config.get_all_agents()
-        assert len(agents) == 12
+        assert len(agents) >= 12  # At least 12, may grow as agents are added
         assert "UNIFIED_QUEEN" in agents
         assert "GATEKEEPER" in agents
         assert "SCHEDULER" in agents

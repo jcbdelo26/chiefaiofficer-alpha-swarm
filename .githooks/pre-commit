@@ -12,6 +12,7 @@ echo "Running pre-commit tests..."
 # Curated test files: Phase 4 modules + core pipeline
 python -m pytest \
   tests/test_heyreach_dispatcher.py \
+  tests/test_heyreach_webhook.py \
   tests/test_enricher_waterfall.py \
   tests/test_quality_guard.py \
   tests/test_rejection_memory.py \
@@ -25,6 +26,18 @@ python -m pytest \
   tests/test_task_routing_policy.py \
   tests/test_phase1_proof_deliverability.py \
   tests/test_phase1_feedback_loop_integration.py \
+  tests/test_cadence_engine.py \
+  tests/test_operator_partial_dispatch.py \
+  tests/test_operator_lock_safety.py \
+  tests/test_dashboard_ghl_transaction.py \
+  tests/test_enricher_timeout.py \
+  tests/test_operator_dedup_and_send_path.py \
+  tests/test_operator_ramp_logic.py \
+  tests/test_webhook_signature_enforcement.py \
+  tests/test_state_store_redis_cutover.py \
+  tests/test_health_monitor.py \
+  tests/test_gatekeeper_integration.py \
+  tests/test_dashboard_login.py \
   -x -q --tb=short -s 2>/dev/null
 
 if [ $? -ne 0 ]; then

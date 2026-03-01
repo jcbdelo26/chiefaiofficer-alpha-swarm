@@ -440,8 +440,9 @@ class TestSegmentation:
         segmentor = LeadSegmentor(use_annealing=False)
         lead = sample_leads[0]
         
-        score, breakdown, dq_reason = segmentor.calculate_icp_score(lead)
-        
+        result = segmentor.calculate_icp_score(lead)
+        score, breakdown = result[0], result[1]
+
         assert isinstance(score, int)
         assert 0 <= score <= 100
         assert isinstance(breakdown, dict)
@@ -490,7 +491,8 @@ class TestSegmentation:
                 "title": title,
                 "company": {"employee_count": 100, "industry": "Technology"}
             }
-            score, breakdown, _ = segmentor.calculate_icp_score(lead)
+            result = segmentor.calculate_icp_score(lead)
+            score, breakdown = result[0], result[1]
             title_score = breakdown.get("title_seniority", 0)
             assert title_score > 0 or expected_min_score <= 5
     
@@ -513,7 +515,8 @@ class TestSegmentation:
                 "title": "Manager",
                 "company": {"employee_count": size, "industry": "Technology"}
             }
-            score, breakdown, dq_reason = segmentor.calculate_icp_score(lead)
+            result = segmentor.calculate_icp_score(lead)
+            score, breakdown, dq_reason = result[0], result[1], result[2]
             
             if expected_score is None:
                 assert dq_reason is not None
@@ -531,7 +534,8 @@ class TestSegmentation:
             "company": {"employee_count": 5, "industry": "Technology"}
         }
         
-        score, breakdown, dq_reason = segmentor.calculate_icp_score(small_company_lead)
+        result = segmentor.calculate_icp_score(small_company_lead)
+        score, breakdown, dq_reason = result[0], result[1], result[2]
         
         assert dq_reason is not None
         assert "too small" in dq_reason.lower() or score == 0

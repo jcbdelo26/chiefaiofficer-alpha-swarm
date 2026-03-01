@@ -14,6 +14,7 @@ import hashlib
 import json
 import logging
 import os
+import tempfile
 import uuid
 from datetime import date
 from pathlib import Path
@@ -150,8 +151,19 @@ class StateStore:
             return None
 
     def _write_json_file(self, path: Path, payload: Dict[str, Any]) -> None:
+        """Write JSON atomically: temp file + os.replace() to prevent corruption."""
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
+        fd, tmp_path = tempfile.mkstemp(dir=str(path.parent), suffix=".tmp")
+        try:
+            with os.fdopen(fd, "w", encoding="utf-8") as f:
+                json.dump(payload, f, indent=2, ensure_ascii=False)
+            os.replace(tmp_path, str(path))
+        except BaseException:
+            try:
+                os.unlink(tmp_path)
+            except OSError:
+                pass
+            raise
 
     # ------------------------------------------------------------------
     # Operator daily state
@@ -321,3 +333,15 @@ end
             self._redis_client.eval(release_script, 1, key, token)
         except Exception as exc:
             logger.warning("Failed to release operator lock (%s): %s", motion, exc)
+
+    def verify_operator_lock(self, motion: str, token: str) -> bool:
+        """Check if our lock token is still held (TTL not expired)."""
+        if not self._redis_enabled():
+            return token.startswith("file-lock-")
+        key = self._key("locks", "operator", motion)
+        try:
+            current = self._redis_client.get(key)
+            return current == token
+        except Exception as exc:
+            logger.warning("Failed to verify operator lock (%s): %s", motion, exc)
+            return False

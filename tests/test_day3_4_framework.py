@@ -49,21 +49,21 @@ def test_context_manager():
     
     # Check budget status using get_stats()
     stats = ctx.get_stats()
-    print(f"\n📊 Context Stats: {stats}")
+    print(f"\n[STATS] Context Stats: {stats}")
     print(f"   Token count: {ctx.budget.current_tokens}")
     print(f"   Utilization: {ctx.budget.utilization_percent:.1f}%")
     print(f"   Remaining tokens: {ctx.budget.remaining_tokens}")
     
     # Test context retrieval
     context = ctx.get_context()
-    print(f"\n📋 Context items retrieved: {len(context)}")
+    print(f"\n* Context items retrieved: {len(context)}")
     
     # Check budget status
     budget_result = ctx.check_budget()
     print(f"   Budget check: {budget_result}")
     
     # Test compaction trigger
-    print("\n🗜️  Adding bulk data to trigger compaction...")
+    print("\n**  Adding bulk data to trigger compaction...")
     for i in range(20):
         ctx.add_context(
             content="x" * 500,  # Large content
@@ -82,17 +82,17 @@ def test_context_manager():
     # Verify critical items survived
     critical_item = ctx.get_item("system_prompt")
     assert critical_item is not None, "Critical item should survive compaction"
-    print("\n✅ Critical items survived compaction")
+    print("\n* Critical items survived compaction")
     
     # Test save/load
     ctx.save_state("test_context_state.json")
-    print("✅ Context state saved")
+    print("* Context state saved")
     
     ctx2 = ContextManager()
     loaded = ctx2.restore_state("test_context_state.json")
-    print(f"✅ Context state loaded: {loaded}")
+    print(f"* Context state loaded: {loaded}")
     
-    print("\n✅ Context Manager tests passed!")
+    print("\n* Context Manager tests passed!")
     return True
 
 
@@ -112,7 +112,7 @@ def test_grounding_chain():
     chain = GroundingChain()
     
     # Test claim creation and grounding
-    print("\n📋 Testing claim grounding...")
+    print("\n* Testing claim grounding...")
     
     # Create and ground a claim
     claim = chain.ground_claim(
@@ -159,13 +159,13 @@ def test_grounding_chain():
     
     # Get flagged claims
     flagged = chain.get_flagged_claims()
-    print(f"\n📊 Flagged claims: {len(flagged)}")
+    print(f"\n[STATS] Flagged claims: {len(flagged)}")
     
     # Get audit trail for the output
     audit = chain.get_audit_trail(output.id)
     print(f"   Audit entries: {len(audit)}")
     
-    print("\n✅ Grounding Chain tests passed!")
+    print("\n* Grounding Chain tests passed!")
     return True
 
 
@@ -181,7 +181,7 @@ def test_feedback_collector():
     collector = FeedbackCollector()
     
     # Record various feedback events
-    print("\n📋 Recording feedback events...")
+    print("\n* Recording feedback events...")
     
     events_to_record = [
         (FeedbackType.OPEN, "lead_001", "campaign_001"),
@@ -200,21 +200,21 @@ def test_feedback_collector():
     
     # Get campaign feedback
     campaign_events = collector.get_feedback_by_campaign("campaign_001")
-    print(f"\n📊 Campaign 001 events: {len(campaign_events)}")
+    print(f"\n[STATS] Campaign 001 events: {len(campaign_events)}")
     
     # Get summary
     summary = collector.get_summary()
     print(f"   Summary: {summary}")
     
     # Check reward mapping
-    print(f"\n📊 Reward Mapping (sample):")
+    print(f"\n[STATS] Reward Mapping (sample):")
     for event_type in [FeedbackType.MEETING_BOOKED, FeedbackType.REPLY_POSITIVE, FeedbackType.UNSUBSCRIBE]:
         reward = REWARD_MAP.get(event_type, 0)
         print(f"   {event_type.value}: {reward:+.2f}")
     
     # Export for RL training
     training_signals = collector.export_for_training()
-    print(f"\n🤖 Training Signals exported: {len(training_signals)} signals")
+    print(f"\n* Training Signals exported: {len(training_signals)} signals")
     
     # Calculate total reward
     if training_signals:
@@ -229,7 +229,7 @@ def test_feedback_collector():
     campaign_rewards = collector.calculate_campaign_rewards()
     print(f"   Total campaign rewards: {campaign_rewards}")
     
-    print("\n✅ Feedback Collector tests passed!")
+    print("\n* Feedback Collector tests passed!")
     return True
 
 
@@ -248,7 +248,7 @@ def test_full_integration():
     grounding = GroundingChain()
     feedback = FeedbackCollector()
     
-    print("\n📋 Simulating CRAFTER workflow...")
+    print("\n* Simulating CRAFTER workflow...")
     
     # 1. Add system context
     context.add_context(
@@ -331,21 +331,21 @@ def test_full_integration():
     print("   Engagement signals recorded")
     
     # 7. Get final stats
-    print(f"\n📊 Final Stats:")
+    print(f"\n[STATS] Final Stats:")
     print(f"   Context utilization: {context.budget.utilization_percent:.1f}%")
     print(f"   Grounded outputs: {len(grounding.outputs)}")
     
     summary = feedback.get_summary()
     print(f"   Feedback summary: {summary}")
     
-    print("\n✅ Full Integration test passed!")
+    print("\n* Full Integration test passed!")
     return True
 
 
 def run_all_tests():
     """Run all Day 3-4 framework tests."""
     print("\n" + "=" * 70)
-    print("🧪 DAY 3-4 FRAMEWORK INTEGRATION TESTS")
+    print("* DAY 3-4 FRAMEWORK INTEGRATION TESTS")
     print("=" * 70)
     
     results = {
@@ -358,49 +358,49 @@ def run_all_tests():
     try:
         results["context_manager"] = test_context_manager()
     except Exception as e:
-        print(f"\n❌ Context Manager test failed: {e}")
+        print(f"\n* Context Manager test failed: {e}")
         import traceback
         traceback.print_exc()
     
     try:
         results["grounding_chain"] = test_grounding_chain()
     except Exception as e:
-        print(f"\n❌ Grounding Chain test failed: {e}")
+        print(f"\n* Grounding Chain test failed: {e}")
         import traceback
         traceback.print_exc()
     
     try:
         results["feedback_collector"] = test_feedback_collector()
     except Exception as e:
-        print(f"\n❌ Feedback Collector test failed: {e}")
+        print(f"\n* Feedback Collector test failed: {e}")
         import traceback
         traceback.print_exc()
     
     try:
         results["full_integration"] = test_full_integration()
     except Exception as e:
-        print(f"\n❌ Full Integration test failed: {e}")
+        print(f"\n* Full Integration test failed: {e}")
         import traceback
         traceback.print_exc()
     
     # Print summary
     print("\n" + "=" * 70)
-    print("📊 TEST SUMMARY")
+    print("[STATS] TEST SUMMARY")
     print("=" * 70)
     
     passed = sum(1 for v in results.values() if v)
     total = len(results)
     
     for test_name, passed_test in results.items():
-        status = "✅ PASS" if passed_test else "❌ FAIL"
+        status = "* PASS" if passed_test else "* FAIL"
         print(f"   {test_name}: {status}")
     
     print(f"\n   Total: {passed}/{total} tests passed")
     
     if passed == total:
-        print("\n🎉 ALL DAY 3-4 FRAMEWORK TESTS PASSED!")
+        print("\n* ALL DAY 3-4 FRAMEWORK TESTS PASSED!")
     else:
-        print(f"\n⚠️  {total - passed} test(s) failed")
+        print(f"\n**  {total - passed} test(s) failed")
     
     return passed == total
 
