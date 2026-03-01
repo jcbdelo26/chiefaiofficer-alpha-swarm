@@ -14,7 +14,7 @@ FastAPI router for HeyReach webhook events.
 
 Key workflow:
 - CONNECTION_REQUEST_ACCEPTED → trigger warm email follow-up via Instantly
-- MESSAGE_REPLY_RECEIVED → route to RESPONDER agent
+- MESSAGE_REPLY_RECEIVED → classify (positive/negative/neutral) + signal loop update
 - CAMPAIGN_COMPLETED → mark lead as LinkedIn-exhausted
 
 Mounted into dashboard at dashboard/health_app.py.
@@ -276,9 +276,34 @@ async def _handle_reply_received(event_type: str, payload: Dict, lead: Dict) -> 
     except Exception as e:
         logger.error("Signal loop error (linkedin_reply): %s", e)
 
-    # TODO: Route to RESPONDER agent for classification
+    # Classify reply sentiment (HR-06)
+    sentiment = classify_reply(reply_text)
+    logger.info("Reply classified as '%s' for %s", sentiment, email or lead.get("linkedin_url"))
 
-    return {"action": "reply_logged", "needs_classification": True}
+    if sentiment == "positive":
+        _slack_alert(
+            f"HOT LEAD: {name} replied positively",
+            f"Positive LinkedIn reply detected.\n"
+            f"Reply: {reply_text[:200] if reply_text else '(empty)'}\n"
+            f"Action: Flag for immediate outreach.",
+            metadata={**lead, "sentiment": sentiment},
+        )
+    elif sentiment == "negative":
+        # Update signal loop to mark as unsubscribed/not-interested
+        try:
+            if email:
+                _get_signal_manager().update_lead_status(
+                    email, "unsubscribed", "heyreach_webhook:negative_reply",
+                    {"reply_text": reply_text[:200], "sentiment": "negative"},
+                )
+        except Exception as e:
+            logger.error("Signal loop error (negative classification): %s", e)
+
+    return {
+        "action": "reply_classified",
+        "sentiment": sentiment,
+        "email": email,
+    }
 
 
 async def _handle_inmail_sent(event_type: str, payload: Dict, lead: Dict) -> Dict:
@@ -359,6 +384,51 @@ async def _handle_unknown(event_type: str, payload: Dict, lead: Dict) -> Dict:
     )
 
     return {"action": "unknown_event_logged"}
+
+
+# =============================================================================
+# REPLY CLASSIFICATION (HR-06)
+# =============================================================================
+
+# Keyword patterns for rule-based reply classification.
+# These avoid the latency/cost of an LLM call in a webhook handler.
+
+_POSITIVE_KEYWORDS = [
+    "interested", "tell me more", "send me", "love to", "schedule",
+    "sounds great", "let's chat", "book a call", "set up a call",
+    "open to", "that works", "count me in", "send it over",
+    "i'm in", "yes", "sure", "absolutely", "looking forward",
+]
+
+_NEGATIVE_KEYWORDS = [
+    "not interested", "no thanks", "no thank you", "unsubscribe",
+    "remove me", "stop", "don't contact", "do not contact",
+    "opt out", "not the right time", "not for us", "pass",
+    "take me off", "wrong person", "not relevant",
+]
+
+
+def classify_reply(reply_text: str) -> str:
+    """Classify a LinkedIn reply as positive, negative, or neutral.
+
+    Rule-based classification using keyword matching. Fast and deterministic.
+    Returns: "positive", "negative", or "neutral".
+    """
+    if not reply_text:
+        return "neutral"
+
+    text_lower = reply_text.lower().strip()
+
+    # Check negative first (unsubscribe/opt-out takes priority)
+    for keyword in _NEGATIVE_KEYWORDS:
+        if keyword in text_lower:
+            return "negative"
+
+    for keyword in _POSITIVE_KEYWORDS:
+        if keyword in text_lower:
+            return "positive"
+
+    return "neutral"
 
 
 # =============================================================================

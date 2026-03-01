@@ -1492,6 +1492,15 @@ class OperatorOutbound:
                 report.errors.append(f"Cadence signal sync error: {e}")
                 logger.error("Cadence signal sync error: %s", e)
 
+            # Step 1b: Process LinkedIn follow-up flags (HR-07)
+            try:
+                followup_result = cadence.process_linkedin_followups()
+                if followup_result:
+                    logger.info("LinkedIn follow-ups accelerated: %s", followup_result)
+            except Exception as e:
+                report.errors.append(f"LinkedIn follow-up processing error: {e}")
+                logger.error("LinkedIn follow-up processing error: %s", e)
+
             # Step 2: Get actions due today
             try:
                 due_actions = cadence.get_due_actions()

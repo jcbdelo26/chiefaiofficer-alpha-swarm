@@ -8,7 +8,7 @@
 **Company**: Chiefaiofficer.com
 **Platform**: Railway (production) at `caio-swarm-dashboard-production.up.railway.app`
 **Dashboard**: v3.0 full 4-tab UI (Overview/Email Queue/Campaigns/Settings) + live KPIs + compliance checks
-**Latest successful production deploy**: commit `5023f6b` (2026-03-01) — Dashboard login gate + Sprint 4-6 engineering hardening (461 tests, 27 files)
+**Latest successful production deploy**: commit `7397f27` (2026-03-02) — Queue Seed System + OPERATOR synthetic guard (475 tests, 28 files)
 
 ### Mandatory Read Order (Every New Session)
 
@@ -24,7 +24,7 @@
 ```
 Phase 0-3: Foundation → Burn-In → Harden    COMPLETE (33+ pipeline runs, 10 consecutive 6/6 PASS)
 Phase 4A: Instantly V2 Go-Live               COMPLETE (6 domains warmed, 100% health)
-Phase 4B: HeyReach LinkedIn Integration      80% (API verified, 3 campaigns, 4 webhooks — awaiting LinkedIn warmup)
+Phase 4B: HeyReach LinkedIn Integration      90% (7/10 bugs resolved, 3 remaining — awaiting LinkedIn warmup ~Mar 16)
 Phase 4C: OPERATOR Agent                     COMPLETE (unified dispatch + revival scanner + GATEKEEPER gate)
 Phase 4D: Multi-Channel Cadence              COMPLETE (8-step 21-day sequence + CRAFTER follow-ups + auto-enroll)
 Phase 4E: Supervised Live Sends              RAMP MODE ACTIVE (5/day, tier_1, 3 supervised days)
@@ -132,25 +132,27 @@ See `docs/CAIO_TASK_TRACKER.md` for detailed progress and next steps.
 
 ## Agent Architecture
 
-### Alpha Swarm Agents (12 Agents + Queen)
+### Alpha Swarm Agents (6 Active + Queen; 6 Disabled)
 
-| Agent | Role | Key Files |
-|-------|------|-----------|
-| ALPHA QUEEN | Master Orchestrator | `execution/unified_queen_orchestrator.py` |
-| HUNTER | Lead Discovery (Apollo — default source: vidyard, non-competitor) | `execution/hunter_scrape_followers.py` |
-| ENRICHER | Data Enrichment (Apollo + BetterContact) | `execution/enricher_clay_waterfall.py` |
-| SEGMENTOR | ICP Scoring + Tier Assignment | `execution/segmentor_classify.py` |
-| CRAFTER | Campaign Copy + Cadence Follow-ups | `execution/crafter_campaign.py` |
-| GATEKEEPER | AE Approval Gate | `execution/gatekeeper_queue.py` |
-| OPERATOR | Unified Outbound Execution (3 motions) | `execution/operator_outbound.py` |
-| | - `dispatch_outbound()`: Instantly email + HeyReach LinkedIn | |
-| | - `dispatch_cadence()`: 21-day follow-up sequence | `execution/cadence_engine.py` |
-| | - `dispatch_revival()`: GHL stale contact re-engagement | `execution/operator_revival_scanner.py` |
-| SCOUT | Pipeline Intelligence | `execution/revenue_scout_intent_detection.py` |
-| COACH | Pipeline Coaching | `core/call_coach.py` |
-| PIPER | Pipeline Management | `execution/ingest_ghl_deals.py` |
-| SCHEDULER | Calendar + Scheduling | `core/scheduler_service.py` |
-| RESEARCHER | Read-Only Research | `execution/researcher_agent.py` |
+| Agent | Role | Key Files | Status |
+|-------|------|-----------|--------|
+| ALPHA QUEEN | Master Orchestrator | `execution/unified_queen_orchestrator.py` | ACTIVE |
+| HUNTER | Lead Discovery (Apollo — default source: vidyard) | `execution/hunter_scrape_followers.py` | ACTIVE |
+| ENRICHER | Data Enrichment (Apollo + BetterContact + Clay) | `execution/enricher_waterfall.py` | ACTIVE |
+| SEGMENTOR | ICP Scoring + Tier Assignment | `execution/segmentor_classify.py` | ACTIVE |
+| CRAFTER | Campaign Copy + Cadence Follow-ups | `execution/crafter_campaign.py` | ACTIVE |
+| GATEKEEPER | AE Approval Gate | `execution/gatekeeper_queue.py` | ACTIVE |
+| OPERATOR | Unified Outbound Execution (3 motions) | `execution/operator_outbound.py` | ACTIVE |
+| | - `dispatch_outbound()`: Instantly email + HeyReach LinkedIn | | |
+| | - `dispatch_cadence()`: 21-day follow-up sequence | `execution/cadence_engine.py` | |
+| | - `dispatch_revival()`: GHL stale contact re-engagement | `execution/operator_revival_scanner.py` | |
+| SCOUT | Pipeline Intelligence | `execution/revenue_scout_intent_detection.py` | DISABLED |
+| COACH | Pipeline Coaching | `core/call_coach.py` | DISABLED |
+| PIPER | Pipeline Management | `execution/ingest_ghl_deals.py` | DISABLED |
+| SCHEDULER | Calendar + Scheduling | `core/scheduler_service.py` | DISABLED |
+| RESEARCHER | Read-Only Research | `execution/researcher_agent.py` | DISABLED |
+
+*6 agents disabled in `config/production.json` during 12→6 consolidation (2026-02-26). Can be re-enabled when needed.*
 
 ---
 
@@ -180,6 +182,7 @@ chiefaiofficer-alpha-swarm/
 │   ├── activity_timeline.py       # Per-lead event aggregation
 │   ├── alerts.py                  # Slack alerting (WARNING, CRITICAL, INFO)
 │   ├── shadow_queue.py             # Redis-backed shadow email queue (local↔Railway bridge)
+│   ├── seed_queue.py              # Dashboard-triggered training email generation (15 personas, 11 templates)
 │   ├── circuit_breaker.py         # Failure protection (3-trip, 5min reset)
 │   ├── ghl_local_sync.py          # GHL contact cache + search
 │   ├── unified_guardrails.py      # Main guardrails system
@@ -187,7 +190,7 @@ chiefaiofficer-alpha-swarm/
 ├── dashboard/
 │   ├── health_app.py              # FastAPI app (50+ endpoints, port 8080)
 │   ├── leads_dashboard.html       # Lead Signal Loop UI (/leads)
-│   ├── hos_dashboard.html         # Head of Sales email queue (/sales) — v2.4, RAMP MODE banner
+│   ├── hos_dashboard.html         # Head of Sales email queue (/sales) — v3.0, 4-tab + seed queue UI
 │   └── scorecard.html             # Precision Scorecard (/scorecard)
 ├── execution/                     # Agent execution scripts
 │   ├── run_pipeline.py            # 6-stage pipeline runner (send stage extracts per-lead sequences for email body)
@@ -197,7 +200,7 @@ chiefaiofficer-alpha-swarm/
 │   ├── instantly_dispatcher.py    # Shadow → Instantly campaigns
 │   ├── heyreach_dispatcher.py     # Lead-list-first LinkedIn dispatch
 │   ├── hunter_scrape_followers.py # Apollo People Search + Match
-│   ├── enricher_clay_waterfall.py # Apollo (primary) + BetterContact (fallback)
+│   ├── enricher_waterfall.py     # Apollo (primary) + BetterContact + Clay fallback
 │   ├── segmentor_classify.py      # ICP scoring + "Why This Score"
 │   ├── crafter_campaign.py        # Campaign copy + cadence follow-up templates
 │   ├── gatekeeper_queue.py        # Approval queue management

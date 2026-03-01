@@ -498,6 +498,95 @@ class CadenceEngine:
                      len(result["exited"]), len(result["paused"]), len(result["connected"]))
         return result
 
+    # -------------------------------------------------------------------------
+    # HeyReach follow-up flag consumer (HR-07)
+    # -------------------------------------------------------------------------
+
+    def process_linkedin_followups(self) -> List[str]:
+        """
+        Consume follow-up flag files written by HeyReach webhook.
+
+        When a LinkedIn connection is accepted, the webhook writes a JSON
+        flag to .hive-mind/heyreach_followups/. This method:
+        1. Reads unprocessed flag files
+        2. Updates the lead's cadence state (linkedin_connected = True)
+        3. Accelerates the next step due date to today (so warm email fires ASAP)
+        4. Marks the flag as processed
+
+        Returns list of emails that were accelerated.
+        """
+        followup_dir = self.hive_dir / "heyreach_followups"
+        if not followup_dir.exists():
+            return []
+
+        accelerated: List[str] = []
+
+        for flag_path in sorted(followup_dir.glob("*.json")):
+            try:
+                flag_data = json.loads(flag_path.read_text(encoding="utf-8"))
+            except (json.JSONDecodeError, OSError) as e:
+                logger.warning("Failed to read follow-up flag %s: %s", flag_path.name, e)
+                continue
+
+            if flag_data.get("processed"):
+                continue
+
+            lead = flag_data.get("lead", {})
+            email = lead.get("email", "")
+            if not email:
+                logger.warning("Follow-up flag %s has no email — skipping", flag_path.name)
+                # Mark processed to avoid re-reading
+                flag_data["processed"] = True
+                flag_data["skip_reason"] = "no_email"
+                try:
+                    flag_path.write_text(json.dumps(flag_data, indent=2), encoding="utf-8")
+                except OSError:
+                    pass
+                continue
+
+            # Load cadence state for this lead
+            state = self._load_lead_state(email)
+            if not state or state.status != "active":
+                logger.info("Follow-up flag for %s: no active cadence — skipping", email)
+                flag_data["processed"] = True
+                flag_data["skip_reason"] = "no_active_cadence"
+                try:
+                    flag_path.write_text(json.dumps(flag_data, indent=2), encoding="utf-8")
+                except OSError:
+                    pass
+                continue
+
+            # Mark LinkedIn connected
+            changed = False
+            if not state.linkedin_connected:
+                state.linkedin_connected = True
+                changed = True
+
+            # Accelerate next step due date to today
+            today_str = date.today().isoformat()
+            if state.next_step_due and state.next_step_due > today_str:
+                state.next_step_due = today_str
+                changed = True
+                logger.info("Cadence accelerated for %s: next step due moved to today (connection accepted)",
+                            email)
+
+            if changed:
+                self._save_lead_state(state)
+                accelerated.append(email)
+
+            # Mark flag as processed
+            flag_data["processed"] = True
+            flag_data["processed_at"] = datetime.now(timezone.utc).isoformat()
+            try:
+                flag_path.write_text(json.dumps(flag_data, indent=2), encoding="utf-8")
+            except OSError:
+                pass
+
+        if accelerated:
+            logger.info("Processed %d LinkedIn follow-up flags: %s", len(accelerated), accelerated)
+
+        return accelerated
+
     def _should_exit(self, email: str, exit_statuses: List[str]) -> bool:
         """Quick check if lead should exit cadence."""
         mgr = self._get_signal_manager()

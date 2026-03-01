@@ -1,9 +1,9 @@
 # CAIO Alpha Swarm — Master Tracker & Autonomy Roadmap
 
-**Last Updated**: 2026-03-01
-**Last Commit**: `5023f6b` (Dashboard login gate + Sprint 4-6 hardening — deployed to Railway 2026-03-01)
-**Plan Version**: v5.0
-**Test Suite**: 461 tests passing (27-file pre-commit, ~56s)
+**Last Updated**: 2026-03-02
+**Last Commit**: `7397f27` (Queue Seed System — deployed to Railway 2026-03-02)
+**Plan Version**: v5.1
+**Test Suite**: 475 tests passing (28-file pre-commit, ~57s)
 
 > **This file is the single source of truth for all current and future work.**
 > For historical roadmap: `CAIO_IMPLEMENTATION_PLAN.md` (v4.6). For deployment context: `CLAUDE.md`.
@@ -27,7 +27,7 @@ Phase 6: Full Autonomy            [..........]   0%  WAITING (trigger: 30 days l
 | Sub-Phase | Status | Notes |
 |-----------|--------|-------|
 | 4A Instantly Go-Live | COMPLETE | 6 domains, V2 API, 100% warmup health |
-| 4B HeyReach LinkedIn | 80% | Infra done. Blocked: warmup ~Mar 16 + HR-01–07 bugs |
+| 4B HeyReach LinkedIn | 90% | Infra done, 7/10 bugs resolved. Blocked: 3 bugs + warmup ~Mar 16 |
 | 4C OPERATOR Agent | COMPLETE | Unified dispatch (outbound + cadence + revival) |
 | 4D Cadence Engine | COMPLETE | 21-day, 8-step Email+LinkedIn sequence |
 | 4E Supervised Live Sends | RAMP ACTIVE | 5/day, tier_1 only. **Awaiting first HoS review** |
@@ -35,7 +35,7 @@ Phase 6: Full Autonomy            [..........]   0%  WAITING (trigger: 30 days l
 | 4G Proof & Feedback | COMPLETE | GHLSendProofEngine, webhook + poll fallback |
 | 4H Task Routing | 95% | Committed, needs production validation |
 | 4I Runtime Reliability | COMPLETE | Circuit breakers, fallbacks, retry |
-| 4J TDD Testing | COMPLETE | 439 curated tests |
+| 4J TDD Testing | COMPLETE | 475 curated tests |
 | 4K Clay Fallback | COMPLETE | Redis LinkedIn URL correlation |
 
 ### Engineering Sprint History
@@ -127,16 +127,16 @@ After HeyReach hardening AND LinkedIn warmup complete:
 
 | Module | File | Status | Blockers |
 |--------|------|--------|----------|
-| Dashboard & HoS Review | `dashboard/health_app.py` (~3120 lines) | READY | Login gate deployed (`5023f6b`) |
+| Dashboard & HoS Review | `dashboard/health_app.py` (~3150 lines) | READY | Login gate deployed (`5023f6b`) |
 | OPERATOR Dispatch | `execution/operator_outbound.py` (1936 lines) | READY | 3 clean ramp days |
 | Cadence Engine | `execution/cadence_engine.py` (682 lines) | READY | None — auto-runs daily |
 | Shadow Queue (Redis) | `core/shadow_queue.py` (263 lines) | READY | None |
 | GHL Proof Engine | `core/ghl_send_proof.py` | READY | None — auto-triggers on approve |
 | Lead Signal State Machine | `core/lead_signals.py` (21 statuses) | READY | None — webhook-driven |
 | Instantly Dispatcher | `execution/instantly_dispatcher.py` | READY | None — 6 domains warmed |
-| HeyReach Dispatcher | `execution/heyreach_dispatcher.py` (719 lines) | BLOCKED | 7 critical bugs (HR-01–07) |
+| HeyReach Dispatcher | `execution/heyreach_dispatcher.py` (900+ lines) | 90% READY | 3 remaining bugs (HR-05, HR-06, HR-07) |
 | Enrichment Waterfall | `execution/enricher_waterfall.py` | READY | None — Apollo + BC + Clay |
-| Queue Seed System | `core/seed_queue.py` + `/api/admin/seed_queue` | IN PROGRESS | Populates pending queue from dashboard |
+| Queue Seed System | `core/seed_queue.py` + `/api/admin/seed_queue` | READY | 15 personas, 11 templates, dashboard UI (`7397f27`) |
 | Segmentor/ICP Scoring | `execution/segmentor_classify.py` | READY | None |
 
 ---
@@ -184,20 +184,20 @@ After HeyReach hardening AND LinkedIn warmup complete:
 | A4 | Set `HEYREACH_BEARER_TOKEN` on Railway | Before Mar 10 | 5 min |
 | A5 | Capture real HeyReach webhook payload (for HR-05) | Before Mar 10 | 15 min |
 
-### Track B: Engineering (AI)
+### Track B: Engineering (AI) — 3 remaining (7 resolved in prior sprints)
 
-| # | Task | IDs | Files | Est. |
-|---|------|-----|-------|------|
-| B1 | HeyReach `_request()` retry + circuit breaker + error discrimination | HR-04, HR-08, HR-10, HR-13, HR-14 | `heyreach_dispatcher.py`, `circuit_breaker.py` | 2h |
-| B2 | URL-encode query params | HR-01 | `heyreach_dispatcher.py` | 30m |
-| B3 | Distributed LinkedIn ceiling (Redis) | HR-03 | `heyreach_dispatcher.py` | 2h |
-| B4 | Shadow file write race fix (atomic/Redis) | HR-02 | `heyreach_dispatcher.py` | 1h |
-| B5 | Webhook payload schema validation | HR-05 | `heyreach_webhook.py` | 1h |
-| B6 | Follow-up flag processor (cadence integration) | HR-07 | `cadence_engine.py`, `operator_outbound.py` | 3h |
-| B7 | Reply classification routing | HR-06 | `heyreach_webhook.py` | 2h |
-| B8 | Partial success detection for list adds | HR-09 | `heyreach_dispatcher.py` | 1h |
-| B9 | LinkedIn URL format validation | HR-16 | `heyreach_dispatcher.py` | 30m |
-| B10 | Verify `HEYREACH_UNSIGNED_ALLOWLIST=false` on Railway | HR-11 | Railway env | 5m |
+| # | Task | IDs | Files | Est. | Status |
+|---|------|-----|-------|------|--------|
+| ~~B1~~ | ~~Retry + circuit breaker + error discrimination~~ | HR-04, HR-08, HR-10 | `heyreach_dispatcher.py` | — | DONE (exponential backoff, CB registered, handlers split) |
+| ~~B2~~ | ~~URL-encode query params~~ | HR-01 | `heyreach_dispatcher.py` | — | DONE (`url_quote` on all params) |
+| ~~B3~~ | ~~Distributed LinkedIn ceiling~~ | HR-03 | `heyreach_dispatcher.py` | — | DONE (`LinkedInDailyCeiling` Redis class) |
+| ~~B4~~ | ~~Shadow file write race fix~~ | HR-02 | `heyreach_dispatcher.py` | — | DONE (`_atomic_json_write`) |
+| B5 | Webhook payload schema validation | HR-05 | `heyreach_webhook.py` | 1h | **BLOCKED** — needs real payload (user task A5) |
+| B6 | Follow-up flag consumer (cadence integration) | HR-07 | `cadence_engine.py` | 2h | **TODO** — webhook writes flags, cadence never reads |
+| B7 | Reply classification routing | HR-06 | `heyreach_webhook.py` | 2h | **TODO** — explicit `# TODO` in code |
+| ~~B8~~ | ~~Partial success detection~~ | HR-09 | `heyreach_dispatcher.py` | — | DONE (3 field variants checked) |
+| ~~B9~~ | ~~LinkedIn URL format validation~~ | HR-16 | `heyreach_dispatcher.py` | — | DONE (regex `_LINKEDIN_PROFILE_RE`) |
+| ~~B10~~ | ~~Verify unsigned allowlist~~ | HR-11 | Railway env | — | DONE |
 
 ### Track C: Documentation (AI)
 
@@ -280,22 +280,15 @@ The system collects feedback data (approvals, rejections, send outcomes) but **d
 
 ## 7. Open Audit Findings (Unresolved)
 
-### HeyReach — 10 Remaining (7 CRITICAL, 2 HIGH, 1 MEDIUM)
+### HeyReach — 3 Remaining (2 CRITICAL, 1 PARTIAL)
 
-| ID | Severity | Issue | Sprint 7 Task |
-|----|----------|-------|---------------|
-| HR-01 | CRITICAL | Query params not URL-encoded | B2 |
-| HR-02 | CRITICAL | Race condition in shadow file write | B4 |
-| HR-03 | CRITICAL | LinkedIn ceiling not distributed | B3 |
-| HR-04 | CRITICAL | Retry logic ignored | B1 |
-| HR-05 | CRITICAL | Webhook payload fields unvalidated | B5 |
-| HR-06 | CRITICAL | Reply classification TODO | B7 |
-| HR-07 | CRITICAL | Follow-up flags unread (cadence broken) | B6 |
-| HR-08 | HIGH | Bare `except Exception` in `_request()` | B1 |
-| HR-09 | HIGH | Partial list-add success undetected | B8 |
-| HR-10 | HIGH | No circuit breaker | B1 |
+| ID | Severity | Issue | Sprint 7 Task | Status |
+|----|----------|-------|---------------|--------|
+| HR-05 | CRITICAL | Webhook payload fields unvalidated | B5 | PARTIAL — discovery harness built, needs real payload from user |
+| HR-06 | CRITICAL | Reply classification TODO | B7 | OPEN — `# TODO: Route to RESPONDER` in webhook handler |
+| HR-07 | CRITICAL | Follow-up flags unread (cadence broken) | B6 | PARTIAL — webhook writes flag files, cadence engine never reads them |
 
-**Resolved (12/22):** HR-04 partially, HR-08 partially, HR-10 partially, HR-11 (auth enforced), HR-12 (email validation), HR-13 (timeout), HR-14 (JSON fallback), HR-15, HR-16 (B9), HR-17 (atomic log), HR-18 (config validation), HR-19, HR-20, HR-21 (Slack alert), HR-22.
+**Resolved (19/22):** HR-01 (url_quote on all params), HR-02 (atomic_json_write), HR-03 (Redis LinkedInDailyCeiling), HR-04 (exponential backoff + retryable status codes), HR-08 (split into TimeoutError/ClientError/Exception handlers), HR-09 (partial success detection with 3 field variants), HR-10 (circuit breaker registered in __init__), HR-11 (auth enforced), HR-12 (email validation), HR-13 (timeout), HR-14 (JSON fallback), HR-15, HR-16 (LinkedIn URL regex), HR-17 (atomic log), HR-18 (config validation), HR-19, HR-20, HR-21 (Slack alert), HR-22.
 
 ### Cross-System — 6 Remaining (0 CRITICAL, 0 HIGH, 6 MEDIUM/LOW)
 
@@ -330,7 +323,7 @@ The system collects feedback data (approvals, rejections, send outcomes) but **d
 - [x] FastAPI lifespan migration (from deprecated `on_event`)
 - [ ] Replace `datetime.utcnow()` with timezone-aware UTC (partial)
 - [ ] Remove stale `PROXYCURL_API_KEY` references
-- [x] CLAUDE.md deployed hash updated to `5023f6b`
+- [x] CLAUDE.md deployed hash updated to `7397f27`
 
 ### Emergency Controls
 
@@ -378,13 +371,13 @@ All must be TRUE before declaring full email autonomy:
 - [x] Webhook strict mode enabled (`WEBHOOK_SIGNATURE_REQUIRED=true`)
 - [x] Login page + cookie session auth (token never in URL)
 - [x] Redis-only state cutover complete
-- [x] 461 pre-commit tests passing (27 files)
+- [x] 475 pre-commit tests passing (28 files)
 - [x] Engineering Sprints 1-6 complete
 
 All must be TRUE before declaring multi-channel (email + LinkedIn) autonomy:
 
 - [ ] All email autonomy items above
-- [ ] **HeyReach HR-01–07 bugs fixed** (Sprint 7 Track B)
+- [ ] **HeyReach HR-05, HR-06, HR-07 bugs fixed** (Sprint 7 Track B — 7/10 already resolved)
 - [ ] **LinkedIn warmup complete** (~Mar 16)
 - [ ] **`HEYREACH_BEARER_TOKEN` set on Railway**
 - [ ] **`HEYREACH_UNSIGNED_ALLOWLIST=false` on Railway**
@@ -397,7 +390,7 @@ All must be TRUE before declaring multi-channel (email + LinkedIn) autonomy:
 
 | Risk | Probability | Impact | Mitigation |
 |------|-------------|--------|------------|
-| HeyReach bugs hit during LinkedIn ramp | HIGH | LinkedIn sends fail silently | Sprint 7 Track B before Mar 16 |
+| HeyReach bugs hit during LinkedIn ramp | MEDIUM | 3 remaining (HR-05/06/07), 7 resolved | Sprint 7 Track B before Mar 16 |
 | Bounce rate > 5% during ramp | MEDIUM | Ramp days reset, domain reputation at risk | 4-layer deliverability guards, 3/domain/batch |
 | No HoS review this week | LOW | Entire pipeline stalled | Email queue + Slack reminder |
 | Railway env var mismatch | LOW | Shadow emails invisible on dashboard | Pre-flight checklist enforces |
@@ -475,7 +468,7 @@ echo yes | python execution/run_pipeline.py --mode production --source "wpromote
 |---------|------|-------|
 | Dashboard API | `dashboard/health_app.py` | 2820 lines, 50+ endpoints |
 | OPERATOR Agent | `execution/operator_outbound.py` | 1936 lines, 3 dispatch motions |
-| HeyReach Dispatcher | `execution/heyreach_dispatcher.py` | 719 lines, 7 critical bugs remaining |
+| HeyReach Dispatcher | `execution/heyreach_dispatcher.py` | 900+ lines, 3 bugs remaining (HR-05/06/07) |
 | HeyReach Webhooks | `webhooks/heyreach_webhook.py` | 388 lines |
 | Instantly Dispatcher | `execution/instantly_dispatcher.py` | V2 API, 6 domains |
 | Cadence Engine | `execution/cadence_engine.py` | 682 lines, 21-day 8-step |
@@ -487,7 +480,7 @@ echo yes | python execution/run_pipeline.py --mode production --source "wpromote
 | Alerts | `core/alerts.py` | Slack webhook, 3 severity levels |
 | Compliance | `core/compliance.py` | CAN-SPAM enforcement |
 | Production Config | `config/production.json` | All feature flags + limits |
-| Pre-commit Hook | `.githooks/pre-commit` | 27 files, 461 tests, ~56s |
+| Pre-commit Hook | `.githooks/pre-commit` | 28 files, 475 tests, ~57s |
 | Implementation Plan | `CAIO_IMPLEMENTATION_PLAN.md` | v4.6, full historical roadmap |
 | HoS Review Guide | `docs/HOS_EMAIL_REVIEW_GUIDE.md` | Email approval criteria |
 | Dev Team Skill | `.claude/commands/dev-team.md` | 3-pass code review |
@@ -509,6 +502,7 @@ echo yes | python execution/run_pipeline.py --mode production --source "wpromote
 
 | Commit | Date | Description |
 |--------|------|-------------|
+| `7397f27` | 2026-03-02 | Queue Seed System: dashboard-triggered training email generation, OPERATOR synthetic guard, 14 new tests. 475 tests, 28 files. Deployed to Railway. |
 | `5023f6b` | 2026-03-01 | Dashboard login gate (cookie sessions) + Sprint 4-6 engineering hardening. 461 tests, 27 files. Deployed to Railway. |
 | `8176c27` | 2026-02-27 | Phase 4 bulk commit: 7 modules, 14 test files, 5 agents, pre-commit hook. Deployed to Railway. |
 | `4992d69` | 2026-02-27 | FastAPI lifespan migration, timezone-aware UTC, smoke matrix hard-auth. |
@@ -523,4 +517,4 @@ echo yes | python execution/run_pipeline.py --mode production --source "wpromote
 
 ---
 
-*Last updated: 2026-03-01 | Next review: After HoS email review or Sprint 7 start, whichever comes first*
+*Last updated: 2026-03-02 | Next review: After HoS email review or Sprint 7 B6/B7 completion*

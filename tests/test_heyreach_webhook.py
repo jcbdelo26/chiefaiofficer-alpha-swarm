@@ -25,6 +25,7 @@ from webhooks.heyreach_webhook import (
     _handle_connection_accepted,
     _handle_reply_received,
     _handle_campaign_completed,
+    classify_reply,
     EVENT_HANDLERS,
 )
 
@@ -191,7 +192,7 @@ class TestReplyHandler:
 
     @pytest.mark.asyncio
     async def test_reply_logged_with_classification_flag(self):
-        """Reply handler returns needs_classification=True."""
+        """Reply handler classifies and returns sentiment."""
         lead = {"linkedin_url": "https://linkedin.com/in/test", "first_name": "Test", "last_name": "User", "email": "t@co.com"}
         payload = {"messageText": "Sounds interesting, let's chat!"}
 
@@ -200,8 +201,8 @@ class TestReplyHandler:
             mock_sm.return_value = MagicMock()
             result = await _handle_reply_received("MESSAGE_REPLY_RECEIVED", payload, lead)
 
-        assert result["action"] == "reply_logged"
-        assert result["needs_classification"] is True
+        assert result["action"] == "reply_classified"
+        assert result["sentiment"] == "positive"
 
 
 # =============================================================================
@@ -314,3 +315,88 @@ class TestSignalLoopEmailValidation:
 
         warning_calls = [c for c in mock_logger.warning.call_args_list if "HR-12" in str(c)]
         assert len(warning_calls) == 0
+
+
+# =============================================================================
+# TEST: Reply Classification (HR-06)
+# =============================================================================
+
+class TestReplyClassification:
+    """Tests for HR-06: keyword-based reply sentiment classification."""
+
+    def test_positive_interested(self):
+        assert classify_reply("Yes, I'm interested! Tell me more.") == "positive"
+
+    def test_positive_schedule(self):
+        assert classify_reply("Sounds great, let's schedule a call") == "positive"
+
+    def test_positive_send_over(self):
+        assert classify_reply("Sure, send it over please") == "positive"
+
+    def test_negative_not_interested(self):
+        assert classify_reply("Not interested, thanks") == "negative"
+
+    def test_negative_unsubscribe(self):
+        assert classify_reply("Please unsubscribe me from these messages") == "negative"
+
+    def test_negative_stop(self):
+        assert classify_reply("Stop contacting me") == "negative"
+
+    def test_negative_remove(self):
+        assert classify_reply("Remove me from your list") == "negative"
+
+    def test_neutral_question(self):
+        assert classify_reply("What exactly does your company do?") == "neutral"
+
+    def test_neutral_short(self):
+        assert classify_reply("Thanks for reaching out") == "neutral"
+
+    def test_empty_reply(self):
+        assert classify_reply("") == "neutral"
+
+    def test_none_reply(self):
+        assert classify_reply("") == "neutral"
+
+    def test_negative_takes_priority(self):
+        """Negative keywords override positive ones (opt-out safety)."""
+        assert classify_reply("I was interested but not the right time, please stop") == "negative"
+
+    @pytest.mark.asyncio
+    async def test_reply_handler_returns_sentiment(self):
+        """Full handler returns classification result instead of TODO marker."""
+        lead = {
+            "linkedin_url": "https://linkedin.com/in/test",
+            "first_name": "Test",
+            "last_name": "User",
+            "email": "test@example.com",
+        }
+        payload = {"messageText": "Yes, I'm interested! Tell me more."}
+        with patch("webhooks.heyreach_webhook._slack_alert"), \
+             patch("webhooks.heyreach_webhook._get_signal_manager") as mock_sm:
+            mock_sm.return_value = MagicMock()
+            result = await _handle_reply_received("MESSAGE_REPLY_RECEIVED", payload, lead)
+
+        assert result["action"] == "reply_classified"
+        assert result["sentiment"] == "positive"
+
+    @pytest.mark.asyncio
+    async def test_negative_reply_updates_signal_loop(self):
+        """Negative replies should update signal loop to unsubscribed."""
+        lead = {
+            "linkedin_url": "https://linkedin.com/in/test",
+            "first_name": "Test",
+            "last_name": "User",
+            "email": "test@example.com",
+        }
+        payload = {"messageText": "Not interested, please stop"}
+        mock_mgr = MagicMock()
+        with patch("webhooks.heyreach_webhook._slack_alert"), \
+             patch("webhooks.heyreach_webhook._get_signal_manager", return_value=mock_mgr):
+            result = await _handle_reply_received("MESSAGE_REPLY_RECEIVED", payload, lead)
+
+        assert result["sentiment"] == "negative"
+        # Should call update_lead_status for negative classification AND handle_linkedin_reply
+        assert mock_mgr.handle_linkedin_reply.called
+        assert mock_mgr.update_lead_status.called
+        args = mock_mgr.update_lead_status.call_args
+        assert args[0][1] == "unsubscribed"
