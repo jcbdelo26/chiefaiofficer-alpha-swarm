@@ -1225,6 +1225,32 @@ async def logout(request: Request):
 # ADMIN HELPER ENDPOINTS
 # =============================================================================
 
+@app.post("/api/admin/seed_queue")
+async def seed_queue(
+    count: int = Query(5, ge=1, le=20, description="Number of training emails to generate"),
+    tier: Optional[str] = Query(None, description="Filter by tier (tier_1, tier_2, tier_3)"),
+    auth: bool = Depends(require_auth),
+):
+    """Seed the pending queue with pre-built training emails.
+
+    No LLM or external API calls. Instant generation.
+    All emails are marked synthetic=true for safety.
+    """
+    try:
+        from core.seed_queue import generate_seed_emails
+
+        emails = generate_seed_emails(count=count, tier_filter=tier)
+        return {
+            "status": "ok",
+            "seeded": len(emails),
+            "email_ids": [e["email_id"] for e in emails],
+            "note": "All seeded emails are synthetic (canary=true). OPERATOR will not dispatch them.",
+        }
+    except Exception as exc:
+        logger.error("seed_queue failed: %s", exc, exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Seed failed: {exc}")
+
+
 @app.post("/api/admin/regenerate_queue")
 async def regenerate_queue(auth: bool = Depends(require_auth)):
     """

@@ -1331,6 +1331,7 @@
                         <span class="section-badge" id="pendingCount">0</span>
                         <div class="bulk-actions">
                             <button class="btn-sm btn-primary" onclick="bulkApprove()">Approve All Low</button>
+                            <button class="btn-sm" style="background:#f59e0b;color:#000;margin-left:8px;font-weight:600;" onclick="showSeedModal()">Seed Training Emails</button>
                         </div>
                     </div>
                 </div>
@@ -1525,6 +1526,42 @@
                 <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
                 <button class="btn btn-reject btn-sm" onclick="rejectEmail()">Reject</button>
                 <button class="btn btn-approve" onclick="approveEmail()">✓ Approve &amp; Send</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Seed Queue Modal -->
+    <div class="modal-overlay" id="seedModal">
+        <div class="modal" style="max-width:420px;">
+            <div class="modal-header">
+                <h3>Seed Training Emails</h3>
+                <button class="modal-close" onclick="closeSeedModal()">&times;</button>
+            </div>
+            <div class="modal-body" style="padding:20px;">
+                <p style="color:var(--text-muted);margin-bottom:16px;">Generate synthetic training emails for HoS review practice. These emails use safe non-routable addresses and are tagged as TRAINING.</p>
+                <div style="margin-bottom:14px;">
+                    <label style="display:block;margin-bottom:4px;font-weight:600;font-size:13px;">Count</label>
+                    <select id="seedCount" style="width:100%;padding:8px;border-radius:6px;border:1px solid var(--border);background:var(--card-bg);color:var(--text);">
+                        <option value="3">3 emails</option>
+                        <option value="5" selected>5 emails</option>
+                        <option value="10">10 emails</option>
+                        <option value="15">15 emails</option>
+                        <option value="20">20 emails</option>
+                    </select>
+                </div>
+                <div style="margin-bottom:14px;">
+                    <label style="display:block;margin-bottom:4px;font-weight:600;font-size:13px;">Tier Filter</label>
+                    <select id="seedTier" style="width:100%;padding:8px;border-radius:6px;border:1px solid var(--border);background:var(--card-bg);color:var(--text);">
+                        <option value="">All Tiers</option>
+                        <option value="tier_1">Tier 1 - Decision Makers</option>
+                        <option value="tier_2">Tier 2 - Influencers</option>
+                        <option value="tier_3">Tier 3 - Champions</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeSeedModal()">Cancel</button>
+                <button class="btn" id="seedSubmitBtn" style="background:#f59e0b;color:#000;font-weight:600;" onclick="executeSeed()">Generate</button>
             </div>
         </div>
     </div>
@@ -2027,9 +2064,10 @@
             if (filteredEmails.length === 0) {
                 list.innerHTML = `
                     <div class="empty-state">
-                        <div class="icon">✅</div>
+                        <div class="icon">&#x2705;</div>
                         <h3>All caught up!</h3>
                         <p>No pending emails to review</p>
+                        <button class="btn-sm" style="background:#f59e0b;color:#000;margin-top:12px;font-weight:600;padding:8px 20px;cursor:pointer;border:none;border-radius:6px;" onclick="showSeedModal()">Generate Training Emails</button>
                     </div>
                 `;
                 document.getElementById('pendingCount').textContent = '0';
@@ -2499,6 +2537,48 @@
 
             showToast(`✅ Approved ${approved} emails`);
             await fetchPendingEmails({ silent: true });
+        }
+
+        // --- Seed Queue Functions ---
+        function showSeedModal() {
+            document.getElementById('seedModal').classList.add('active');
+        }
+
+        function closeSeedModal() {
+            document.getElementById('seedModal').classList.remove('active');
+        }
+
+        async function executeSeed() {
+            const count = document.getElementById('seedCount').value;
+            const tier = document.getElementById('seedTier').value;
+            const btn = document.getElementById('seedSubmitBtn');
+            btn.disabled = true;
+            btn.textContent = 'Generating...';
+
+            try {
+                const params = new URLSearchParams({ count });
+                if (tier) params.set('tier', tier);
+
+                const response = await fetch(`/api/admin/seed_queue?${params.toString()}`, {
+                    method: 'POST',
+                    headers: buildAuthHeaders()
+                });
+
+                if (!response.ok) {
+                    const errData = await response.json().catch(() => ({}));
+                    throw new Error(errData.detail || `HTTP ${response.status}`);
+                }
+
+                const data = await response.json();
+                closeSeedModal();
+                showToast(`Seeded ${data.seeded} training emails`);
+                await fetchPendingEmails({ silent: true });
+            } catch (err) {
+                showToast(`Seed failed: ${err.message}`);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Generate';
+            }
         }
 
         function getPriorityBadge(email) {

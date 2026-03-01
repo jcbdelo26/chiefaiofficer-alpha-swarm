@@ -136,6 +136,7 @@ After HeyReach hardening AND LinkedIn warmup complete:
 | Instantly Dispatcher | `execution/instantly_dispatcher.py` | READY | None — 6 domains warmed |
 | HeyReach Dispatcher | `execution/heyreach_dispatcher.py` (719 lines) | BLOCKED | 7 critical bugs (HR-01–07) |
 | Enrichment Waterfall | `execution/enricher_waterfall.py` | READY | None — Apollo + BC + Clay |
+| Queue Seed System | `core/seed_queue.py` + `/api/admin/seed_queue` | IN PROGRESS | Populates pending queue from dashboard |
 | Segmentor/ICP Scoring | `execution/segmentor_classify.py` | READY | None |
 
 ---
@@ -206,7 +207,7 @@ After HeyReach hardening AND LinkedIn warmup complete:
 | C2 | Create `directives/compliance.md` (CAN-SPAM, GDPR, LinkedIn ToS, unsub flow) | `directives/compliance.md` | 1h |
 | C3 | Create `docs/INCIDENT_RESPONSE.md` (auth errors, webhook failures, Redis loss, EMERGENCY_STOP) | `docs/INCIDENT_RESPONSE.md` | 1h |
 
-### Track D: Nice-to-Have (Post-Graduation)
+### Track D: Autonomy Prep + Nice-to-Have
 
 | # | Task | Priority | Trigger |
 |---|------|----------|---------|
@@ -215,6 +216,30 @@ After HeyReach hardening AND LinkedIn warmup complete:
 | D3 | Railway deployment playbook (`docs/DEPLOYMENT_RAILWAY.md`) | MEDIUM | Before next deploy |
 | D4 | Replace `datetime.utcnow()` → timezone-aware UTC (partial) | LOW | Ongoing cleanup |
 | D5 | Remove stale `PROXYCURL_API_KEY` references | LOW | Cleanup |
+| D6 | **Wire feedback loops for full autonomy** | **CRITICAL** | Before Phase 5 |
+
+#### D6: Feedback Loop Wiring (DEFERRED — Critical for Full Autonomy)
+
+**Status**: Infrastructure 90% built. Missing: event→engine connectors.
+
+The system collects feedback data (approvals, rejections, send outcomes) but **does not apply it to change agent behavior**. Only `core/rejection_memory.py` closes the loop today. All other learning engines are dormant:
+
+| Engine | File | What's Built | What's Missing |
+|--------|------|-------------|----------------|
+| Feedback tuples | `core/feedback_loop.py` | Records outcomes with reward signals | Nobody reads tuples; policy deltas generated but not applied |
+| Quality Guard | `core/quality_guard.py` | 5 static rules | No threshold learning from outcomes |
+| CRAFTER | `execution/crafter_campaign.py` | Receives rejection context | Doesn't change template selection based on feedback |
+| Self-Annealing | `core/self_annealing_engine.py` | Full RETRIEVE-JUDGE-DISTILL pipeline | Imported but never triggered |
+| RL Engine | `execution/rl_engine.py` | Q-learning with state-action-reward | No reward signals wired from send events |
+| A/B Testing | `core/ab_test_engine.py` | Subject line variants + significance | Manual-only, no auto-trigger |
+| Self-Learning ICP | `core/self_learning_icp.py` | pgvector embeddings for deal outcomes | No GHL webhook hookup |
+
+**To close the loop (Phase 5 prep)**:
+1. Wire send/open/reply/bounce webhook events → RL engine `update()` calls
+2. Apply policy deltas → CRAFTER template selection (avoid rejected angles)
+3. Auto-create A/B tests when reply rate drops below threshold
+4. GHL deal outcome webhook → ICP weight recalibration
+5. Quality Guard: dynamic thresholds from rejection rate trends
 
 ---
 

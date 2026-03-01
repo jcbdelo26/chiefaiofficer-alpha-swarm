@@ -38,6 +38,7 @@ python -m pytest \
   tests/test_health_monitor.py \
   tests/test_gatekeeper_integration.py \
   tests/test_dashboard_login.py \
+  tests/test_seed_queue.py \
   -x -q --tb=short -s 2>/dev/null
 
 if [ $? -ne 0 ]; then

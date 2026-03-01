@@ -692,8 +692,8 @@ class OperatorOutbound:
                     continue
                 if data.get("sent_via_ghl"):
                     continue
-                # Canary safety gate: never dispatch training emails
-                if data.get("canary") or data.get("_do_not_dispatch"):
+                # Canary / synthetic safety gate: never dispatch training emails
+                if data.get("canary") or data.get("_do_not_dispatch") or data.get("synthetic"):
                     continue
                 recipient_email = data.get("to", "")
                 if not self._is_lead_eligible(recipient_email, state):
