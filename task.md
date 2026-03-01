@@ -1,9 +1,9 @@
 # CAIO Alpha Swarm — Master Tracker & Autonomy Roadmap
 
 **Last Updated**: 2026-03-01
-**Last Commit**: `8176c27` (Phase 4 bulk commit — deployed to Railway 2026-02-27)
+**Last Commit**: `5023f6b` (Dashboard login gate + Sprint 4-6 hardening — deployed to Railway 2026-03-01)
 **Plan Version**: v5.0
-**Test Suite**: 439 tests passing (26-file pre-commit, ~32s)
+**Test Suite**: 461 tests passing (27-file pre-commit, ~56s)
 
 > **This file is the single source of truth for all current and future work.**
 > For historical roadmap: `CAIO_IMPLEMENTATION_PLAN.md` (v4.6). For deployment context: `CLAUDE.md`.
@@ -68,7 +68,7 @@ HoS Review → Ramp Supervision → Graduate → HR Hardening → LinkedIn Live
 
 **This is the single gate blocking everything.** No emails send live until you review.
 
-1. Open `caio-swarm-dashboard-production.up.railway.app`
+1. Open `caio-swarm-dashboard-production.up.railway.app/login` (enter your `DASHBOARD_AUTH_TOKEN`)
 2. Go to the **Email Queue** tab (or `/sales`)
 3. Review 5+ shadow emails — approve or reject each
 4. On approval: OPERATOR dispatches first live batch (5 emails, tier_1 only, Instantly)
@@ -127,7 +127,7 @@ After HeyReach hardening AND LinkedIn warmup complete:
 
 | Module | File | Status | Blockers |
 |--------|------|--------|----------|
-| Dashboard & HoS Review | `dashboard/health_app.py` (2820 lines) | READY | None |
+| Dashboard & HoS Review | `dashboard/health_app.py` (~3120 lines) | READY | Login gate deployed (`5023f6b`) |
 | OPERATOR Dispatch | `execution/operator_outbound.py` (1936 lines) | READY | 3 clean ramp days |
 | Cadence Engine | `execution/cadence_engine.py` (682 lines) | READY | None — auto-runs daily |
 | Shadow Queue (Redis) | `core/shadow_queue.py` (263 lines) | READY | None |
@@ -291,7 +291,7 @@ After HeyReach hardening AND LinkedIn warmup complete:
 
 - [x] **Webhook strict enforcement** — `WEBHOOK_SIGNATURE_REQUIRED=true` validated
 - [ ] **HeyReach auth** — `HEYREACH_UNSIGNED_ALLOWLIST` must be `false`, `HEYREACH_BEARER_TOKEN` must be set on Railway
-- [x] **Dashboard auth** — Header-only enforced, query-token disabled
+- [x] **Dashboard auth** — Login page gate with signed cookie sessions (commit `5023f6b`). Token never in URL.
 
 ### P1 (Before scaling past 25/day)
 
@@ -305,7 +305,7 @@ After HeyReach hardening AND LinkedIn warmup complete:
 - [x] FastAPI lifespan migration (from deprecated `on_event`)
 - [ ] Replace `datetime.utcnow()` with timezone-aware UTC (partial)
 - [ ] Remove stale `PROXYCURL_API_KEY` references
-- [ ] CLAUDE.md deployed hash stale (`0f0e0a9` → should be `8176c27`)
+- [x] CLAUDE.md deployed hash updated to `5023f6b`
 
 ### Emergency Controls
 
@@ -351,9 +351,9 @@ All must be TRUE before declaring full email autonomy:
 - [ ] **`operator.ramp.enabled` set to `false`** (config change)
 - [ ] **CLAUDE.md updated with current deploy hash**
 - [x] Webhook strict mode enabled (`WEBHOOK_SIGNATURE_REQUIRED=true`)
-- [x] Header-only dashboard auth (query token disabled)
+- [x] Login page + cookie session auth (token never in URL)
 - [x] Redis-only state cutover complete
-- [x] 439 pre-commit tests passing
+- [x] 461 pre-commit tests passing (27 files)
 - [x] Engineering Sprints 1-6 complete
 
 All must be TRUE before declaring multi-channel (email + LinkedIn) autonomy:
@@ -462,7 +462,7 @@ echo yes | python execution/run_pipeline.py --mode production --source "wpromote
 | Alerts | `core/alerts.py` | Slack webhook, 3 severity levels |
 | Compliance | `core/compliance.py` | CAN-SPAM enforcement |
 | Production Config | `config/production.json` | All feature flags + limits |
-| Pre-commit Hook | `.githooks/pre-commit` | 26 files, 439 tests, ~32s |
+| Pre-commit Hook | `.githooks/pre-commit` | 27 files, 461 tests, ~56s |
 | Implementation Plan | `CAIO_IMPLEMENTATION_PLAN.md` | v4.6, full historical roadmap |
 | HoS Review Guide | `docs/HOS_EMAIL_REVIEW_GUIDE.md` | Email approval criteria |
 | Dev Team Skill | `.claude/commands/dev-team.md` | 3-pass code review |
@@ -484,6 +484,7 @@ echo yes | python execution/run_pipeline.py --mode production --source "wpromote
 
 | Commit | Date | Description |
 |--------|------|-------------|
+| `5023f6b` | 2026-03-01 | Dashboard login gate (cookie sessions) + Sprint 4-6 engineering hardening. 461 tests, 27 files. Deployed to Railway. |
 | `8176c27` | 2026-02-27 | Phase 4 bulk commit: 7 modules, 14 test files, 5 agents, pre-commit hook. Deployed to Railway. |
 | `4992d69` | 2026-02-27 | FastAPI lifespan migration, timezone-aware UTC, smoke matrix hard-auth. |
 | `21993cd` | 2026-02-26 | CORS hardening: explicit methods/headers; staging + production validated. |
@@ -493,7 +494,7 @@ echo yes | python execution/run_pipeline.py --mode production --source "wpromote
 | `5eaffac` | 2026-02-23 | HeyReach strict auth hardening + regression tests. |
 | `d9ade64` | 2026-02-22 | Structured rejection tags + clean-day ramp gating. |
 
-**Uncommitted work (Sprints 5-6):** XS-01–06 fixes, HR-12/17/18 fixes, XS-14, legacy test cleanup, emoji purge, dev-team skill. **Needs commit + deploy.**
+**All Sprint 5-6 work committed in `5023f6b`** — XS-01–06 fixes, HR-12/17/18 fixes, XS-14, legacy test cleanup, emoji purge, dev-team skill, login gate.
 
 ---
 

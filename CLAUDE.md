@@ -8,7 +8,7 @@
 **Company**: Chiefaiofficer.com
 **Platform**: Railway (production) at `caio-swarm-dashboard-production.up.railway.app`
 **Dashboard**: v3.0 full 4-tab UI (Overview/Email Queue/Campaigns/Settings) + live KPIs + compliance checks
-**Latest successful production deploy**: commit `0f0e0a9` (2026-02-19) — Compliance footer fix (Reply STOP) + Dashboard v3.0 + P0 checks
+**Latest successful production deploy**: commit `5023f6b` (2026-03-01) — Dashboard login gate + Sprint 4-6 engineering hardening (461 tests, 27 files)
 
 ### Mandatory Read Order (Every New Session)
 
