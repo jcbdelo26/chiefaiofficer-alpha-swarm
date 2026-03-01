@@ -1251,6 +1251,21 @@ async def seed_queue(
         raise HTTPException(status_code=500, detail=f"Seed failed: {exc}")
 
 
+@app.get("/api/admin/webhook_captures")
+async def get_webhook_captures(auth: bool = Depends(require_auth)):
+    """Read captured HeyReach webhook payloads from Redis (HR-05 debug).
+
+    Temporary endpoint — remove after webhook schema is validated.
+    """
+    try:
+        from webhooks.heyreach_webhook import _read_captures_from_redis
+        captures = _read_captures_from_redis()
+        return {"captures": captures, "count": len(captures)}
+    except Exception as exc:
+        logger.error("webhook_captures failed: %s", exc)
+        raise HTTPException(status_code=500, detail=str(exc))
+
+
 @app.post("/api/admin/regenerate_queue")
 async def regenerate_queue(auth: bool = Depends(require_auth)):
     """

@@ -509,3 +509,75 @@ async def heyreach_webhook_health():
         "warnings": warnings,
         "events_supported": list(EVENT_HANDLERS.keys()),
     }
+
+
+# =============================================================================
+# TEMPORARY: Webhook Payload Capture (HR-05 schema discovery)
+# Remove after real payloads are captured and schema is validated.
+# =============================================================================
+
+def _capture_to_redis(key: str, payload: Dict[str, Any]) -> bool:
+    """Store captured webhook payload to Redis with 24h TTL."""
+    try:
+        from core.shadow_queue import _get_redis
+        r = _get_redis()
+        if r:
+            r.set(key, json.dumps(payload, ensure_ascii=False), ex=86400)
+            return True
+    except Exception as e:
+        logger.warning("Failed to store webhook capture to Redis: %s", e)
+    return False
+
+
+def _read_captures_from_redis() -> list:
+    """Read all captured webhook payloads from Redis."""
+    try:
+        from core.shadow_queue import _get_redis
+        r = _get_redis()
+        if not r:
+            return []
+        keys = list(r.scan_iter("caio:debug:webhook_capture:*"))
+        captures = []
+        for key in sorted(keys):
+            raw = r.get(key)
+            if raw:
+                captures.append({
+                    "key": key if isinstance(key, str) else key.decode(),
+                    "payload": json.loads(raw),
+                })
+        return captures
+    except Exception as e:
+        logger.warning("Failed to read webhook captures: %s", e)
+        return []
+
+
+@router.post("/webhooks/heyreach/capture")
+async def heyreach_capture(request: Request):
+    """Temporary debug endpoint — captures raw HeyReach webhook payload to Redis.
+
+    No auth required (temporary, captures only to Redis with 24h TTL).
+    Used to discover actual HeyReach webhook field names for HR-05.
+    DELETE THIS ENDPOINT after schema is validated.
+    """
+    try:
+        raw_body = await request.body()
+        payload = json.loads(raw_body.decode("utf-8"))
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        raise HTTPException(status_code=400, detail="Invalid JSON")
+
+    ts = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S_%f")
+    redis_key = f"caio:debug:webhook_capture:{ts}"
+    stored = _capture_to_redis(redis_key, payload)
+
+    logger.info(
+        "HR-05 CAPTURE: %d bytes, %d keys: %s (redis=%s)",
+        len(raw_body), len(payload), sorted(payload.keys()), stored,
+    )
+
+    return {
+        "status": "captured",
+        "redis_key": redis_key,
+        "stored": stored,
+        "payload_keys": sorted(payload.keys()),
+        "payload_size": len(raw_body),
+    }
