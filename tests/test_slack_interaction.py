@@ -69,7 +69,8 @@ async def test_handle_unknown_action():
         payload = {"actions": [{"action_id": "dance_req_789"}]}
         
         result = await handler.handle_payload(payload)
-        
-        # Should log warning and return empty, meaning no update
-        assert result == {}
+
+        # Unknown actions return an error response with blocks and text
+        assert result.get("replace_original") is True
+        assert "Unknown action" in result.get("text", "")
         mock_engine.approve_request.assert_not_called()

@@ -2,9 +2,15 @@
 Agent Manager - Central Orchestration Layer
 Unified coordination for chiefaiofficer-alpha-swarm + revenue-swarm
 
+STATUS: PHASE-0 SCAFFOLD -- Only AgentRegistry.agents and bootstrap_swarm()
+are used in production (by TestOrchestrator and ProductionValidator).
+All other managers (Lifecycle, State, Handoff, Context, Learning) contain
+placeholder stubs from the initial scaffold and are not called by any
+production code path.
+
 Author: Chris Daigle (Chiefaiofficer.com)
-Version: 1.0.0
-Date: 2026-01-16
+Version: 1.1.0
+Date: 2026-01-16 (scaffold), 2026-03-02 (stub cleanup)
 """
 
 import json
@@ -244,11 +250,6 @@ class AgentRegistry:
         if not agent:
             return {"healthy": False, "error": "Agent not found"}
         
-        # TODO: Implement actual health checks
-        # - Check if MCP server is running
-        # - Check if dependencies are available
-        # - Test basic agent functionality
-        
         return {
             "healthy": True,
             "agent_id": agent_id,
@@ -274,11 +275,6 @@ class AgentRegistry:
         Returns:
             List of discovered agent IDs
         """
-        # TODO: Implement agent discovery
-        # - Scan path for Python files
-        # - Extract agent metadata from docstrings
-        # - Auto-register if enabled
-        
         logger.info(f"Discovering agents in {path} with prefix '{prefix}'")
         discovered = []
         
@@ -320,12 +316,6 @@ class LifecycleManager:
         
         logger.info(f"Initializing agent: {agent_id}")
         
-        # TODO: Implement agent initialization
-        # - Load configuration
-        # - Initialize dependencies
-        # - Restore state if warm_start
-        # - Update registry status
-        
         metadata.status = AgentStatus.RUNNING
         self.registry._save_registry()
         
@@ -348,11 +338,6 @@ class LifecycleManager:
             raise ValueError(f"Agent {agent_id} not registered")
         
         logger.info(f"Shutting down agent: {agent_id}")
-        
-        # TODO: Implement shutdown
-        # - Save state if persist_state
-        # - Clean up resources
-        # - Update registry status
         
         metadata.status = AgentStatus.STOPPED
         self.registry._save_registry()
@@ -439,11 +424,6 @@ class StateManager:
         
         Returns progress for each agent in workflow
         """
-        # TODO: Implement workflow state tracking
-        # - Load workflow definition
-        # - Check each agent's progress
-        # - Return status map
-        
         return {}
     
     def persist_state(self, agent_id: str, state_data: Dict[str, Any]):
@@ -572,11 +552,6 @@ class HandoffManager:
         
         Returns validation results with warnings and required transforms
         """
-        # TODO: Implement schema validation
-        # - Check if to_agent can accept data format
-        # - Identify missing required fields
-        # - Suggest data transformations
-        
         return {
             "valid": True,
             "warnings": [],
@@ -615,12 +590,6 @@ class ContextManager:
         
         Returns current usage, zone, and recommendations
         """
-        # TODO: Implement context monitoring
-        # - Query agent for current context size
-        # - Calculate percentage used
-        # - Determine zone (smart/warning/dumb)
-        # - Suggest compaction strategy if needed
-        
         return {
             "agent_id": agent_id,
             "context_used": "0%",
@@ -637,17 +606,12 @@ class ContextManager:
         Force context compaction using specified strategy
         
         Strategies:
-        - rpi: Research → Plan → Implement
+        - rpi: Research -> Plan -> Implement
         - semantic_anchor: Extract WHY/WHAT/HOW
         - summarize: Progressive summarization
         - checkpoint: Save state and restart fresh
         """
         logger.info(f"Triggering {strategy} compaction for {agent_id}")
-        
-        # TODO: Implement compaction strategies
-        # - Execute appropriate compaction method
-        # - Verify context reduction
-        # - Log results
     
     def create_context_checkpoint(
         self,
@@ -659,11 +623,6 @@ class ContextManager:
         
         Allows restoration later if needed
         """
-        # TODO: Implement checkpoint creation
-        # - Save current context state
-        # - Tag with checkpoint_name
-        # - Store in .hive-mind/checkpoints/
-        
         logger.info(f"Created checkpoint '{checkpoint_name}' for {agent_id}")
     
     def get_context_analytics(
@@ -676,12 +635,6 @@ class ContextManager:
         
         Returns trends and optimization opportunities
         """
-        # TODO: Implement analytics
-        # - Load historical context usage
-        # - Calculate averages and trends
-        # - Identify patterns
-        # - Suggest optimizations
-        
         return {
             "agent_id": agent_id,
             "period": time_period,
@@ -776,8 +729,6 @@ class LearningManager:
         if event_type:
             filtered = [l for l in filtered if l.event_type == event_type]
         
-        # TODO: Implement time period filtering
-        
         return filtered
     
     def apply_learning(
@@ -801,12 +752,6 @@ class LearningManager:
         if not learning:
             raise ValueError(f"Learning {learning_id} not found")
         
-        # TODO: Implement learning application
-        # - Analyze learning data
-        # - Generate directive update
-        # - Write to appropriate file
-        # - Mark learning as applied
-        
         learning.applied = True
         self._save_learnings()
         
@@ -822,11 +767,6 @@ class LearningManager:
         
         Returns patterns with suggested fixes
         """
-        # TODO: Implement pattern detection
-        # - Group learnings by similarity
-        # - Identify recurring themes
-        # - Suggest systematic fixes
-        
         return []
     
     def suggest_improvements(
@@ -838,11 +778,6 @@ class LearningManager:
         
         Returns list of suggested improvements
         """
-        # TODO: Implement improvement suggestion
-        # - Analyze learnings for agent
-        # - Identify weak points
-        # - Generate actionable suggestions
-        
         return []
 
 
@@ -935,12 +870,6 @@ class AgentManager:
         Returns:
             Workflow ID
         """
-        # TODO: Implement workflow creation
-        # - Validate all agents exist
-        # - Check dependencies
-        # - Create workflow definition
-        # - Save to .hive-mind/workflows/
-        
         workflow_id = f"workflow_{name}"
         logger.info(f"Created workflow: {workflow_id} with {len(steps)} steps")
         
@@ -956,13 +885,6 @@ class AgentManager:
         
         Coordinates handoffs between agents
         """
-        # TODO: Implement workflow execution
-        # - Load workflow definition
-        # - Initialize required agents
-        # - Execute steps in sequence
-        # - Handle handoffs
-        # - Return final output
-        
         logger.info(f"Executing workflow: {workflow_id}")
         
         return {"status": "completed", "output": {}}
@@ -1000,19 +922,19 @@ if __name__ == "__main__":
         
         if command == "bootstrap":
             am.bootstrap_swarm()
-            print("✅ Swarm bootstrapped")
+            print("[OK] Swarm bootstrapped")
         
         elif command == "list":
             agents = am.registry.list_agents()
-            print(f"\n📋 Registered Agents ({len(agents)}):")
+            print(f"\nRegistered Agents ({len(agents)}):")
             for agent in agents:
                 print(f"  - {agent.agent_id} ({agent.agent_type})")
                 print(f"    Capabilities: {', '.join(agent.capabilities)}")
         
         elif command == "health":
             health = am.health_check()
-            print(f"\n🏥 System Health:")
-            print(f"  Overall: {'✅ Healthy' if health['healthy'] else '❌ Unhealthy'}")
+            print(f"\nSystem Health:")
+            print(f"  Overall: {'[OK] Healthy' if health['healthy'] else '[FAIL] Unhealthy'}")
             print(f"  Total Agents: {health['total_agents']}")
         
         else:

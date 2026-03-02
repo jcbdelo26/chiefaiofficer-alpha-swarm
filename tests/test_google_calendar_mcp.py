@@ -18,6 +18,25 @@ from config import CalendarConfig, get_config, set_config
 from guardrails import CalendarGuardrails, BookingValidation, WorkingHours
 
 
+def _future_weekday_2pm():
+    """Return a future weekday date string (YYYY-MM-DD) at least 7 days out.
+
+    Guarantees the date falls on a weekday (Mon-Fri) so guardrails accept it.
+    """
+    base = datetime.now(timezone.utc) + timedelta(days=7)
+    while base.weekday() >= 5:
+        base += timedelta(days=1)
+    return base.strftime("%Y-%m-%d")
+
+
+def _future_saturday():
+    """Return a future Saturday date string (YYYY-MM-DD) at least 7 days out."""
+    base = datetime.now(timezone.utc) + timedelta(days=7)
+    while base.weekday() != 5:  # 5 = Saturday
+        base += timedelta(days=1)
+    return base.strftime("%Y-%m-%d")
+
+
 class TestCalendarConfig:
     """Test calendar configuration."""
     
@@ -57,14 +76,15 @@ class TestCalendarGuardrails:
     
     def test_valid_booking(self):
         guardrails = CalendarGuardrails()
-        
-        # Valid meeting during working hours
+
+        # Valid meeting during working hours on a future weekday
+        date_str = _future_weekday_2pm()
         result = guardrails.validate_booking(
-            start_time="2026-01-22T14:00:00-05:00",
-            end_time="2026-01-22T14:30:00-05:00",
+            start_time=f"{date_str}T14:00:00-05:00",
+            end_time=f"{date_str}T14:30:00-05:00",
             timezone_str="America/New_York"
         )
-        
+
         assert result.valid is True
         assert result.error is None
     
@@ -132,13 +152,15 @@ class TestCalendarGuardrails:
     def test_weekend_allowed_with_config(self):
         working_hours = WorkingHours(weekend_allowed=True)
         guardrails = CalendarGuardrails(working_hours=working_hours)
-        
+
+        # Use a future Saturday
+        sat_str = _future_saturday()
         result = guardrails.validate_booking(
-            start_time="2026-01-24T14:00:00-05:00",
-            end_time="2026-01-24T14:30:00-05:00",
+            start_time=f"{sat_str}T14:00:00-05:00",
+            end_time=f"{sat_str}T14:30:00-05:00",
             timezone_str="America/New_York"
         )
-        
+
         assert result.valid is True
     
     def test_end_before_start(self):
@@ -270,13 +292,15 @@ class TestAlternativeTimeSuggestions:
     
     def test_suggest_alternatives(self):
         guardrails = CalendarGuardrails()
-        
+
+        # Use a future weekday so validate_booking passes inside suggest_alternative_times
+        date_str = _future_weekday_2pm()
         suggestions = guardrails.suggest_alternative_times(
-            start_time="2026-01-22T14:00:00-05:00",
+            start_time=f"{date_str}T14:00:00-05:00",
             duration_minutes=30,
             existing_events=[]
         )
-        
+
         assert len(suggestions) > 0
         assert all("start" in s and "end" in s for s in suggestions)
 

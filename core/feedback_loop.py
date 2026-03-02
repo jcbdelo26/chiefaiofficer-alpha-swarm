@@ -1,6 +1,13 @@
 #!/usr/bin/env python3
 """
 Deterministic feedback loop storage for supervised learning tuples.
+
+STATUS: PARTIALLY ACTIVE -- Records training tuples (always). Policy-closing
+behaviour (auto-boosting/suppression via quality_guard integration) is gated
+behind the FEEDBACK_LOOP_POLICY_ENABLED feature flag (default: false).
+When enabled: GUARD-001 grants leniency to 3x-approved leads,
+GUARD-004 extends banned openers from policy deltas.
+Do not enable until task.md marks Phase 5 active.
 """
 
 from __future__ import annotations
@@ -226,6 +233,45 @@ class FeedbackLoop:
         with open(output_file, "w", encoding="utf-8") as f:
             json.dump(delta, f, indent=2, ensure_ascii=False)
         return delta
+
+    def get_lead_approval_count(self, lead_email: str) -> int:
+        """Count how many times a lead has been approved (reward > 0)."""
+        lead_email = lead_email.strip().lower()
+        count = 0
+        if not self.tuples_file.exists():
+            return 0
+        try:
+            with open(self.tuples_file, "r", encoding="utf-8") as f:
+                for line in f:
+                    line = line.strip()
+                    if not line:
+                        continue
+                    try:
+                        item = json.loads(line)
+                    except Exception:
+                        continue
+                    features = item.get("lead_features") or {}
+                    if features.get("lead_email") != lead_email:
+                        continue
+                    outcome = item.get("outcome", "")
+                    if outcome in ("approved", "sent_proved", "sent_unresolved"):
+                        count += 1
+        except Exception:
+            pass
+        return count
+
+    def get_latest_policy_delta(self) -> Optional[Dict[str, Any]]:
+        """Read the most recent policy delta file, if any."""
+        if not self.policy_dir.exists():
+            return None
+        delta_files = sorted(self.policy_dir.glob("policy_delta_*.json"), reverse=True)
+        if not delta_files:
+            return None
+        try:
+            with open(delta_files[0], "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            return None
 
     def _emit_trace(
         self,

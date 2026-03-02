@@ -2,6 +2,11 @@
 """
 A/B Test Engine for Email Optimization
 =======================================
+
+STATUS: DORMANT -- Phase 5 only. Do not integrate into production
+pipelines until task.md marks Phase 5 active.
+Feature flag: AB_TEST_ENGINE_ENABLED (default: false)
+
 Implements subject line A/B testing, negative reply pattern detection,
 and CTA optimization based on self-annealing recommendations.
 
@@ -16,18 +21,18 @@ Triggered by: Self-annealing alert "reply rate below target"
 
 Usage:
     from core.ab_test_engine import get_ab_engine, SubjectLineTest
-    
+
     engine = get_ab_engine()
-    
+
     # Create new A/B test
     test = await engine.create_subject_test(
         base_subject="Quick thought on {company}'s development cycle",
         campaign_id="campaign_001"
     )
-    
+
     # Get variant for a lead
     variant = engine.get_variant_for_lead("lead_123", test.test_id)
-    
+
     # Record outcome
     engine.record_outcome(test.test_id, variant.variant_id, "replied", positive=True)
 """
@@ -216,7 +221,7 @@ SOFT_CTAS = {
     CTASoftness.SOFT: [
         "Would later today or tomorrow work better?",
         "Happy to share more when timing works.",
-        "No rush—just let me know if it's worth exploring.",
+        "No rush--just let me know if it's worth exploring.",
     ],
     CTASoftness.ULTRA_SOFT: [
         "Happy to share more if helpful.",

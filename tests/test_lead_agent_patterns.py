@@ -100,6 +100,10 @@ class TestIntentInterpreter:
 # TEST: DURABLE WORKFLOW
 # =============================================================================
 
+@pytest.mark.skipif(
+    sys.platform == "win32",
+    reason="SQLite file locks prevent temp directory cleanup on Windows"
+)
 class TestDurableWorkflow:
     """Tests for Durable Workflow (Checkpoint Persistence)."""
     
@@ -581,6 +585,10 @@ class TestBoundedTools:
 # INTEGRATION TESTS
 # =============================================================================
 
+@pytest.mark.skipif(
+    sys.platform == "win32",
+    reason="SQLite file locks prevent temp directory cleanup on Windows"
+)
 class TestIntegration:
     """Integration tests combining multiple patterns."""
     

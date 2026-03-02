@@ -1,3 +1,12 @@
+---
+title: Context Handoff
+version: "1.0"
+last_updated: 2026-01-26
+audience: [all-agents, engineers]
+tags: [handoff, context, production-launch]
+canonical_for: [context-handoff]
+---
+
 # Context Handoff: ChiefAIOfficer-Alpha-Swarm Production Launch
 
 **Created:** 2026-01-26

@@ -4,6 +4,11 @@ Reinforcement Learning Engine
 =============================
 Adaptive decision-making using Q-learning for campaign optimization.
 
+STATUS: DORMANT -- Infrastructure only, no active policies.
+All RL-driven behaviour is gated behind the RL_ENGINE_ENABLED
+feature flag (default: false). Do not enable until task.md marks
+Phase 5 active and sufficient training tuples exist.
+
 Learns optimal:
 - Template selection
 - Send timing
@@ -12,7 +17,7 @@ Learns optimal:
 
 Usage:
     from execution.rl_engine import RLEngine
-    
+
     engine = RLEngine()
     action = engine.select_action(state)
     engine.update(state, action, reward, next_state)
@@ -279,7 +284,7 @@ class RLEngine:
         """
         Update Q-value using Q-learning update rule.
         
-        Q(s, a) = Q(s, a) + α * (r + γ * max(Q(s', a')) - Q(s, a))
+        Q(s, a) = Q(s, a) + alpha * (r + gamma * max(Q(s', a')) - Q(s, a))
         """
         
         state_key = state.to_key()

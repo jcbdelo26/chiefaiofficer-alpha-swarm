@@ -1,6 +1,15 @@
+---
+title: Unified Implementation Plan
+version: "4.7"
+last_updated: 2026-03-02
+audience: [all-agents, engineers, pto-gtm]
+tags: [implementation, roadmap, phases, architecture]
+canonical_for: [implementation-plan, phase-roadmap]
+---
+
 # CAIO Alpha Swarm — Unified Implementation Plan
 
-**Last Updated**: 2026-02-27 (v4.6 — Sprint 3: Clay fallback re-enabled, TDD testing complete, HeyReach tests, pre-commit hook)
+**Last Updated**: 2026-03-02 (v4.7 — Phase 4L: Agentic Engineering Audit v1.1 security hardening, dormant engine gating, 5-pillar assessment)
 **Owner**: ChiefAIOfficer Production Team
 **AI**: Claude Opus 4.6
 
@@ -12,7 +21,7 @@ The CAIO Alpha Swarm is a 12-agent autonomous SDR pipeline: Lead Discovery (Apol
 
 **Current Position**: Phase 4 (Autonomy Graduation) — IN PROGRESS
 **Production Pipeline**: 6/6 stages PASS with real Apollo data (8-68s end-to-end)
-**Autonomy Score**: ~98/100
+**Autonomy Score**: ~99/100 (security hardening + audit complete, ramp active)
 **Total Production Runs**: 33+ (22 fully clean, last 10 consecutive 6/6 PASS)
 
 ```
@@ -20,7 +29,7 @@ Phase 0: Foundation Lock          [##########] 100%  COMPLETE
 Phase 1: Live Pipeline Validation [##########] 100%  COMPLETE
 Phase 2: Supervised Burn-In       [##########] 100%  COMPLETE
 Phase 3: Expand & Harden          [##########] 100%  COMPLETE
-Phase 4: Autonomy Graduation      [#########.]  98%  IN PROGRESS (4A+4C+4D+4F+4G+4I+4J+4K COMPLETE, 4B infra done, 4E ramp active, 4H in progress)
+Phase 4: Autonomy Graduation      [#########.]  99%  IN PROGRESS (4A+4C+4D+4F+4G+4I+4J+4K+4L COMPLETE, 4B infra done, 4E ramp active, 4H in progress)
 ```
 
 ---
@@ -689,6 +698,65 @@ QUEEN (orchestrator)
 
 **Env vars**: `CLAY_API_KEY`, `CLAY_WORKBOOK_WEBHOOK_URL` (existing), `CLAY_PIPELINE_ENABLED` (new, default false)
 
+### Phase 4L: Agentic Engineering Audit & Security Hardening — COMPLETE (v1.1)
+
+**Objective**: Assess entire codebase against the 5 Pillars of Agentic Engineering framework, close critical security nuances identified by Codex agent manager review, and establish remediation roadmap for remaining gaps.
+
+**Source**: `docs/AGENTIC_ENGINEERING_AUDIT_HANDOFF.md` (v1.1, Codex-reviewed)
+
+#### Assessment Scorecard
+
+| Pillar | Score | Verdict | Primary Gap |
+|--------|------:|---------|-------------|
+| Context Engineering | 9.0 | Strong | No indexed freshness automation |
+| Agentic Validation | 8.8 | Strong | Learning loops mostly observational |
+| Agentic Tooling | 8.4 | Strong | Tool orchestration/discovery fragmentation |
+| Agentic Codebases | 7.8 | Good (weakest) | Dormant systems + auth nuance drift |
+| Compound Engineering | 8.1 | Strong | Feedback not consistently policy-closing |
+| **Overall** | **8.4** | **Production-capable** | **Auth hardening + dormant engine gating** |
+
+#### Security Hardening (P0 — Closed)
+
+| Nuance | Fix | File |
+|--------|-----|------|
+| N1: Query-token default enabled | Default DISABLED in production/staging | `dashboard/health_app.py` |
+| N2: Token URLs in Slack | `_dashboard_url()` returns token-free URLs | `core/approval_notifier.py` |
+| N3: Weak session secret fallback | Strict enforcement: `SESSION_SECRET_KEY` required in production | `dashboard/health_app.py` |
+| N4: Incomplete auth state reporting | `/api/runtime/dependencies` enriched with 7 auth fields | `dashboard/health_app.py` |
+| N6: OpenAPI docs exposed | `/docs`, `/redoc`, `/openapi.json` disabled in production/staging | `dashboard/health_app.py` |
+
+#### Dormant Engine Gating (P1 — Closed)
+
+5 learning engine files annotated with `STATUS: DORMANT` + feature flags. Catalog: `docs/DORMANT_ENGINES.md`.
+
+| Engine | Path | Lines | Feature Flag |
+|--------|------|------:|--------------|
+| Feedback Loop | `core/feedback_loop.py` | 255 | `FEEDBACK_LOOP_POLICY_ENABLED` |
+| A/B Test Engine | `core/ab_test_engine.py` | 825 | `AB_TEST_ENGINE_ENABLED` |
+| Self-Annealing | `core/self_annealing_engine.py` | 1,205 | `SELF_ANNEALING_ENGINE_ENABLED` |
+| RL Engine | `execution/rl_engine.py` | 514 | `RL_ENGINE_ENABLED` |
+| Self-Learning ICP | `core/self_learning_icp.py` | 793 | `SELF_LEARNING_ICP_ENABLED` |
+
+#### Validation & Smoke Gate
+
+| Gate | Command | Result |
+|------|---------|--------|
+| Security hardening tests | `python -m pytest tests/test_security_hardening_v11.py -x -q --tb=short -s` | **30 passed** |
+| Dashboard login regression | `python -m pytest tests/test_dashboard_login.py -x -q --tb=short -s` | **14 passed** |
+| Health monitor regression | `python -m pytest tests/test_health_monitor.py -x -q --tb=short -s` | **67 passed** |
+| Feedback loop regression | `python -m pytest tests/test_feedback_loop.py -x -q --tb=short -s` | **15 passed** |
+| Strict-auth parity (deployed) | `python scripts/strict_auth_parity_smoke.py --base-url <URL> --token <TOKEN>` | Pending deploy |
+
+#### Remaining Remediation Roadmap (4 Sprints — see Task Tracker Section 2B)
+
+21 gaps identified across 5 pillars, organized into Sprints A-D:
+- **Sprint A** (Quick Wins): 4 remaining items — glossary, agent_manager cleanup, YAML frontmatter, ASCII enforcement
+- **Sprint B** (Structural): 6 items — knowledge index, unified CLI, smoke orchestrator, cross-env tests, UI validation, doc freshness
+- **Sprint C** (Compound): 5 items — MCP catalog, ADR backfill, lesson capture, compound skills, trace diagnosis
+- **Sprint D** (Deep Integration): 4 items — gateway registry, compound metrics, legacy test fixes, feedback loop activation
+
+**#1 Systemic Gap**: 7 dormant learning engines (spans Pillars 2, 4, 5). Activation deferred to Phase 5 with explicit feature flag + data threshold + rollback switch gates. `docs/DORMANT_ENGINES.md` documents activation criteria for each engine.
+
 ---
 
 ## Phase 5: Optimize & Scale (Post-Autonomy)
@@ -702,7 +770,7 @@ QUEEN (orchestrator)
 | Task | Status | Notes |
 |------|--------|-------|
 | Enrichment result caching (Supabase) | TODO | Saves Apollo credits on re-encounters |
-| Self-learning ICP calibration | TODO | Feed real deal outcomes back to scoring model |
+| Self-learning ICP calibration | TODO | Feed real deal outcomes back to scoring model. Gated: `SELF_LEARNING_ICP_ENABLED` (see `docs/DORMANT_ENGINES.md`) |
 | Enrichment quality feedback loop | TODO | Track which provider gives best data per segment |
 | Document adapter contracts in CLAUDE.md | TODO | Low effort, high clarity |
 
@@ -711,8 +779,26 @@ QUEEN (orchestrator)
 | Task | Status | Notes |
 |------|--------|-------|
 | Multi-source intent fusion | TODO | RB2B visitors + email opens + LinkedIn engagement → unified intent score |
-| A/B testing infrastructure | TODO | Email subject/body variants — needs real send data first |
+| A/B testing infrastructure | TODO | Email subject/body variants. Gated: `AB_TEST_ENGINE_ENABLED` (see `docs/DORMANT_ENGINES.md`) |
 | Campaign performance analytics dashboard | TODO | Aggregate Instantly + HeyReach metrics |
+
+### 5D: Learning Engine Activation Roadmap (Trigger: Phase 5 active in task.md)
+
+**Priority order** (based on proven pattern from `rejection_memory.py` — the one engine that already closes the loop):
+
+| Phase | Engine | Flag | Trigger | Minimum Data |
+|-------|--------|------|---------|-------------|
+| 5D-1 | Feedback Loop → Quality Guard | `FEEDBACK_LOOP_POLICY_ENABLED` | 200+ training tuples | 50 approved + 50 rejected |
+| 5D-2 | A/B Test Engine → CRAFTER | `AB_TEST_ENGINE_ENABLED` | 100+ sends per variant | Instantly webhook open/reply data |
+| 5D-3 | Self-Learning ICP → Tier Reweighting | `SELF_LEARNING_ICP_ENABLED` | 50+ closed deals | GHL webhook won/lost data |
+| 5D-4 | Self-Annealing → Template Selection | `SELF_ANNEALING_ENGINE_ENABLED` | 500+ email outcomes | Template attribution in feedback loop |
+| 5D-5 | RL Engine → Policy Optimization | `RL_ENGINE_ENABLED` | 1,000+ state-action tuples | Mature feedback loop required |
+
+**Activation protocol** (same for all engines):
+1. Verify data threshold met via `feedback_loop.py` tuple count
+2. Set feature flag to `true` in Railway env vars
+3. Monitor via `scripts/strict_auth_parity_smoke.py` + `/api/runtime/dependencies`
+4. Rollback: set flag to `false` → instant disable, no data loss
 
 ### 5C: Infrastructure Migration (Trigger: Volume exceeds 500 emails/day)
 
@@ -793,6 +879,10 @@ QUEEN (orchestrator)
 | **Pre-commit hook (test gate)** | `.githooks/pre-commit` |
 | **HeyReach dispatcher tests (18 tests)** | `tests/test_heyreach_dispatcher.py` |
 | **Enricher waterfall tests (41 tests)** | `tests/test_enricher_waterfall.py` |
+| **Dormant engines catalog** | `docs/DORMANT_ENGINES.md` |
+| **Agentic Engineering Audit (v1.1)** | `docs/AGENTIC_ENGINEERING_AUDIT_HANDOFF.md` |
+| **Security hardening tests (30 tests)** | `tests/test_security_hardening_v11.py` |
+| **Strict-auth parity smoke** | `scripts/strict_auth_parity_smoke.py` |
 | This plan | `CAIO_IMPLEMENTATION_PLAN.md` |
 
 ---
@@ -860,11 +950,14 @@ QUEEN (orchestrator)
 | 2026-02-17 | Apply HoS critical pre-live fixes + add regression gate | Fixed follow-up subject A/B bug, intent+engagement cap inflation, subdomain exclusion gap, cadence dry-run side effects, and cadence auto-enroll channel gap. Added `tests/test_hos_integration_regressions.py`; replay and expanded pytest gates passed. |
 | 2026-02-17 | Enforce strict non-API webhook signatures + readiness webhook dependency checks | Added shared webhook signature policy helper; enforced signed webhooks on Instantly/HeyReach/RB2B/Clay endpoints; runtime readiness now hard-fails in strict mode if required webhook secrets are missing. Added `tests/test_webhook_signature_enforcement.py` and expanded runtime reliability tests. |
 | 2026-02-18 | HoS Requirements Integration | Complete email system rewrite: 11 HoS-approved angles (4 T1, 3 T2, 4 T3), Fractional CAIO positioning, M.A.P.™ Framework, CAN-SPAM footer (5700 Harper Dr, Albuquerque), sender=Dani Apgar/Chief AI Officer, booking=caio.cx, ICP scoring multipliers (1.5x/1.2x), customer exclusion (7 domains + 27 emails), Guard 4 in dispatcher, Tier 1 target companies (agencies/consulting/staffing). |
+| 2026-03-02 | Agentic Engineering Audit v1.1 | 5-pillar assessment (8.4/10 overall). N1-N7 security hardening: query-token default disabled, token-free Slack URLs, session secret strict, OpenAPI disabled in production, dormant engines gated behind 5 feature flags. 21 gaps mapped to 4 remediation sprints. Codex agent manager reviewed and approved v1.1. |
+| 2026-03-02 | Dormant engine feature flags | 7 dormant learning engines (3,921 lines) explicitly gated behind individual feature flags with documented activation criteria, data thresholds, and rollback procedures. Activation deferred to Phase 5. `docs/DORMANT_ENGINES.md` is the catalog. |
+| 2026-03-02 | Learning engine activation order | Phase 5 activation follows proven pattern from `rejection_memory.py`: Feedback Loop (5D-1) → A/B Testing (5D-2) → Self-Learning ICP (5D-3) → Self-Annealing (5D-4) → RL Engine (5D-5). Each requires explicit feature flag + data threshold + rollback switch. |
 
 ---
 
-*Plan Version: 4.6*
+*Plan Version: 4.7*
 *Created: 2026-02-13*
-*Latest Release: 2026-02-27 (commit `a0d91b4` — Sprint 3: Clay fallback re-enabled via Redis LinkedIn URL correlation, HeyReach dispatcher tests (18), pre-commit hook, TDD 4J COMPLETE with 187 tests)*
-*Previous Release: 2026-02-17 (P0-A..P0-E complete, v4.5 deep-review + HoS fixes + strict webhook signature hardening)*
-*Supersedes: v3.7, v3.6, Modernization Roadmap (implementation_plan.md.resolved), Original Path to Full Autonomy (f34646b2/task.md.resolved)*
+*Latest Release: 2026-03-02 (Phase 4L: Agentic Engineering Audit v1.1 — 5-pillar assessment, N1-N7 security hardening, dormant engine gating, 30 new tests, strict-auth parity smoke)*
+*Previous Release: 2026-02-27 (commit `a0d91b4` — Sprint 3: Clay fallback re-enabled via Redis LinkedIn URL correlation, HeyReach dispatcher tests (18), pre-commit hook, TDD 4J COMPLETE with 187 tests)*
+*Supersedes: v4.6, v3.7, v3.6, Modernization Roadmap (implementation_plan.md.resolved), Original Path to Full Autonomy (f34646b2/task.md.resolved)*

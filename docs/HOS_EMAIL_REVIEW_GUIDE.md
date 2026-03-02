@@ -1,3 +1,12 @@
+---
+title: HoS Email Review & Feedback Guide
+version: "1.0"
+last_updated: 2026-02-18
+audience: [pto-gtm, hos]
+tags: [review, email, approval, feedback, hos]
+canonical_for: [hos-email-review]
+---
+
 # Head of Sales — Email Review & Feedback Guide
 
 **Purpose**: This is your source of truth for reviewing pipeline-generated emails before they reach prospects. Your edits and feedback directly improve the AI system over time.

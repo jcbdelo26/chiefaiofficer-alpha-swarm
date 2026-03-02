@@ -2,20 +2,25 @@
 """
 Self-Learning ICP Engine
 
+STATUS: DORMANT -- Collects engagement data but does NOT rerank Tier
+boundaries or adjust ICP weights. All adaptive scoring behaviour is
+gated behind the SELF_LEARNING_ICP_ENABLED feature flag
+(default: false). Do not enable until task.md marks Phase 5 active.
+
 Captures deal outcomes (won/lost) from GoHighLevel webhooks and uses them
 to continuously improve ICP scoring accuracy. Stores lead embeddings in
 Supabase pgvector for pattern analysis.
 
 The system learns from:
-1. Won deals → Positive signals (what works)
-2. Lost deals → Negative signals (what to avoid)
-3. Ghost/No-show → Weak ICP indicators
+1. Won deals -> Positive signals (what works)
+2. Lost deals -> Negative signals (what to avoid)
+3. Ghost/No-show -> Weak ICP indicators
 
 Architecture:
-- GHL Webhook → Capture outcome signals
-- Supabase pgvector → Store embeddings
-- Pattern Analyzer → Extract winning traits
-- Scoring Updater → Adjust ICP weights
+- GHL Webhook -> Capture outcome signals
+- Supabase pgvector -> Store embeddings
+- Pattern Analyzer -> Extract winning traits
+- Scoring Updater -> Adjust ICP weights
 """
 
 import os
@@ -144,7 +149,7 @@ class ICPMemory:
             key = os.getenv("SUPABASE_KEY")
             if url and key:
                 self.supabase = create_client(url, key)
-                print("✓ ICP Memory connected to Supabase")
+                print("[OK] ICP Memory connected to Supabase")
         except Exception as e:
             print(f"Warning: Supabase not available for ICP Memory - {e}")
     
@@ -250,7 +255,7 @@ class ICPMemory:
                 }
                 
                 self.supabase.table("icp_learning").insert(record).execute()
-                print(f"✓ Recorded {deal.outcome.value} deal: {deal.company_name}")
+                print(f"[OK] Recorded {deal.outcome.value} deal: {deal.company_name}")
                 return True
                 
             except Exception as e:
@@ -498,7 +503,7 @@ class GHLOutcomeWebhook:
         # Strategy 2: Check for Standard GHL Flat Payload
         # Standard GHL webhooks send flattened contact/opp data
         if "contact_id" in payload or "contact.id" in payload:
-            print("✓ Detected Standard GHL Payload")
+            print("[OK] Detected Standard GHL Payload")
             return await self._process_deal_data(payload, "standard_ghl")
             
         return {"status": "ignored", "reason": "Unknown payload format"}
@@ -615,7 +620,7 @@ class PatternAnalyzer:
         with open(report_file, 'w') as f:
             json.dump(report, f, indent=2)
         
-        print(f"✓ Weekly ICP analysis complete. Win rate: {report['win_rate']:.1f}%")
+        print(f"[OK] Weekly ICP analysis complete. Win rate: {report['win_rate']:.1f}%")
         
         return report
     
@@ -702,7 +707,7 @@ def get_icp_router():
         """
         Receive deal outcome webhooks from GoHighLevel.
         
-        Configure in GHL: Workflows → Trigger → Webhook
+        Configure in GHL: Workflows -> Trigger -> Webhook
         URL: https://YOUR-RAILWAY-URL/api/icp/ghl/outcome
         """
         try:

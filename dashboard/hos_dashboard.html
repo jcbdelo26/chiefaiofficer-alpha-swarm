@@ -1193,6 +1193,7 @@
             <button class="nav-tab" onclick="showTab('emails')">Email Queue</button>
             <button class="nav-tab" onclick="showTab('campaigns')">Campaigns</button>
             <button class="nav-tab" onclick="showTab('settings')">Settings</button>
+            <button class="nav-tab" onclick="showTab('metrics')">Metrics</button>
         </div>
         <div class="nav-user">
             <div class="status">
@@ -1507,6 +1508,75 @@
                     <a href="https://app.instantly.ai" class="quick-link" target="_blank" rel="noopener">Instantly Dashboard</a>
                     <a href="https://app.gohighlevel.com" class="quick-link" target="_blank" rel="noopener">GHL Dashboard</a>
                 </div>
+            </div>
+        </div>
+
+        <!-- ========== TAB: METRICS ========== -->
+        <div id="tab-metrics" class="tab-content">
+            <div class="tab-header">
+                <h2>Compound Metrics</h2>
+                <p>Test infrastructure, gateway health, and system-wide metrics from <code>/api/compound-metrics</code></p>
+            </div>
+
+            <div class="settings-grid" id="metricsGrid">
+                <!-- TEST INFRASTRUCTURE -->
+                <div class="setting-card">
+                    <h3>Test Infrastructure</h3>
+                    <div id="metricsTests">
+                        <div class="setting-row">
+                            <span class="setting-label">Pre-commit Files</span>
+                            <span class="setting-value" id="metricsTestFiles">--</span>
+                        </div>
+                        <div class="setting-row">
+                            <span class="setting-label">Total Tests</span>
+                            <span class="setting-value" id="metricsTestCount">--</span>
+                        </div>
+                        <div class="setting-row">
+                            <span class="setting-label">Coverage</span>
+                            <span class="setting-value" id="metricsTestCoverage">--</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- GATEWAY HEALTH -->
+                <div class="setting-card">
+                    <h3>Gateway Health</h3>
+                    <div id="metricsGateways">
+                        <div style="text-align:center; color: var(--text-muted); padding: 12px;">Loading gateways...</div>
+                    </div>
+                </div>
+
+                <!-- APPROVAL RATE -->
+                <div class="setting-card">
+                    <h3>Approval Rate</h3>
+                    <div id="metricsApproval">
+                        <div class="setting-row">
+                            <span class="setting-label">Total Reviewed</span>
+                            <span class="setting-value" id="metricsReviewedCount">--</span>
+                        </div>
+                        <div class="setting-row">
+                            <span class="setting-label">Approved</span>
+                            <span class="setting-value" id="metricsApprovedCount">--</span>
+                        </div>
+                        <div class="setting-row">
+                            <span class="setting-label">Approval Rate</span>
+                            <span class="setting-value" id="metricsApprovalRate">--</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- DOCUMENTATION -->
+                <div class="setting-card">
+                    <h3>Documentation</h3>
+                    <div id="metricsDocs">
+                        <div style="text-align:center; color: var(--text-muted); padding: 12px;">Loading docs status...</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section" style="padding: 20px 24px;">
+                <h2 class="section-title" style="margin-bottom: 16px;">Raw Metrics</h2>
+                <pre id="metricsRaw" style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 16px; font-size: 12px; overflow-x: auto; max-height: 400px; color: var(--text-secondary);">Loading...</pre>
             </div>
         </div>
 
@@ -2395,14 +2465,15 @@
             overview: 'tab-overview',
             emails: 'tab-emails',
             campaigns: 'tab-campaigns',
-            settings: 'tab-settings'
+            settings: 'tab-settings',
+            metrics: 'tab-metrics'
         };
 
         function showTab(tab) {
             activeTab = tab;
             // Toggle nav active state
             document.querySelectorAll('.nav-tab').forEach((t, i) => {
-                const tabNames = ['overview', 'emails', 'campaigns', 'settings'];
+                const tabNames = ['overview', 'emails', 'campaigns', 'settings', 'metrics'];
                 t.classList.toggle('active', tabNames[i] === tab);
             });
             // Toggle content panels
@@ -2438,6 +2509,9 @@
                     break;
                 case 'settings':
                     fetchSettingsData();
+                    break;
+                case 'metrics':
+                    fetchCompoundMetrics();
                     break;
             }
         }
@@ -3169,6 +3243,84 @@
         }
 
         // ============================================================
+        // COMPOUND METRICS
+        // ============================================================
+        async function fetchCompoundMetrics() {
+            try {
+                const response = await fetch('/api/compound-metrics', {
+                    headers: buildAuthHeaders()
+                });
+                if (response.status === 401) { handleAuthRedirect(); return; }
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const data = await response.json();
+
+                // Test infrastructure
+                const ti = data.test_infrastructure || {};
+                const filesEl = document.getElementById('metricsTestFiles');
+                const countEl = document.getElementById('metricsTestCount');
+                const covEl = document.getElementById('metricsTestCoverage');
+                if (filesEl) filesEl.textContent = ti.pre_commit_file_count || '--';
+                if (countEl) countEl.textContent = ti.total_test_count || '--';
+                if (covEl) covEl.textContent = ti.coverage || '--';
+
+                // Gateway health
+                const gh = data.gateway_health || {};
+                const gwContainer = document.getElementById('metricsGateways');
+                if (gwContainer) {
+                    let html = '';
+                    const gateways = gh.gateways || {};
+                    Object.entries(gateways).forEach(([name, info]) => {
+                        const status = (info.status || 'unknown').toLowerCase();
+                        const cls = status === 'healthy' ? 'ok' : status === 'degraded' ? 'warn' : 'err';
+                        html += `<div class="setting-row">
+                            <span class="setting-label">${escapeHtml(name)}</span>
+                            <span class="status-indicator ${cls}"><span class="dot"></span> ${escapeHtml(status.toUpperCase())}</span>
+                        </div>`;
+                    });
+                    if (!html) {
+                        const summary = gh.summary || 'No gateway data';
+                        html = `<div class="setting-row"><span class="setting-label">Status</span><span class="setting-value">${escapeHtml(String(summary))}</span></div>`;
+                    }
+                    gwContainer.innerHTML = html;
+                }
+
+                // Approval rate
+                const ar = data.approval_rate || {};
+                const revEl = document.getElementById('metricsReviewedCount');
+                const apvEl = document.getElementById('metricsApprovedCount');
+                const rateEl = document.getElementById('metricsApprovalRate');
+                if (revEl) revEl.textContent = ar.total_reviewed || '0';
+                if (apvEl) apvEl.textContent = ar.approved || '0';
+                if (rateEl) rateEl.textContent = ar.rate ? `${(ar.rate * 100).toFixed(1)}%` : '--';
+
+                // Documentation
+                const docs = data.documentation || {};
+                const docsContainer = document.getElementById('metricsDocs');
+                if (docsContainer) {
+                    let html = '';
+                    Object.entries(docs).forEach(([key, val]) => {
+                        const display = typeof val === 'boolean' ? (val ? 'Present' : 'Missing') : String(val);
+                        const cls = val === true || val === 'present' ? 'ok' : 'warn';
+                        html += `<div class="setting-row">
+                            <span class="setting-label">${escapeHtml(key.replace(/_/g, ' '))}</span>
+                            <span class="status-indicator ${cls}"><span class="dot"></span> ${escapeHtml(display)}</span>
+                        </div>`;
+                    });
+                    docsContainer.innerHTML = html || '<div style="color: var(--text-muted);">No doc data</div>';
+                }
+
+                // Raw JSON
+                const rawEl = document.getElementById('metricsRaw');
+                if (rawEl) rawEl.textContent = JSON.stringify(data, null, 2);
+
+            } catch (e) {
+                console.warn('fetchCompoundMetrics error:', e);
+                const rawEl = document.getElementById('metricsRaw');
+                if (rawEl) rawEl.textContent = 'Error loading metrics: ' + e.message;
+            }
+        }
+
+        // ============================================================
         // INITIALIZATION
         // ============================================================
         renderPendingEmails();
@@ -3188,6 +3340,7 @@
             fetchOperatorStatus(); // global ramp banner
             if (activeTab === 'campaigns') { fetchOperatorHistory(); fetchCadenceSummary(); }
             if (activeTab === 'settings') fetchSettingsData();
+            if (activeTab === 'metrics') fetchCompoundMetrics();
         }, 60000);
 
         // Refresh heartbeat: update countdown + last refresh label

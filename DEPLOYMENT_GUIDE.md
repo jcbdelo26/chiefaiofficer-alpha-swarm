@@ -1,3 +1,12 @@
+---
+title: Deployment Guide
+version: "1.0"
+last_updated: 2026-03-02
+audience: [engineers, all-agents]
+tags: [deployment, guide, railway, docker, local]
+canonical_for: [deployment-guide]
+---
+
 # Unified CAIO RevOps Swarm - Deployment Guide
 
 ## Quick Start Decision Tree

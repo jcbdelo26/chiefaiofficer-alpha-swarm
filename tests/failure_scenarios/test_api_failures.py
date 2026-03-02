@@ -12,6 +12,8 @@ import requests
 from threading import Thread
 from core.failure_tracker import FailureTracker, FailureCategory
 
+pytestmark = pytest.mark.skip(reason="Requires local sandbox servers (localhost:8001-8004) — run manually")
+
 # Sandbox URLs (from sandbox.json)
 SANDBOX_URLS = {
     "ghl": "http://localhost:8001",

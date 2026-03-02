@@ -44,13 +44,23 @@ from core.unified_guardrails import (
 @pytest.fixture
 def guardrails(tmp_path):
     """Create a fresh guardrails instance with temp storage."""
-    return UnifiedGuardrails(storage_path=tmp_path)
+    g = UnifiedGuardrails(storage_path=tmp_path)
+    # Force file-only backend to prevent Redis state leakage across tests
+    g.rate_limiter._use_redis = False
+    g.rate_limiter._redis = None
+    g.rate_limiter.counters.clear()
+    return g
 
 
 @pytest.fixture
 def rate_limiter(tmp_path):
     """Create a fresh rate limiter with temp storage."""
-    return UnifiedRateLimiter(tmp_path / "rate_limits.json")
+    rl = UnifiedRateLimiter(tmp_path / "rate_limits.json")
+    # Force file-only backend to prevent Redis state leakage across tests
+    rl._use_redis = False
+    rl._redis = None
+    rl.counters.clear()
+    return rl
 
 
 @pytest.fixture

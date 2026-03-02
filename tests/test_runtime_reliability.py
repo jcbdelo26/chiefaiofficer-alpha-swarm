@@ -341,15 +341,22 @@ def test_query_token_can_be_disabled_while_header_token_remains_valid(monkeypatc
     assert payload.get("auth", {}).get("query_token_enabled") is False
 
 
-def test_legacy_sales_routes_redirect_to_canonical_sales_dashboard():
+def test_legacy_sales_routes_redirect_to_canonical_sales_dashboard(monkeypatch):
     from dashboard import health_app
 
+    monkeypatch.setenv("DASHBOARD_AUTH_TOKEN", "abc123")
+    monkeypatch.setenv("DASHBOARD_QUERY_TOKEN_ENABLED", "true")
+
     client = TestClient(health_app.app)
+
+    # Establish an authenticated session so DashboardAuthMiddleware passes through
+    login_resp = client.post("/login", data={"token": "abc123", "next": "/sales"}, follow_redirects=False)
+    assert login_resp.status_code == 303
 
     legacy_upper = client.get("/ChiefAIOfficer?token=abc123", follow_redirects=False)
     legacy_lower = client.get("/chiefaiofficer?token=abc123", follow_redirects=False)
 
-    assert legacy_upper.status_code in {307, 308}
-    assert legacy_lower.status_code in {307, 308}
+    assert legacy_upper.status_code in {302, 307, 308}
+    assert legacy_lower.status_code in {302, 307, 308}
     assert legacy_upper.headers.get("location") == "/sales?token=abc123"
     assert legacy_lower.headers.get("location") == "/sales?token=abc123"

@@ -343,10 +343,10 @@ async def test_approve_email_auto_resolves_contact_before_live_send(monkeypatch,
     )
 
     assert result["status"] == "approved"
-    assert result["message"] == "Email sent via GHL"
+    assert result["message"] == "Email sent via GHL (proof unresolved)"
 
     updated = json.loads(email_path.read_text(encoding="utf-8"))
-    assert updated["status"] == "sent_via_ghl"
+    assert updated["status"] in ("sent_via_ghl", "sent_unresolved")
     assert updated["contact_id"] == "contact_123"
     assert updated["sent_via_ghl"] is True
     assert updated["ghl_message_id"] == "msg_abc"

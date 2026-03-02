@@ -1,3 +1,12 @@
+---
+title: CAIO Claude Memory
+version: "1.0"
+last_updated: 2026-02-19
+audience: [all-agents, engineers]
+tags: [memory, runtime-truth, deployment, living-doc]
+canonical_for: [runtime-truth, deploy-state]
+---
+
 # CAIO Claude Memory (Living Source of Truth)
 
 **Last Updated**: 2026-02-19  

@@ -1,3 +1,12 @@
+---
+title: Deployment Checklist
+version: "1.0"
+last_updated: 2026-03-02
+audience: [engineers, all-agents]
+tags: [deployment, checklist, railway, staging, production]
+canonical_for: [deployment-checklist]
+---
+
 # Deployment Checklist
 
 ## Overview

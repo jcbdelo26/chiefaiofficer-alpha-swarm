@@ -2,8 +2,13 @@
 """
 Self-Annealing Engine with RETRIEVE-JUDGE-DISTILL-CONSOLIDATE Pipeline
 =======================================================================
-Advanced self-annealing system implementing the Claude-Flow inspired 
-4-step learning pipeline with HNSW similarity search and EWC++ 
+
+STATUS: DORMANT -- Phase 5 only. Do not integrate into production
+pipelines until task.md marks Phase 5 active.
+Feature flag: SELF_ANNEALING_ENGINE_ENABLED (default: false)
+
+Advanced self-annealing system implementing the Claude-Flow inspired
+4-step learning pipeline with HNSW similarity search and EWC++
 knowledge consolidation.
 
 Pipeline Stages:
@@ -20,16 +25,16 @@ Integration:
 
 Usage:
     from core.self_annealing_engine import SelfAnnealingPipeline
-    
+
     pipeline = SelfAnnealingPipeline()
-    
+
     # Full 4-step pipeline
     result = pipeline.process_outcome(
         workflow_id="campaign_001",
         outcome={"meeting_booked": True, "response_time_hours": 4},
         context={"icp_tier": "tier_1", "template": "thought_leadership"}
     )
-    
+
     # Retrieve similar patterns
     similar = pipeline.retrieve_similar("campaign failed with no response")
 """
@@ -1173,7 +1178,7 @@ if __name__ == "__main__":
         )
         
         quality = result["stages"]["judge"]["quality"]
-        emoji = "✅" if quality in ["excellent", "good"] else "⚠️" if quality == "neutral" else "❌"
+        emoji = "[OK]" if quality in ["excellent", "good"] else "[WARN]" if quality == "neutral" else "[FAIL]"
         console.print(f"  {emoji} {test['workflow_id']}: {quality} (reward: {result['stages']['judge']['reward']})")
     
     # Show status

@@ -34,7 +34,11 @@ def _env_bool(name: str, default: bool) -> bool:
     return raw in {"1", "true", "yes", "on"}
 
 
-# ── Banned opener patterns ────────────────────────────────────────
+FEEDBACK_POLICY_ENABLED = _env_bool("FEEDBACK_LOOP_POLICY_ENABLED", False)
+APPROVAL_BOOST_THRESHOLD = 3  # Leads approved 3+ times get leniency on GUARD-001
+
+
+# -- Banned opener patterns ----------------------------------------
 
 BANNED_OPENERS = [
     r"^Given your role as\b",
@@ -82,10 +86,19 @@ def _is_soft_mode() -> bool:
 
 
 class QualityGuard:
-    """Deterministic pre-queue validator for email drafts."""
+    """Deterministic pre-queue validator for email drafts.
+
+    When FEEDBACK_LOOP_POLICY_ENABLED=true:
+    - GUARD-001 grants leniency to leads approved 3+ times historically
+    - GUARD-004 extends banned openers from feedback-derived policy deltas
+    """
 
     def __init__(self, rejection_memory: Optional[RejectionMemory] = None):
         self.memory = rejection_memory or RejectionMemory()
+        self._feedback_loop = None
+        self._dynamic_banned_openers: List[str] = []
+        if FEEDBACK_POLICY_ENABLED:
+            self._load_feedback_policy()
 
     def check(self, email_data: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -114,11 +127,18 @@ class QualityGuard:
         failures: List[Dict[str, str]] = []
         rejection_memory_hit = False
 
-        # GUARD-001: Rejection memory block
+        # GUARD-001: Rejection memory block (with feedback boost)
         blocked, reason = self.memory.should_block_lead(to_email)
         if blocked:
-            rejection_memory_hit = True
-            failures.append({"rule_id": "GUARD-001", "message": reason})
+            # Feedback policy: leads approved 3+ times get leniency
+            if FEEDBACK_POLICY_ENABLED and self._check_approval_boost(to_email):
+                logger.info(
+                    "GUARD-001 boost: %s has %d+ prior approvals, allowing despite rejections",
+                    to_email, APPROVAL_BOOST_THRESHOLD,
+                )
+            else:
+                rejection_memory_hit = True
+                failures.append({"rule_id": "GUARD-001", "message": reason})
 
         # GUARD-002: Repeat draft detection
         if self.memory.is_repeat_draft(to_email, subject, body):
@@ -136,7 +156,7 @@ class QualityGuard:
             # Attempt sub-agent enrichment as fallback before blocking
             sub_agent_context = self._run_sub_agent_enrichment(email_data)
             if sub_agent_context and sub_agent_context.meets_minimum_evidence:
-                # Sub-agents found enough — override the evidence shortfall
+                # Sub-agents found enough -- override the evidence shortfall
                 logger.info(
                     "Sub-agent enrichment rescued %s: %d company + %d role signals",
                     to_email, sub_agent_context.company_specific_count,
@@ -153,7 +173,6 @@ class QualityGuard:
                 })
 
         # GUARD-004: Banned opener patterns
-        body_first_line = (body or "").strip().split("\n")[0].strip()
         # Skip greeting line (e.g., "Hi Chris,") and check the actual opener
         body_lines = [ln.strip() for ln in (body or "").strip().split("\n") if ln.strip()]
         opener_line = ""
@@ -163,7 +182,11 @@ class QualityGuard:
             opener_line = line
             break
 
-        for pattern in BANNED_OPENERS:
+        all_banned = list(BANNED_OPENERS)
+        if FEEDBACK_POLICY_ENABLED:
+            all_banned.extend(self._dynamic_banned_openers)
+
+        for pattern in all_banned:
             if re.search(pattern, opener_line, re.IGNORECASE):
                 failures.append({
                     "rule_id": "GUARD-004",
@@ -313,6 +336,42 @@ class QualityGuard:
         except Exception as exc:
             logger.warning("Sub-agent enrichment failed: %s", exc)
             return None
+
+    def _load_feedback_policy(self) -> None:
+        """Load feedback-derived policy deltas for dynamic rule extension."""
+        try:
+            if self._feedback_loop is None:
+                from core.feedback_loop import FeedbackLoop
+                self._feedback_loop = FeedbackLoop()
+            delta = self._feedback_loop.get_latest_policy_delta()
+            if not delta:
+                return
+            # Convert opener suppressions into regex patterns for GUARD-004
+            for item in delta.get("opener_pattern_suppressions", []):
+                pattern_text = item.get("pattern", "").strip()
+                if pattern_text and item.get("count", 0) >= 2:
+                    escaped = re.escape(pattern_text[:80])
+                    self._dynamic_banned_openers.append(f"^{escaped}")
+            logger.info(
+                "Feedback policy loaded: %d dynamic banned openers",
+                len(self._dynamic_banned_openers),
+            )
+        except Exception as exc:
+            logger.warning("Failed to load feedback policy: %s", exc)
+
+    def _check_approval_boost(self, lead_email: str) -> bool:
+        """Check if a lead qualifies for approval-based leniency."""
+        if self._feedback_loop is None:
+            try:
+                from core.feedback_loop import FeedbackLoop
+                self._feedback_loop = FeedbackLoop()
+            except Exception:
+                return False
+        try:
+            count = self._feedback_loop.get_lead_approval_count(lead_email)
+            return count >= APPROVAL_BOOST_THRESHOLD
+        except Exception:
+            return False
 
     def _pass_result(self, email_data: Dict[str, Any]) -> Dict[str, Any]:
         """Return a passing result when guard is disabled."""

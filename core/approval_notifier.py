@@ -99,26 +99,34 @@ def get_pending_details() -> List[Dict]:
     
     return pending_items
 
+def _dashboard_url() -> str:
+    """Return dashboard URL without embedding auth tokens (N2 security fix)."""
+    base = os.getenv(
+        "DASHBOARD_URL",
+        "https://caio-swarm-dashboard-production.up.railway.app",
+    ).rstrip("/")
+    return f"{base}/sales"
+
+
 def send_hot_alert(hot_items: List[Dict]):
     """Send immediate Slack alert for HOT priority leads."""
     if not SLACK_BOT_TOKEN or not hot_items:
         return
-    
-    token = os.getenv("DASHBOARD_AUTH_TOKEN", "REDACTED_TOKEN")
-    dashboard_url = f"https://caio-swarm-dashboard-production.up.railway.app/sales?token={token}"
+
+    dashboard_url = _dashboard_url()
     count = len(hot_items)
     
     # Build urgent message
     preview_text = ""
     for item in hot_items[:5]:
-        preview_text += f"• 🔴 *{item['company']}* ({item['employees']} employees) — {item['subject'][:35]}...\n"
+        preview_text += f"* :red_circle: *{item['company']}* ({item['employees']} employees) -- {item['subject'][:35]}...\n"
     
     blocks = [
         {
             "type": "header",
             "text": {
                 "type": "plain_text",
-                "text": f"🚨 {count} HOT LEAD{'S' if count > 1 else ''} — Immediate Review Required",
+                "text": f":rotating_light: {count} HOT LEAD{'S' if count > 1 else ''} -- Immediate Review Required",
                 "emoji": True
             }
         },
@@ -134,7 +142,7 @@ def send_hot_alert(hot_items: List[Dict]):
             "elements": [
                 {
                     "type": "button",
-                    "text": {"type": "plain_text", "text": "🔥 Review Now", "emoji": True},
+                    "text": {"type": "plain_text", "text": ":fire: Review Now", "emoji": True},
                     "url": dashboard_url,
                     "style": "danger"
                 }
@@ -142,15 +150,14 @@ def send_hot_alert(hot_items: List[Dict]):
         }
     ]
     
-    _send_to_slack(blocks, f"🚨 {count} HOT LEADS need immediate review")
+    _send_to_slack(blocks, f":rotating_light: {count} HOT LEADS need immediate review")
 
 def send_batch_alert(warm_items: List[Dict], low_items: List[Dict]):
     """Send batch notification for WARM and LOW priority leads."""
     if not SLACK_BOT_TOKEN:
         return
-    
-    token = os.getenv("DASHBOARD_AUTH_TOKEN", "REDACTED_TOKEN")
-    dashboard_url = f"https://caio-swarm-dashboard-production.up.railway.app/sales?token={token}"
+
+    dashboard_url = _dashboard_url()
     warm_count = len(warm_items)
     low_count = len(low_items)
     total = warm_count + low_count
@@ -161,18 +168,18 @@ def send_batch_alert(warm_items: List[Dict], low_items: List[Dict]):
     # Build summary
     warm_text = ""
     for item in warm_items[:3]:
-        warm_text += f"• 🟡 *{item['company']}* ({item['tier_display']}): {item['subject'][:30]}...\n"
+        warm_text += f"* :large_yellow_circle: *{item['company']}* ({item['tier_display']}): {item['subject'][:30]}...\n"
     if warm_count > 3:
         warm_text += f"_+ {warm_count - 3} more warm leads..._\n"
     
-    low_text = f"\n🟢 *{low_count} Low Priority* leads queued for auto-processing." if low_count > 0 else ""
+    low_text = f"\n:large_green_circle: *{low_count} Low Priority* leads queued for auto-processing." if low_count > 0 else ""
     
     blocks = [
         {
             "type": "header",
             "text": {
                 "type": "plain_text",
-                "text": f"🦅 {total} Emails Awaiting Review",
+                "text": f":eagle: {total} Emails Awaiting Review",
                 "emoji": True
             }
         },
@@ -188,7 +195,7 @@ def send_batch_alert(warm_items: List[Dict], low_items: List[Dict]):
             "elements": [
                 {
                     "type": "button",
-                    "text": {"type": "plain_text", "text": "🔎 Review Dashboard", "emoji": True},
+                    "text": {"type": "plain_text", "text": ":mag: Review Dashboard", "emoji": True},
                     "url": dashboard_url,
                     "style": "primary"
                 }
@@ -251,13 +258,13 @@ def main():
     
     # 3. HOT leads always trigger immediately (regardless of time window)
     if hot_items:
-        logger.info(f"🔥 Sending IMMEDIATE alert for {len(hot_items)} HOT leads")
+        logger.info(f":fire: Sending IMMEDIATE alert for {len(hot_items)} HOT leads")
         send_hot_alert(hot_items)
     
     # 4. WARM/LOW only notify during window
     if inside_window or force_all:
         if warm_items or low_items:
-            logger.info(f"📬 Sending batch alert for {len(warm_items)} WARM + {len(low_items)} LOW leads")
+            logger.info(f":mailbox_with_mail: Sending batch alert for {len(warm_items)} WARM + {len(low_items)} LOW leads")
             send_batch_alert(warm_items, low_items)
     else:
         logger.info(f"Outside notification window. Skipping WARM/LOW alerts.")

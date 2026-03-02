@@ -1,3 +1,12 @@
+---
+title: Claude Configuration
+version: "4.8"
+last_updated: 2026-03-03
+audience: [all-agents, engineers]
+tags: [config, session, pitfalls, directives]
+canonical_for: [session-config, mandatory-read-order]
+---
+
 # Chief AI Officer Alpha Swarm - Claude Configuration
 
 ## Project Context
@@ -8,7 +17,8 @@
 **Company**: Chiefaiofficer.com
 **Platform**: Railway (production) at `caio-swarm-dashboard-production.up.railway.app`
 **Dashboard**: v3.0 full 4-tab UI (Overview/Email Queue/Campaigns/Settings) + live KPIs + compliance checks
-**Latest successful production deploy**: commit `7397f27` (2026-03-02) — Queue Seed System + OPERATOR synthetic guard (475 tests, 28 files)
+**Latest successful production deploy**: commit `4226583` (2026-03-02) — HR-05: HeyReach webhook schema validated (502 tests, 29 files)
+**Latest local build**: Sprint 8(D) complete (576 tests, 34 pre-commit files) — pending commit + deploy
 
 ### Mandatory Read Order (Every New Session)
 
@@ -29,7 +39,25 @@ Phase 4C: OPERATOR Agent                     COMPLETE (unified dispatch + reviva
 Phase 4D: Multi-Channel Cadence              COMPLETE (8-step 21-day sequence + CRAFTER follow-ups + auto-enroll)
 Phase 4E: Supervised Live Sends              RAMP MODE ACTIVE (5/day, tier_1, 3 supervised days)
 Phase 4F: Monaco Signal Loop                 COMPLETE (lead_signals + activity_timeline + leads dashboard + decay cron)
+Phase 4K: Clay Pipeline Fallback             COMPLETE (code + tests, awaiting workbook config)
+Phase 4L: Engineering Sprints 4-8            COMPLETE (576 tests, 34 pre-commit files)
 ```
+
+### Agentic Engineering Audit (2026-03-02 → 2026-03-03)
+
+**Score**: 8.6/10 across 5 Pillars of Agentic Engineering. 21 gaps identified, ALL remediated in 4 sprints:
+
+| Sprint | Focus | Tests Added |
+|--------|-------|-------------|
+| A (Quick Wins) | 8 items: trace envelope, health endpoint, config drift, env contract | +30 |
+| B (Structural) | 6 items: enrichment sub-agents, cross-env bridge, gateway registry | +24 |
+| C (Compound) | 5 items: compound metrics API, quality guard enrichment fallback | +12 |
+| D (Polish) | 4 items: gateway health, feedback→quality_guard, legacy test debt, compound metrics | +32 |
+
+**New files**: `core/trace_envelope.py`, `core/enrichment_sub_agents.py`, `core/gateway_registry.py`, `core/cross_environment_bridge.py`, `core/compound_metrics.py`, `scripts/audit_cli.py`
+**New endpoints**: `/api/compound-metrics`, gateway health in `/api/health`
+**Feedback loop wired**: `core/feedback_loop.py` → `core/quality_guard.py` (GUARD-001 boost + GUARD-004 dynamic openers), gated behind `FEEDBACK_LOOP_POLICY_ENABLED`
+**Audit doc**: `docs/AGENTIC_ENGINEERING_AUDIT_HANDOFF.md`
 
 ### Phase-1 Proof + Deliverability Hardening (2026-02-26)
 
@@ -55,6 +83,9 @@ Locked behavior now implemented in `dashboard/health_app.py`:
   - Runs before `shadow_queue.push()` in `_stage_send()`.
   - `QUALITY_GUARD_ENABLED=false` to bypass; `QUALITY_GUARD_MODE=soft` for log-only.
   - Sub-agent enrichment fallback when evidence insufficient (`core/enrichment_sub_agents.py`).
+  - **Feedback integration** (gated behind `FEEDBACK_LOOP_POLICY_ENABLED`, default: false):
+    - GUARD-001 boost: leads approved 3+ times historically bypass rejection block.
+    - GUARD-004 extension: dynamically bans openers from feedback-derived policy deltas (count >= 2).
 - **CRAFTER per-lead rejection context**: `rejection_context` in template variables, template rotation away from rejected template IDs.
 - Runtime route snapshot exposed in `/api/runtime/dependencies` under `llm_routing.task_routes`.
 
@@ -63,6 +94,8 @@ Validation tests:
 - `tests/test_phase1_feedback_loop_integration.py`
 - `tests/test_rejection_memory.py` (26 tests — per-lead memory, TTL, fingerprinting, Andrew/Celia replay)
 - `tests/test_quality_guard.py` (16 tests — all 5 guard rules, soft mode, disabled mode, replay scenarios)
+- `tests/test_feedback_integration.py` (12 tests — feedback→quality_guard: approval boost, dynamic openers, flag gating)
+- `tests/test_gateway_registry.py`, `tests/test_compound_metrics.py`, `tests/test_cross_environment_bridge.py` (Sprint D audit tests)
 
 **Safety**: `actually_send: true` (informational), real control: `--live` CLI flag + `EMERGENCY_STOP` env var + `gatekeeper_required: true`.
 **Ramp Mode**: 5 emails/day, tier_1 only (C-Suite at agencies/consulting/law), 3 supervised days starting 2026-02-18. Set `operator.ramp.enabled: false` to graduate to 25/day.
@@ -592,6 +625,15 @@ Calendar: GHL Calendar API via `mcp-servers/ghl-mcp/calendar_client.py`. ID: `2t
 `dashboard/health_app.py` — FastAPI on port 8080. 4 tabs: System Health (`/`), Scorecard (`/scorecard`), Head of Sales (`/sales`), Lead Signals (`/leads`).
 
 Key API groups: `/api/health`, `/api/agents`, `/api/pending-emails` (Redis via `shadow_queue.py`), `/api/emails/{id}/approve|reject`, `/api/leads/*` (signal loop + funnel + timeline), `/api/operator/*` (status + trigger + history), `/api/cadence/*` (summary + due + sync). Webhooks: `/webhooks/clay`, `/webhooks/instantly/*`, `/webhooks/heyreach/*`.
+
+**Security Hardening (v1.1 Audit — 2026-03-02)**:
+- **N1**: Query-token auth (`?token=`) DISABLED by default in production/staging. Header-only (`X-Dashboard-Token`). Override: `DASHBOARD_QUERY_TOKEN_ENABLED=true`.
+- **N2**: `core/approval_notifier.py` — dashboard URLs sent to Slack contain NO embedded tokens.
+- **N3**: Session secret requires explicit `SESSION_SECRET_KEY` in production/staging. Falls back to `DASHBOARD_AUTH_TOKEN` with warning; raises `RuntimeError` if neither set.
+- **N4**: `/api/runtime/dependencies` reports full auth state (token_configured, session_secret_explicit, webhook_signature_required, environment).
+- **N6**: OpenAPI docs (`/docs`, `/redoc`, `/openapi.json`) DISABLED in production/staging.
+- **Dormant engines**: 5 files gated behind feature flags — see `docs/DORMANT_ENGINES.md`.
+- **Smoke script**: `scripts/strict_auth_parity_smoke.py` validates N1-N7 on deployed instances.
 
 ---
 

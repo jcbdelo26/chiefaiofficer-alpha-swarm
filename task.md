@@ -1,9 +1,18 @@
+---
+title: Master Tracker & Autonomy Roadmap
+version: "5.2"
+last_updated: 2026-03-03
+audience: [all-agents, engineers, pto-gtm]
+tags: [tracker, sprints, autonomy, go-no-go]
+canonical_for: [sprint-tracker, task-status]
+---
+
 # CAIO Alpha Swarm — Master Tracker & Autonomy Roadmap
 
-**Last Updated**: 2026-03-02
-**Last Commit**: `7397f27` (Queue Seed System — deployed to Railway 2026-03-02)
-**Plan Version**: v5.1
-**Test Suite**: 475 tests passing (28-file pre-commit, ~57s)
+**Last Updated**: 2026-03-03
+**Last Commit**: `4226583` (HR-05 — deployed to Railway 2026-03-02)
+**Plan Version**: v5.2
+**Test Suite**: 576 tests passing (34-file pre-commit suite, ~102s)
 
 > **This file is the single source of truth for all current and future work.**
 > For historical roadmap: `CAIO_IMPLEMENTATION_PLAN.md` (v4.6). For deployment context: `CLAUDE.md`.
@@ -35,8 +44,9 @@ Phase 6: Full Autonomy            [..........]   0%  WAITING (trigger: 30 days l
 | 4G Proof & Feedback | COMPLETE | GHLSendProofEngine, webhook + poll fallback |
 | 4H Task Routing | 95% | Committed, needs production validation |
 | 4I Runtime Reliability | COMPLETE | Circuit breakers, fallbacks, retry |
-| 4J TDD Testing | COMPLETE | 475 curated tests |
+| 4J TDD Testing | COMPLETE | 576 curated tests (34 pre-commit files) |
 | 4K Clay Fallback | COMPLETE | Redis LinkedIn URL correlation |
+| 4L Agentic Engineering Audit | COMPLETE | 21 gaps → 4 sprints (A-D), N1-N7 security, feedback loop wired, 576 tests |
 
 ### Engineering Sprint History
 
@@ -46,6 +56,11 @@ Phase 6: Full Autonomy            [..........]   0%  WAITING (trigger: 30 days l
 | 4 | HeyReach hardening (12/14 HR findings resolved) | +47 | COMPLETE |
 | 5 | Cross-system hardening (XS-01–06, HR-12) | +46 | COMPLETE |
 | 6 | Observability, legacy test debt, dev-team skill | +144 | COMPLETE |
+| 7 | HeyReach B6+B7, cadence follow-up, reply classification | +63 | COMPLETE |
+| 8 (A) | Agentic audit: security hardening + Sprint A quick wins | +30 | COMPLETE |
+| 8 (B) | Agentic audit: structural improvements (knowledge index, CLI, smoke, cross-env test, UI validation, doc freshness) | +12 | COMPLETE |
+| 8 (C) | Agentic audit: compound engineering (MCP catalog, ADRs, lessons learned, compound skills, diagnosis CLI) | +0 | COMPLETE |
+| 8 (D) | Agentic audit: deep integration (gateway registry, compound metrics, 33 legacy test fixes, feedback loop activation) | +32 | COMPLETE |
 
 ---
 
@@ -134,7 +149,7 @@ After HeyReach hardening AND LinkedIn warmup complete:
 | GHL Proof Engine | `core/ghl_send_proof.py` | READY | None — auto-triggers on approve |
 | Lead Signal State Machine | `core/lead_signals.py` (21 statuses) | READY | None — webhook-driven |
 | Instantly Dispatcher | `execution/instantly_dispatcher.py` | READY | None — 6 domains warmed |
-| HeyReach Dispatcher | `execution/heyreach_dispatcher.py` (900+ lines) | 90% READY | 3 remaining bugs (HR-05, HR-06, HR-07) |
+| HeyReach Dispatcher | `execution/heyreach_dispatcher.py` (900+ lines) | 95% READY | 1 remaining bug (HR-05 — needs real payload) |
 | Enrichment Waterfall | `execution/enricher_waterfall.py` | READY | None — Apollo + BC + Clay |
 | Queue Seed System | `core/seed_queue.py` + `/api/admin/seed_queue` | READY | 15 personas, 11 templates, dashboard UI (`7397f27`) |
 | Segmentor/ICP Scoring | `execution/segmentor_classify.py` | READY | None |
@@ -193,8 +208,8 @@ After HeyReach hardening AND LinkedIn warmup complete:
 | ~~B3~~ | ~~Distributed LinkedIn ceiling~~ | HR-03 | `heyreach_dispatcher.py` | — | DONE (`LinkedInDailyCeiling` Redis class) |
 | ~~B4~~ | ~~Shadow file write race fix~~ | HR-02 | `heyreach_dispatcher.py` | — | DONE (`_atomic_json_write`) |
 | B5 | Webhook payload schema validation | HR-05 | `heyreach_webhook.py` | 1h | **BLOCKED** — needs real payload (user task A5) |
-| B6 | Follow-up flag consumer (cadence integration) | HR-07 | `cadence_engine.py` | 2h | **TODO** — webhook writes flags, cadence never reads |
-| B7 | Reply classification routing | HR-06 | `heyreach_webhook.py` | 2h | **TODO** — explicit `# TODO` in code |
+| ~~B6~~ | ~~Follow-up flag consumer (cadence integration)~~ | HR-07 | `cadence_engine.py` | — | DONE (`9606327`) — `process_linkedin_followups()` reads flags, accelerates next_step_due |
+| ~~B7~~ | ~~Reply classification routing~~ | HR-06 | `heyreach_webhook.py` | — | DONE (`9606327`) — keyword classifier, Slack HOT LEAD alert, unsubscribe routing |
 | ~~B8~~ | ~~Partial success detection~~ | HR-09 | `heyreach_dispatcher.py` | — | DONE (3 field variants checked) |
 | ~~B9~~ | ~~LinkedIn URL format validation~~ | HR-16 | `heyreach_dispatcher.py` | — | DONE (regex `_LINKEDIN_PROFILE_RE`) |
 | ~~B10~~ | ~~Verify unsigned allowlist~~ | HR-11 | Railway env | — | DONE |
@@ -203,9 +218,9 @@ After HeyReach hardening AND LinkedIn warmup complete:
 
 | # | Task | Files | Est. |
 |---|------|-------|------|
-| C1 | CLAUDE.md refresh (deploy hash, agent table, Sprint 6 results) | `CLAUDE.md` | 30m |
-| C2 | Create `directives/compliance.md` (CAN-SPAM, GDPR, LinkedIn ToS, unsub flow) | `directives/compliance.md` | 1h |
-| C3 | Create `docs/INCIDENT_RESPONSE.md` (auth errors, webhook failures, Redis loss, EMERGENCY_STOP) | `docs/INCIDENT_RESPONSE.md` | 1h |
+| ~~C1~~ | ~~CLAUDE.md refresh (deploy hash, audit results, Sprint 8)~~ | `CLAUDE.md` | DONE (v4.8) |
+| ~~C2~~ | ~~Create compliance doc (CAN-SPAM, GDPR, LinkedIn ToS)~~ | `docs/COMPLIANCE.md` | DONE |
+| ~~C3~~ | ~~Create incident response playbook~~ | `docs/INCIDENT_RESPONSE.md` | DONE |
 
 ### Track D: Autonomy Prep + Nice-to-Have
 
@@ -218,28 +233,30 @@ After HeyReach hardening AND LinkedIn warmup complete:
 | D5 | Remove stale `PROXYCURL_API_KEY` references | LOW | Cleanup |
 | D6 | **Wire feedback loops for full autonomy** | **CRITICAL** | Before Phase 5 |
 
-#### D6: Feedback Loop Wiring (DEFERRED — Critical for Full Autonomy)
+#### D6: Feedback Loop Wiring (PARTIALLY WIRED — Sprint D-4)
 
-**Status**: Infrastructure 90% built. Missing: event→engine connectors.
+**Status**: `feedback_loop.py` → `quality_guard.py` integration COMPLETE (Sprint D-4). Remaining 5 engines deferred to Phase 5.
 
-The system collects feedback data (approvals, rejections, send outcomes) but **does not apply it to change agent behavior**. Only `core/rejection_memory.py` closes the loop today. All other learning engines are dormant:
+**What's wired** (gated behind `FEEDBACK_LOOP_POLICY_ENABLED`, default: false):
+- GUARD-001 boost: leads approved 3+ times bypass rejection block
+- GUARD-004 extension: dynamically bans openers from feedback-derived policy deltas (count >= 2)
+- Tests: `tests/test_feedback_integration.py` (12 tests)
 
-| Engine | File | What's Built | What's Missing |
-|--------|------|-------------|----------------|
-| Feedback tuples | `core/feedback_loop.py` | Records outcomes with reward signals | Nobody reads tuples; policy deltas generated but not applied |
-| Quality Guard | `core/quality_guard.py` | 5 static rules | No threshold learning from outcomes |
-| CRAFTER | `execution/crafter_campaign.py` | Receives rejection context | Doesn't change template selection based on feedback |
-| Self-Annealing | `core/self_annealing_engine.py` | Full RETRIEVE-JUDGE-DISTILL pipeline | Imported but never triggered |
-| RL Engine | `execution/rl_engine.py` | Q-learning with state-action-reward | No reward signals wired from send events |
-| A/B Testing | `core/ab_test_engine.py` | Subject line variants + significance | Manual-only, no auto-trigger |
-| Self-Learning ICP | `core/self_learning_icp.py` | pgvector embeddings for deal outcomes | No GHL webhook hookup |
+**Remaining engines** (deferred to Phase 5 — need 2+ weeks of live send data):
 
-**To close the loop (Phase 5 prep)**:
+| Engine | File | What's Missing |
+|--------|------|----------------|
+| CRAFTER | `execution/crafter_campaign.py` | Template selection based on feedback |
+| Self-Annealing | `core/self_annealing_engine.py` | Event triggers for RETRIEVE-JUDGE-DISTILL |
+| RL Engine | `execution/rl_engine.py` | Reward signals from send/open/reply webhooks |
+| A/B Testing | `core/ab_test_engine.py` | Auto-trigger on reply rate drops |
+| Self-Learning ICP | `core/self_learning_icp.py` | GHL deal outcome webhook hookup |
+
+**To close remaining loops (Phase 5)**:
 1. Wire send/open/reply/bounce webhook events → RL engine `update()` calls
 2. Apply policy deltas → CRAFTER template selection (avoid rejected angles)
 3. Auto-create A/B tests when reply rate drops below threshold
 4. GHL deal outcome webhook → ICP weight recalibration
-5. Quality Guard: dynamic thresholds from rejection rate trends
 
 ---
 
@@ -280,13 +297,13 @@ The system collects feedback data (approvals, rejections, send outcomes) but **d
 
 ## 7. Open Audit Findings (Unresolved)
 
-### HeyReach — 3 Remaining (2 CRITICAL, 1 PARTIAL)
+### HeyReach — 1 Remaining (HR-05 PARTIAL — blocked on user)
 
 | ID | Severity | Issue | Sprint 7 Task | Status |
 |----|----------|-------|---------------|--------|
 | HR-05 | CRITICAL | Webhook payload fields unvalidated | B5 | PARTIAL — discovery harness built, needs real payload from user |
-| HR-06 | CRITICAL | Reply classification TODO | B7 | OPEN — `# TODO: Route to RESPONDER` in webhook handler |
-| HR-07 | CRITICAL | Follow-up flags unread (cadence broken) | B6 | PARTIAL — webhook writes flag files, cadence engine never reads them |
+| ~~HR-06~~ | ~~CRITICAL~~ | ~~Reply classification TODO~~ | B7 | RESOLVED (`9606327`) — keyword classifier + Slack alerts + signal loop routing |
+| ~~HR-07~~ | ~~CRITICAL~~ | ~~Follow-up flags unread~~ | B6 | RESOLVED (`9606327`) — `process_linkedin_followups()` in cadence engine |
 
 **Resolved (19/22):** HR-01 (url_quote on all params), HR-02 (atomic_json_write), HR-03 (Redis LinkedInDailyCeiling), HR-04 (exponential backoff + retryable status codes), HR-08 (split into TimeoutError/ClientError/Exception handlers), HR-09 (partial success detection with 3 field variants), HR-10 (circuit breaker registered in __init__), HR-11 (auth enforced), HR-12 (email validation), HR-13 (timeout), HR-14 (JSON fallback), HR-15, HR-16 (LinkedIn URL regex), HR-17 (atomic log), HR-18 (config validation), HR-19, HR-20, HR-21 (Slack alert), HR-22.
 
@@ -315,7 +332,7 @@ The system collects feedback data (approvals, rejections, send outcomes) but **d
 
 - [x] **State-store cutover** — `STATE_BACKEND=redis`, file fallback disabled
 - [x] **CORS policy** — Explicit methods/headers, smoke-validated
-- [ ] **Compliance documentation** — `directives/compliance.md` missing (CAN-SPAM enforced in code but not documented)
+- [x] **Compliance documentation** — `docs/COMPLIANCE.md` created (CAN-SPAM, GDPR, LinkedIn ToS)
 - [ ] **KPI monitoring** — No automated alerting for bounce%, reply%, unsub% thresholds
 
 ### P2 (Maintenance)
@@ -323,7 +340,7 @@ The system collects feedback data (approvals, rejections, send outcomes) but **d
 - [x] FastAPI lifespan migration (from deprecated `on_event`)
 - [ ] Replace `datetime.utcnow()` with timezone-aware UTC (partial)
 - [ ] Remove stale `PROXYCURL_API_KEY` references
-- [x] CLAUDE.md deployed hash updated to `7397f27`
+- [x] CLAUDE.md deployed hash updated to `4226583` (v4.8, audit complete)
 
 ### Emergency Controls
 
@@ -371,13 +388,14 @@ All must be TRUE before declaring full email autonomy:
 - [x] Webhook strict mode enabled (`WEBHOOK_SIGNATURE_REQUIRED=true`)
 - [x] Login page + cookie session auth (token never in URL)
 - [x] Redis-only state cutover complete
-- [x] 475 pre-commit tests passing (28 files)
-- [x] Engineering Sprints 1-6 complete
+- [x] 576 pre-commit tests passing (34 files)
+- [x] Engineering Sprints 1-8(D) complete (Agentic Engineering Audit fully remediated)
 
 All must be TRUE before declaring multi-channel (email + LinkedIn) autonomy:
 
 - [ ] All email autonomy items above
-- [ ] **HeyReach HR-05, HR-06, HR-07 bugs fixed** (Sprint 7 Track B — 7/10 already resolved)
+- [x] **HeyReach HR-06, HR-07 bugs fixed** (Sprint 7 B6+B7 — `9606327`)
+- [ ] **HeyReach HR-05 schema validation** (blocked — needs real webhook payload)
 - [ ] **LinkedIn warmup complete** (~Mar 16)
 - [ ] **`HEYREACH_BEARER_TOKEN` set on Railway**
 - [ ] **`HEYREACH_UNSIGNED_ALLOWLIST=false` on Railway**
@@ -390,7 +408,7 @@ All must be TRUE before declaring multi-channel (email + LinkedIn) autonomy:
 
 | Risk | Probability | Impact | Mitigation |
 |------|-------------|--------|------------|
-| HeyReach bugs hit during LinkedIn ramp | MEDIUM | 3 remaining (HR-05/06/07), 7 resolved | Sprint 7 Track B before Mar 16 |
+| HeyReach bugs hit during LinkedIn ramp | LOW | 1 remaining (HR-05), 9 resolved | Sprint 7 Track B before Mar 16 |
 | Bounce rate > 5% during ramp | MEDIUM | Ramp days reset, domain reputation at risk | 4-layer deliverability guards, 3/domain/batch |
 | No HoS review this week | LOW | Entire pipeline stalled | Email queue + Slack reminder |
 | Railway env var mismatch | LOW | Shadow emails invisible on dashboard | Pre-flight checklist enforces |
@@ -502,6 +520,7 @@ echo yes | python execution/run_pipeline.py --mode production --source "wpromote
 
 | Commit | Date | Description |
 |--------|------|-------------|
+| `9606327` | 2026-03-02 | Sprint 7 B6+B7: cadence follow-up consumer (HR-07, 9 tests) + reply classification routing (HR-06, 15 tests). task.md + CLAUDE.md refreshed. 498 tests, 29 files. Deployed to Railway. |
 | `7397f27` | 2026-03-02 | Queue Seed System: dashboard-triggered training email generation, OPERATOR synthetic guard, 14 new tests. 475 tests, 28 files. Deployed to Railway. |
 | `5023f6b` | 2026-03-01 | Dashboard login gate (cookie sessions) + Sprint 4-6 engineering hardening. 461 tests, 27 files. Deployed to Railway. |
 | `8176c27` | 2026-02-27 | Phase 4 bulk commit: 7 modules, 14 test files, 5 agents, pre-commit hook. Deployed to Railway. |

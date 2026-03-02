@@ -732,14 +732,18 @@ def _is_query_token_enabled() -> bool:
     """
     Whether ?token= query auth is accepted for protected APIs.
 
-    Default remains enabled for backwards compatibility. Prefer header token.
+    Default: DISABLED in production/staging (header-only auth).
+    Local dev defaults to enabled for backwards compatibility.
+    Set DASHBOARD_QUERY_TOKEN_ENABLED=true to explicitly re-enable.
     """
     raw = (os.getenv("DASHBOARD_QUERY_TOKEN_ENABLED") or "").strip().lower()
     if raw in {"1", "true", "yes", "on"}:
         return True
     if raw in {"0", "false", "no", "off"}:
         return False
-    return True
+    # Default: disabled in production/staging, enabled locally
+    environment = (os.getenv("ENVIRONMENT") or "").strip().lower()
+    return environment not in {"production", "staging"}
 
 
 def _auth_error_detail() -> str:
@@ -943,11 +947,20 @@ async def app_lifespan(app: FastAPI):
                 await task
 
 
+# N6 fix: disable OpenAPI docs in production/staging to avoid exposing internal
+# API schema to unauthenticated users.  /docs and /redoc remain available in
+# local dev for development convenience.
+_openapi_env = (os.getenv("ENVIRONMENT") or "").strip().lower()
+_disable_docs = _openapi_env in ("production", "staging")
+
 app = FastAPI(
     title="CAIO Swarm Health Dashboard",
     description="Real-time health monitoring for the unified agent swarm",
     version="1.0.0",
     lifespan=app_lifespan,
+    docs_url=None if _disable_docs else "/docs",
+    redoc_url=None if _disable_docs else "/redoc",
+    openapi_url=None if _disable_docs else "/openapi.json",
 )
 
 # Middleware ordering: Starlette processes LAST-added as OUTERMOST.
@@ -963,9 +976,29 @@ app.add_middleware(APIAuthMiddleware)
 # Gate HTML dashboard pages behind login session
 app.add_middleware(DashboardAuthMiddleware)
 
-# Session middleware (signed cookies — populates request.session)
-_session_secret = (os.getenv("SESSION_SECRET_KEY") or os.getenv("DASHBOARD_AUTH_TOKEN") or "change-me-in-production").strip()
-_session_https_only = (os.getenv("ENVIRONMENT") or "").strip().lower() in ("production", "staging")
+# Session middleware (signed cookies -- populates request.session)
+# N3 fix: require explicit SESSION_SECRET_KEY in production/staging; no weak fallback.
+_session_env = (os.getenv("ENVIRONMENT") or "").strip().lower()
+_session_secret_raw = (os.getenv("SESSION_SECRET_KEY") or "").strip()
+if _session_secret_raw:
+    _session_secret = _session_secret_raw
+elif _session_env in ("production", "staging"):
+    _explicit_token = (os.getenv("DASHBOARD_AUTH_TOKEN") or "").strip()
+    if _explicit_token:
+        logger.warning(
+            "SESSION_SECRET_KEY not set in %s -- falling back to DASHBOARD_AUTH_TOKEN. "
+            "Set a dedicated SESSION_SECRET_KEY for stronger session signing.",
+            _session_env,
+        )
+        _session_secret = _explicit_token
+    else:
+        raise RuntimeError(
+            f"SESSION_SECRET_KEY is required in {_session_env} environment. "
+            "Set it as an env var to enable secure session signing."
+        )
+else:
+    _session_secret = (os.getenv("DASHBOARD_AUTH_TOKEN") or "caio-local-dev-secret").strip()
+_session_https_only = _session_env in ("production", "staging")
 app.add_middleware(
     SessionMiddleware,
     secret_key=_session_secret,
@@ -975,7 +1008,7 @@ app.add_middleware(
     https_only=_session_https_only,
 )
 
-# CORS (outermost — processes first)
+# CORS (outermost -- processes first)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_get_cors_allowed_origins(),
@@ -1165,7 +1198,7 @@ _LOGIN_PAGE_HTML = """<!DOCTYPE html>
 
 def _render_login_page(next_url: str = "/sales", error: str = "") -> HTMLResponse:
     error_html = f'<div class="error-msg">{error}</div>' if error else ""
-    # Sanitize next_url to prevent open redirect — only allow relative paths
+    # Sanitize next_url to prevent open redirect -- only allow relative paths
     if not next_url.startswith("/"):
         next_url = "/sales"
     # Use .replace() instead of .format() to avoid conflicts with CSS curly braces
@@ -1356,6 +1389,11 @@ async def health_check():
         check_connections=False,
         inngest_route_mounted=INNGEST_ROUTE_MOUNTED,
     )
+    try:
+        from core.gateway_registry import get_all_gateway_health
+        status["gateways"] = get_all_gateway_health()
+    except Exception:
+        status["gateways"] = {"overall": "unavailable", "error": "Gateway registry not loaded"}
     return status
 
 
@@ -1366,10 +1404,15 @@ async def get_runtime_dependencies(auth: bool = Depends(require_auth)):
         check_connections=True,
         inngest_route_mounted=INNGEST_ROUTE_MOUNTED,
     )
+    _env = (os.getenv("ENVIRONMENT") or "").strip().lower()
     payload["auth"] = {
         "strict_mode": _is_token_strict_mode(),
         "query_token_enabled": _is_query_token_enabled(),
         "token_header": DASHBOARD_TOKEN_HEADER,
+        "token_configured": bool((os.getenv("DASHBOARD_AUTH_TOKEN") or "").strip()),
+        "session_secret_explicit": bool((os.getenv("SESSION_SECRET_KEY") or "").strip()),
+        "webhook_signature_required": (os.getenv("WEBHOOK_SIGNATURE_REQUIRED") or "").strip().lower() in {"1", "true", "yes"},
+        "environment": _env or "local",
     }
     routes = _phase1_llm_routes()
     payload["llm_routing"] = {
@@ -1672,6 +1715,114 @@ async def get_scorecard_markdown():
     return {"markdown": scorecard.to_markdown_report()}
 
 
+# =============================================================================
+# COMPOUND METRICS ENDPOINT
+# =============================================================================
+
+@app.get("/api/compound-metrics")
+async def get_compound_metrics(auth: bool = Depends(require_auth)):
+    """
+    Compound engineering metrics -- tracks system improvement over time.
+
+    Returns test infrastructure stats, approval rates, gateway health,
+    and event volume for trend analysis.
+    """
+    import glob as glob_mod
+    metrics: Dict[str, Any] = {"generated_at": datetime.now(timezone.utc).isoformat()}
+
+    # 1. Test infrastructure
+    project_root = Path(__file__).parent.parent
+    test_files = list(project_root.glob("tests/test_*.py"))
+    metrics["test_infrastructure"] = {
+        "test_files": len(test_files),
+        "pre_commit_files": _count_pre_commit_tests(project_root),
+    }
+
+    # 2. Approval/rejection rates from shadow queue
+    try:
+        from core.shadow_queue import list_pending, get_email_history
+        pending = list_pending()
+        history = get_email_history(limit=100) if callable(get_email_history) else []
+        approved = sum(1 for e in history if e.get("status") == "approved")
+        rejected = sum(1 for e in history if e.get("status") == "rejected")
+        total_reviewed = approved + rejected
+        metrics["approval_rates"] = {
+            "pending_count": len(pending) if pending else 0,
+            "recent_approved": approved,
+            "recent_rejected": rejected,
+            "approval_rate": round(approved / total_reviewed, 3) if total_reviewed > 0 else None,
+        }
+    except Exception:
+        metrics["approval_rates"] = {"error": "Shadow queue not available"}
+
+    # 3. Gateway health summary
+    try:
+        from core.gateway_registry import get_all_gateway_health
+        gw_health = get_all_gateway_health()
+        metrics["gateway_health"] = {
+            "overall": gw_health.get("overall", "unknown"),
+            "per_gateway": {
+                name: info.get("status", "unknown")
+                for name, info in gw_health.get("gateways", {}).items()
+            },
+        }
+    except Exception:
+        metrics["gateway_health"] = {"overall": "unavailable"}
+
+    # 4. Event volume (from events.jsonl)
+    try:
+        events_file = project_root / ".hive-mind" / "events.jsonl"
+        if events_file.exists():
+            line_count = sum(1 for _ in open(events_file, "r", encoding="utf-8", errors="replace"))
+            metrics["event_volume"] = {"total_events": line_count}
+        else:
+            metrics["event_volume"] = {"total_events": 0}
+    except Exception:
+        metrics["event_volume"] = {"error": "Events file not readable"}
+
+    # 5. Doc freshness (count of docs with frontmatter)
+    try:
+        docs_dir = project_root / "docs"
+        docs_with_frontmatter = 0
+        total_docs = 0
+        for md_file in docs_dir.glob("*.md"):
+            total_docs += 1
+            try:
+                with open(md_file, "r", encoding="utf-8") as f:
+                    first_line = f.readline().strip()
+                    if first_line == "---":
+                        docs_with_frontmatter += 1
+            except Exception:
+                pass
+        metrics["documentation"] = {
+            "total_docs": total_docs,
+            "with_frontmatter": docs_with_frontmatter,
+            "frontmatter_coverage": round(docs_with_frontmatter / total_docs, 3) if total_docs > 0 else 0,
+        }
+    except Exception:
+        metrics["documentation"] = {"error": "Docs directory not readable"}
+
+    return metrics
+
+
+def _count_pre_commit_tests(project_root: Path) -> int:
+    """Count test files listed in .githooks/pre-commit."""
+    hook_file = project_root / ".githooks" / "pre-commit"
+    if not hook_file.exists():
+        return 0
+    count = 0
+    try:
+        content = hook_file.read_text(encoding="utf-8")
+        for line in content.splitlines():
+            # Strip whitespace and trailing bash continuation backslash
+            line = line.strip().rstrip("\\").strip()
+            if line.startswith("tests/test_") and line.endswith(".py"):
+                count += 1
+    except Exception:
+        pass
+    return count
+
+
 @app.get("/scorecard")
 async def scorecard_dashboard():
     """
@@ -1885,7 +2036,7 @@ async def get_pending_emails(
             or "unknown"
         )
 
-        # P0: Backend compliance checks — single source of truth for UI
+        # P0: Backend compliance checks -- single source of truth for UI
         body_text = email_data.get("body") or ""
         body_lower = body_text.lower()
         email_data["compliance_checks"] = {
@@ -2166,7 +2317,7 @@ async def approve_email(
                             if result.get("success"):
                                 email_data["sent_via_ghl"] = True
                                 email_data["ghl_message_id"] = result.get("message_id")
-                                # XS-06: Persist sent_via_ghl immediately — before proof engine.
+                                # XS-06: Persist sent_via_ghl immediately -- before proof engine.
                                 # If proof or later steps crash, file still records the send.
                                 if email_file:
                                     try:
@@ -2240,7 +2391,7 @@ async def approve_email(
     email_data["approved_by"] = approver
     email_data["feedback"] = feedback
     
-    # Save updated data — Redis + filesystem
+    # Save updated data -- Redis + filesystem
     try:
         from core.shadow_queue import update_status as sq_update
         sq_update(email_id, final_status, shadow_dir=shadow_log, extra_fields={
@@ -2399,7 +2550,7 @@ async def reject_email(
     email_data["rejection_tag"] = validated_tag
     email_data["feedback"] = validated_reason
 
-    # Save updated data — Redis + filesystem
+    # Save updated data -- Redis + filesystem
     try:
         from core.shadow_queue import update_status as sq_update
         sq_update(email_id, "rejected", shadow_dir=shadow_log, extra_fields={
@@ -2756,7 +2907,7 @@ async def clay_enrichment_callback(request: Request):
 
     Pipeline flow:
     1. Local pipeline sends lead to Clay workbook webhook, stores correlation
-       in Redis as {prefix}:clay:pipeline:{linkedin_hash} → {lead_id, request_id, ...}
+       in Redis as {prefix}:clay:pipeline:{linkedin_hash} -> {lead_id, request_id, ...}
     2. Clay enriches and fires HTTP API callback to this endpoint
     3. This handler extracts linkedin_url, looks up correlation, stores enriched
        data in Redis as {prefix}:clay:result:{request_id}
@@ -2773,7 +2924,7 @@ async def clay_enrichment_callback(request: Request):
     ).strip()
 
     if not linkedin_url:
-        logger.warning("Clay callback missing linkedin_url — cannot correlate to pipeline lead")
+        logger.warning("Clay callback missing linkedin_url -- cannot correlate to pipeline lead")
         return {"status": "received", "correlated": False, "reason": "no_linkedin_url"}
 
     prefix = _clay_redis_prefix()
@@ -2887,7 +3038,7 @@ try:
         count = _lead_status_mgr.bootstrap_from_shadow_emails()
         return {"created": count, "message": f"Bootstrapped {count} lead status records"}
 
-    logger.info("✓ Lead Signal Loop & Activity Timeline endpoints mounted")
+    logger.info("[OK] Lead Signal Loop & Activity Timeline endpoints mounted")
 except Exception as e:
     logger.warning("Lead Signal Loop could not be mounted: %s", e)
 
@@ -2986,7 +3137,7 @@ try:
             from fastapi.responses import JSONResponse
             return JSONResponse(status_code=404, content={"error": f"Batch {batch_id} not found"})
 
-    logger.info("✓ OPERATOR Agent endpoints mounted (incl. GATEKEEPER batch approval)")
+    logger.info("[OK] OPERATOR Agent endpoints mounted (incl. GATEKEEPER batch approval)")
 except Exception as e:
     logger.warning("OPERATOR endpoints could not be mounted: %s", e)
 
@@ -3032,7 +3183,7 @@ try:
         """Sync cadence with signal loop (auto-exit replied/bounced leads)."""
         return _cadence.sync_signals()
 
-    logger.info("✓ Cadence Engine endpoints mounted")
+    logger.info("[OK] Cadence Engine endpoints mounted")
 except Exception as e:
     logger.warning("Cadence endpoints could not be mounted: %s", e)
 
@@ -3044,7 +3195,7 @@ try:
     from core.inngest_scheduler import get_inngest_serve
     get_inngest_serve(app)
     INNGEST_ROUTE_MOUNTED = True
-    logger.info("✓ Inngest route mounted at /inngest")
+    logger.info("[OK] Inngest route mounted at /inngest")
 except Exception as e:
     INNGEST_ROUTE_MOUNTED = False
     logger.warning("Inngest route could not be mounted: %s", e)
@@ -3052,21 +3203,21 @@ except Exception as e:
 try:
     from webhooks.rb2b_webhook import router as rb2b_router
     app.include_router(rb2b_router)
-    logger.info("✓ RB2B Webhook mounted")
+    logger.info("[OK] RB2B Webhook mounted")
 except Exception as e:
     logger.warning("RB2B Webhook could not be mounted: %s", e)
 
 try:
     from webhooks.instantly_webhook import router as instantly_router
     app.include_router(instantly_router)
-    logger.info("✓ Instantly Webhook + Campaign Management mounted")
+    logger.info("[OK] Instantly Webhook + Campaign Management mounted")
 except Exception as e:
     logger.warning("Instantly webhook router could not be mounted: %s", e)
 
 try:
     from webhooks.heyreach_webhook import router as heyreach_router
     app.include_router(heyreach_router)
-    logger.info("✓ HeyReach Webhook mounted")
+    logger.info("[OK] HeyReach Webhook mounted")
 except Exception as e:
     logger.warning("HeyReach webhook router could not be mounted: %s", e)
 

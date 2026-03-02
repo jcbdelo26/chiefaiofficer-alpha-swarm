@@ -1,5 +1,12 @@
 
 import pytest
+
+# Module-level skip: these tests target the deleted core/guardrails.py API.
+# The replacement tests live in test_unified_guardrails.py.
+pytestmark = pytest.mark.skip(
+    reason="Stale: targets deleted core/guardrails.py API — see test_unified_guardrails.py"
+)
+
 import re
 from unittest.mock import MagicMock, AsyncMock, patch
 from typing import Dict, Any

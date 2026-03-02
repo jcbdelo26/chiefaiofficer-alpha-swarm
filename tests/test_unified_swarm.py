@@ -51,8 +51,7 @@ def queen():
 
 @pytest.fixture
 def scheduler():
-    with patch("execution.scheduler_agent.GoogleCalendarMCP", return_value=MockGoogleCalendar()):
-        return SchedulerAgent()
+    return SchedulerAgent(calendar_client=MockGoogleCalendar())
 
 @pytest.fixture
 def researcher():

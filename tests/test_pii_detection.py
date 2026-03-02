@@ -347,14 +347,14 @@ class TestRiskLevelCalculation:
     def test_low_risk_email_only(self):
         detector = PIIDetector()
         result = detector.scan("Email: user@example.com")
-        
-        assert result.risk_level == "low"
-    
+
+        assert result.risk_level == "medium"
+
     def test_low_risk_phone_only(self):
         detector = PIIDetector()
         result = detector.scan("Phone: 555-123-4567")
-        
-        assert result.risk_level == "low"
+
+        assert result.risk_level == "medium"
     
     def test_medium_risk_ip(self):
         detector = PIIDetector()

@@ -30,6 +30,19 @@ from guardrails import CalendarGuardrails, BookingValidation, WorkingHours
 
 INTEGRATION_MODE = os.getenv("GOOGLE_CALENDAR_TEST", "0") == "1"
 
+
+def _future_weekday_2pm():
+    """Return a future weekday datetime at 2 PM ET (UTC-5) for use in tests.
+
+    Guarantees the date is at least 7 days in the future and falls on a
+    weekday (Mon-Fri), so guardrails will not reject it as past or weekend.
+    """
+    base = datetime.now(timezone.utc) + timedelta(days=7)
+    # Advance to Monday if it lands on a weekend
+    while base.weekday() >= 5:  # 5=Sat, 6=Sun
+        base += timedelta(days=1)
+    return base.replace(hour=19, minute=0, second=0, microsecond=0)  # 19:00 UTC = 14:00 ET (UTC-5)
+
 skip_if_no_creds = pytest.mark.skipif(
     not INTEGRATION_MODE,
     reason="Set GOOGLE_CALENDAR_TEST=1 to run integration tests"
@@ -195,12 +208,15 @@ class TestEventCreation:
     @pytest.mark.asyncio
     async def test_create_simple_event(self, calendar_mcp):
         """Create a basic event."""
+        future = _future_weekday_2pm()
+        start = future.strftime("%Y-%m-%dT14:00:00-05:00")
+        end = future.strftime("%Y-%m-%dT14:30:00-05:00")
         result = await calendar_mcp.create_event(
             title="Test Meeting",
-            start_time="2026-01-22T14:00:00-05:00",
-            end_time="2026-01-22T14:30:00-05:00"
+            start_time=start,
+            end_time=end
         )
-        
+
         assert result["success"] is True
         assert result["title"] == "Test Meeting"
         assert "event_id" in result
@@ -208,27 +224,33 @@ class TestEventCreation:
     @pytest.mark.asyncio
     async def test_create_event_with_attendees(self, calendar_mcp):
         """Create event with attendees."""
+        future = _future_weekday_2pm()
+        start = future.strftime("%Y-%m-%dT14:00:00-05:00")
+        end = future.strftime("%Y-%m-%dT14:30:00-05:00")
         result = await calendar_mcp.create_event(
             title="Team Sync",
-            start_time="2026-01-22T14:00:00-05:00",
-            end_time="2026-01-22T14:30:00-05:00",
+            start_time=start,
+            end_time=end,
             attendees=["alice@example.com", "bob@example.com"]
         )
-        
+
         assert result["success"] is True
         assert result["attendees"] == ["alice@example.com", "bob@example.com"]
     
     @pytest.mark.asyncio
     async def test_create_event_with_zoom(self, calendar_mcp):
         """Create event with Zoom link."""
+        future = _future_weekday_2pm()
+        start = future.strftime("%Y-%m-%dT14:00:00-05:00")
+        end = future.strftime("%Y-%m-%dT14:30:00-05:00")
         zoom_url = "https://zoom.us/j/123456789"
         result = await calendar_mcp.create_event(
             title="Zoom Call",
-            start_time="2026-01-22T14:00:00-05:00",
-            end_time="2026-01-22T14:30:00-05:00",
+            start_time=start,
+            end_time=end,
             zoom_link=zoom_url
         )
-        
+
         assert result["success"] is True
         assert result["zoom_link"] == zoom_url
     
@@ -260,25 +282,27 @@ class TestEventCreation:
     @pytest.mark.asyncio
     async def test_double_booking_prevention(self, calendar_mcp_with_mock_service):
         """Verify mutex prevents double booking."""
+        future = _future_weekday_2pm()
+        date_str = future.strftime("%Y-%m-%d")
         calendar_mcp_with_mock_service._service.freebusy().query().execute.return_value = {
             "calendars": {
                 "primary": {
                     "busy": [
                         {
-                            "start": "2026-01-22T14:00:00-05:00",
-                            "end": "2026-01-22T15:00:00-05:00"
+                            "start": f"{date_str}T14:00:00-05:00",
+                            "end": f"{date_str}T15:00:00-05:00"
                         }
                     ]
                 }
             }
         }
-        
+
         result = await calendar_mcp_with_mock_service.create_event(
             title="Conflicting Meeting",
-            start_time="2026-01-22T14:30:00-05:00",
-            end_time="2026-01-22T15:30:00-05:00"
+            start_time=f"{date_str}T14:30:00-05:00",
+            end_time=f"{date_str}T15:30:00-05:00"
         )
-        
+
         assert result["success"] is False
         assert "double-booking" in result["error"].lower() or "no longer available" in result["error"].lower()
     
