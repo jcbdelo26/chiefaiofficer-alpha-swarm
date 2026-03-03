@@ -1,7 +1,7 @@
 ---
 title: Master Tracker & Autonomy Roadmap
-version: "5.2"
-last_updated: 2026-03-03
+version: "5.3"
+last_updated: 2026-03-04
 audience: [all-agents, engineers, pto-gtm]
 tags: [tracker, sprints, autonomy, go-no-go]
 canonical_for: [sprint-tracker, task-status]
@@ -9,13 +9,15 @@ canonical_for: [sprint-tracker, task-status]
 
 # CAIO Alpha Swarm — Master Tracker & Autonomy Roadmap
 
-**Last Updated**: 2026-03-03
-**Last Commit**: `4226583` (HR-05 — deployed to Railway 2026-03-02)
-**Plan Version**: v5.2
+**Last Updated**: 2026-03-04
+**Last Commit**: `38562b0` (Agentic Engineering Audit sprints A-D + post-audit housekeeping)
+**Plan Version**: v5.3
 **Test Suite**: 576 tests passing (34-file pre-commit suite, ~102s)
 
 > **This file is the single source of truth for all current and future work.**
-> For historical roadmap: `CAIO_IMPLEMENTATION_PLAN.md` (v4.6). For deployment context: `CLAUDE.md`.
+> **Canonical status rule (2026-03-03)**: update live status ONLY in this file; other trackers are historical context unless explicitly regenerated from this file.
+> For historical roadmap: `CAIO_IMPLEMENTATION_PLAN.md` (v4.8). For deployment context: `CLAUDE.md`.
+> **Operational mode (2026-03-04)**: dev-progress only. Live sends, ramp graduation, and go-live sign-off are paused until N3/N6 closure and post-fix rerun gates are green.
 
 ---
 
@@ -26,7 +28,7 @@ Phase 0: Foundation Lock          [##########] 100%  COMPLETE
 Phase 1: Live Pipeline Validation [##########] 100%  COMPLETE  (33+ runs, 10 consecutive 6/6)
 Phase 2: Supervised Burn-In       [##########] 100%  COMPLETE
 Phase 3: Expand & Harden          [##########] 100%  COMPLETE
-Phase 4: Autonomy Graduation      [#########.]  98%  IN PROGRESS ← YOU ARE HERE
+Phase 4: Autonomy Graduation      [#########.]  98%  IN PROGRESS (DEV-PROGRESS HOLD) ← YOU ARE HERE
 Phase 5: Intelligence & Optimize  [..........]   0%  WAITING (trigger: 2 weeks live send data)
 Phase 6: Full Autonomy            [..........]   0%  WAITING (trigger: 30 days live send data)
 ```
@@ -36,10 +38,10 @@ Phase 6: Full Autonomy            [..........]   0%  WAITING (trigger: 30 days l
 | Sub-Phase | Status | Notes |
 |-----------|--------|-------|
 | 4A Instantly Go-Live | COMPLETE | 6 domains, V2 API, 100% warmup health |
-| 4B HeyReach LinkedIn | 90% | Infra done, 7/10 bugs resolved. Blocked: 3 bugs + warmup ~Mar 16 |
+| 4B HeyReach LinkedIn | 95% | Infra done, 9/10 bugs resolved. Blocked: HR-05 payload validation + warmup ~Mar 16 |
 | 4C OPERATOR Agent | COMPLETE | Unified dispatch (outbound + cadence + revival) |
 | 4D Cadence Engine | COMPLETE | 21-day, 8-step Email+LinkedIn sequence |
-| 4E Supervised Live Sends | RAMP ACTIVE | 5/day, tier_1 only. **Awaiting first HoS review** |
+| 4E Supervised Live Sends | ON HOLD | Dev-progress mode active until N3/N6 closure + rerun gates |
 | 4F Monaco Signal Loop | COMPLETE | 21 statuses, webhook-driven |
 | 4G Proof & Feedback | COMPLETE | GHLSendProofEngine, webhook + poll fallback |
 | 4H Task Routing | 95% | Committed, needs production validation |
@@ -66,6 +68,32 @@ Phase 6: Full Autonomy            [..........]   0%  WAITING (trigger: 30 days l
 
 ## 2. Critical Path to Full Autonomy
 
+### Post-Audit Execution Window (2026-03-04)
+
+| Phase | Status | Evidence / Remaining Blocker |
+|-------|--------|------------------------------|
+| Phase 0: Canonicalization | DONE | `task.md` enforced as sole live tracker; `docs/CAIO_TASK_TRACKER.md` + `CAIO_IMPLEMENTATION_PLAN.md` treated as historical/roadmap |
+| Phase 1: Runtime/Auth Gate | PARTIAL | Staging+production matrices executed; remaining parity blockers are N3 + N6 and must be closed before live operations |
+| Phase 2: PTO Inputs Closure | IN_PROGRESS (DEV ONLY) | Runtime env mapping and isolation verified; complete `SESSION_SECRET_KEY` explicit detection + docs-disable verification + rerun evidence |
+| Phase 3: Supervised Proof + 3-Day Ramp | ON HOLD | Blocked until Phase 1 and Phase 2 are green (no N3/N6 failures) |
+| Phase 4: LinkedIn Readiness | BLOCKED | HR-05 still requires real HeyReach webhook payload capture/validation (`python scripts/inspect_heyreach_payloads.py --print-sample`) |
+| Phase 5: Doc Drift Cleanup | IN_PROGRESS | Numeric/status drift reconciliation started across 4 source docs |
+
+### Phase 1 Validation Snapshot (Production, 2026-03-03)
+
+- `strict_auth_parity_smoke.py`: **FAIL (8/12)**  
+  - PASS: N1, N2, N4, N5  
+  - FAIL: N3 (`auth.session_secret_explicit=false`), N6 (`/docs`, `/redoc`, `/openapi.json` return 200)
+- `strict_auth_parity_smoke.py` (staging): **FAIL (8/12)** with the same N3/N6 failures
+- `webhook_strict_smoke.py --require-heyreach-hard-auth`: **PASS**
+- `endpoint_auth_smoke.py --expect-query-token-enabled false`: **PASS**
+- `webhook_strict_smoke_matrix.py --require-heyreach-hard-auth`: **PASS** (staging + production)
+- `deployed_full_smoke_matrix.py --expect-query-token-enabled false --require-heyreach-hard-auth`: **PASS** (staging + production)
+- `deployed_full_smoke_checklist.py --expect-query-token-enabled false --require-heyreach-hard-auth`: **FAIL**
+  - Legacy result before checker update; matrix now passes with login-gated `/sales` handling
+- Full evidence log: `docs/POST_AUDIT_EXECUTION_LOG.md`
+- Latest manual verification (2026-03-04): `session_secret_explicit=false` in staging+production; `/docs`, `/redoc`, `/openapi.json` returned `302` in staging+production (still failing N3/N6 until redeploy + env correction).
+
 ### Overview
 
 ```
@@ -79,14 +107,16 @@ HoS Review → Ramp Supervision → Graduate → HR Hardening → LinkedIn Live
   |   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~          |   ~~~~~~~~~~~~~~~~~~~~~
 ```
 
-### Step 1: HoS Email Review — USER ACTION (TODAY)
+### Step 1: Runtime/Auth Closure — USER + ENGINEERING (NOW)
 
-**This is the single gate blocking everything.** No emails send live until you review.
+**This is the current gate blocking live operations.**
 
-1. Open `caio-swarm-dashboard-production.up.railway.app/login` (enter your `DASHBOARD_AUTH_TOKEN`)
-2. Go to the **Email Queue** tab (or `/sales`)
-3. Review 5+ shadow emails — approve or reject each
-4. On approval: OPERATOR dispatches first live batch (5 emails, tier_1 only, Instantly)
+1. Re-enter `SESSION_SECRET_KEY` in staging and production as plain single-line values.
+2. Force redeploy staging then production.
+3. Validate `/api/runtime/dependencies` shows:
+   - `auth.environment=staging|production` correctly
+   - `auth.session_secret_explicit=true`
+   - `auth.session_secret_source=SESSION_SECRET_KEY`
 
 **What to check on each email:**
 - Subject line: Not deceptive, personalized to recipient
@@ -96,18 +126,16 @@ HoS Review → Ramp Supervision → Graduate → HR Hardening → LinkedIn Live
 
 **Reference**: `docs/HOS_EMAIL_REVIEW_GUIDE.md`
 
-### Step 2: 3-Day Ramp Supervision — USER + SYSTEM (Days 1-3)
+### Step 2: Docs Exposure Closure + Full Reruns — USER + ENGINEERING
 
-After first approval, the system enters ramp mode: **5 emails/day, tier_1 only**.
-
-**Daily ritual (15:00 EST, ~10 min):**
-1. Pre-flight smoke check:
-   ```powershell
-   python scripts/deployed_full_smoke_checklist.py --base-url https://caio-swarm-dashboard-production.up.railway.app --token <DASHBOARD_AUTH_TOKEN>
-   ```
-2. Check dashboard: delivery proof outcomes, bounce rate, reply rate
-3. Review any new emails in queue → approve/reject
-4. After dispatch: verify proof in GHL conversation thread
+1. Deploy/verify production-like docs disable logic.
+2. Confirm `/docs`, `/redoc`, `/openapi.json` return `404` on staging and production.
+3. Run gate reruns:
+   - `scripts/endpoint_auth_smoke.py`
+   - `scripts/strict_auth_parity_smoke.py`
+   - `scripts/webhook_strict_smoke_matrix.py`
+   - `scripts/deployed_full_smoke_matrix.py`
+4. Keep live sends paused until all reruns are green.
 
 **Graduation criteria (all must pass):**
 - [ ] 3 consecutive clean supervised days (no gate failures, no unresolved sends)
@@ -164,13 +192,14 @@ After HeyReach hardening AND LinkedIn warmup complete:
 |-------|-----|-----|
 | **Review 5+ shadow emails** | Unblocks first live dispatch | Dashboard Email Queue tab |
 | **Confirm daily supervision schedule** | Need 3 supervised days for ramp graduation | 15:00 EST recommended |
+| **Provide staging dashboard + webhook bearer tokens for matrix gate** | Required to complete staging+production same-window auth closure | Secure handoff to engineering runbook |
 
 ### Before LinkedIn Ramp (~Mar 10)
 
 | Input | Why | How |
 |-------|-----|-----|
-| **Set `HEYREACH_BEARER_TOKEN` on Railway** | Webhook auth enforcement | Railway dashboard → env vars |
-| **Confirm HeyReach webhook schema** | HR-05: payload field names are guesses | Check HeyReach docs or capture via webhook.site |
+| **Confirm `HEYREACH_BEARER_TOKEN` in staging and production** | Hard-auth parity must be green in both envs | Railway dashboard → env vars |
+| **Confirm HeyReach webhook schema** | HR-05: requires real payload evidence | Trigger a real HeyReach event, then run `python scripts/inspect_heyreach_payloads.py --print-sample` |
 | **Verify campaign IDs still valid** | 334314 / 334364 / 334381 in config | HeyReach UI |
 | **Confirm LinkedIn warmup progress** | Determines hardening deadline | HeyReach dashboard |
 
@@ -486,7 +515,7 @@ echo yes | python execution/run_pipeline.py --mode production --source "wpromote
 |---------|------|-------|
 | Dashboard API | `dashboard/health_app.py` | 2820 lines, 50+ endpoints |
 | OPERATOR Agent | `execution/operator_outbound.py` | 1936 lines, 3 dispatch motions |
-| HeyReach Dispatcher | `execution/heyreach_dispatcher.py` | 900+ lines, 3 bugs remaining (HR-05/06/07) |
+| HeyReach Dispatcher | `execution/heyreach_dispatcher.py` | 900+ lines, 1 bug remaining (HR-05) |
 | HeyReach Webhooks | `webhooks/heyreach_webhook.py` | 388 lines |
 | Instantly Dispatcher | `execution/instantly_dispatcher.py` | V2 API, 6 domains |
 | Cadence Engine | `execution/cadence_engine.py` | 682 lines, 21-day 8-step |
@@ -498,8 +527,8 @@ echo yes | python execution/run_pipeline.py --mode production --source "wpromote
 | Alerts | `core/alerts.py` | Slack webhook, 3 severity levels |
 | Compliance | `core/compliance.py` | CAN-SPAM enforcement |
 | Production Config | `config/production.json` | All feature flags + limits |
-| Pre-commit Hook | `.githooks/pre-commit` | 28 files, 475 tests, ~57s |
-| Implementation Plan | `CAIO_IMPLEMENTATION_PLAN.md` | v4.6, full historical roadmap |
+| Pre-commit Hook | `.githooks/pre-commit` | 34 files, 576 tests, ~102s |
+| Implementation Plan | `CAIO_IMPLEMENTATION_PLAN.md` | v4.8, full historical roadmap |
 | HoS Review Guide | `docs/HOS_EMAIL_REVIEW_GUIDE.md` | Email approval criteria |
 | Dev Team Skill | `.claude/commands/dev-team.md` | 3-pass code review |
 
@@ -520,6 +549,7 @@ echo yes | python execution/run_pipeline.py --mode production --source "wpromote
 
 | Commit | Date | Description |
 |--------|------|-------------|
+| `38562b0` | 2026-03-03 | Agentic audit Sprints A-D + post-audit housekeeping merged. Post-audit execution started: production hard-auth smoke run, canonical tracker enforcement, cross-doc drift cleanup initiated. |
 | `9606327` | 2026-03-02 | Sprint 7 B6+B7: cadence follow-up consumer (HR-07, 9 tests) + reply classification routing (HR-06, 15 tests). task.md + CLAUDE.md refreshed. 498 tests, 29 files. Deployed to Railway. |
 | `7397f27` | 2026-03-02 | Queue Seed System: dashboard-triggered training email generation, OPERATOR synthetic guard, 14 new tests. 475 tests, 28 files. Deployed to Railway. |
 | `5023f6b` | 2026-03-01 | Dashboard login gate (cookie sessions) + Sprint 4-6 engineering hardening. 461 tests, 27 files. Deployed to Railway. |
@@ -536,4 +566,4 @@ echo yes | python execution/run_pipeline.py --mode production --source "wpromote
 
 ---
 
-*Last updated: 2026-03-02 | Next review: After HoS email review or Sprint 7 B6/B7 completion*
+*Last updated: 2026-03-03 | Next review: After staging+production auth matrix closure and first supervised proof cycle*

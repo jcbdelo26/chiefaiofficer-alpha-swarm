@@ -718,14 +718,32 @@ def _load_api_auth_allowlist() -> Set[str]:
 API_AUTH_ALLOWLIST = _load_api_auth_allowlist()
 
 
+def _runtime_env() -> str:
+    """
+    Return normalized runtime environment.
+
+    Preference order:
+    1) ENVIRONMENT (existing project convention)
+    2) RAILWAY_ENVIRONMENT (Railway-native fallback)
+    """
+    env = (os.getenv("ENVIRONMENT") or "").strip().lower()
+    if env:
+        return env
+    return (os.getenv("RAILWAY_ENVIRONMENT") or "").strip().lower()
+
+
+def _is_production_like_env() -> bool:
+    """True for staging/production runtime modes."""
+    return _runtime_env() in {"production", "staging"}
+
+
 def _is_token_strict_mode() -> bool:
     strict_raw = (os.getenv("DASHBOARD_AUTH_STRICT") or "").strip().lower()
     if strict_raw in {"1", "true", "yes", "on"}:
         return True
     if strict_raw in {"0", "false", "no", "off"}:
         return False
-    environment = (os.getenv("ENVIRONMENT") or "").strip().lower()
-    return environment in {"production", "staging"}
+    return _is_production_like_env()
 
 
 def _is_query_token_enabled() -> bool:
@@ -742,8 +760,7 @@ def _is_query_token_enabled() -> bool:
     if raw in {"0", "false", "no", "off"}:
         return False
     # Default: disabled in production/staging, enabled locally
-    environment = (os.getenv("ENVIRONMENT") or "").strip().lower()
-    return environment not in {"production", "staging"}
+    return not _is_production_like_env()
 
 
 def _auth_error_detail() -> str:
@@ -829,8 +846,20 @@ class APIAuthMiddleware(BaseHTTPMiddleware):
 class DashboardAuthMiddleware(BaseHTTPMiddleware):
     """Gate HTML dashboard pages behind login session."""
 
-    _EXEMPT_PREFIXES = ("/login", "/logout", "/static/", "/webhooks/", "/api/", "/ws", "/inngest")
-    _EXEMPT_EXACT = {"/favicon.ico"}
+    _EXEMPT_PREFIXES = (
+        "/login",
+        "/logout",
+        "/static/",
+        "/webhooks/",
+        "/api/",
+        "/ws",
+        "/inngest",
+        # Allow OpenAPI routes to hit the router directly so disabled docs
+        # resolve as 404 (instead of login redirects that mask N6 checks).
+        "/docs",
+        "/redoc",
+    )
+    _EXEMPT_EXACT = {"/favicon.ico", "/openapi.json"}
 
     async def dispatch(self, request: Request, call_next):
         path = _normalize_path(request.url.path)
@@ -950,8 +979,8 @@ async def app_lifespan(app: FastAPI):
 # N6 fix: disable OpenAPI docs in production/staging to avoid exposing internal
 # API schema to unauthenticated users.  /docs and /redoc remain available in
 # local dev for development convenience.
-_openapi_env = (os.getenv("ENVIRONMENT") or "").strip().lower()
-_disable_docs = _openapi_env in ("production", "staging")
+_openapi_env = _runtime_env()
+_disable_docs = _is_production_like_env()
 
 app = FastAPI(
     title="CAIO Swarm Health Dashboard",
@@ -978,10 +1007,11 @@ app.add_middleware(DashboardAuthMiddleware)
 
 # Session middleware (signed cookies -- populates request.session)
 # N3 fix: require explicit SESSION_SECRET_KEY in production/staging; no weak fallback.
-_session_env = (os.getenv("ENVIRONMENT") or "").strip().lower()
+_session_env = _runtime_env()
 _session_secret_raw = (os.getenv("SESSION_SECRET_KEY") or "").strip()
 if _session_secret_raw:
     _session_secret = _session_secret_raw
+    _session_secret_source = "SESSION_SECRET_KEY"
 elif _session_env in ("production", "staging"):
     _explicit_token = (os.getenv("DASHBOARD_AUTH_TOKEN") or "").strip()
     if _explicit_token:
@@ -991,13 +1021,16 @@ elif _session_env in ("production", "staging"):
             _session_env,
         )
         _session_secret = _explicit_token
+        _session_secret_source = "DASHBOARD_AUTH_TOKEN_FALLBACK"
     else:
         raise RuntimeError(
             f"SESSION_SECRET_KEY is required in {_session_env} environment. "
             "Set it as an env var to enable secure session signing."
         )
 else:
-    _session_secret = (os.getenv("DASHBOARD_AUTH_TOKEN") or "caio-local-dev-secret").strip()
+    _local_token = (os.getenv("DASHBOARD_AUTH_TOKEN") or "").strip()
+    _session_secret = (_local_token or "caio-local-dev-secret").strip()
+    _session_secret_source = "DASHBOARD_AUTH_TOKEN" if _local_token else "LOCAL_DEFAULT"
 _session_https_only = _session_env in ("production", "staging")
 app.add_middleware(
     SessionMiddleware,
@@ -1404,13 +1437,14 @@ async def get_runtime_dependencies(auth: bool = Depends(require_auth)):
         check_connections=True,
         inngest_route_mounted=INNGEST_ROUTE_MOUNTED,
     )
-    _env = (os.getenv("ENVIRONMENT") or "").strip().lower()
+    _env = _runtime_env()
     payload["auth"] = {
         "strict_mode": _is_token_strict_mode(),
         "query_token_enabled": _is_query_token_enabled(),
         "token_header": DASHBOARD_TOKEN_HEADER,
         "token_configured": bool((os.getenv("DASHBOARD_AUTH_TOKEN") or "").strip()),
         "session_secret_explicit": bool((os.getenv("SESSION_SECRET_KEY") or "").strip()),
+        "session_secret_source": _session_secret_source,
         "webhook_signature_required": (os.getenv("WEBHOOK_SIGNATURE_REQUIRED") or "").strip().lower() in {"1", "true", "yes"},
         "environment": _env or "local",
     }

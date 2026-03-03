@@ -66,6 +66,12 @@ class TestN1QueryTokenDefault:
         monkeypatch.setenv("ENVIRONMENT", "staging")
         assert _health_app._is_query_token_enabled() is False
 
+    def test_railway_environment_fallback_defaults_to_disabled(self, monkeypatch, _health_app):
+        monkeypatch.delenv("DASHBOARD_QUERY_TOKEN_ENABLED", raising=False)
+        monkeypatch.delenv("ENVIRONMENT", raising=False)
+        monkeypatch.setenv("RAILWAY_ENVIRONMENT", "production")
+        assert _health_app._is_query_token_enabled() is False
+
     def test_local_defaults_to_enabled(self, monkeypatch, _health_app):
         monkeypatch.delenv("DASHBOARD_QUERY_TOKEN_ENABLED", raising=False)
         monkeypatch.setenv("ENVIRONMENT", "")
@@ -221,6 +227,7 @@ class TestN4RuntimeDependenciesAuth:
             "token_header",
             "token_configured",
             "session_secret_explicit",
+            "session_secret_source",
             "webhook_signature_required",
             "environment",
         }
@@ -248,6 +255,23 @@ class TestN4RuntimeDependenciesAuth:
         )
         assert resp.json()["auth"]["token_header"] == "X-Dashboard-Token"
 
+    def test_session_secret_source_explicit(self, client):
+        resp = client.get(
+            "/api/runtime/dependencies",
+            headers={"X-Dashboard-Token": "test-secret-token-abc"},
+        )
+        assert resp.json()["auth"]["session_secret_source"] == "SESSION_SECRET_KEY"
+
+    def test_environment_uses_railway_fallback(self, monkeypatch, client):
+        monkeypatch.delenv("ENVIRONMENT", raising=False)
+        monkeypatch.setenv("RAILWAY_ENVIRONMENT", "staging")
+        resp = client.get(
+            "/api/runtime/dependencies",
+            headers={"X-Dashboard-Token": "test-secret-token-abc"},
+        )
+        assert resp.status_code == 200
+        assert resp.json()["auth"]["environment"] == "staging"
+
 
 # =====================================================================
 # N6 -- OPENAPI DOCS DISABLED IN PRODUCTION
@@ -273,6 +297,40 @@ class TestN6OpenApiDisabled:
         """In testing env (our test suite), docs should be accessible."""
         env = "testing"
         assert env not in ("production", "staging")
+
+    def test_railway_environment_is_treated_as_production_like(self, monkeypatch, _health_app):
+        monkeypatch.delenv("ENVIRONMENT", raising=False)
+        monkeypatch.setenv("RAILWAY_ENVIRONMENT", "production")
+        assert _health_app._is_production_like_env() is True
+
+    def test_dashboard_auth_middleware_does_not_redirect_docs_paths(self):
+        """
+        Regression guard: docs routes must not be converted to login redirects.
+
+        If docs are disabled (docs_url=None etc.), these paths must resolve to 404.
+        A 302 to /login masks N6 and breaks strict parity smoke checks.
+        """
+        from fastapi import FastAPI
+        from fastapi.testclient import TestClient
+        from starlette.middleware.sessions import SessionMiddleware
+
+        from dashboard.health_app import DashboardAuthMiddleware
+
+        app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None)
+
+        @app.get("/login")
+        def _login():
+            return {"ok": True}
+
+        # Match production middleware stack shape:
+        # last-added middleware is outermost, so add Dashboard first then Session.
+        app.add_middleware(DashboardAuthMiddleware)
+        app.add_middleware(SessionMiddleware, secret_key="test-session-secret")
+
+        client = TestClient(app)
+        for path in ("/docs", "/redoc", "/openapi.json"):
+            resp = client.get(path, follow_redirects=False)
+            assert resp.status_code == 404, f"{path} should be 404 when docs are disabled"
 
 
 # =====================================================================
