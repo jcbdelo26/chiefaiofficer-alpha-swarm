@@ -12,7 +12,7 @@ canonical_for: [sprint-tracker, task-status]
 **Last Updated**: 2026-03-05
 **Last Commit**: `9914695` (Agentic Engineering Score Push — 4 deliverables, 601 tests)
 **Plan Version**: v5.5
-**Test Suite**: 601 tests passing (35-file pre-commit suite, ~170s)
+**Test Suite**: 609 tests passing (36-file pre-commit suite, ~168s)
 
 > **This file is the single source of truth for all current and future work.**
 > **Canonical status rule (2026-03-03)**: update live status ONLY in this file; other trackers are historical context unless explicitly regenerated from this file.
@@ -46,7 +46,7 @@ Phase 6: Full Autonomy            [..........]   0%  WAITING (trigger: 30 days l
 | 4G Proof & Feedback | COMPLETE | GHLSendProofEngine, webhook + poll fallback |
 | 4H Task Routing | 95% | Committed, needs production validation |
 | 4I Runtime Reliability | COMPLETE | Circuit breakers, fallbacks, retry |
-| 4J TDD Testing | COMPLETE | 601 curated tests (35 pre-commit files) |
+| 4J TDD Testing | COMPLETE | 609 curated tests (36 pre-commit files) |
 | 4K Clay Fallback | COMPLETE | Redis LinkedIn URL correlation |
 | 4L Agentic Engineering Audit | COMPLETE | 21 gaps → 4 sprints (A-D), N1-N7 security, feedback loop wired, 576 tests |
 | 4M Agentic Engineering Score Push | COMPLETE | 4 deliverables: freshness, CLI list, trace logging, dormant tests → 8.4→~8.9 |
@@ -99,6 +99,24 @@ Phase 6: Full Autonomy            [..........]   0%  WAITING (trigger: 30 days l
 
 **N6 Closure Evidence** (both envs):
 - `/docs` => 404, `/redoc` => 404, `/openapi.json` => 404
+
+### Pre-Ramp Day 1 Evidence (2026-03-05, commit `ba9049b`)
+
+**Post-deploy health checks** (all PASS):
+- `/api/health` → 200, `health_score: 98.1` (degraded only due to zero traffic — expected)
+- `/webhooks/heyreach/health` → `api_key_configured: true`, `bearer_configured: true`, `events_supported: 11`
+- HeyReach API auth: `[+] API key valid (HTTP 200)`
+- Campaign IDs validated: 334314 (DRAFT), 334364 (DRAFT), 334381 (DRAFT) — all match `config/production.json`
+- 24 total HeyReach campaigns found, 3 CAIO campaigns confirmed
+- E2E integration test: 8/8 passed (webhook→flag→cadence flow validated)
+- Full pre-commit: **609 tests, 36 files, 168.45s** — 0 failures
+
+**HeyReach env var status on Railway**:
+- `HEYREACH_API_KEY`: configured (confirmed via health check)
+- `HEYREACH_BEARER_TOKEN`: configured (confirmed via webhook health)
+- `HEYREACH_WEBHOOK_SECRET`: NOT configured (`secret_configured: false`)
+- `HEYREACH_UNSIGNED_ALLOWLIST`: false (correct — strict mode)
+- **Action needed**: Set `HEYREACH_WEBHOOK_SECRET` on Railway before LinkedIn ramp (~Mar 10)
 
 **Previous results (2026-03-03, superseded):**
 - `strict_auth_parity_smoke.py`: FAIL (8/12) — N3 (`session_secret_explicit=false`), N6 (`/docs` returned 302)
@@ -414,7 +432,7 @@ All must be TRUE before declaring full email autonomy:
 - [x] Webhook strict mode enabled (`WEBHOOK_SIGNATURE_REQUIRED=true`)
 - [x] Login page + cookie session auth (token never in URL)
 - [x] Redis-only state cutover complete
-- [x] 601 pre-commit tests passing (35 files)
+- [x] 609 pre-commit tests passing (36 files)
 - [x] Engineering Sprints 1-9 complete (Agentic Engineering Audit + Score Push)
 - [x] N3/N6 security gates closed (2026-03-04, commit `1e1d2da`, 12/12 parity both envs)
 - [x] HoS Supervised Ramp Guide created (`docs/HOS_SUPERVISED_RAMP_GUIDE.md`)
@@ -531,7 +549,7 @@ echo yes | python execution/run_pipeline.py --mode production --source "wpromote
 | Alerts | `core/alerts.py` | Slack webhook, 3 severity levels |
 | Compliance | `core/compliance.py` | CAN-SPAM enforcement |
 | Production Config | `config/production.json` | All feature flags + limits |
-| Pre-commit Hook | `.githooks/pre-commit` | 35 files, 601 tests, ~170s |
+| Pre-commit Hook | `.githooks/pre-commit` | 36 files, 609 tests, ~168s |
 | Implementation Plan | `CAIO_IMPLEMENTATION_PLAN.md` | v4.8, full historical roadmap |
 | HoS Review Guide | `docs/HOS_EMAIL_REVIEW_GUIDE.md` | Email approval criteria |
 | Dev Team Skill | `.claude/commands/dev-team.md` | 3-pass code review |
