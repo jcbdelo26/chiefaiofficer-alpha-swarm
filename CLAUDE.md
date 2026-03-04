@@ -17,8 +17,7 @@ canonical_for: [session-config, mandatory-read-order]
 **Company**: Chiefaiofficer.com
 **Platform**: Railway (production) at `caio-swarm-dashboard-production.up.railway.app`
 **Dashboard**: v3.0 full 4-tab UI (Overview/Email Queue/Campaigns/Settings) + live KPIs + compliance checks
-**Latest successful production deploy**: commit `4226583` (2026-03-02) — HR-05: HeyReach webhook schema validated (502 tests, 29 files)
-**Latest local build**: Sprint 8(D) complete (576 tests, 34 pre-commit files) — pending commit + deploy
+**Latest successful production deploy**: commit `38562b0` (2026-03-03) -- Audit sprints A-D + housekeeping (576 tests, 34 pre-commit files)
 
 ### Mandatory Read Order (Every New Session)
 

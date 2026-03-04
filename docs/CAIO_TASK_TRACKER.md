@@ -1,10 +1,16 @@
-> **DEPRECATED (2026-02-27)**: Merged into `task.md`. Updated 2026-03-02 with Agentic Engineering Audit v1.1 findings + security hardening status.
+> **DEPRECATED (2026-02-27)**: Merged into `task.md`.
+> **ARCHIVE MODE (2026-03-03)**: This file is historical context only. Live status must be updated in `task.md` only.
 
-# CAIO Alpha Swarm — Source of Truth Task Tracker
+# CAIO Alpha Swarm — Historical Task Tracker (Read-Only Context)
 
-**Last Updated (UTC):** 2026-03-03 01:00
+**Last Updated (UTC):** 2026-03-03 11:00
 **Primary Objective:** Safe progression from supervised Tier_1 live sends to full autonomy without security regressions.
 **Owner:** PTO/GTM (operational), Engineering (controls), HoS (message quality)
+
+---
+
+**Canonical status source**: `task.md` (root).  
+**Usage rule**: Do not use this file as a live go/no-go board.
 
 ---
 
@@ -12,7 +18,7 @@
 
 ### 1.1 Deployment + Runtime
 - Production app: `https://caio-swarm-dashboard-production.up.railway.app`
-- Latest deployed commit: `f1cb70a` (webhook/header-token smoke compatibility), latest functional patch: `d9b8c63` (Tier_1 personalization normalization)
+- Historical deployed-commit snapshot (not live): `f1cb70a` (webhook/header-token smoke compatibility), latest functional patch at snapshot time: `d9b8c63` (Tier_1 personalization normalization)
 - Runtime health: `ready=true`
 - Redis required and healthy: `REDIS_REQUIRED=true`
 - Inngest required and healthy: `INNGEST_REQUIRED=true`
@@ -157,11 +163,11 @@
   - Usage: `python scripts/strict_auth_parity_smoke.py --base-url <URL> --token <TOKEN>`
 
 - [x] **Security hardening tests written**
-  - `tests/test_security_hardening_v11.py` — 30 tests covering all N1-N7 nuances.
+  - `tests/test_security_hardening_v11.py` — 26 tests covering all N1-N7 nuances.
   - All passing alongside existing 96 tests (dashboard login, health monitor, feedback loop).
 
 - Validation:
-  - `python -m pytest tests/test_security_hardening_v11.py -x -q --tb=short -s` -> 30 passed
+  - `python -m pytest tests/test_security_hardening_v11.py -x -q --tb=short -s` -> 26 passed
   - `python -m pytest tests/test_dashboard_login.py tests/test_health_monitor.py tests/test_feedback_loop.py -x -q --tb=short -s` -> 96 passed (no regressions)
 
 - Railway env vars needed before deploy:
@@ -549,7 +555,7 @@ The following areas are suitable for handoff to Codex (agent manager) for indepe
   - N7: 5 dormant engine files annotated with STATUS + feature flags
   - New: `docs/DORMANT_ENGINES.md` (dormant engine catalog)
   - New: `scripts/strict_auth_parity_smoke.py` (N1-N7 deployed validation)
-  - New: `tests/test_security_hardening_v11.py` (30 tests, all passing)
+  - New: `tests/test_security_hardening_v11.py` (26 tests, all passing)
 - `UNRELEASED` — Phase-1 feedback/deliverability patch:
   - `core/deliverability_guard.py`: added deterministic recent hard-bounce memory gate from `DELIVERABILITY_BOUNCE_FILE` + `DELIVERABILITY_BOUNCE_LOOKBACK_DAYS`; high-risk bounce recipients now fail closed as `recent_hard_bounce`.
   - `core/feedback_loop.py`: added trace-envelope emission for `record_email_outcome` (success/failure) for replay diagnostics.
@@ -567,4 +573,3 @@ The following areas are suitable for handoff to Codex (agent manager) for indepe
 - `d9ade64` — structured rejection tags + clean-day ramp gating.
 - `5eaffac` — deployed HeyReach strict auth hardening (`HEYREACH_UNSIGNED_ALLOWLIST` gate) + regression tests; staging/prod strict smoke passed.
 - `00bb12e` — deployed query-token gate (`DASHBOARD_QUERY_TOKEN_ENABLED`) + header-priority auth + smoke flags for header-only validation.
-

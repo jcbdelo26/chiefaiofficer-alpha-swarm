@@ -15,6 +15,7 @@ Covers nuances N1-N7:
 from __future__ import annotations
 
 import sys
+import importlib
 from pathlib import Path
 from unittest.mock import patch
 
@@ -37,9 +38,9 @@ def _base_env(monkeypatch):
 
 @pytest.fixture()
 def _health_app():
-    """Return the already-imported health_app module."""
+    """Reload health_app so module-level env-derived state matches test fixture env."""
     from dashboard import health_app
-    return health_app
+    return importlib.reload(health_app)
 
 
 @pytest.fixture()

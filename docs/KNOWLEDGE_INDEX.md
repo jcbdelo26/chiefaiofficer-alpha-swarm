@@ -115,7 +115,7 @@ Master index of all documentation, organized by category. Use this to discover d
 | `docs/HOS_EMAIL_REVIEW_GUIDE.md` | Head of Sales email review and feedback guide |
 | `docs/HOS_ACTION_ITEMS_GUIDE.md` | HoS action items checklist |
 | `docs/PTO_GTM_NEXT_STEPS_TASKS.md` | PTO/GTM next steps task list |
-| `docs/PTO_GTM_INPUT_COMPLETION_RUNBOOK.md` | Runbook for closing remaining operational inputs |
+| `docs/PTO_GTM_INPUT_COMPLETION_RUNBOOK.md` | Non-technical Railway input collection + runtime/auth smoke gate runbook |
 | `docs/CAIO_RUNTIME_RELIABILITY_VALIDATION_AND_NEXT_STEPS_2026-02-11.md` | Runtime reliability validation approach |
 | `CONTEXT_HANDOFF.md` | Template for context transition between agent sessions |
 
