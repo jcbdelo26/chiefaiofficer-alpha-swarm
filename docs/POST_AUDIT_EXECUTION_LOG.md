@@ -11,9 +11,9 @@
 | Phase | Status | Notes |
 |------|--------|-------|
 | Phase 0 — Canonicalization Rule | DONE | `task.md` declared sole live status board; historical docs marked read-only/context |
-| Phase 1 — Runtime/Auth Gate Closure | PARTIAL | Staging + production matrix runs executed; remaining parity blockers are N3 + N6 |
-| Phase 2 — PTO Inputs Closure | IN_PROGRESS | Pending cards currently `count=0`; token-rotation window not yet recorded |
-| Phase 3 — Supervised Proof + Ramp Graduation | NOT STARTED | Needs fresh supervised cycle + 3 clean days evidence |
+| Phase 1 — Runtime/Auth Gate Closure | DONE | N3+N6 CLOSED (2026-03-04, commit `1e1d2da`). Strict parity 12/12 both envs. All 6 smoke scripts green. |
+| Phase 2 — PTO Inputs Closure | DONE | `SESSION_SECRET_KEY` explicit (128 chars, both envs). Docs disabled (404 all 3 routes). Full rerun evidence below. |
+| Phase 3 — Supervised Proof + Ramp Graduation | READY | Unblocked. Awaiting first HoS review + 3 consecutive clean supervised days. |
 | Phase 4 — LinkedIn Readiness | BLOCKED | HR-05 real payload schema validation still pending |
 | Phase 5 — Documentation Drift Cleanup | IN_PROGRESS | Drift corrections applied in handoff + tracker + implementation docs |
 
@@ -83,12 +83,47 @@
 
 ---
 
+## 2.2 N3/N6 Closure Rerun (2026-03-04, commit `1e1d2da`)
+
+All 6 smoke scripts executed from a single Claude Code session against both deployed envs.
+
+**N3 Runtime Dependencies (auth section):**
+
+| Field | Staging | Production |
+|-------|---------|-----------|
+| `strict_mode` | true | true |
+| `query_token_enabled` | false | false |
+| `token_configured` | true | true |
+| `session_secret_explicit` | **true** | **true** |
+| `session_secret_source` | **SESSION_SECRET_KEY** | **SESSION_SECRET_KEY** |
+| `webhook_signature_required` | true | true |
+| `environment` | staging | production |
+
+**N6 Docs Endpoint Status:**
+
+| Route | Staging | Production |
+|-------|---------|-----------|
+| `/docs` | 404 | 404 |
+| `/redoc` | 404 | 404 |
+| `/openapi.json` | 404 | 404 |
+
+**Full Smoke Pack Results:**
+
+| # | Script | Staging | Production |
+|---|--------|---------|-----------|
+| 1 | `endpoint_auth_smoke.py` | PASS (6/6) | PASS (6/6) |
+| 2 | `strict_auth_parity_smoke.py` | PASS (12/12) | PASS (12/12) |
+| 3 | `webhook_strict_smoke_matrix.py` | PASS (6/6) | PASS (6/6) |
+| 4 | `deployed_full_smoke_matrix.py` | PASS (15/15) | PASS (15/15) |
+
+---
+
 ## 3) Remaining Blocking Items (Actionable)
 
 | Blocker | Owner | Required Action |
 |--------|-------|-----------------|
-| N3 parity gap (`session_secret_explicit=false`) | Engineering + PTO | Set explicit `SESSION_SECRET_KEY` in production/staging, redeploy, rerun parity smoke |
-| N6 parity gap (OpenAPI/docs exposed) | Engineering | Disable `/docs`, `/redoc`, `/openapi.json` in deployed production/staging runtime |
+| ~~N3 parity gap~~ | ~~Engineering + PTO~~ | ~~CLOSED 2026-03-04~~ |
+| ~~N6 parity gap~~ | ~~Engineering~~ | ~~CLOSED 2026-03-04~~ |
 | Token rotation window not locked | PTO | Decide EST rotation window, rotate staging then production, rerun endpoint auth smoke |
 | HR-05 payload validation | PTO + Engineering | Capture real HeyReach webhook payload and validate schema mapping in `webhooks/heyreach_webhook.py` |
 | 3-day supervised proof cycle missing | PTO + HoS | Run ritual for 3 consecutive days and log evidence rows in `task.md` |

@@ -113,6 +113,7 @@ Master index of all documentation, organized by category. Use this to discover d
 | `docs/CODEX_HANDOFF_SPRINTS_B_C.md` | Sprint B + C task specs for Codex handoff (11 tasks) |
 | `docs/CAIO_HANDOFF_FOR_CLAUDE_2026-02-24.md` | Claude handoff aligned to task tracker (Feb 24) |
 | `docs/HOS_EMAIL_REVIEW_GUIDE.md` | Head of Sales email review and feedback guide |
+| `docs/HOS_SUPERVISED_RAMP_GUIDE.md` | Non-technical HoS guide for 3-day supervised ramp dashboard navigation |
 | `docs/HOS_ACTION_ITEMS_GUIDE.md` | HoS action items checklist |
 | `docs/PTO_GTM_NEXT_STEPS_TASKS.md` | PTO/GTM next steps task list |
 | `docs/PTO_GTM_INPUT_COMPLETION_RUNBOOK.md` | Non-technical Railway input collection + runtime/auth smoke gate runbook |

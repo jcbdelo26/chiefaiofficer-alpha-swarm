@@ -1,17 +1,20 @@
 ---
 title: HoS Email Review & Feedback Guide
-version: "1.0"
-last_updated: 2026-02-18
+version: "1.1"
+last_updated: 2026-03-04
 audience: [pto-gtm, hos]
 tags: [review, email, approval, feedback, hos]
 canonical_for: [hos-email-review]
 ---
 
-# Head of Sales — Email Review & Feedback Guide
+# Head of Sales -- Email Review & Feedback Guide
+
+> **New: Supervised Ramp Guide**
+> If you are doing the 3-day supervised ramp, see [HOS_SUPERVISED_RAMP_GUIDE.md](HOS_SUPERVISED_RAMP_GUIDE.md) for step-by-step dashboard navigation and the daily ritual.
 
 **Purpose**: This is your source of truth for reviewing pipeline-generated emails before they reach prospects. Your edits and feedback directly improve the AI system over time.
 
-**Updated**: 2026-02-18 (First Live Pipeline Run)
+**Updated**: 2026-03-04
 
 ---
 
@@ -29,6 +32,8 @@ canonical_for: [hos-email-review]
 ## Where to Review
 
 **URL**: `https://caio-swarm-dashboard-production.up.railway.app/sales`
+
+**Login**: Navigate to the URL above. You will be redirected to `/login` -- enter your dashboard token and click "Log In". Authentication is handled via secure session cookies.
 
 Each email card shows:
 
@@ -110,7 +115,7 @@ Interpretation:
 
 ### 2) Approve one card from `/sales`
 
-- Open `/sales?token=<DASHBOARD_AUTH_TOKEN>`
+- Open `/sales` (you will be redirected to the login page if not authenticated)
 - Click `Edit & Preview` -> final QA -> `Approve & Send`
 
 ### 3) Confirm backend result

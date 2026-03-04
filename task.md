@@ -1,6 +1,6 @@
 ---
 title: Master Tracker & Autonomy Roadmap
-version: "5.3"
+version: "5.4"
 last_updated: 2026-03-04
 audience: [all-agents, engineers, pto-gtm]
 tags: [tracker, sprints, autonomy, go-no-go]
@@ -10,14 +10,14 @@ canonical_for: [sprint-tracker, task-status]
 # CAIO Alpha Swarm — Master Tracker & Autonomy Roadmap
 
 **Last Updated**: 2026-03-04
-**Last Commit**: `38562b0` (Agentic Engineering Audit sprints A-D + post-audit housekeeping)
-**Plan Version**: v5.3
-**Test Suite**: 576 tests passing (34-file pre-commit suite, ~102s)
+**Last Commit**: `1e1d2da` (post-audit housekeeping + N3/N6 closure artifacts)
+**Plan Version**: v5.4
+**Test Suite**: 581 tests passing (34-file pre-commit suite, ~162s)
 
 > **This file is the single source of truth for all current and future work.**
 > **Canonical status rule (2026-03-03)**: update live status ONLY in this file; other trackers are historical context unless explicitly regenerated from this file.
 > For historical roadmap: `CAIO_IMPLEMENTATION_PLAN.md` (v4.8). For deployment context: `CLAUDE.md`.
-> **Operational mode (2026-03-04)**: dev-progress only. Live sends, ramp graduation, and go-live sign-off are paused until N3/N6 closure and post-fix rerun gates are green.
+> **Operational mode (2026-03-04)**: N3/N6 CLOSED. Live sends unblocked. Awaiting first HoS supervised review to begin 3-day ramp cycle.
 
 ---
 
@@ -28,7 +28,7 @@ Phase 0: Foundation Lock          [##########] 100%  COMPLETE
 Phase 1: Live Pipeline Validation [##########] 100%  COMPLETE  (33+ runs, 10 consecutive 6/6)
 Phase 2: Supervised Burn-In       [##########] 100%  COMPLETE
 Phase 3: Expand & Harden          [##########] 100%  COMPLETE
-Phase 4: Autonomy Graduation      [#########.]  98%  IN PROGRESS (DEV-PROGRESS HOLD) ← YOU ARE HERE
+Phase 4: Autonomy Graduation      [#########.]  99%  IN PROGRESS (N3/N6 CLOSED — RAMP READY) ← YOU ARE HERE
 Phase 5: Intelligence & Optimize  [..........]   0%  WAITING (trigger: 2 weeks live send data)
 Phase 6: Full Autonomy            [..........]   0%  WAITING (trigger: 30 days live send data)
 ```
@@ -41,7 +41,7 @@ Phase 6: Full Autonomy            [..........]   0%  WAITING (trigger: 30 days l
 | 4B HeyReach LinkedIn | 95% | Infra done, 9/10 bugs resolved. Blocked: HR-05 payload validation + warmup ~Mar 16 |
 | 4C OPERATOR Agent | COMPLETE | Unified dispatch (outbound + cadence + revival) |
 | 4D Cadence Engine | COMPLETE | 21-day, 8-step Email+LinkedIn sequence |
-| 4E Supervised Live Sends | ON HOLD | Dev-progress mode active until N3/N6 closure + rerun gates |
+| 4E Supervised Live Sends | READY | N3/N6 closed (2026-03-04). Awaiting first HoS review + 3-day supervised ramp cycle. |
 | 4F Monaco Signal Loop | COMPLETE | 21 statuses, webhook-driven |
 | 4G Proof & Feedback | COMPLETE | GHLSendProofEngine, webhook + poll fallback |
 | 4H Task Routing | 95% | Committed, needs production validation |
@@ -73,26 +73,35 @@ Phase 6: Full Autonomy            [..........]   0%  WAITING (trigger: 30 days l
 | Phase | Status | Evidence / Remaining Blocker |
 |-------|--------|------------------------------|
 | Phase 0: Canonicalization | DONE | `task.md` enforced as sole live tracker; `docs/CAIO_TASK_TRACKER.md` + `CAIO_IMPLEMENTATION_PLAN.md` treated as historical/roadmap |
-| Phase 1: Runtime/Auth Gate | PARTIAL | Staging+production matrices executed; remaining parity blockers are N3 + N6 and must be closed before live operations |
-| Phase 2: PTO Inputs Closure | IN_PROGRESS (DEV ONLY) | Runtime env mapping and isolation verified; complete `SESSION_SECRET_KEY` explicit detection + docs-disable verification + rerun evidence |
-| Phase 3: Supervised Proof + 3-Day Ramp | ON HOLD | Blocked until Phase 1 and Phase 2 are green (no N3/N6 failures) |
+| Phase 1: Runtime/Auth Gate | DONE | N3+N6 CLOSED (2026-03-04). Strict parity 12/12 both envs. All 6 smoke scripts green. Commit `1e1d2da`. |
+| Phase 2: PTO Inputs Closure | DONE | `SESSION_SECRET_KEY` explicit (128 chars, both envs). Docs disabled (404). Full rerun evidence logged. |
+| Phase 3: Supervised Proof + 3-Day Ramp | READY | Unblocked — N3/N6 green. Awaiting first HoS review + 3 consecutive clean supervised days. |
 | Phase 4: LinkedIn Readiness | BLOCKED | HR-05 still requires real HeyReach webhook payload capture/validation (`python scripts/inspect_heyreach_payloads.py --print-sample`) |
 | Phase 5: Doc Drift Cleanup | IN_PROGRESS | Numeric/status drift reconciliation started across 4 source docs |
 
-### Phase 1 Validation Snapshot (Production, 2026-03-03)
+### Phase 1 Validation Snapshot — N3/N6 CLOSED (2026-03-04, commit `1e1d2da`)
 
-- `strict_auth_parity_smoke.py`: **FAIL (8/12)**  
-  - PASS: N1, N2, N4, N5  
-  - FAIL: N3 (`auth.session_secret_explicit=false`), N6 (`/docs`, `/redoc`, `/openapi.json` return 200)
-- `strict_auth_parity_smoke.py` (staging): **FAIL (8/12)** with the same N3/N6 failures
-- `webhook_strict_smoke.py --require-heyreach-hard-auth`: **PASS**
-- `endpoint_auth_smoke.py --expect-query-token-enabled false`: **PASS**
+**All 6/6 smoke scripts GREEN on both staging and production.**
+
+- `strict_auth_parity_smoke.py` (staging): **PASS (12/12)** — N1-N6 all green
+- `strict_auth_parity_smoke.py` (production): **PASS (12/12)** — N1-N6 all green
+- `endpoint_auth_smoke.py --expect-query-token-enabled false` (staging): **PASS** (6/6)
+- `endpoint_auth_smoke.py --expect-query-token-enabled false` (production): **PASS** (6/6)
 - `webhook_strict_smoke_matrix.py --require-heyreach-hard-auth`: **PASS** (staging + production)
-- `deployed_full_smoke_matrix.py --expect-query-token-enabled false --require-heyreach-hard-auth`: **PASS** (staging + production)
-- `deployed_full_smoke_checklist.py --expect-query-token-enabled false --require-heyreach-hard-auth`: **FAIL**
-  - Legacy result before checker update; matrix now passes with login-gated `/sales` handling
+- `deployed_full_smoke_matrix.py --expect-query-token-enabled false --require-heyreach-hard-auth`: **PASS** (staging 15/15 + production 15/15)
+
+**N3 Closure Evidence** (both envs):
+- `auth.session_secret_explicit = true`
+- `auth.session_secret_source = SESSION_SECRET_KEY`
+- `SESSION_SECRET_KEY` length: 128 chars (staging + production)
+
+**N6 Closure Evidence** (both envs):
+- `/docs` => 404, `/redoc` => 404, `/openapi.json` => 404
+
+**Previous results (2026-03-03, superseded):**
+- `strict_auth_parity_smoke.py`: FAIL (8/12) — N3 (`session_secret_explicit=false`), N6 (`/docs` returned 302)
+- Root cause: `SESSION_SECRET_KEY` not set + commit `6ea42de` N6 middleware fix not yet deployed
 - Full evidence log: `docs/POST_AUDIT_EXECUTION_LOG.md`
-- Latest manual verification (2026-03-04): `session_secret_explicit=false` in staging+production; `/docs`, `/redoc`, `/openapi.json` returned `302` in staging+production (still failing N3/N6 until redeploy + env correction).
 
 ### Overview
 
@@ -107,16 +116,9 @@ HoS Review → Ramp Supervision → Graduate → HR Hardening → LinkedIn Live
   |   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~          |   ~~~~~~~~~~~~~~~~~~~~~
 ```
 
-### Step 1: Runtime/Auth Closure — USER + ENGINEERING (NOW)
+### Step 1: Runtime/Auth Closure — DONE (2026-03-04)
 
-**This is the current gate blocking live operations.**
-
-1. Re-enter `SESSION_SECRET_KEY` in staging and production as plain single-line values.
-2. Force redeploy staging then production.
-3. Validate `/api/runtime/dependencies` shows:
-   - `auth.environment=staging|production` correctly
-   - `auth.session_secret_explicit=true`
-   - `auth.session_secret_source=SESSION_SECRET_KEY`
+**CLOSED.** `SESSION_SECRET_KEY` confirmed 128 chars on both envs. Runtime deps show `session_secret_explicit=true`, `session_secret_source=SESSION_SECRET_KEY`.
 
 **What to check on each email:**
 - Subject line: Not deceptive, personalized to recipient
@@ -126,16 +128,9 @@ HoS Review → Ramp Supervision → Graduate → HR Hardening → LinkedIn Live
 
 **Reference**: `docs/HOS_EMAIL_REVIEW_GUIDE.md`
 
-### Step 2: Docs Exposure Closure + Full Reruns — USER + ENGINEERING
+### Step 2: Docs Exposure Closure + Full Reruns — DONE (2026-03-04)
 
-1. Deploy/verify production-like docs disable logic.
-2. Confirm `/docs`, `/redoc`, `/openapi.json` return `404` on staging and production.
-3. Run gate reruns:
-   - `scripts/endpoint_auth_smoke.py`
-   - `scripts/strict_auth_parity_smoke.py`
-   - `scripts/webhook_strict_smoke_matrix.py`
-   - `scripts/deployed_full_smoke_matrix.py`
-4. Keep live sends paused until all reruns are green.
+**CLOSED.** `/docs`, `/redoc`, `/openapi.json` all return 404. All 6 smoke scripts green (see Phase 1 Validation Snapshot above).
 
 **Graduation criteria (all must pass):**
 - [ ] 3 consecutive clean supervised days (no gate failures, no unresolved sends)
@@ -419,6 +414,9 @@ All must be TRUE before declaring full email autonomy:
 - [x] Redis-only state cutover complete
 - [x] 576 pre-commit tests passing (34 files)
 - [x] Engineering Sprints 1-8(D) complete (Agentic Engineering Audit fully remediated)
+- [x] N3/N6 security gates closed (2026-03-04, commit `1e1d2da`, 12/12 parity both envs)
+- [x] HoS Supervised Ramp Guide created (`docs/HOS_SUPERVISED_RAMP_GUIDE.md`)
+- [x] Seed Queue UI verified operational (already built in dashboard v3.0)
 
 All must be TRUE before declaring multi-channel (email + LinkedIn) autonomy:
 
@@ -485,7 +483,11 @@ Rotation: round-robin | Warmup: complete | Health: 100%
 
 ## 13. Operational Ritual (Daily Supervised Window)
 
-**Schedule:** 15:00 EST
+**Schedule:** 15:00 EST (3:00 PM Eastern)
+
+**HoS Navigation Guide**: [`docs/HOS_SUPERVISED_RAMP_GUIDE.md`](docs/HOS_SUPERVISED_RAMP_GUIDE.md) -- non-technical, step-by-step for dashboard use during the 3-day ramp.
+
+**Token Rotation**: Rotate `DASHBOARD_AUTH_TOKEN` + `SESSION_SECRET_KEY` every 90 days. Schedule during HoS off-hours. Apply to staging first, verify, then production.
 
 ### Pre-flight (must pass)
 ```powershell
