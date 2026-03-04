@@ -499,6 +499,14 @@
             "state_dir": ".hive-mind/cadence_state"
         }
     },
+    "queue_watcher": {
+        "enabled": true,
+        "low_water_mark": 3,
+        "target_count": 5,
+        "cooldown_seconds": 60,
+        "check_interval_seconds": 30,
+        "max_daily_auto_seeds": 50
+    },
     "llm_fallback": {
         "enabled": true,
         "description": "LLM Provider Fallback Chain: Claude -> GPT-4o -> GPT-4o-mini -> Human",

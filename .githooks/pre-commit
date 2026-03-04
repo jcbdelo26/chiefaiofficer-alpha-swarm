@@ -57,6 +57,7 @@ python -m pytest \
   tests/test_cross_environment_bridge.py \
   tests/test_dormant_engine_imports.py \
   tests/test_heyreach_e2e_flow.py \
+  tests/test_queue_watcher.py \
   -x -q --tb=short -s 2>/dev/null
 
 if [ $? -ne 0 ]; then

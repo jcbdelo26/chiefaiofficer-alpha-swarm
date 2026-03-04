@@ -2134,13 +2134,16 @@
             if (filteredEmails.length === 0) {
                 list.innerHTML = `
                     <div class="empty-state">
-                        <div class="icon">&#x2705;</div>
-                        <h3>All caught up!</h3>
-                        <p>No pending emails to review</p>
+                        <div class="icon">&#x23F3;</div>
+                        <h3>Refreshing queue...</h3>
+                        <p>New training emails are being generated automatically.</p>
+                        <p style="font-size:12px;color:#6b7280;margin-top:8px;">If this persists, click below to manually generate.</p>
                         <button class="btn-sm" style="background:#f59e0b;color:#000;margin-top:12px;font-weight:600;padding:8px 20px;cursor:pointer;border:none;border-radius:6px;" onclick="showSeedModal()">Generate Training Emails</button>
                     </div>
                 `;
                 document.getElementById('pendingCount').textContent = '0';
+                // Auto-retry faster since backend auto-seed should have populated
+                setTimeout(() => fetchPendingEmails({ silent: true }), 3000);
                 return;
             }
 

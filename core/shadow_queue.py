@@ -239,6 +239,17 @@ def update_status(
     return data
 
 
+def pending_count() -> int:
+    """Fast O(1) count of pending emails via Redis ZCARD."""
+    r = _get_redis()
+    if r:
+        try:
+            return r.zcard(_index_key()) or 0
+        except Exception:
+            pass
+    return 0
+
+
 def get_email(email_id: str, shadow_dir: Optional[Path] = None) -> Optional[Dict[str, Any]]:
     """Get a single email by ID from Redis or filesystem."""
     r = _get_redis()

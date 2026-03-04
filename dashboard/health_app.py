@@ -962,6 +962,14 @@ async def app_lifespan(app: FastAPI):
     monitor_task = asyncio.create_task(monitor.start())
     broadcast_task = asyncio.create_task(health_broadcast_loop())
 
+    # Queue watcher background safety net
+    queue_watcher_task = None
+    try:
+        from core.queue_watcher import queue_watcher_loop
+        queue_watcher_task = asyncio.create_task(queue_watcher_loop())
+    except Exception as exc:
+        logger.warning("Queue watcher failed to start: %s", exc)
+
     app.state.health_monitor_task = monitor_task
     app.state.health_broadcast_task = broadcast_task
 
@@ -969,7 +977,10 @@ async def app_lifespan(app: FastAPI):
         yield
     finally:
         await monitor.stop()
-        for task in (broadcast_task, monitor_task):
+        tasks = [broadcast_task, monitor_task]
+        if queue_watcher_task:
+            tasks.append(queue_watcher_task)
+        for task in tasks:
             if task and not task.done():
                 task.cancel()
             with suppress(asyncio.CancelledError):
@@ -2024,6 +2035,26 @@ async def get_pending_emails(
         logger.warning("shadow_queue.list_pending failed, falling back to filesystem: %s", exc)
         sq_debug["error"] = str(exc)
 
+    # Queue watcher self-validation: auto-seed if below low-water mark
+    auto_seed_debug: Dict[str, Any] = {}
+    try:
+        from core.queue_watcher import check_and_seed, get_watcher_metrics
+        watcher_result = check_and_seed()
+        auto_seed_debug["seeded_count"] = watcher_result.seeded_count
+        auto_seed_debug["reason"] = watcher_result.reason
+        auto_seed_debug["previous_count"] = watcher_result.previous_count
+        if watcher_result.seeded_count > 0:
+            # Re-fetch to include freshly seeded emails in this response
+            try:
+                pending = list_pending(limit=20, shadow_dir=shadow_log)
+                sq_debug["redis_returned_after_autoseed"] = len(pending)
+            except Exception:
+                pass
+        auto_seed_debug["metrics"] = get_watcher_metrics()
+    except Exception as exc:
+        auto_seed_debug["error"] = str(exc)
+        logger.warning("Queue watcher inline check failed: %s", exc)
+
     merge_filesystem = _pending_queue_should_merge_filesystem(
         bool(sq_debug.get("redis_connected"))
     )
@@ -2154,6 +2185,7 @@ async def get_pending_emails(
         "synced_from_gatekeeper": synced_count,
         "refreshed_at": datetime.now(timezone.utc).isoformat(),
         "_shadow_queue_debug": sq_debug,
+        "_queue_watcher_debug": auto_seed_debug,
     }
 
 
@@ -2849,6 +2881,32 @@ async def get_queue_status(auth: bool = Depends(require_auth)):
         "recent_queue_events": recent_events[-5:],
         "pipeline_healthy": shadow_pending > 0 or gatekeeper_count > 0 or daily_counts.get("queued", 0) > 0
     }
+
+
+@app.get("/api/queue-watcher/status")
+async def queue_watcher_status(auth: bool = Depends(require_auth)):
+    """Queue watcher self-validation loop status and metrics."""
+    try:
+        from core.queue_watcher import get_watcher_metrics
+        return get_watcher_metrics()
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc))
+
+
+@app.post("/api/queue-watcher/trigger")
+async def queue_watcher_trigger(auth: bool = Depends(require_auth)):
+    """Manually trigger queue watcher seed (force=True bypasses threshold)."""
+    try:
+        from core.queue_watcher import check_and_seed
+        result = check_and_seed(force=True)
+        return {
+            "status": "ok",
+            "seeded_count": result.seeded_count,
+            "previous_count": result.previous_count,
+            "reason": result.reason,
+        }
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc))
 
 
 @app.get("/api/health/ready")
