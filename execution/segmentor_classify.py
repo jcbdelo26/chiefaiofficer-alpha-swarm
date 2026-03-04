@@ -1128,9 +1128,11 @@ Examples:
         console.print(f"[red]❌ Input file not found: {input_path}[/red]")
         sys.exit(1)
     
+    import time as _time_mod
+    _trace_start = _time_mod.time()
     try:
         segmentor = LeadSegmentor(use_annealing=not args.no_annealing)
-        
+
         if args.quiet:
             import io
             from contextlib import redirect_stdout
@@ -1138,23 +1140,23 @@ Examples:
                 segmented = segmentor.segment_batch(input_path)
         else:
             segmented = segmentor.segment_batch(input_path)
-        
+
         if segmented:
             if not args.quiet:
                 segmentor.print_summary(segmented)
-            
+
             if args.test_mode:
                 test_output_dir = PROJECT_ROOT / ".hive-mind" / "testing"
                 test_output_dir.mkdir(parents=True, exist_ok=True)
                 output_path = test_output_dir / "segmentor_test_results.json"
             else:
                 output_path = args.output
-            
+
             output_path = segmentor.save_segmented(segmented, output_path)
-            
+
             if args.test_mode:
                 print_test_metrics(segmented)
-            
+
             console.print(f"\n[bold green]✅ Segmentation complete![/bold green]")
             console.print(f"  Total leads: {len(segmented)}")
             console.print(f"  Output: {output_path}")
@@ -1163,7 +1165,20 @@ Examples:
                 console.print(f"  python execution/crafter_campaign.py --input {output_path}")
         else:
             console.print("[yellow]No leads to segment[/yellow]")
-            
+
+        try:
+            from core.trace_envelope import emit_tool_trace
+            _tier_counts = {}
+            for lead in (segmented or []):
+                t = lead.get("tier", "unknown") if isinstance(lead, dict) else getattr(lead, "tier", "unknown")
+                _tier_counts[str(t)] = _tier_counts.get(str(t), 0) + 1
+            emit_tool_trace(agent="segmentor", tool_name="segmentor:classify",
+                            tool_input={"input": str(input_path)},
+                            tool_output={"segmented_count": len(segmented) if segmented else 0, "tiers": _tier_counts},
+                            status="success", duration_ms=(_time_mod.time() - _trace_start) * 1000)
+        except Exception:
+            pass
+
     except json.JSONDecodeError as e:
         console.print(f"[red]❌ Invalid JSON in input file: {e}[/red]")
         sys.exit(1)
@@ -1171,6 +1186,14 @@ Examples:
         console.print(f"[red]❌ File not found: {e}[/red]")
         sys.exit(1)
     except Exception as e:
+        try:
+            from core.trace_envelope import emit_tool_trace
+            emit_tool_trace(agent="segmentor", tool_name="segmentor:classify",
+                            tool_input={"input": str(input_path)},
+                            status="error", duration_ms=(_time_mod.time() - _trace_start) * 1000,
+                            error_code="SEGMENT_FAILED", error_message=str(e)[:200])
+        except Exception:
+            pass
         console.print(f"[red]❌ Segmentation failed: {e}[/red]")
         import traceback
         if not args.quiet:

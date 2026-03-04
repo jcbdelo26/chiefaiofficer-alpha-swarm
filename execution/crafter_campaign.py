@@ -1282,6 +1282,8 @@ def main():
         console.print("Run: python execution/segmentor_classify.py first")
         sys.exit(1)
 
+    import time as _time_mod
+    _trace_start = _time_mod.time()
     try:
         crafter = CampaignCrafter()
         campaigns = crafter.process_segmented_file(args.input, args.segment)
@@ -1295,7 +1297,24 @@ def main():
             console.print(f"\nNext step: Submit for AE review via GATEKEEPER")
             console.print(f"  python execution/gatekeeper_queue.py --input {output_path}")
 
+        try:
+            from core.trace_envelope import emit_tool_trace
+            emit_tool_trace(agent="crafter", tool_name="crafter:campaign",
+                            tool_input={"input": str(args.input), "segment": args.segment},
+                            tool_output={"campaigns_generated": len(campaigns) if campaigns else 0},
+                            status="success", duration_ms=(_time_mod.time() - _trace_start) * 1000)
+        except Exception:
+            pass
+
     except Exception as e:
+        try:
+            from core.trace_envelope import emit_tool_trace
+            emit_tool_trace(agent="crafter", tool_name="crafter:campaign",
+                            tool_input={"input": str(args.input)},
+                            status="error", duration_ms=(_time_mod.time() - _trace_start) * 1000,
+                            error_code="CRAFT_FAILED", error_message=str(e)[:200])
+        except Exception:
+            pass
         console.print(f"[red]Campaign generation failed: {e}[/red]")
         import traceback
         traceback.print_exc()

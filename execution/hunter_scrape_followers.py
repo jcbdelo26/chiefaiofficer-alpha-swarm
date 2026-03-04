@@ -545,9 +545,10 @@ def main():
         company_name = company_url.split("/")[-1]
         company_domain = ""
 
+    _trace_start = time.time()
     try:
         leads = scraper.fetch_followers(company_url, company_name, args.limit, company_domain=company_domain)
-        
+
         if leads:
             output_path = scraper.save_leads(leads)
             console.print(f"\n[bold green]✅ Scraping complete![/bold green]")
@@ -555,11 +556,28 @@ def main():
             console.print(f"  python execution/enricher_waterfall.py --input {output_path}")
         else:
             console.print("\n[yellow]No leads scraped. Check APOLLO_API_KEY in .env[/yellow]")
-            
+
+        try:
+            from core.trace_envelope import emit_tool_trace
+            emit_tool_trace(agent="hunter", tool_name="hunter:scrape",
+                            tool_input={"company": company_name, "limit": args.limit},
+                            tool_output={"leads_found": len(leads) if leads else 0},
+                            status="success", duration_ms=(time.time() - _trace_start) * 1000)
+        except Exception:
+            pass
+
     except ScraperUnavailableError as e:
         console.print(f"[yellow]⚠️ Scraper unavailable: {e}[/yellow]")
         console.print("[yellow]Pipeline will use test data fallback.[/yellow]")
     except Exception as e:
+        try:
+            from core.trace_envelope import emit_tool_trace
+            emit_tool_trace(agent="hunter", tool_name="hunter:scrape",
+                            tool_input={"company": company_name, "limit": args.limit},
+                            status="error", duration_ms=(time.time() - _trace_start) * 1000,
+                            error_code="SCRAPE_FAILED", error_message=str(e)[:200])
+        except Exception:
+            pass
         console.print(f"[red]❌ Scraping failed: {e}[/red]")
         sys.exit(1)
 

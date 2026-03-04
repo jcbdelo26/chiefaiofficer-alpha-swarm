@@ -1111,11 +1111,15 @@ def main():
     if not args.input and not args.linkedin_url:
         parser.error("Either --input or --linkedin-url is required")
     
+    import time as _time_mod
+    _trace_start = _time_mod.time()
+    _enriched_count = 0
     try:
         enricher = WaterfallEnricher(test_mode=args.test_mode)
-        
+
         if args.input:
             enriched = enricher.enrich_batch(args.input)
+            _enriched_count = len(enriched) if enriched else 0
             if enriched:
                 if args.test_mode:
                     output_path = enricher.save_test_results(enriched)
@@ -1132,15 +1136,32 @@ def main():
                 args.name,
                 args.company
             )
+            _enriched_count = 1 if result else 0
             if result:
                 console.print(json.dumps(asdict(result), indent=2))
                 if args.test_mode:
-                    # Save single lead test result
                     enricher.save_test_results([result])
             else:
                 console.print("[yellow]No enrichment data found[/yellow]")
-                
+
+        try:
+            from core.trace_envelope import emit_tool_trace
+            emit_tool_trace(agent="enricher", tool_name="enricher:waterfall",
+                            tool_input={"input": str(args.input or args.linkedin_url), "test_mode": args.test_mode},
+                            tool_output={"enriched_count": _enriched_count},
+                            status="success", duration_ms=(_time_mod.time() - _trace_start) * 1000)
+        except Exception:
+            pass
+
     except Exception as e:
+        try:
+            from core.trace_envelope import emit_tool_trace
+            emit_tool_trace(agent="enricher", tool_name="enricher:waterfall",
+                            tool_input={"input": str(args.input or args.linkedin_url)},
+                            status="error", duration_ms=(_time_mod.time() - _trace_start) * 1000,
+                            error_code="ENRICH_FAILED", error_message=str(e)[:200])
+        except Exception:
+            pass
         console.print(f"[red]❌ Enrichment failed: {e}[/red]")
         sys.exit(1)
 

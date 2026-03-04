@@ -1814,29 +1814,96 @@ async def get_compound_metrics(auth: bool = Depends(require_auth)):
     except Exception:
         metrics["event_volume"] = {"error": "Events file not readable"}
 
-    # 5. Doc freshness (count of docs with frontmatter)
+    # 5. Doc freshness (enriched -- reuses check_doc_freshness logic)
     try:
-        docs_dir = project_root / "docs"
-        docs_with_frontmatter = 0
-        total_docs = 0
-        for md_file in docs_dir.glob("*.md"):
-            total_docs += 1
-            try:
-                with open(md_file, "r", encoding="utf-8") as f:
-                    first_line = f.readline().strip()
-                    if first_line == "---":
-                        docs_with_frontmatter += 1
-            except Exception:
-                pass
+        import sys as _sys_mod
+        _scripts_dir = project_root / "scripts"
+        if str(_scripts_dir) not in _sys_mod.path:
+            _sys_mod.path.insert(0, str(_scripts_dir))
+        from check_doc_freshness import _check_file, SCAN_DIRS, EXCLUDE_DIRS, PROJECT_ROOT as _FRESH_ROOT
+        _stale_docs: list = []
+        _checked = 0
+        for _scan_dir in SCAN_DIRS:
+            if not _scan_dir.is_dir():
+                continue
+            _pattern = "*.md" if _scan_dir == _FRESH_ROOT else "**/*.md"
+            for _md_file in _scan_dir.glob(_pattern):
+                _rel = _md_file.relative_to(_scan_dir)
+                if any(part in EXCLUDE_DIRS for part in _rel.parts):
+                    continue
+                _checked += 1
+                _violation = _check_file(_md_file)
+                if _violation:
+                    _stale_docs.append(_violation)
         metrics["documentation"] = {
-            "total_docs": total_docs,
-            "with_frontmatter": docs_with_frontmatter,
-            "frontmatter_coverage": round(docs_with_frontmatter / total_docs, 3) if total_docs > 0 else 0,
+            "total_checked": _checked,
+            "stale_count": len(_stale_docs),
+            "stale_critical": len([s for s in _stale_docs if s["is_critical"]]),
+            "stale_standard": len([s for s in _stale_docs if not s["is_critical"]]),
+            "freshness_score": round(1 - len(_stale_docs) / max(_checked, 1), 3),
+            "stale_files": [s["file"] for s in _stale_docs[:10]],
         }
     except Exception:
-        metrics["documentation"] = {"error": "Docs directory not readable"}
+        metrics["documentation"] = {"error": "Freshness check not available"}
+
+    # 6. Trace coverage (pipeline stage observability)
+    try:
+        _trace_file = project_root / ".hive-mind" / "traces" / "tool_trace_envelopes.jsonl"
+        if _trace_file.exists():
+            _lines = _trace_file.read_text(encoding="utf-8", errors="replace").splitlines()
+            _recent = _lines[-100:] if len(_lines) > 100 else _lines
+            _agents_seen: set = set()
+            for _line in _recent:
+                try:
+                    _entry = json.loads(_line)
+                    _agents_seen.add(_entry.get("agent", "unknown"))
+                except Exception:
+                    pass
+            metrics["trace_coverage"] = {
+                "total_traces": len(_lines),
+                "recent_agents": sorted(_agents_seen),
+                "pipeline_stages_traced": len(_agents_seen),
+            }
+        else:
+            metrics["trace_coverage"] = {"total_traces": 0, "recent_agents": [], "pipeline_stages_traced": 0}
+    except Exception:
+        metrics["trace_coverage"] = {"error": "Trace file not readable"}
 
     return metrics
+
+
+@app.get("/api/traces/recent")
+async def get_recent_traces(
+    auth: bool = Depends(require_auth),
+    limit: int = 50,
+    agent: str = "",
+):
+    """Recent pipeline trace envelopes for agent self-diagnosis."""
+    project_root = Path(__file__).parent.parent
+    trace_file = project_root / ".hive-mind" / "traces" / "tool_trace_envelopes.jsonl"
+    if not trace_file.exists():
+        return {"traces": [], "count": 0}
+
+    limit = min(max(limit, 1), 200)
+    traces: list = []
+    try:
+        lines = trace_file.read_text(encoding="utf-8", errors="replace").splitlines()
+        for line in reversed(lines):
+            if not line.strip():
+                continue
+            try:
+                entry = json.loads(line)
+                if agent and entry.get("agent") != agent:
+                    continue
+                traces.append(entry)
+                if len(traces) >= limit:
+                    break
+            except (json.JSONDecodeError, ValueError):
+                continue
+    except Exception:
+        pass
+
+    return {"traces": traces, "count": len(traces)}
 
 
 def _count_pre_commit_tests(project_root: Path) -> int:

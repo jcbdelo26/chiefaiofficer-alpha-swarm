@@ -107,6 +107,46 @@ def get_staged_py_files() -> list[Path]:
         return []
 
 
+def get_staged_diff_added_lines() -> dict[Path, set[int]]:
+    """Get line numbers of added/changed lines in staged .py files.
+
+    Returns a dict mapping file paths to sets of line numbers that were
+    added or modified in the staged diff. This allows checking ONLY new
+    content, not pre-existing non-ASCII in files being modified.
+    """
+    try:
+        result = subprocess.run(
+            ["git", "diff", "--cached", "-U0", "--diff-filter=ACM"],
+            capture_output=True,
+            text=True,
+            cwd=str(PROJECT_ROOT),
+        )
+        added_lines: dict[Path, set[int]] = {}
+        current_file = None
+        for line in result.stdout.splitlines():
+            if line.startswith("+++ b/"):
+                fname = line[6:]
+                if fname.endswith(".py"):
+                    current_file = PROJECT_ROOT / fname
+                    if current_file not in added_lines:
+                        added_lines[current_file] = set()
+                else:
+                    current_file = None
+            elif line.startswith("@@ ") and current_file is not None:
+                # Parse hunk header: @@ -old,count +new,count @@
+                parts = line.split("+")[1].split(" ")[0]
+                if "," in parts:
+                    start, count = parts.split(",")
+                    start, count = int(start), int(count)
+                else:
+                    start, count = int(parts), 1
+                for i in range(start, start + count):
+                    added_lines[current_file].add(i)
+        return added_lines
+    except Exception:
+        return {}
+
+
 def get_production_py_files() -> list[Path]:
     """Get all .py files in production directories."""
     files = []
@@ -143,8 +183,11 @@ def main() -> int:
             str(PROJECT_ROOT / d) for d in PRODUCTION_DIRS
         )
         files = [f for f in files if str(f).startswith(prod_prefixes)]
+        # Only check lines actually added/changed in the diff, not full file
+        diff_lines = get_staged_diff_added_lines()
     else:
         files = get_production_py_files()
+        diff_lines = {}  # empty = check all lines
 
     if not files:
         print(f"No .py files to scan in {PRODUCTION_DIRS}")
@@ -152,7 +195,14 @@ def main() -> int:
 
     all_violations = []
     for f in sorted(files):
-        all_violations.extend(find_non_ascii(f, show_fix=args.fix))
+        violations = find_non_ascii(f, show_fix=args.fix)
+        if diff_lines and f in diff_lines:
+            # In staged mode: only report violations on new/changed lines
+            violations = [v for v in violations if v["line"] in diff_lines[f]]
+        elif diff_lines:
+            # File is staged but no diff lines found — skip entirely
+            violations = []
+        all_violations.extend(violations)
 
     if not all_violations:
         print(f"[PASS] {len(files)} production .py files are ASCII-clean.")

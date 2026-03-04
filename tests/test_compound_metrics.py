@@ -78,7 +78,7 @@ def test_compound_metrics_test_infrastructure():
 
 
 def test_compound_metrics_documentation_section():
-    """Documentation section reports frontmatter coverage."""
+    """Documentation section reports freshness metrics."""
     from dashboard.health_app import app
     from starlette.testclient import TestClient
 
@@ -93,6 +93,7 @@ def test_compound_metrics_documentation_section():
     data = resp.json()
     docs = data.get("documentation", {})
     if "error" not in docs:
-        assert "total_docs" in docs
-        assert "with_frontmatter" in docs
-        assert "frontmatter_coverage" in docs
+        assert "total_checked" in docs
+        assert "stale_count" in docs
+        assert "freshness_score" in docs
+        assert 0.0 <= docs["freshness_score"] <= 1.0

@@ -1,7 +1,7 @@
 ---
 title: Master Tracker & Autonomy Roadmap
-version: "5.4"
-last_updated: 2026-03-04
+version: "5.5"
+last_updated: 2026-03-05
 audience: [all-agents, engineers, pto-gtm]
 tags: [tracker, sprints, autonomy, go-no-go]
 canonical_for: [sprint-tracker, task-status]
@@ -9,10 +9,10 @@ canonical_for: [sprint-tracker, task-status]
 
 # CAIO Alpha Swarm — Master Tracker & Autonomy Roadmap
 
-**Last Updated**: 2026-03-04
-**Last Commit**: `1e1d2da` (post-audit housekeeping + N3/N6 closure artifacts)
-**Plan Version**: v5.4
-**Test Suite**: 581 tests passing (34-file pre-commit suite, ~162s)
+**Last Updated**: 2026-03-05
+**Last Commit**: `9914695` (Agentic Engineering Score Push — 4 deliverables, 601 tests)
+**Plan Version**: v5.5
+**Test Suite**: 601 tests passing (35-file pre-commit suite, ~170s)
 
 > **This file is the single source of truth for all current and future work.**
 > **Canonical status rule (2026-03-03)**: update live status ONLY in this file; other trackers are historical context unless explicitly regenerated from this file.
@@ -46,9 +46,10 @@ Phase 6: Full Autonomy            [..........]   0%  WAITING (trigger: 30 days l
 | 4G Proof & Feedback | COMPLETE | GHLSendProofEngine, webhook + poll fallback |
 | 4H Task Routing | 95% | Committed, needs production validation |
 | 4I Runtime Reliability | COMPLETE | Circuit breakers, fallbacks, retry |
-| 4J TDD Testing | COMPLETE | 576 curated tests (34 pre-commit files) |
+| 4J TDD Testing | COMPLETE | 601 curated tests (35 pre-commit files) |
 | 4K Clay Fallback | COMPLETE | Redis LinkedIn URL correlation |
 | 4L Agentic Engineering Audit | COMPLETE | 21 gaps → 4 sprints (A-D), N1-N7 security, feedback loop wired, 576 tests |
+| 4M Agentic Engineering Score Push | COMPLETE | 4 deliverables: freshness, CLI list, trace logging, dormant tests → 8.4→~8.9 |
 
 ### Engineering Sprint History
 
@@ -63,6 +64,7 @@ Phase 6: Full Autonomy            [..........]   0%  WAITING (trigger: 30 days l
 | 8 (B) | Agentic audit: structural improvements (knowledge index, CLI, smoke, cross-env test, UI validation, doc freshness) | +12 | COMPLETE |
 | 8 (C) | Agentic audit: compound engineering (MCP catalog, ADRs, lessons learned, compound skills, diagnosis CLI) | +0 | COMPLETE |
 | 8 (D) | Agentic audit: deep integration (gateway registry, compound metrics, 33 legacy test fixes, feedback loop activation) | +32 | COMPLETE |
+| 9 (Score Push) | Agentic Engineering Score Push: freshness automation, CLI list, pipeline trace logging, dormant engine rot tests | +20 | COMPLETE |
 
 ---
 
@@ -412,8 +414,8 @@ All must be TRUE before declaring full email autonomy:
 - [x] Webhook strict mode enabled (`WEBHOOK_SIGNATURE_REQUIRED=true`)
 - [x] Login page + cookie session auth (token never in URL)
 - [x] Redis-only state cutover complete
-- [x] 576 pre-commit tests passing (34 files)
-- [x] Engineering Sprints 1-8(D) complete (Agentic Engineering Audit fully remediated)
+- [x] 601 pre-commit tests passing (35 files)
+- [x] Engineering Sprints 1-9 complete (Agentic Engineering Audit + Score Push)
 - [x] N3/N6 security gates closed (2026-03-04, commit `1e1d2da`, 12/12 parity both envs)
 - [x] HoS Supervised Ramp Guide created (`docs/HOS_SUPERVISED_RAMP_GUIDE.md`)
 - [x] Seed Queue UI verified operational (already built in dashboard v3.0)
@@ -529,7 +531,7 @@ echo yes | python execution/run_pipeline.py --mode production --source "wpromote
 | Alerts | `core/alerts.py` | Slack webhook, 3 severity levels |
 | Compliance | `core/compliance.py` | CAN-SPAM enforcement |
 | Production Config | `config/production.json` | All feature flags + limits |
-| Pre-commit Hook | `.githooks/pre-commit` | 34 files, 576 tests, ~102s |
+| Pre-commit Hook | `.githooks/pre-commit` | 35 files, 601 tests, ~170s |
 | Implementation Plan | `CAIO_IMPLEMENTATION_PLAN.md` | v4.8, full historical roadmap |
 | HoS Review Guide | `docs/HOS_EMAIL_REVIEW_GUIDE.md` | Email approval criteria |
 | Dev Team Skill | `.claude/commands/dev-team.md` | 3-pass code review |
@@ -551,6 +553,7 @@ echo yes | python execution/run_pipeline.py --mode production --source "wpromote
 
 | Commit | Date | Description |
 |--------|------|-------------|
+| `9914695` | 2026-03-05 | Agentic Engineering Score Push (Sprint 9): automated freshness in pre-commit + compound metrics, CLI `list` command (55 scripts, 13 aliases), structured trace logging in 6 pipeline stages + `/api/traces/recent`, 20 dormant engine rot tests. 601 tests, 35 pre-commit files. |
 | `38562b0` | 2026-03-03 | Agentic audit Sprints A-D + post-audit housekeeping merged. Post-audit execution started: production hard-auth smoke run, canonical tracker enforcement, cross-doc drift cleanup initiated. |
 | `9606327` | 2026-03-02 | Sprint 7 B6+B7: cadence follow-up consumer (HR-07, 9 tests) + reply classification routing (HR-06, 15 tests). task.md + CLAUDE.md refreshed. 498 tests, 29 files. Deployed to Railway. |
 | `7397f27` | 2026-03-02 | Queue Seed System: dashboard-triggered training email generation, OPERATOR synthetic guard, 14 new tests. 475 tests, 28 files. Deployed to Railway. |

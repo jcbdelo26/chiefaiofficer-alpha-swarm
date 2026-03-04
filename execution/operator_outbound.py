@@ -1115,6 +1115,22 @@ class OperatorOutbound:
             if mark_batch_executed and report.batch_id and not report.pending_approval:
                 self._mark_batch_executed(report.batch_id, report)
 
+            try:
+                from core.trace_envelope import emit_tool_trace
+                import time as _time_mod
+                emit_tool_trace(
+                    agent="operator", tool_name="operator:dispatch",
+                    tool_input={"motion": "outbound", "dry_run": dry_run,
+                                "tier_filter": tier_filter, "run_id": run_id},
+                    tool_output={"email_dispatched": report.email_dispatched,
+                                 "linkedin_dispatched": report.linkedin_dispatched,
+                                 "errors": len(report.errors)},
+                    status="error" if report.errors else "success",
+                    duration_ms=0,  # report already has timestamps
+                )
+            except Exception:
+                pass
+
             return report
         finally:
             if lock_token:

@@ -12,6 +12,11 @@ echo "Checking for non-ASCII characters in production code..."
 python scripts/check_ascii.py --staged
 echo "ASCII check passed."
 
+# Document freshness advisory (warn-only — does not block commits)
+echo "Checking document freshness..."
+python scripts/check_doc_freshness.py --warn-only
+echo ""
+
 echo "Running pre-commit tests..."
 
 # Curated test files: Phase 4 modules + core pipeline
@@ -50,6 +55,7 @@ python -m pytest \
   tests/test_compound_metrics.py \
   tests/test_feedback_integration.py \
   tests/test_cross_environment_bridge.py \
+  tests/test_dormant_engine_imports.py \
   -x -q --tb=short -s 2>/dev/null
 
 if [ $? -ne 0 ]; then

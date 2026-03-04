@@ -18,6 +18,7 @@ canonical_for: [session-config, mandatory-read-order]
 **Platform**: Railway (production) at `caio-swarm-dashboard-production.up.railway.app`
 **Dashboard**: v3.0 full 4-tab UI (Overview/Email Queue/Campaigns/Settings) + live KPIs + compliance checks
 **Latest successful production deploy**: commit `1e1d2da` (2026-03-04) -- N3/N6 closure + post-audit housekeeping (581 tests, 34 pre-commit files)
+**Pending deploy**: commit `9914695` (2026-03-05) -- Agentic Engineering Score Push, 601 tests, 35 pre-commit files
 
 ### Mandatory Read Order (Every New Session)
 
@@ -40,6 +41,7 @@ Phase 4E: Supervised Live Sends              RAMP MODE ACTIVE (5/day, tier_1, 3 
 Phase 4F: Monaco Signal Loop                 COMPLETE (lead_signals + activity_timeline + leads dashboard + decay cron)
 Phase 4K: Clay Pipeline Fallback             COMPLETE (code + tests, awaiting workbook config)
 Phase 4L: Engineering Sprints 4-8            COMPLETE (576 tests, 34 pre-commit files)
+Phase 4M: Agentic Eng. Score Push            COMPLETE (601 tests, 35 pre-commit files, 8.4→~8.9)
 ```
 
 ### Agentic Engineering Audit (2026-03-02 → 2026-03-03)
@@ -55,6 +57,21 @@ Phase 4L: Engineering Sprints 4-8            COMPLETE (576 tests, 34 pre-commit 
 
 **New files**: `core/trace_envelope.py`, `core/enrichment_sub_agents.py`, `core/gateway_registry.py`, `core/cross_environment_bridge.py`, `core/compound_metrics.py`, `scripts/audit_cli.py`
 **New endpoints**: `/api/compound-metrics`, gateway health in `/api/health`
+
+### Agentic Engineering Score Push (2026-03-05)
+
+**Target**: 8.4/10 → ~8.9/10. 4 deliverables, all additive (zero risk to existing pipeline/dashboard):
+
+| Deliverable | Pillar | What Changed |
+|-------------|--------|--------------|
+| D1: Automated Freshness | Context (9.0→9.4) | Pre-commit `--warn-only` freshness advisory; `/api/compound-metrics` enriched with `freshness_score` |
+| D2: CLI Tool Discovery | Tooling (8.4→8.8) | `python cli.py list` — 55 scripts categorized with descriptions; `--search` filter |
+| D3: Structured Trace Logging | Validation (8.8→9.2) | `emit_tool_trace()` in 6 pipeline stages (hunter/enricher/segmentor/crafter/gatekeeper/operator); `/api/traces/recent` endpoint; `trace_coverage` in compound metrics |
+| D4: Dormant Engine Rot Tests | Codebases (7.8→8.2) | `tests/test_dormant_engine_imports.py` — 20 parametrized tests (5 engines x 4 checks: import, class, status header, feature flag) |
+
+**New files**: `tests/test_dormant_engine_imports.py`
+**New endpoint**: `/api/traces/recent` (auth-gated, agent filter, limit param)
+**Modified**: `cli.py` (+90 lines), 6 execution files (+trace calls), `dashboard/health_app.py` (+freshness+traces), `.githooks/pre-commit` (+freshness advisory)
 **Feedback loop wired**: `core/feedback_loop.py` → `core/quality_guard.py` (GUARD-001 boost + GUARD-004 dynamic openers), gated behind `FEEDBACK_LOOP_POLICY_ENABLED`
 **Audit doc**: `docs/AGENTIC_ENGINEERING_AUDIT_HANDOFF.md`
 

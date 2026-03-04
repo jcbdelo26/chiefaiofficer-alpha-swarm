@@ -2126,8 +2126,10 @@ def main():
         run_test_mode(args.input, args.campaign_id)
         return
     
+    import time as _time_mod
+    _trace_start = _time_mod.time()
     gatekeeper = GatekeeperQueue()
-    
+
     if args.serve:
         app = create_dashboard_app()
         if app:
@@ -2135,18 +2137,42 @@ def main():
             console.print(f"[dim]Open http://localhost:{args.port} in your browser[/dim]")
             app.run(host='0.0.0.0', port=args.port, debug=True)
         return
-    
-    if args.input:
-        gatekeeper.queue_campaigns_from_file(args.input)
-    
-    if args.approve:
-        gatekeeper.approve(args.approve)
-    
-    if args.reject:
-        gatekeeper.reject(args.reject, args.reason or "Rejected via CLI")
-    
-    if args.status or (not args.input and not args.approve and not args.reject and not args.serve):
-        gatekeeper.print_queue()
+
+    _action = "status"
+    try:
+        if args.input:
+            _action = "queue"
+            gatekeeper.queue_campaigns_from_file(args.input)
+
+        if args.approve:
+            _action = "approve"
+            gatekeeper.approve(args.approve)
+
+        if args.reject:
+            _action = "reject"
+            gatekeeper.reject(args.reject, args.reason or "Rejected via CLI")
+
+        if args.status or (not args.input and not args.approve and not args.reject and not args.serve):
+            _action = "status"
+            gatekeeper.print_queue()
+
+        try:
+            from core.trace_envelope import emit_tool_trace
+            emit_tool_trace(agent="gatekeeper", tool_name=f"gatekeeper:{_action}",
+                            tool_input={"input": str(args.input) if args.input else None,
+                                        "approve": args.approve, "reject": args.reject},
+                            status="success", duration_ms=(_time_mod.time() - _trace_start) * 1000)
+        except Exception:
+            pass
+    except Exception as e:
+        try:
+            from core.trace_envelope import emit_tool_trace
+            emit_tool_trace(agent="gatekeeper", tool_name=f"gatekeeper:{_action}",
+                            status="error", duration_ms=(_time_mod.time() - _trace_start) * 1000,
+                            error_code="GATEKEEPER_FAILED", error_message=str(e)[:200])
+        except Exception:
+            pass
+        raise
 
 
 if __name__ == "__main__":
