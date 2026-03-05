@@ -232,112 +232,181 @@ SEED_TEMPLATES: Dict[str, Dict[str, Any]] = {
             "self-assessment.)"
         ),
     },
-    # Tier 2 angles
+    # Tier 2 angles (aligned to HoS doc source of truth)
     "t2_a_tech_stack": {
         "tier": "tier_2",
         "angle": "Tech Stack Integration",
-        "subject": "AI integration playbook for {company}'s stack",
+        "subjects": [
+            "{first_name} - AI for {company}'s tech stack",
+            "AI integration for {industry} teams",
+            "AI playbook for teams like {company}",
+        ],
         "body": (
             "Hi {first_name},\n\n"
-            "I have been mapping out AI integration playbooks for {industry} "
-            "teams and wanted to share one tailored to companies like {company}.\n\n"
-            "Most teams I talk to have the same 3 pain points: lead enrichment "
-            "takes too long, document processing is manual, and support triage "
-            "is a bottleneck. AI can address all three without ripping out your "
-            "existing stack.\n\n"
-            "Would it be helpful if I shared the playbook specific to your "
-            "tech environment?"
+            "I noticed {company} is in {industry} -- we actually have a "
+            "specific AI integration playbook for that space.\n\n"
+            "Most {title} roles I talk to are seeing two blockers:\n"
+            "1. The CTO is buried in legacy tech maintenance\n"
+            "2. No dedicated AI strategy lead to drive implementation\n\n"
+            "We bridge that gap as your Fractional Chief AI Officer -- "
+            "moving from \"AI pilot\" to production workflows in 90 days.\n\n"
+            "What teams like yours are automating:\n"
+            "- Lead enrichment & qualification (from raw data to booked meetings)\n"
+            "- Document processing & extraction (invoices, contracts, reports)\n"
+            "- Customer support triage (route, respond, escalate)\n\n"
+            "Would it be helpful if I shared the AI playbook we're seeing "
+            "work best for {industry}?"
         ),
     },
     "t2_b_operations_efficiency": {
         "tier": "tier_2",
         "angle": "Operations Efficiency",
-        "subject": "40-60% time savings on ops at firms like {company}",
+        "subjects": [
+            "{company}'s operational efficiency",
+            "{first_name} - cutting {company}'s overhead",
+            "AI for operations teams at {company}",
+        ],
         "body": (
             "Hi {first_name},\n\n"
-            "Teams like yours at {company} are typically spending 40-60% of "
-            "their operational bandwidth on tasks that AI can handle in minutes.\n\n"
-            "Our M.A.P. framework (Measure, Automate, Prove) identifies the "
-            "highest-ROI automations in your first 90 days and delivers "
-            "measurable results your leadership team can see.\n\n"
-            "Open to a brief sync to see where {company} stands?"
+            "The teams we work with are seeing 40-60% time savings on "
+            "operational tasks using AI automation.\n\n"
+            "Specifically:\n"
+            "- One 150-person firm saved 300+ hours in 30 days on "
+            "administrative work\n"
+            "- A 7-person pilot team saw 27% productivity boost in the "
+            "first month\n"
+            "- AI now handles the work of 20+ staff in Operations at one "
+            "of our travel clients\n\n"
+            "The pattern: start with high-volume, low-complexity tasks "
+            "(data entry, scheduling, reporting), prove ROI in 30 days, "
+            "then expand.\n\n"
+            "We call it the M.A.P. framework: Measure, Automate, Prove.\n\n"
+            "Open to a brief sync, or should I just send over a one-pager "
+            "for now?"
         ),
     },
     "t2_c_innovation_champion": {
         "tier": "tier_2",
         "angle": "Innovation Champion",
-        "subject": "Why 75% of AI pilots stall (and how {company} can avoid it)",
+        "subjects": [
+            "AI transformation at {company}",
+            "{first_name} - building the AI Council",
+            "Accelerating {company}'s AI roadmap",
+        ],
         "body": (
             "Hi {first_name},\n\n"
-            "75% of AI pilots never make it past the proof-of-concept stage. "
-            "The reason is almost never the technology -- it is the lack of an "
-            "internal AI Council driving adoption across the org.\n\n"
-            "We help companies like {company} stand up that council: a 90-day "
-            "bootcamp to co-pilot phase, then a clean handoff so your team "
-            "owns it long-term.\n\n"
-            "If you have been thinking about how to scale AI at {company}, "
-            "I would love to compare notes."
+            "75%+ of AI pilots stall before ROI is proven.\n\n"
+            "The root cause we see: insufficient governance and process "
+            "integration. CFOs see spend but not savings. Teams focus on "
+            "\"AI chatbots\" instead of operational transformation.\n\n"
+            "We fix this by building an AI Council inside your company -- "
+            "internal champions from every department who drive adoption "
+            "from within.\n\n"
+            "Our 90-day approach:\n"
+            "1. Day 1: Executive bootcamp (your team leaves AI-ready)\n"
+            "2. Weeks 2-8: We co-pilot with your AI Council, build the "
+            "workflows\n"
+            "3. Weeks 9-12: Measure ROI, hand off the playbook\n\n"
+            "If the M.A.P. cycle doesn't deliver tangible savings, you "
+            "don't pay the next phase.\n\n"
+            "Mind if I send over a 2-minute video on how we do this?"
         ),
     },
-    # Tier 3 angles
+    # Tier 3 angles (aligned to HoS doc source of truth)
     "t3_a_quick_win": {
         "tier": "tier_3",
         "angle": "Quick Win",
-        "subject": "One workflow to automate at {company} this month",
+        "subjects": [
+            "Quick idea for {company}",
+            "{first_name} - one workflow to automate",
+            "Save 5 hours/week at {company}",
+        ],
         "body": (
             "Hi {first_name},\n\n"
-            "What if you could pick one workflow at {company} and automate it "
-            "this month -- getting 8 hours back every week?\n\n"
-            "That is exactly what we help {industry} teams do. No massive "
-            "overhaul, no 6-month project. Just one quick win that proves "
-            "the value.\n\n"
-            "Reply 'yes' and I will send over the top 3 candidates for "
-            "{company}."
+            "Most {industry} teams I talk to have one workflow that eats up "
+            "way too much time -- usually something like data entry, reporting, "
+            "or lead research.\n\n"
+            "We help companies like {company} automate that one thing first. "
+            "No 6-month project. Just pick the biggest time-waster and fix it.\n\n"
+            "Example: A 25-person {industry} company automated their weekly "
+            "reporting and got 8 hours back per person, per month.\n\n"
+            "Worth a quick look?\n\n"
+            "Reply \"yes\" and I'll send a 2-minute breakdown of how we do it."
         ),
     },
     "t3_b_time_savings": {
         "tier": "tier_3",
         "angle": "Time Savings",
-        "subject": "10 hrs/week back for your {industry} team",
+        "subjects": [
+            "{first_name} - 10 hours back per week",
+            "What if {company}'s admin work did itself?",
+            "AI for the boring stuff at {company}",
+        ],
         "body": (
             "Hi {first_name},\n\n"
-            "Most {industry} teams I work with are losing 10+ hours a week "
-            "to tasks that AI agents (not chatbots) can handle automatically.\n\n"
-            "I am talking about real workflow automation: intake processing, "
-            "reporting, data entry, internal routing -- the stuff that eats "
-            "your team's time but does not need a human brain.\n\n"
-            "Want me to send a quick video showing how this works for "
-            "teams like yours at {company}?"
+            "The teams I work with typically waste 10-15 hours per week on "
+            "tasks that should be automated: data entry, status updates, "
+            "scheduling, and reporting.\n\n"
+            "We use AI agents to handle that -- not a \"chatbot\" but actual "
+            "workflow automation that runs 24/7.\n\n"
+            "Quick wins we see for {industry} teams:\n"
+            "- Auto-updating spreadsheets and dashboards\n"
+            "- Lead research done overnight (you wake up to qualified lists)\n"
+            "- Follow-up emails sent at the right time, automatically\n\n"
+            "No huge IT project. Start with one workflow, prove it works, "
+            "expand from there.\n\n"
+            "Should I send over a quick video showing how this works for "
+            "teams your size?"
         ),
     },
     "t3_c_competitor_fomo": {
         "tier": "tier_3",
         "angle": "Competitor FOMO",
-        "subject": "Your {industry} competitors are already automating",
+        "subjects": [
+            "What {industry} teams are automating",
+            "{first_name} - how competitors are scaling",
+            "AI adoption in {industry}",
+        ],
         "body": (
             "Hi {first_name},\n\n"
-            "Just a heads up: several {industry} companies your size are "
-            "already using AI to automate 40-60% of their operational "
-            "workflows.\n\n"
-            "The gap between early adopters and everyone else is widening "
-            "fast. The good news: catching up does not take a massive budget "
-            "or a 12-month timeline.\n\n"
-            "Reply 'show me' and I will share what is working right now for "
-            "teams like {company}."
+            "I've been working with a few {industry} companies lately, and "
+            "there's a pattern:\n\n"
+            "The ones pulling ahead are automating the \"invisible work\" -- "
+            "the research, the data entry, the follow-ups that eat up 40-60% "
+            "of everyone's week.\n\n"
+            "What they're automating:\n"
+            "- Lead research and scoring (AI does it overnight)\n"
+            "- Proposal drafts and first-pass content\n"
+            "- Client onboarding workflows\n"
+            "- Reporting and status updates\n\n"
+            "Not asking you to rip out your tech stack. Just add a layer of "
+            "AI that handles the repetitive stuff.\n\n"
+            "Curious if {company} has looked into this yet?\n\n"
+            "Just reply \"show me\" -- I'll send a quick breakdown of what "
+            "we're seeing work."
         ),
     },
     "t3_d_diy_resource": {
         "tier": "tier_3",
         "angle": "DIY Resource",
-        "subject": "Free AI automation checklist for {company}",
+        "subjects": [
+            "Free AI checklist for {industry}",
+            "{first_name} - quick resource for small teams",
+            "AI quick wins (no sales pitch)",
+        ],
         "body": (
             "Hi {first_name},\n\n"
-            "I put together a 1-page checklist of the top AI tools (all under "
-            "$100/mo) that {industry} teams are using to automate repetitive "
-            "work.\n\n"
-            "No pitch, no call required -- just practical tools you can start "
-            "using this week.\n\n"
-            "Want me to send it over?"
+            "I put together a 1-page checklist of the 5 \"quick win\" AI "
+            "automations that work best for {industry} teams under 50 people.\n\n"
+            "No fluff, no 30-minute demo required -- just actionable stuff "
+            "you can implement yourself or hand to your ops person.\n\n"
+            "Includes:\n"
+            "- Top 5 workflows to automate first (and why)\n"
+            "- Tools that work for small budgets (under $100/month)\n"
+            "- Common mistakes to avoid\n\n"
+            "Mind if I send it over?\n\n"
+            "(No strings attached -- it's genuinely useful even if we "
+            "never talk.)"
         ),
     },
 }
