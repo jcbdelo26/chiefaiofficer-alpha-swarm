@@ -13,6 +13,11 @@ from typing import Final
 
 CALL_LINK: Final[str] = "https://caio.cx/ai-exec-briefing-call"
 SUPPORT_EMAIL: Final[str] = "support@chiefaiofficer.com"
+COMPANY_ADDRESS: Final[str] = "5700 Harper Dr, Suite 210, Albuquerque, NM 87109"
+GHL_UNSUBSCRIBE_BASE: Final[str] = (
+    "https://services.msgsndr.com/emails/builder/unsubscribe-view/"
+    "FgaFLGYrbGZSBVprTkhR/94NfAEoXf481l6gra4vh"
+)
 
 STANDARD_TEXT_SIGNATURE: Final[str] = "\n".join(
     [
@@ -24,11 +29,11 @@ STANDARD_TEXT_SIGNATURE: Final[str] = "\n".join(
 
 STANDARD_TEXT_FOOTER: Final[str] = "\n".join(
     [
-        "We only reach out to professionals we believe can lead AI strategy inside their organizations. If this isn't you, or now's not the right time, just Reply STOP to unsubscribe.",
-        "Chief AI Officer Inc.",
-        "5700 Harper Dr, Suite 210, Albuquerque, NM 87109",
-        SUPPORT_EMAIL,
-        "Copyright © 2026 Chief AI Officer. All rights reserved",
+        "We only reach out to professionals we believe can lead AI strategy "
+        "inside their organizations. If this isn't you, or now's not the "
+        "right time.",
+        "",
+        f"ChiefAIOfficer.com | {COMPANY_ADDRESS} | Unsubscribe",
     ]
 )
 
@@ -39,13 +44,13 @@ STANDARD_HTML_SIGNATURE: Final[str] = (
 )
 
 STANDARD_HTML_FOOTER: Final[str] = (
-    '<center><p style="font-size: 11px; color: #666; margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; text-align: center;">'
-    "We only reach out to professionals we believe can lead AI strategy inside their organizations. "
-    "If this isn&#39;t you, or now&#39;s not the right time, just Reply STOP to unsubscribe.<br>"
-    "Chief AI Officer Inc.<br>"
-    "5700 Harper Dr, Suite 210, Albuquerque, NM 87109<br>"
-    f'<a href="mailto:{SUPPORT_EMAIL}">{SUPPORT_EMAIL}</a><br>'
-    "Copyright © 2026 Chief AI Officer. All rights reserved"
+    '<center><p style="font-size: 11px; color: #666; margin-top: 30px; '
+    'padding-top: 20px; border-top: 1px solid #eee; text-align: center;">'
+    "We only reach out to professionals we believe can lead AI strategy "
+    "inside their organizations. If this isn&#39;t you, or now&#39;s not "
+    "the right time.<br><br>"
+    f"ChiefAIOfficer.com | {COMPANY_ADDRESS} | "
+    f'<a href="{GHL_UNSUBSCRIBE_BASE}" style="color: #666;">Unsubscribe</a>'
     "</p></center>"
 )
 
@@ -55,6 +60,7 @@ _LEGACY_HTML_BLOCKS = [
     r"(?is)<p[^>]*>\s*Reply STOP to unsubscribe\.?\s*</p>",
     r"(?is)<p[^>]*>\s*(?:Best|Cheers|Thanks),<br>[\s\S]*?</p>",
     r"(?is)Chief AI Officer Inc\.\s*\|\s*5700 Harper Dr, Suite 210, Albuquerque, NM 87109",
+    r"(?is)ChiefAIOfficer\.com\s*\|\s*5700 Harper Dr.*?Unsubscribe\s*</a>",
 ]
 
 _LEGACY_TEXT_BLOCKS = [
@@ -62,6 +68,7 @@ _LEGACY_TEXT_BLOCKS = [
     r"(?is)\n*(?:Best|Cheers|Thanks),\s*\n[\s\S]*$",
     r"(?is)\n*---\s*\n[\s\S]*$",
     r"(?is)\n*Reply STOP to unsubscribe\.?\s*$",
+    r"(?is)\n*ChiefAIOfficer\.com\s*\|.*?Unsubscribe\s*$",
 ]
 
 

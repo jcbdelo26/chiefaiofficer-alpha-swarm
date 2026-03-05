@@ -122,7 +122,7 @@ class TestSeedQueueGeneration:
         for email in emails:
             body = email.get("body", "")
             assert "Dani Apgar" in body, f"Missing signature in email {email['email_id']}"
-            assert "Reply STOP" in body, f"Missing CAN-SPAM footer in email {email['email_id']}"
+            assert "Unsubscribe" in body, f"Missing unsubscribe footer in email {email['email_id']}"
 
     def test_diverse_personas(self):
         """A batch of 5 should have no duplicate recipients (15 personas > 5)."""
