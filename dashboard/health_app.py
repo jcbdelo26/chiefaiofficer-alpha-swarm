@@ -1328,6 +1328,27 @@ async def seed_queue(
         raise HTTPException(status_code=500, detail=f"Seed failed: {exc}")
 
 
+@app.delete("/api/admin/clear-queue")
+async def clear_queue(auth: bool = Depends(require_auth)):
+    """Delete all pending emails from the Redis shadow queue.
+
+    Use after template updates to flush stale seeded emails.
+    The queue watcher will auto-reseed within 30 seconds.
+    """
+    try:
+        from core.shadow_queue import clear_pending
+
+        deleted = clear_pending()
+        return {
+            "status": "ok",
+            "deleted": deleted,
+            "note": "Queue watcher will auto-reseed within 30 seconds.",
+        }
+    except Exception as exc:
+        logger.error("clear-queue failed: %s", exc, exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Clear failed: {exc}")
+
+
 @app.post("/api/admin/regenerate_queue")
 async def regenerate_queue(auth: bool = Depends(require_auth)):
     """

@@ -43,7 +43,7 @@ class FakeRedis:
     def get(self, key):
         return self._data.get(key)
 
-    def set(self, key, value):
+    def set(self, key, value, ex=None):
         self._data[key] = value
 
     def incr(self, key):

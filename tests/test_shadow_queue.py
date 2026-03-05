@@ -32,7 +32,7 @@ class FakeRedis:
     def get(self, key: str) -> Optional[str]:
         return self._store.get(key)
 
-    def set(self, key: str, value: str):
+    def set(self, key: str, value: str, ex=None):
         self._store[key] = value
 
     def zadd(self, key: str, mapping: Dict[str, float]):
@@ -70,7 +70,7 @@ class BrokenRedis:
     def get(self, key: str):
         raise ConnectionError("Redis is down")
 
-    def set(self, key: str, value: str):
+    def set(self, key: str, value: str, ex=None):
         raise ConnectionError("Redis is down")
 
     def zadd(self, key: str, mapping: Dict):

@@ -89,7 +89,8 @@ def push(email_data: Dict[str, Any], shadow_dir: Optional[Path] = None) -> bool:
     r = _get_redis()
     if r:
         try:
-            r.set(_key(email_id), json.dumps(email_data, ensure_ascii=False))
+            r.set(_key(email_id), json.dumps(email_data, ensure_ascii=False),
+                  ex=604800)  # 7-day TTL -- stale emails auto-expire
             # Maintain a sorted set of pending IDs (score = timestamp for ordering)
             if email_data.get("status") == "pending":
                 r.zadd(_index_key(), {email_id: datetime.now(timezone.utc).timestamp()})
@@ -248,6 +249,27 @@ def pending_count() -> int:
         except Exception:
             pass
     return 0
+
+
+def clear_pending() -> int:
+    """Delete all pending emails from Redis shadow queue.
+
+    Returns the number of deleted email records.
+    """
+    r = _get_redis()
+    if not r:
+        return 0
+
+    deleted = 0
+    try:
+        for key in r.scan_iter(f"{_prefix()}:shadow:email:*"):
+            r.delete(key)
+            deleted += 1
+        r.delete(_index_key())
+    except Exception as exc:
+        logger.warning("clear_pending failed: %s", exc)
+
+    return deleted
 
 
 def get_email(email_id: str, shadow_dir: Optional[Path] = None) -> Optional[Dict[str, Any]]:

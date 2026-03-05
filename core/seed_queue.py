@@ -144,66 +144,92 @@ SEED_TEMPLATES: Dict[str, Dict[str, Any]] = {
     "t1_a_executive_buyin": {
         "tier": "tier_1",
         "angle": "Executive Buy-In",
-        "subject": "Quick question about AI strategy at {company}",
+        "subjects": [
+            "AI Roadmap for {company}",
+            "Quick question regarding {company}'s AI strategy",
+            "Fractional AI leadership for {company}",
+        ],
         "body": (
             "Hi {first_name},\n\n"
-            "When you are {pain_hook}, the last thing you need is another tool "
-            "demo. What most {industry} leaders actually need is someone who can "
-            "look at the operation and say: \"automate this, skip that, here is "
-            "the ROI.\"\n\n"
-            "That is what our Fractional CAIO does -- a 90-day M.A.P. cycle "
-            "(Measure, Automate, Prove) that delivers measurable results or you "
-            "do not pay the next phase.\n\n"
-            "Would a 15-minute call make sense to see if this fits {company}'s "
-            "priorities right now?"
+            "Seeing a lot of {industry} firms stuck in \"AI research mode\" "
+            "without moving to implementation.\n\n"
+            "Usually, it's because the CTO is buried in legacy tech and "
+            "there's no dedicated AI lead to drive the strategy forward.\n\n"
+            "We act as your Fractional Chief AI Officer to move {company} "
+            "from curiosity to ROI -- typically in 90 days.\n\n"
+            "What that looks like:\n"
+            "- Day 1: One-day M.A.P. Bootcamp (your team leaves with an "
+            "AI-ready action plan)\n"
+            "- Days 2-90: We embed with your team, build the workflows, "
+            "and measure results\n"
+            "- Guarantee: Measurable ROI, or you don't pay the next phase\n\n"
+            "Worth a brief chat on how we're doing this for similar "
+            "{industry} companies?"
         ),
     },
     "t1_b_industry_specific": {
         "tier": "tier_1",
         "angle": "Industry-Specific",
-        "subject": "{first_name} -- 300+ hours saved in back-office at a {company_context}",
+        "subjects": [
+            "AI in {industry} / {company}",
+            "Automating {company}'s back-office?",
+            "{first_name} -- operational efficiency at {company}",
+        ],
         "body": (
             "Hi {first_name},\n\n"
-            "Running a {company_context} means {pain_hook} -- and the back-office "
-            "work that supports it rarely gets the attention it deserves.\n\n"
-            "One of our recent engagements freed up over 300 hours in the first "
-            "30 days by automating intake, reporting, and internal routing. No "
-            "new tools to learn, no disruption to existing workflows.\n\n"
-            "If the operational side at {company} is eating more time than it "
-            "should, I would love to share what worked.\n\n"
-            "Open to a quick chat this week?"
+            "Many {industry} CEOs I speak with are frustrated by thin margins "
+            "and operational inefficiency.\n\n"
+            "The fix we're seeing work: AI automating the back-office \"drudge "
+            "work\" -- project estimation, invoicing, scheduling, reporting -- "
+            "so your team can focus on revenue.\n\n"
+            "Example: A 150-person {industry} firm saved 300+ hours in 30 days "
+            "and saw a 27% productivity boost after our 90-day AI pilot.\n\n"
+            "Are you open to seeing a quick breakdown of the workflow we built "
+            "for them?"
         ),
     },
     "t1_c_hiring_trigger": {
         "tier": "tier_1",
         "angle": "Hiring Trigger",
-        "subject": "Bridging the AI gap at {company} before your next hire starts",
+        "subjects": [
+            "Re: {company}'s AI hiring",
+            "{first_name} - about your AI team",
+            "Bridge strategy for {company}",
+        ],
         "body": (
             "Hi {first_name},\n\n"
-            "Most {industry} leaders I talk to hit a point where the team is "
-            "growing but the systems are not keeping up -- especially when you "
-            "are {pain_hook}.\n\n"
-            "Before your next hire ramps up, there is a window to set the AI "
-            "roadmap so they are executing from day one instead of spending "
-            "3 months figuring out priorities.\n\n"
-            "Our Fractional CAIO service bridges that gap: we set the strategy, "
-            "build the playbook, and hand it off to your permanent hire.\n\n"
-            "Worth a 15-minute call to see if the timing makes sense?"
+            "Noticed you're hiring for a {title} at {company}. Great move.\n\n"
+            "But here's what we usually see: it takes 4-6 months to get that "
+            "person productive -- finding the right hire, onboarding, learning "
+            "your systems.\n\n"
+            "We provide the fractional AI leadership to set the strategy now "
+            "so your new hire hits the ground running on Day 1.\n\n"
+            "What we do in 90 days:\n"
+            "- Define your AI roadmap before the hire starts\n"
+            "- Train your current team on AI fundamentals\n"
+            "- Build your first automated workflows\n"
+            "- Hand off a documented playbook to your new AI lead\n\n"
+            "Open to a \"bridge strategy\" call? Just 15 minutes."
         ),
     },
     "t1_d_value_first": {
         "tier": "tier_1",
         "angle": "Value-First",
-        "subject": "Free AI readiness audit for {company}",
+        "subjects": [
+            "2-minute AI readiness check for {company}",
+            "{first_name} - quick resource for {industry} leaders",
+            "AI quick wins for {industry}",
+        ],
         "body": (
             "Hi {first_name},\n\n"
-            "I built a quick AI Readiness diagnostic specifically for {industry} "
-            "leaders who are {pain_hook}. Takes 2 minutes, and you get a "
-            "personalized report showing your 3 biggest automation wins -- "
-            "no strings attached.\n\n"
-            "Most leaders I share this with are surprised by how much time "
-            "their team is losing to tasks that do not need a human brain.\n\n"
-            "Mind if I send the link over?"
+            "I put together a 2-minute \"AI Readiness\" audit for "
+            "{industry} leaders.\n\n"
+            "It covers the 3 biggest low-hanging fruit automation wins "
+            "we're seeing right now -- ones that typically save 10-20 hours "
+            "per week per team member.\n\n"
+            "Mind if I send the link over?\n\n"
+            "(No pitch, no 30-minute demo request -- just a quick "
+            "self-assessment.)"
         ),
     },
     # Tier 2 angles
@@ -226,10 +252,10 @@ SEED_TEMPLATES: Dict[str, Dict[str, Any]] = {
     "t2_b_operations_efficiency": {
         "tier": "tier_2",
         "angle": "Operations Efficiency",
-        "subject": "40-60%% time savings on ops at firms like {company}",
+        "subject": "40-60% time savings on ops at firms like {company}",
         "body": (
             "Hi {first_name},\n\n"
-            "Teams like yours at {company} are typically spending 40-60%% of "
+            "Teams like yours at {company} are typically spending 40-60% of "
             "their operational bandwidth on tasks that AI can handle in minutes.\n\n"
             "Our M.A.P. framework (Measure, Automate, Prove) identifies the "
             "highest-ROI automations in your first 90 days and delivers "
@@ -240,10 +266,10 @@ SEED_TEMPLATES: Dict[str, Dict[str, Any]] = {
     "t2_c_innovation_champion": {
         "tier": "tier_2",
         "angle": "Innovation Champion",
-        "subject": "Why 75%% of AI pilots stall (and how {company} can avoid it)",
+        "subject": "Why 75% of AI pilots stall (and how {company} can avoid it)",
         "body": (
             "Hi {first_name},\n\n"
-            "75%% of AI pilots never make it past the proof-of-concept stage. "
+            "75% of AI pilots never make it past the proof-of-concept stage. "
             "The reason is almost never the technology -- it is the lack of an "
             "internal AI Council driving adoption across the org.\n\n"
             "We help companies like {company} stand up that council: a 90-day "
@@ -291,7 +317,7 @@ SEED_TEMPLATES: Dict[str, Dict[str, Any]] = {
         "body": (
             "Hi {first_name},\n\n"
             "Just a heads up: several {industry} companies your size are "
-            "already using AI to automate 40-60%% of their operational "
+            "already using AI to automate 40-60% of their operational "
             "workflows.\n\n"
             "The gap between early adopters and everyone else is widening "
             "fast. The good news: catching up does not take a massive budget "
@@ -398,7 +424,9 @@ def generate_seed_emails(
             "pain_hook": persona.get("pain_hook", "growing efficiently"),
             "company_context": persona.get("company_context", persona["industry"] + " firm"),
         }
-        subject = template["subject"].format(**fmt)
+        # Support both "subject" (string) and "subjects" (list for rotation)
+        subject_raw = template.get("subject") or random.choice(template["subjects"])
+        subject = subject_raw.format(**fmt)
         raw_body = template["body"].format(**fmt)
         body = enforce_text_signature(raw_body)
 
