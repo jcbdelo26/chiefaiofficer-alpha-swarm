@@ -34,36 +34,48 @@ SEED_PERSONAS: List[Dict[str, Any]] = [
         "title": "CEO", "company": "Apex Digital Partners",
         "industry": "Digital Marketing Agency", "employees": 180,
         "location": "Austin, TX", "tier": "tier_1",
+        "pain_hook": "managing creative teams while keeping client delivery on track",
+        "company_context": "180-person digital marketing agency",
     },
     {
         "first_name": "David", "last_name": "Chen",
         "title": "Founder & COO", "company": "Summit Consulting Group",
         "industry": "Management Consulting", "employees": 250,
         "location": "Chicago, IL", "tier": "tier_1",
+        "pain_hook": "scaling advisory engagements without burning out your senior consultants",
+        "company_context": "boutique consulting firm in growth mode",
     },
     {
         "first_name": "Rachel", "last_name": "Torres",
         "title": "Managing Partner", "company": "Caliber Legal Advisors",
         "industry": "Law Firm", "employees": 95,
         "location": "Denver, CO", "tier": "tier_1",
+        "pain_hook": "running a law practice where billable hours compete with administrative overhead",
+        "company_context": "mid-size legal practice balancing growth and efficiency",
     },
     {
         "first_name": "James", "last_name": "Nakamura",
         "title": "President", "company": "Meridian Staffing Solutions",
         "industry": "Staffing & Recruiting", "employees": 320,
         "location": "Seattle, WA", "tier": "tier_1",
+        "pain_hook": "filling roles fast while your own back-office runs on spreadsheets",
+        "company_context": "staffing firm placing hundreds of candidates a month",
     },
     {
         "first_name": "Lauren", "last_name": "Bishop",
         "title": "Owner", "company": "Ironclad Construction Group",
         "industry": "Construction", "employees": 150,
         "location": "Nashville, TN", "tier": "tier_1",
+        "pain_hook": "coordinating 150 crew members across job sites while keeping margins tight",
+        "company_context": "mid-size commercial construction firm scaling past the coordination ceiling",
     },
     {
         "first_name": "Marcus", "last_name": "Reeves",
         "title": "CEO", "company": "Trident Media Agency",
         "industry": "Advertising Agency", "employees": 210,
         "location": "New York, NY", "tier": "tier_1",
+        "pain_hook": "juggling campaign execution for multiple clients with a lean internal team",
+        "company_context": "full-service ad agency competing against bigger shops",
     },
     # --- Tier 2: CTO, CIO, VP Ops at SaaS, IT, healthcare ---
     {
@@ -135,32 +147,30 @@ SEED_TEMPLATES: Dict[str, Dict[str, Any]] = {
         "subject": "Quick question about AI strategy at {company}",
         "body": (
             "Hi {first_name},\n\n"
-            "Most {industry} firms your size are asking the same question right now: "
-            "where is our AI strategy actually going?\n\n"
-            "The challenge is not tools or vendors -- it is the lack of a dedicated "
-            "AI executive who can set the roadmap and hold the team accountable. "
-            "That is exactly what our Fractional CAIO service provides.\n\n"
-            "We embed into your leadership team, run a 90-day M.A.P. cycle "
-            "(Measure, Automate, Prove), and deliver measurable ROI -- or you do "
-            "not pay the next phase.\n\n"
-            "Would a 15-minute call next week make sense to see if this fits "
-            "{company}'s priorities?"
+            "When you are {pain_hook}, the last thing you need is another tool "
+            "demo. What most {industry} leaders actually need is someone who can "
+            "look at the operation and say: \"automate this, skip that, here is "
+            "the ROI.\"\n\n"
+            "That is what our Fractional CAIO does -- a 90-day M.A.P. cycle "
+            "(Measure, Automate, Prove) that delivers measurable results or you "
+            "do not pay the next phase.\n\n"
+            "Would a 15-minute call make sense to see if this fits {company}'s "
+            "priorities right now?"
         ),
     },
     "t1_b_industry_specific": {
         "tier": "tier_1",
         "angle": "Industry-Specific",
-        "subject": "{first_name} -- 300+ hours saved in back-office at a firm like {company}",
+        "subject": "{first_name} -- 300+ hours saved in back-office at a {company_context}",
         "body": (
             "Hi {first_name},\n\n"
-            "I have been working with {industry} firms similar to {company} and "
-            "one theme keeps coming up: back-office operations are eating 30-40%% "
-            "of leadership bandwidth.\n\n"
-            "One of our recent engagements freed up over 300 hours in the first 30 "
-            "days by automating intake, reporting, and internal routing -- all "
-            "without disrupting the team's existing workflows.\n\n"
-            "If you are seeing similar bottlenecks at {company}, I would love to "
-            "share what worked.\n\n"
+            "Running a {company_context} means {pain_hook} -- and the back-office "
+            "work that supports it rarely gets the attention it deserves.\n\n"
+            "One of our recent engagements freed up over 300 hours in the first "
+            "30 days by automating intake, reporting, and internal routing. No "
+            "new tools to learn, no disruption to existing workflows.\n\n"
+            "If the operational side at {company} is eating more time than it "
+            "should, I would love to share what worked.\n\n"
             "Open to a quick chat this week?"
         ),
     },
@@ -170,10 +180,11 @@ SEED_TEMPLATES: Dict[str, Dict[str, Any]] = {
         "subject": "Bridging the AI gap at {company} before your next hire starts",
         "body": (
             "Hi {first_name},\n\n"
-            "I noticed {company} has been growing its team -- and in my experience, "
-            "that is exactly when AI strategy either accelerates or stalls.\n\n"
-            "Before your next AI or data hire ramps up, there is a window to set "
-            "the roadmap so they are executing from day one instead of spending "
+            "Most {industry} leaders I talk to hit a point where the team is "
+            "growing but the systems are not keeping up -- especially when you "
+            "are {pain_hook}.\n\n"
+            "Before your next hire ramps up, there is a window to set the AI "
+            "roadmap so they are executing from day one instead of spending "
             "3 months figuring out priorities.\n\n"
             "Our Fractional CAIO service bridges that gap: we set the strategy, "
             "build the playbook, and hand it off to your permanent hire.\n\n"
@@ -186,11 +197,12 @@ SEED_TEMPLATES: Dict[str, Dict[str, Any]] = {
         "subject": "Free AI readiness audit for {company}",
         "body": (
             "Hi {first_name},\n\n"
-            "I put together a 2-minute AI Readiness audit that has helped "
-            "{industry} leaders like yourself identify their 3 biggest automation "
-            "wins -- no strings attached.\n\n"
-            "It takes about 2 minutes, and you will get a personalized report "
-            "showing exactly where AI can save your team time right now.\n\n"
+            "I built a quick AI Readiness diagnostic specifically for {industry} "
+            "leaders who are {pain_hook}. Takes 2 minutes, and you get a "
+            "personalized report showing your 3 biggest automation wins -- "
+            "no strings attached.\n\n"
+            "Most leaders I share this with are surprised by how much time "
+            "their team is losing to tasks that do not need a human brain.\n\n"
             "Mind if I send the link over?"
         ),
     },
@@ -383,6 +395,8 @@ def generate_seed_emails(
             "company": persona["company"],
             "title": persona["title"],
             "industry": persona["industry"],
+            "pain_hook": persona.get("pain_hook", "growing efficiently"),
+            "company_context": persona.get("company_context", persona["industry"] + " firm"),
         }
         subject = template["subject"].format(**fmt)
         raw_body = template["body"].format(**fmt)
